@@ -2,8 +2,9 @@
 *.project
 *.classpath
 *.settings
-/bin/
+bin/
 .DS_Store
 /build/
 .gradle
 *.class
+/gradle/
