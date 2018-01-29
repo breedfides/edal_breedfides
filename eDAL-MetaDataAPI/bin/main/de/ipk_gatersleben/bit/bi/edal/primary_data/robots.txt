@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /DOWNLOAD
-Disallow: /ZIP
-Crawl-delay: 1
