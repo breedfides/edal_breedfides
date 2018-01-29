@@ -1,0 +1,34 @@
+<!--
+
+    Copyright (c) 2017 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+    which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+
+    Contributors:
+         Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - RMI Client, FileChooser, PublicationTool
+
+-->
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<body
+	bgcolor=rgb($bgcolor.getRed(),$bgcolor.getGreen(),$bgcolor.getBlue())
+	style="font-family: sans-serif; color:rgb($fgcolor.getRed(),$fgcolor.getGreen(),$fgcolor.getBlue())">
+
+	<table style="width: 100%; border-spacing: 0px 0px 0px 0px;">
+		<tr style="padding: 0px;">
+			<td style="margin: 0px 4px 0px 4px;">
+			<h3	style="margin: 4px 0px 0px 0px;">Citation Preview:</h3></td>
+		</tr>
+		<tr style="padding: 0px;">
+			<td style="margin: 0px 4px 2px 4px;">
+			<font size="3">
+			#if ($authors
+				!= "") $authors; #end ($year): #if ($title != "") $title; #end #if
+				($publisher != "") $publisher #end
+			</font>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

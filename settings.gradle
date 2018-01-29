@@ -1,0 +1,5 @@
+include ':eDAL-MetaDataAPI'
+include ':eDAL-MetaDataAPI-Server'
+include ':eDAL-MetaDataAPI-Client'
+
+rootProject.name = 'electronicDataArchiveLibrary'

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2011 Leibniz Institute of Plant Genetics and Crop Plant 
+	Research (IPK), Gatersleben, Germany. All rights reserved. This program and 
+	the accompanying materials are made available under the terms of the GNU 
+	Lesser Public License v2.1 which accompanies this distribution, and is available 
+	at http://www.gnu.org/licenses/old-licenses/gpl-2.0.html Contributors: Leibniz 
+	Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany 
+	- initial API and implementation -->
+<!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://datacite.org/schema/kernel-3"
+	targetNamespace="http://datacite.org/schema/kernel-3"
+	elementFormDefault="qualified">
+	<xs:simpleType name="relatedIdentifierType">
+		<xs:annotation>
+			<xs:documentation>The type of the RelatedIdentifier.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ARK" />
+			<xs:enumeration value="DOI" />
+			<xs:enumeration value="EAN13" />
+			<xs:enumeration value="EISSN" />
+			<xs:enumeration value="Handle" />
+			<xs:enumeration value="ISBN" />
+			<xs:enumeration value="ISSN" />
+			<xs:enumeration value="ISTC" />
+			<xs:enumeration value="LISSN" />
+			<xs:enumeration value="LSID" />
+			<xs:enumeration value="PURL" />
+			<xs:enumeration value="UPC" />
+			<xs:enumeration value="URL" />
+			<xs:enumeration value="URN" />
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

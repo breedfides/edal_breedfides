@@ -1,0 +1,63 @@
+		<script type ="application/ld+json">
+		{
+			"@context":"http://schema.org",
+			"@type":"Dataset",
+			#foreach( $element in $citation_entity.getVersionByDate($date).getPublicReferences())
+			#if($element.getAssignedID())
+			"@id":"https://doi.org/$element.getAssignedID()",
+			#end
+			#if($element.getReleaseDate())
+			"datePublished:"$element.getReleaseDate(),
+			#end
+			#end
+			"name":"$entity.getVersionByDate($date).getName().replace('"',"'")",
+			"publisher":{
+				"@type":"Organization",
+				"name":"$entity.getVersionByDate($date).getMetaData().getElementValue($publisher).toString()"
+			},
+			"description":"$entity.getVersionByDate($date).getMetaData().getElementValue($description).toString().replace('"',"'")",
+			"keywords":"$entity.getVersionByDate($date).getMetaData().getElementValue($subjects).toString()",
+			"inLanguage":"$entity.getVersionByDate($date).getMetaData().getElementValue($language)",
+			"author":[
+			#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($creator))
+			#set($size=$persons.size())
+			#foreach($person in $persons.getPersons())
+			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+					{	
+						"@type":"Person",
+			 			"givenName":"$person.getGivenName()",
+			 			"familyName":"$person.getSureName()",
+			 			"address":"$person.getAddressLine(), $person.getZip(), $person.getCountry()" 
+					}
+			#else
+					{
+						"@type":"Organization",
+						"name":"$person.getLegalName()" 	
+					}
+			#end
+			#if($foreach.count < $size),#{else} #end
+		 	#end
+		 	],
+		 	"contributor":[
+			#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($contributor))
+			#set($size=$persons.size())
+			#foreach($person in $persons.getPersons())
+			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+					{	
+						"@type":"Person",
+			 			"givenName":"$person.getGivenName()",
+			 			"familyName":"$person.getSureName()",
+			 			"address":"$person.getAddressLine(), $person.getZip(), $person.getCountry()" 
+					}
+			#else
+					{
+						"@type":"Organization",
+						"name":"$person.getLegalName()" 	
+					}
+			#end
+			#if($foreach.count < $size),#{else} #end
+		 	#end
+		 	]
+		 	
+		}
+		</script>

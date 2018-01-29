@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+
+    Copyright (c) 2017 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+    which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+
+    Contributors:
+         Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+
+-->
+<ehcache name="edal" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocaton="ehcache.xsd">
+	<defaultCache maxElementsInMemory="100000" eternal="false"
+		timeToIdleSeconds="500" timeToLiveSeconds="500" overflowToDisk="false" />
+
+	<cache name="org.hibernate.cache.spi.UpdateTimestampsCache"
+		timeToIdleSeconds="0" timeToLiveSeconds="0" maxElementsInMemory="100000"
+		eternal="true" overflowToDisk="false" />
+
+	<cache name="org.hibernate.cache.internal.StandardQueryCache"
+		maxElementsInMemory="10000" eternal="false" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="PrimaryDataDirectory" maxElementsInMemory="10000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="PrimaryDataFile" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="EdalPermission" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="EdalVersion" maxElementsInMemory="100000" eternal="false"
+		timeToIdleSeconds="500" timeToLiveSeconds="500" overflowToDisk="false" />
+
+	<cache name="query.list" maxElementsInMemory="100000" eternal="false"
+		timeToIdleSeconds="500" timeToLiveSeconds="500" overflowToDisk="false" />
+
+	<!-- cache providers for all queries of the security check -->
+
+	<cache name="query.root" maxElementsInMemory="100000" eternal="false"
+		timeToIdleSeconds="500" timeToLiveSeconds="500" overflowToDisk="false" />
+
+	<cache name="query.permission" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="query.principal" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<!-- cache providers for all queries of the search functions -->
+
+	<cache name="search.metadata" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="search.version" maxElementsInMemory="100000"
+		eternal="false" timeToIdleSeconds="500" timeToLiveSeconds="500"
+		overflowToDisk="false" />
+
+	<cache name="search.entity" maxElementsInMemory="100000" eternal="false"
+		timeToIdleSeconds="500" timeToLiveSeconds="500" overflowToDisk="false" />
+
+	<cache name="jetty.webpage.cache" maxElementsInMemory="1000"
+		eternal="true" overflowToDisk="false" memoryStoreEvictionPolicy="LRU" />
+
+	<!-- eternal=true deaktiviert die Rauemung des Cache durch timeout -->
+
+</ehcache> 

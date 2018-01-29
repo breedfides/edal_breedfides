@@ -1,0 +1,447 @@
+/**
+ * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+ * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+ *
+ * Contributors:
+ *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+ */
+package de.ipk_gatersleben.bit.bi.edal.primary_data;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.util.List;
+
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.ExecutorThreadPool;
+
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
+
+public class EdalHttpServer {
+
+	public static final String EDAL_PATH_SEPARATOR = "/";
+
+	private static URL url = null;
+	private static URL httpDownloadUrl = null;
+
+	private boolean useSSL = false;
+
+	private Server eDALServer = null;
+
+	private String domainNameToUse = null;
+
+	protected EdalHttpServer(final EdalConfiguration configuration) {
+
+		if (configuration.getStaticServerAdress() == null) {
+			try {
+				if (configuration.isReadOnly()) {
+					domainNameToUse = InetAddress.getLocalHost().getCanonicalHostName();
+				} else {
+					if (configuration.isInTestMode()) {
+						domainNameToUse = InetAddress.getLocalHost().getCanonicalHostName();
+					} else {
+						checkIfDomainIsRegisteredByDataCite(InetAddress.getLocalHost(),
+								configuration.getAliasDomainNames());
+					}
+				}
+			} catch (UnknownHostException e) {
+				DataManager.getImplProv().getLogger().error("Unable to validate registered domain names");
+				System.exit(0);
+			}
+		} else {
+
+			if (configuration.isReadOnly()) {
+				domainNameToUse = configuration.getStaticServerAdress();
+			} else {
+				if (configuration.isInTestMode()) {
+					domainNameToUse = configuration.getStaticServerAdress();
+				} else {
+					checkIfStaticServerIsRegisteredByDataCite(configuration.getStaticServerAdress(),
+							configuration.getAliasDomainNames());
+				}
+			}
+
+		}
+
+		this.useSSL = configuration.isUseSSLForHttpListener();
+
+		this.eDALServer = new Server(new ExecutorThreadPool(DataManager.getJettyThreadPool()));
+
+		if (!Files.exists(
+				Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "jetty_log"))) {
+			try {
+				Files.createDirectories(
+						Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "jetty_log"));
+			} catch (IOException e) {
+				DataManager.getImplProv().getLogger().error("Unable to create jetty log directory " + e.getMessage());
+			}
+		}
+
+		EdalRequestLog requestLog = new EdalRequestLog(
+				Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "jetty_log",
+						"jetty-yyyy_mm_dd.request.log").toString());
+		requestLog.setRetainDays(Integer.MAX_VALUE);
+		requestLog.setAppend(true);
+		requestLog.setExtended(true);
+		requestLog.setLogServer(true);
+		requestLog.setPreferProxiedForAddress(true);
+		requestLog.setLogTimeZone("GMT+1");
+		requestLog.setIgnorePaths(new String[] { "/" + EdalHttpFunctions.CSS.name() + "/*",
+				"/" + EdalHttpFunctions.LOGO.name() + "/*", "/" + EdalHttpFunctions.JS.name() + "/*",
+				"/" + EdalHttpFunctions.FILEICONS.name() + "/*", "/" + EdalHttpFunctions.ACCEPT.name() + "/*",
+				"/" + EdalHttpFunctions.REJECT.name() + "/*", "/" + EdalHttpFunctions.USER_ACCEPT.name() + "/*",
+				"/" + EdalHttpFunctions.USER_REJECT.name() + "/*", "/" + EdalHttpFunctions.LOGIN.name() + "/*",
+				"/favicon.ico", "/index.htm", "/robots.txt", "/Report/*", "/REPORT/*", "/report/*" });
+
+		RequestLogHandler requestLogHandler = new RequestLogHandler();
+		requestLogHandler.setRequestLog(requestLog);
+
+		ContextHandler contextHandler = new ContextHandler("/");
+		contextHandler.setHandler(new EdalHttpHandler());
+
+		HandlerCollection collection = new HandlerCollection();
+
+		collection.addHandler(contextHandler);
+		collection.addHandler(requestLogHandler);
+
+		if (this.useSSL) {
+
+			SslContextFactory contextFactory = new SslContextFactory();
+
+			KeyStore keystore = null;
+			try {
+				keystore = KeyStore.getInstance("JKS");
+				keystore.load(new FileInputStream(configuration.getCertificatePathForHttpListener().getPath()),
+						configuration.getKeystorePasswordForHttpListener().toCharArray());
+			} catch (GeneralSecurityException | IOException e) {
+				DataManager.getImplProv().getLogger().error("Unable to load/open keystore : " + e.getMessage());
+			}
+
+			contextFactory.setKeyStore(keystore);
+
+			contextFactory.setKeyStorePassword(configuration.getKeystorePasswordForHttpListener());
+
+			ServerConnector sslConnector = new ServerConnector(this.eDALServer, contextFactory);
+			sslConnector.setIdleTimeout(600000);
+
+			ServerConnector connector = new ServerConnector(this.eDALServer);
+			connector.setIdleTimeout(600000);
+
+			try {
+				connector.setPort(configuration.getHttpPort());
+				sslConnector.setPort(configuration.getHttpsPort());
+				this.eDALServer.setConnectors(new Connector[] { sslConnector, connector });
+				this.eDALServer.setHandler(collection);
+
+				if (configuration.getStaticServerAdress() != null) {
+
+					URI domainNameTuUseUri = new URI("https://" + domainNameToUse);
+
+					this.setURL(new URL("https://" + domainNameTuUseUri.getHost() + ":"
+							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
+					this.setHttpDownloadURL(new URL("http://" + domainNameTuUseUri.getHost() + ":"
+							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
+
+				} else {
+					this.setURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpsPort()));
+					this.setHttpDownloadURL(new URL("http://" + domainNameToUse + ":" + configuration.getHttpPort()));
+				}
+
+			} catch (MalformedURLException | EdalConfigurationException | URISyntaxException e) {
+				DataManager.getImplProv().getLogger().error("Unable to initialize HTTPS-server : " + e.getMessage());
+			}
+
+		} else {
+
+			ServerConnector connector = new ServerConnector(this.eDALServer);
+			connector.setIdleTimeout(600000);
+
+			try {
+				connector.setPort(configuration.getHttpPort());
+				this.eDALServer.setConnectors(new Connector[] { connector });
+				this.eDALServer.setHandler(collection);
+
+				if (configuration.getStaticServerAdress() != null) {
+
+					URI domainNameTuUseUri = new URI("http://" + domainNameToUse);
+
+					this.setURL(new URL("http://" + domainNameTuUseUri.getHost() + ":"
+							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
+					this.setHttpDownloadURL(new URL("http://" + domainNameTuUseUri.getHost() + ":"
+							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
+
+				} else {
+					this.setURL(new URL("http://" + domainNameToUse + ":" + configuration.getHttpPort()));
+					this.setHttpDownloadURL(new URL("http://" + domainNameToUse + ":" + configuration.getHttpPort()));
+				}
+
+			} catch (MalformedURLException | EdalConfigurationException | URISyntaxException e) {
+				DataManager.getImplProv().getLogger().error("Unable to initialize HTTP-server : " + e.getMessage());
+			}
+		}
+	}
+
+	private boolean checkIfDomainIsRegisteredByDataCite(InetAddress localhost, List<String> domainNames) {
+
+		try {
+			for (String domain : domainNames) {
+				if (checkIfLocalhostIsInDomain(localhost, domain) || checkIfLocalhostHasSubDomain(localhost, domain)) {
+					domainNameToUse = localhost.getCanonicalHostName();
+					return true;
+				} else if (checkIfDomainIsAliasForLocalhost(localhost, domain)) {
+					domainNameToUse = domain;
+					return true;
+				}
+			}
+			DataManager.getImplProv().getLogger().error("e!DAL is running on '" + localhost.getCanonicalHostName()
+					+ "' and not one of your registrated DataCite Domain(s) '" + domainNames + "'");
+			System.exit(0);
+		}
+
+		catch (UnknownHostException e) {
+			DataManager.getImplProv().getLogger().error("Unable to validate registered domain names");
+			System.exit(0);
+		}
+		System.exit(0);
+		return false;
+
+	}
+
+	private boolean checkIfStaticServerIsRegisteredByDataCite(String host, List<String> domainNames) {
+
+		try {
+			for (String domain : domainNames) {
+				if (checkIfLocalhostIsInDomain(host, domain) || checkIfLocalhostHasSubDomain(host, domain)) {
+					domainNameToUse = host;
+					return true;
+				} else if (checkIfDomainIsAliasForLocalhost(host, domain)) {
+					domainNameToUse = domain;
+					return true;
+				}
+			}
+			DataManager.getImplProv().getLogger().error("e!DAL is running on '" + host
+					+ "' and not one of your registrated DataCite Domain(s) '" + domainNames + "'");
+			System.exit(0);
+		}
+
+		catch (UnknownHostException e) {
+			DataManager.getImplProv().getLogger().error("Unable to validate registered domain names");
+			System.exit(0);
+		}
+		System.exit(0);
+		return false;
+
+	}
+
+	public static boolean checkIfLocalhostIsInDomain(InetAddress localhost, String domain) {
+		if (localhost.getCanonicalHostName().endsWith(domain) || domain.equals("*")) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean checkIfDomainIsAliasForLocalhost(InetAddress localhost, String domain)
+			throws UnknownHostException {
+
+		if (localhost.getCanonicalHostName().endsWith(InetAddress.getByName(domain).getCanonicalHostName())) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean checkIfLocalhostHasSubDomain(InetAddress localhost, String domain)
+			throws UnknownHostException {
+
+		if (localhost.getCanonicalHostName().endsWith(domain)) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean checkIfLocalhostIsInDomain(String localhost, String domain) {
+		if (localhost.endsWith(domain) || domain.equals("*")) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean checkIfDomainIsAliasForLocalhost(String localhost, String domain)
+			throws UnknownHostException {
+
+		if (localhost.endsWith(InetAddress.getByName(domain).getCanonicalHostName())) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean checkIfLocalhostHasSubDomain(String localhost, String domain) throws UnknownHostException {
+
+		if (localhost.endsWith(domain)) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Start the eDAL {@link org.eclipse.jetty.server.Server}.
+	 */
+	protected void start() {
+		try {
+			this.eDALServer.start();
+			if (this.useSSL) {
+				DataManager.getImplProv().getLogger()
+						.info("HTTPS-Server is listening on : " + EdalHttpServer.getServerURL());
+			} else {
+				DataManager.getImplProv().getLogger()
+						.info("HTTP-Server is listening on : " + EdalHttpServer.getServerURL());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (this.useSSL) {
+				DataManager.getImplProv().getLogger().error("Unable to start HTTPS Server : " + e.getMessage());
+			} else {
+				DataManager.getImplProv().getLogger().error("Unable to start HTTP Server : " + e.getMessage());
+			}
+			System.exit(0);
+		}
+	}
+
+	/**
+	 * Stop the eDAL {@link org.eclipse.jetty.server.Server}.
+	 */
+	protected void stop() {
+
+		try {
+			this.eDALServer.stop();
+		} catch (Exception e) {
+			if (this.useSSL) {
+				DataManager.getImplProv().getLogger().error("Unable to stop HTTPS-Server : " + e.getMessage());
+			} else {
+				DataManager.getImplProv().getLogger().error("Unable to stop HTTP-Server : " + e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * internal setter for the {@link URL} of the HTTP server.
+	 * 
+	 * @param url
+	 *            the {@link URL} to set.
+	 */
+	private void setURL(URL url) {
+		EdalHttpServer.url = url;
+	}
+
+	/**
+	 * internal setter for the {@link URL} of the HTTP downloads.
+	 * 
+	 * @param url
+	 *            the {@link URL} to set.
+	 */
+	private void setHttpDownloadURL(URL url) {
+		EdalHttpServer.httpDownloadUrl = url;
+	}
+
+	/**
+	 * Get the {@link URL} of the HTTP server.
+	 * 
+	 * @return the {@link URL} of the HTTP server.
+	 * @throws EdalException
+	 *             if no HTTP server was started.
+	 */
+	public static URL getServerURL() throws EdalException {
+		if (EdalHttpServer.url != null) {
+			return EdalHttpServer.url;
+		} else {
+			throw new EdalException("no eDAL HTTP server started");
+		}
+	}
+
+	/**
+	 * Get the {@link URL} for the HTTP downloads.
+	 * 
+	 * @return the {@link URL} of the HTTP server.
+	 * @throws EdalException
+	 *             if no HTTP server was started.
+	 */
+	public static URL getHttpDownloadURL() throws EdalException {
+		if (EdalHttpServer.httpDownloadUrl != null) {
+			return EdalHttpServer.httpDownloadUrl;
+		} else {
+			throw new EdalException("no eDAL HTTP server started");
+		}
+	}
+
+	/**
+	 * Generate an {@link URL} to a ticket for the given method.
+	 * 
+	 * @param ticket
+	 *            the ticket to the method.
+	 * @param reviewerCode
+	 *            the code to identify the reviewer.
+	 * @param method
+	 *            the method for this {@link URL}.
+	 * @return the URL to accept the
+	 *         {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 *         .
+	 * @throws EdalException
+	 *             if unable to generate an URL.
+	 */
+	public static URL generateMethodURL(String ticket, int reviewerCode, EdalHttpFunctions method)
+			throws EdalException {
+
+		try {
+			URI uri = new URI(getServerURL().toString());
+
+			URL methodURL = new URL(uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort() + uri.getPath()
+					+ EdalHttpServer.EDAL_PATH_SEPARATOR + method + EdalHttpServer.EDAL_PATH_SEPARATOR + ticket
+					+ EdalHttpServer.EDAL_PATH_SEPARATOR + reviewerCode);
+
+			return methodURL;
+		} catch (URISyntaxException | MalformedURLException e) {
+			throw new EdalException("unable to generate URL for " + method, e);
+		}
+	}
+
+	/**
+	 * Generate an {@link URL} to access a
+	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
+	 * as reviewer over a temporal landing page.
+	 * 
+	 * @param entityURL
+	 *            the normal {@link URL} to this
+	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
+	 *            .
+	 * @param reviewersCode
+	 *            the code to identify the reviewer
+	 * @return the {@link URL} to access the landing page for the reviewer.
+	 * @throws EdalException
+	 *             if unable to generate reviewer {@link URL}
+	 */
+	public static URL generateReviewerURL(URL entityURL, int reviewersCode) throws EdalException {
+
+		try {
+			URL reviewerUrl = new URL(entityURL.toString() + EdalHttpServer.EDAL_PATH_SEPARATOR + reviewersCode);
+			return reviewerUrl;
+		} catch (MalformedURLException e) {
+			throw new EdalException("unable to generate ReviewerURL", e);
+		}
+	}
+}

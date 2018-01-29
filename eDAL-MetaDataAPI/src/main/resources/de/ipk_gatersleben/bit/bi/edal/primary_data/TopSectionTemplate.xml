@@ -1,0 +1,13 @@
+<div class="row">
+	<div class="col-md-2" style="margin-top:5px; margin-left:15px;">
+		<figure class="headerimg">
+			<img src="$serverURL/LOGO/edal_scaled.png" alt="edalLogo" />
+		</figure>
+	</div>
+	<div class="col-md-10" style="margin-top:5px; margin-left:-15px;">
+		<h3>
+			<a style="text-decoration: none;" href="http://edal.ipk-gatersleben.de"
+				target="blank">e!DAL - store, cite and share primary data</a>
+		</h3>
+	</div>
+</div>

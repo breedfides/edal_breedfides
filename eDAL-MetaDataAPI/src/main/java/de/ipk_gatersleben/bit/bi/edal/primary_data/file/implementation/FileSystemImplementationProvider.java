@@ -1,0 +1,704 @@
+/**
+ * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+ * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+ *
+ * Contributors:
+ *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+ */
+package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
+
+import java.lang.reflect.Constructor;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.Principal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import net.sf.ehcache.CacheManager;
+
+import org.apache.log4j.Logger;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.boot.spi.MetadataImplementor;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.criterion.Restrictions;
+import org.hibernate.stat.Statistics;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.hbm2ddl.SchemaValidator;
+
+import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSum;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSumType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataSize;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDateEvents;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDirectoryMetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalDate;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalDateRange;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEmptyMetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifierRelation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyLegalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyNaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyORCID;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPersons;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnknownMetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
+
+/**
+ * FileSystem implementation of {@link ImplementationProvider}
+ * 
+ * @author arendd
+ */
+public class FileSystemImplementationProvider implements ImplementationProvider {
+
+	private static final String EDALDB_DBNAME = "edaldb";
+
+	private Logger logger = null;
+
+	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
+
+	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
+
+	private boolean autoIndexing;
+
+	private EdalConfiguration configuration;
+	private Connection connection = null;
+
+	private String databasePassword;
+	private String databaseUsername;
+	private IndexWriterThread indexThread = null;
+	private SessionFactory sessionFactory = null;
+	private Path indexDirectory = null;
+
+	public FileSystemImplementationProvider(EdalConfiguration configuration) {
+
+		this.configuration = configuration;
+
+		try {
+			this.setDatabaseUsername(this.getConfiguration().getDatabaseUsername());
+			this.setDatabasePassword(this.getConfiguration().getDatabasePassword());
+		} catch (EdalConfigurationException e) {
+			// should never happen, because of the validation function
+			e.printStackTrace();
+		}
+
+		this.logger = configuration.getLogger();
+
+		this.setAutoIndexing(autoIndexing);
+
+		try {
+			try {
+				Class.forName("org.h2.Driver");
+				this.setConnection(DriverManager.getConnection(
+						"jdbc:h2:split:30:" + this.getMountPath() + ";IFEXISTS=TRUE;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE",
+						this.getDatabaseUsername(), this.getDatabasePassword()));
+				
+				this.getLogger().info("Database connection established");
+			} catch (final ClassNotFoundException e) {
+				this.getLogger().error("Could not find driver for H2 connection !");
+				System.exit(0);
+			}
+
+		} catch (final SQLException se) {
+
+			if (se.getErrorCode() == SQL_ERROR_DATABASE_IN_USE) {
+				this.getLogger().warn("Database still in use -> close and restart please !");
+				System.exit(0);
+			}
+			if (se.getErrorCode() == SQL_ERROR_DATABASE_NOT_FOUND) {
+				this.getLogger().info("No database found -> creating new database...");
+				try {
+					this.setConnection(DriverManager.getConnection(
+							"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE",
+							this.getDatabaseUsername(), this.getDatabasePassword()));
+
+				} catch (final SQLException e) {
+					this.getLogger().error("Could not start H2 connection !");
+					System.exit(0);
+				}
+			}
+		}
+
+		this.indexDirectory = Paths.get(this.getMountPath().toString(), "lucene");
+
+		final Configuration config = new Configuration();
+
+		config.configure(FileSystemImplementationProvider.class.getResource("hibernate.cfg.xml"));
+
+		config.setProperty("hibernate.connection.url", "jdbc:h2:split:30:" + this.getMountPath()+";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE");
+		config.setProperty("hibernate.connection.username", this.getDatabaseUsername());
+		config.setProperty("hibernate.connection.password", this.getDatabasePassword());
+		config.setProperty("hibernate.search.default.exclusive_index_use", "false");
+		config.setProperty("hibernate.search.default.indexBase", this.indexDirectory.toString());
+
+		if (!this.isAutoIndexing()) {
+			config.setProperty("hibernate.search.indexing_strategy", "manual");
+		}
+
+		Boolean exists = false;
+		try (ResultSet result = this.getConnection().createStatement().executeQuery("SELECT count(*) FROM ENTITIES ")) {
+			result.last();
+			final int resultSize = result.getInt("COUNT(*)");
+			if (resultSize > 0) {
+				exists = true;
+			}
+			result.close();
+		} catch (final SQLException e) {
+			exists = false;
+		}
+
+		CacheManager.create(FileSystemImplementationProvider.class.getResourceAsStream("ehcache.xml"));
+
+		if (!exists) {
+
+			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
+					.applySettings(config.getProperties()).build();
+
+			MetadataSources metadata = new MetadataSources(standardRegistry);
+
+			metadata.addAnnotatedClass(RootImplementation.class);
+			metadata.addAnnotatedClass(PrincipalImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataDirectoryImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataFileImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataEntityVersionImplementation.class);
+			metadata.addAnnotatedClass(MetaDataImplementation.class);
+			metadata.addAnnotatedClass(EdalPermissionImplementation.class);
+			metadata.addAnnotatedClass(SupportedPrincipals.class);
+			metadata.addAnnotatedClass(PublicReferenceImplementation.class);
+			metadata.addAnnotatedClass(TicketImplementation.class);
+			metadata.addAnnotatedClass(ReviewersImplementation.class);
+			metadata.addAnnotatedClass(ReviewStatusImplementation.class);
+			metadata.addAnnotatedClass(UrlImplementation.class);
+			metadata.addAnnotatedClass(DoiImplementation.class);
+			metadata.addAnnotatedClass(MyDataFormat.class);
+			metadata.addAnnotatedClass(MyDataSize.class);
+			metadata.addAnnotatedClass(MyDataType.class);
+			metadata.addAnnotatedClass(MyDirectoryMetaData.class);
+			metadata.addAnnotatedClass(MyEmptyMetaData.class);
+			metadata.addAnnotatedClass(MyIdentifier.class);
+			metadata.addAnnotatedClass(MyIdentifierRelation.class);
+			metadata.addAnnotatedClass(MyPersons.class);
+			metadata.addAnnotatedClass(MyPerson.class);
+			metadata.addAnnotatedClass(MyNaturalPerson.class);
+			metadata.addAnnotatedClass(MyLegalPerson.class);
+			metadata.addAnnotatedClass(MyUnknownMetaData.class);
+			metadata.addAnnotatedClass(MyUntypedData.class);
+			metadata.addAnnotatedClass(MySubjects.class);
+			metadata.addAnnotatedClass(MyCheckSumType.class);
+			metadata.addAnnotatedClass(MyCheckSum.class);
+			metadata.addAnnotatedClass(MyEdalLanguage.class);
+			metadata.addAnnotatedClass(MyEdalDate.class);
+			metadata.addAnnotatedClass(MyEdalDateRange.class);
+			metadata.addAnnotatedClass(MyDateEvents.class);
+			metadata.addAnnotatedClass(MyORCID.class);
+
+			SchemaExport export = new SchemaExport((MetadataImplementor) metadata.buildMetadata());
+			export.create(false, true);
+
+			try {
+
+				Metadata meta = metadata.getMetadataBuilder().build();
+
+				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
+
+			} catch (HibernateException e) {
+				e.printStackTrace();
+				logger.error("Lucene Index damaged", e);
+				logger.info("Lucene Index damaged -> clean up index directory to rebuild the index !");
+				System.exit(0);
+			}
+			// /*
+			// * to check if the PermissionCheck for normal users save another
+			// * root-users
+			// */
+			// final Session session = this.getSessionFactory().openSession();
+			// final Transaction transaction = session.beginTransaction();
+			// try {
+			// session.save(new RootImplementation("D", "A",
+			// new InternetAddress("edal-root@ipk-gatersleben.de")));
+			// } catch (AddressException e) {
+			// e.printStackTrace();
+			// }
+			// transaction.commit();
+			// session.close();
+			// /* ********************************************************** */
+		} else {
+			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
+					.applySettings(config.getProperties()).build();
+
+			MetadataSources metadata = new MetadataSources(standardRegistry);
+
+			metadata.addAnnotatedClass(RootImplementation.class);
+			metadata.addAnnotatedClass(PrincipalImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataDirectoryImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataFileImplementation.class);
+			metadata.addAnnotatedClass(PrimaryDataEntityVersionImplementation.class);
+			metadata.addAnnotatedClass(MetaDataImplementation.class);
+			metadata.addAnnotatedClass(EdalPermissionImplementation.class);
+			metadata.addAnnotatedClass(SupportedPrincipals.class);
+			metadata.addAnnotatedClass(PublicReferenceImplementation.class);
+			metadata.addAnnotatedClass(TicketImplementation.class);
+			metadata.addAnnotatedClass(ReviewersImplementation.class);
+			metadata.addAnnotatedClass(ReviewStatusImplementation.class);
+			metadata.addAnnotatedClass(UrlImplementation.class);
+			metadata.addAnnotatedClass(DoiImplementation.class);
+			metadata.addAnnotatedClass(MyDataFormat.class);
+			metadata.addAnnotatedClass(MyDataSize.class);
+			metadata.addAnnotatedClass(MyDataType.class);
+			metadata.addAnnotatedClass(MyDirectoryMetaData.class);
+			metadata.addAnnotatedClass(MyEmptyMetaData.class);
+			metadata.addAnnotatedClass(MyIdentifier.class);
+			metadata.addAnnotatedClass(MyIdentifierRelation.class);
+			metadata.addAnnotatedClass(MyPersons.class);
+			metadata.addAnnotatedClass(MyPerson.class);
+			metadata.addAnnotatedClass(MyNaturalPerson.class);
+			metadata.addAnnotatedClass(MyLegalPerson.class);
+			metadata.addAnnotatedClass(MyUnknownMetaData.class);
+			metadata.addAnnotatedClass(MyUntypedData.class);
+			metadata.addAnnotatedClass(MySubjects.class);
+			metadata.addAnnotatedClass(MyCheckSumType.class);
+			metadata.addAnnotatedClass(MyCheckSum.class);
+			metadata.addAnnotatedClass(MyEdalLanguage.class);
+			metadata.addAnnotatedClass(MyEdalDate.class);
+			metadata.addAnnotatedClass(MyEdalDateRange.class);
+			metadata.addAnnotatedClass(MyDateEvents.class);
+			metadata.addAnnotatedClass(MyORCID.class);
+			
+			try {
+				
+				Metadata meta = metadata.getMetadataBuilder().build();
+
+				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
+
+			} catch (HibernateException e) {
+				e.printStackTrace();
+				logger.error("Lucene Index damaged", e);
+				logger.info("Lucene Index damaged -> clean up index directory to rebuild the index !");
+				System.exit(0);
+			}
+			/* validate database schema */
+			try {
+				SchemaValidator sv = new SchemaValidator((MetadataImplementor) metadata.buildMetadata());
+
+				sv.validate();
+
+				this.getLogger().info("Database Schema Validation : successful");
+
+			} catch (final HibernateException e) {
+				e.printStackTrace();
+				this.getLogger().error("Found existing, but not compatible database schema in path '"
+						+ configuration.getMountPath() + "' (" + e.getMessage() + ") ");
+				this.getLogger().error("Please delete path or specify another mount path !");
+				System.exit(0);
+//				 System.out.println("run schema update");
+//				 new SchemaUpdate((MetadataImplementor) metadata.buildMetadata()).execute(true, true);
+//				 System.exit(0);
+
+			}
+		}
+
+		/* enable statistics log of the SessionFactory */
+		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
+
+		if (!this.isAutoIndexing()) {
+			this.setIndexThread(new IndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+			this.getIndexThread().start();
+		}
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public MetaDataImplementation createMetaDataInstance() {
+		return new MetaDataImplementation();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Class<? extends ApprovalServiceProvider> getApprovalServiceProvider() {
+
+		return ApprovalServiceProviderImplementation.class;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public EdalConfiguration getConfiguration() {
+		return this.configuration;
+	}
+
+	/**
+	 * Getter for the database {@link Connection}.
+	 * 
+	 * @return a {@link Connection} object.
+	 */
+	private Connection getConnection() {
+		return this.connection;
+	}
+
+	/**
+	 * Private getter for the dataPath
+	 * 
+	 * @return the dataPath
+	 */
+	public Path getDataPath() {
+		return Paths.get(this.getConfiguration().getDataPath().toString(),
+				FileSystemImplementationProvider.EDALDB_DBNAME);
+	}
+
+	/**
+	 * Getter for the database password.
+	 * 
+	 * @return the databasePassword
+	 */
+	private String getDatabasePassword() {
+		return this.databasePassword;
+	}
+
+	/**
+	 * Getter for the database user.
+	 * 
+	 * @return the databaseUsername
+	 */
+	private String getDatabaseUsername() {
+		return this.databaseUsername;
+	}
+
+	/**
+	 * @return the indexThread
+	 */
+	public IndexWriterThread getIndexThread() {
+		return this.indexThread;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Logger getLogger() {
+		return this.logger;
+	}
+
+	/**
+	 * Getter for the mount path of the EDAL system.
+	 * 
+	 * @return the current MountPath.
+	 */
+	public Path getMountPath() {
+		return Paths.get(this.getConfiguration().getMountPath().toString(),
+				FileSystemImplementationProvider.EDALDB_DBNAME);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Class<? extends PermissionProvider> getPermissionProvider() {
+
+		return PermissionProviderImplementation.class;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Class<? extends PrimaryDataDirectory> getPrimaryDataDirectoryProvider() {
+
+		return PrimaryDataDirectoryImplementation.class;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public PrimaryDataEntity reloadPrimaryDataEntityByID(final String uuid, final long versionNumber)
+			throws EdalException {
+
+		final Session session = this.getSessionFactory().openSession();
+
+		final Criteria getFile = session.createCriteria(PrimaryDataFileImplementation.class)
+				.add(Restrictions.eq("class", PrimaryDataFileImplementation.class)).add(Restrictions.eq("ID", uuid));
+
+		final PrimaryDataFile file = (PrimaryDataFile) getFile.uniqueResult();
+
+		if (file == null) {
+			final Criteria getDirectory = session.createCriteria(PrimaryDataDirectoryImplementation.class)
+					.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
+					.add(Restrictions.eq("ID", uuid));
+
+			final PrimaryDataDirectory directory = (PrimaryDataDirectory) getDirectory.uniqueResult();
+
+			if (directory == null) {
+				session.close();
+				throw new EdalException("found no entity with ID '" + uuid + "'");
+			} else {
+				PrimaryDataEntityVersion version;
+				try {
+					version = directory.getVersionByRevisionNumber(versionNumber);
+				} catch (PrimaryDataEntityVersionException e) {
+					session.close();
+					throw new EdalException(e.getMessage(), e);
+				}
+
+				try {
+					directory.switchCurrentVersion(version);
+				} catch (PrimaryDataEntityVersionException e) {
+					session.close();
+					throw new EdalException("unable to switch the version with the number " + versionNumber, e);
+				}
+			}
+			session.close();
+			return directory;
+		} else {
+
+			PrimaryDataEntityVersion version;
+			try {
+				version = file.getVersionByRevisionNumber(versionNumber);
+			} catch (PrimaryDataEntityVersionException e) {
+				session.close();
+				throw new EdalException(e.getMessage(), e);
+			}
+
+			try {
+				file.switchCurrentVersion(version);
+			} catch (PrimaryDataEntityVersionException e) {
+				session.close();
+				throw new EdalException("unable to switch the version with the number " + versionNumber, e);
+			}
+			session.close();
+			return file;
+		}
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Class<? extends PrimaryDataFile> getPrimaryDataFileProvider() {
+		return PrimaryDataFileImplementation.class;
+	}
+
+	/**
+	 * Getter for a new {@link Session} for public access.
+	 * 
+	 * <em>NOTE: use {@link Session#close()} after UnitOfWork !</em>
+	 * 
+	 * @return new Session
+	 */
+	public Session getSession() {
+		return this.getSessionFactory().openSession();
+	}
+
+	/**
+	 * Private Setter for the {@link SessionFactory}
+	 * 
+	 * @return the sessionFactory
+	 */
+	private SessionFactory getSessionFactory() {
+		return this.sessionFactory;
+	}
+
+	/**
+	 * Getter for the {@link Statistics} of the {@link SessionFactory}
+	 * 
+	 * @return the {@link Statistics}
+	 */
+	public Statistics getStatistics() {
+		return this.getSessionFactory().getStatistics();
+	}
+
+	/**
+	 * Private getter for the autoIndexing
+	 * 
+	 * @return the autoIndexing
+	 */
+	private boolean isAutoIndexing() {
+		return this.autoIndexing;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public PrimaryDataDirectory mount(final List<Class<? extends Principal>> supportedPrincipals)
+			throws PrimaryDataDirectoryException {
+
+		final Session session = this.getSessionFactory().openSession();
+
+		final Criteria checkRoot = session.createCriteria(PrimaryDataDirectoryImplementation.class)
+				.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
+				.add(Restrictions.isNull("parentDirectory"));
+
+		if (checkRoot.uniqueResult() == null) {
+
+			session.close();
+
+			DataManager.getImplProv().getLogger().info("Creating new RootDirectory...");
+
+			final Session sess = this.getSessionFactory().openSession();
+			final Transaction transaction = sess.beginTransaction();
+
+			for (final Class<? extends Principal> clazz : supportedPrincipals) {
+				sess.save(new SupportedPrincipals(clazz));
+			}
+			transaction.commit();
+			sess.close();
+			PrimaryDataDirectory newRootDirectory = null;
+
+			try {
+				final Constructor<? extends PrimaryDataDirectory> constructor = DataManager.getImplProv()
+						.getPrimaryDataDirectoryProvider().getConstructor(PrimaryDataDirectory.class, String.class);
+
+				newRootDirectory = constructor.newInstance(null, PrimaryDataDirectory.PATH_SEPARATOR);
+			} catch (final Exception e) {
+				throw new PrimaryDataDirectoryException(
+						"Can not instantiate the constructor to mount implementation: " + e.getMessage(), e);
+			}
+
+			return newRootDirectory;
+		}
+
+		else {
+
+			final Criteria principals = session.createCriteria(SupportedPrincipals.class);
+
+			@SuppressWarnings("unchecked")
+			final List<SupportedPrincipals> privatePrincipals = principals.list();
+
+			final List<SupportedPrincipals> publicPrincipals = new ArrayList<SupportedPrincipals>(
+					supportedPrincipals.size());
+
+			for (final Class<? extends Principal> clazz : supportedPrincipals) {
+				publicPrincipals.add(new SupportedPrincipals(clazz));
+			}
+			if (privatePrincipals.containsAll(publicPrincipals)) {
+				DataManager.getImplProv().getLogger().info("All principals are supported !");
+			} else {
+				DataManager.getImplProv().getLogger()
+						.warn("Not all principals are supported , please define new list and connect again !");
+				throw new PrimaryDataDirectoryException(
+						"Not all principals are supported , please define new list and connect again !");
+			}
+
+			DataManager.getImplProv().getLogger().info("Getting existing RootDirectory...");
+
+			final PrimaryDataDirectoryImplementation existingRootDirectory = (PrimaryDataDirectoryImplementation) checkRoot
+					.uniqueResult();
+
+			session.close();
+
+			final PrimaryDataDirectory existingRootDirectoryOrg = existingRootDirectory;
+
+			return existingRootDirectoryOrg;
+		}
+
+	}
+
+	/**
+	 * Private setter for the autoIndexing
+	 * 
+	 * @param autoIndexing
+	 *            the autoIndexing to set
+	 */
+	private void setAutoIndexing(final boolean autoIndexing) {
+		this.autoIndexing = autoIndexing;
+	}
+
+	private void setConnection(final Connection connection) {
+		this.connection = connection;
+	}
+
+	/**
+	 * Private setter for the database password.
+	 * 
+	 * @param databasePassword
+	 *            the database password to set
+	 */
+	private void setDatabasePassword(final String databasePassword) {
+		this.databasePassword = databasePassword;
+	}
+
+	/**
+	 * Private setter for the database user
+	 * 
+	 * @param databaseUsername
+	 *            the database username to set
+	 */
+	private void setDatabaseUsername(final String databaseUsername) {
+		this.databaseUsername = databaseUsername;
+	}
+
+	/**
+	 * Private setter for the indexingThread
+	 * 
+	 * @param indexThread
+	 *            the indexThread to set
+	 */
+	private void setIndexThread(final IndexWriterThread indexThread) {
+		this.indexThread = indexThread;
+	}
+
+	/**
+	 * Private setter for the {@link SessionFactory}
+	 * 
+	 * @param sessionFactory
+	 *            the sessionFactory to set
+	 */
+	private void setSessionFactory(final SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public void shutdown() {
+
+		// try {
+		// System.out.println("Opened Sessions : " +
+		// this.getSessionFactory().getStatistics().getSessionOpenCount());
+		// System.out.println("Closed Sessions : " +
+		// this.getSessionFactory().getStatistics().getSessionCloseCount());
+		//
+		// } catch (Exception e) {
+		// // do nothing
+		// }
+
+		if (!this.isAutoIndexing()) {
+			this.getIndexThread().waitForFinish();
+		}
+		try {
+			this.getConnection().close();
+			this.getSessionFactory().close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	@Override
+	public Class<? extends ServiceProvider> getServiceProvider() {
+		return ServiceProviderImplementation.class;
+	}
+
+	@Override
+	public Class<? extends HttpServiceProvider> getHttpServiceProvider() {
+		return HttpServiceProviderImplementation.class;
+	}
+}

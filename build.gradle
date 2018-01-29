@@ -1,0 +1,137 @@
+plugins {
+  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "com.github.hierynomus.license" version "0.14.0"
+  id "net.researchgate.release" version "2.6.0"
+}
+
+project.ext {
+    aspectjVersion = '1.8.10'
+}
+
+allprojects {
+
+	apply plugin: 'java'
+	apply plugin: 'maven'
+	apply plugin: 'signing'
+	apply plugin: 'com.github.johnrengelman.shadow'
+	apply plugin: 'com.github.hierynomus.license'
+	apply plugin: 'net.researchgate.release'
+	
+	repositories {
+	    mavenCentral()
+	    jcenter()
+	    maven {url "https://oss.sonatype.org/content/repositories/snapshots"}
+	    maven {url "http://repo.maven.apache.org/maven2"}
+	    maven {url "https://maven.eveoh.nl/content/repositories/releases"}
+        maven {url "https://plugins.gradle.org/m2/"}
+	}
+	
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+	tasks.withType(JavaCompile) {
+		options.encoding = 'UTF-8'
+	}
+	
+	test {
+	    useJUnit()
+	    maxParallelForks = Runtime.runtime.availableProcessors()
+	    minHeapSize = "512m"
+	    maxHeapSize = "1024m"
+	
+	    systemProperties = ["java.security.policy": file("./src/main/resources/de/ipk_gatersleben/bit/bi/edal/primary_data/policy.txt").absolutePath ]
+	
+	    testLogging.showStandardStreams = true
+	    testLogging.exceptionFormat = 'full'
+	}
+	
+	license {
+    header rootProject.file('src/main/resources/license.txt')
+    strictCheck false
+ 	ext.year = Calendar.getInstance().get(Calendar.YEAR)
+	include "**/*.java"
+}
+	
+	sourceSets {
+        main {
+            java {srcDirs=["src/main/java"]}
+            resources {srcDirs=["src/main/resources","src/main/unfilteredresources"]}
+        }
+	}
+	
+	task javadocJar(type: Jar) {
+	 	classifier = 'javadoc'
+	    from javadoc
+	}
+
+	task sourcesJar(type: Jar) {
+	    classifier = 'sources'
+	    from sourceSets.main.allSource
+	}
+	
+	shadowJar {
+   		classifier = 'jar-with-dependencies'
+	}
+	
+	artifacts {
+   		archives javadocJar, sourcesJar, shadowJar
+	}
+
+	signing {
+	    sign configurations.archives
+	}
+
+}
+
+subprojects {
+
+
+}
+
+//API Project specific stuff
+project(':eDAL-MetaDataAPI') {	
+ 	dependencies {
+	    compile group: 'com.mchange', name: 'c3p0', version:'0.9.5.2'
+	    compile group: 'commons-io', name: 'commons-io', version:'2.5'
+	    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
+	    compile group: 'com.h2database', name: 'h2', version:'1.3.176'
+	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.0.9.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.5.4.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-ehcache', version:'5.0.9.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.0.9.Final'
+	    compile group: 'com.sun.jersey', name: 'jersey-client', version:'1.18'
+	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'
+	    compile group: 'org.apache.commons', name: 'commons-lang3', version:'3.4'
+	    compile group: 'com.sun.mail', name: 'javax.mail', version:'1.5.4'
+	    compile group: 'org.quartz-scheduler', name: 'quartz', version:'2.2.3'
+	    compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'9.4.7.v20170914'
+	    compile group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
+	    compile group: 'log4j', name: 'log4j', version:'1.2.16'
+	    compile group: 'org.slf4j', name: 'slf4j-log4j12', version:'1.6.1'
+	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.8.1'
+	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.16'
+	    compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.3'
+	    compile group: 'org.apache.lucene', name: 'lucene-queryparser', version:'5.3.1'
+	    testCompile group: 'junit', name: 'junit', version:'4.10'
+	}
+	
+	
+}
+//Server Project specific stuff
+project(':eDAL-MetaDataAPI-Server') {
+	dependencies {
+	    compile project(':eDAL-MetaDataAPI')
+	    compile group: 'commons-cli', name: 'commons-cli', version:'1.2'
+	    compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.0'
+	    testCompile group: 'junit', name: 'junit', version:'4.10'
+	}
+}
+//Client Project specific stuff
+project(':eDAL-MetaDataAPI-Client') {
+	dependencies {
+    	compile project(':eDAL-MetaDataAPI-Server') 
+    	compile group: 'org.swinglabs.swingx', name: 'swingx-all', version:'1.6.4'
+    	compile group: 'com.miglayout', name: 'miglayout-core', version:'4.2'
+    	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
+    	testCompile group: 'junit', name: 'junit', version:'4.10'
+    }
+}

@@ -1,0 +1,58 @@
+<!--
+
+    Copyright (c) 2017 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+    which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+
+    Contributors:
+         Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+
+-->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>Please approve the public reference</title>
+	</head>
+	<body marginwidth="80" marginheight="10">
+		Dear e!DAL-$reviewerType reviewer,
+		<br />
+		<br />
+		we recently recieved a data publication request by $principal.
+		<br />
+		Please check the submission carefully and state if it can be
+		published
+		as $id data publication.
+		<br />
+		<br /><b>
+		preview:
+		<a href="$landingpage">$infos_string</a></b>
+		<br />
+		<br />
+		You are named to replace the scientific reviewer in case he is not on
+		duty. In that case, you may decide to accept or reject this request.
+		<br />
+		<br />
+		Please note, this decision may be undo by veto of the
+		e!DAL
+		managing reviewer.
+		<br />
+		<br />
+		<b>
+			<a href="$acceptURL">YES</a>
+			, the submission can be published online as DOI featured citable
+			data
+			reference
+			<br />
+			<br />
+			<a href="$rejectURL">NO</a>
+			, I have major doubts and reject the submission.
+		</b>
+		<br />
+		<br />
+		Thanks for your kind support,
+		<br />
+		The e!DAL research data publication system!
+	</body>
+</html>

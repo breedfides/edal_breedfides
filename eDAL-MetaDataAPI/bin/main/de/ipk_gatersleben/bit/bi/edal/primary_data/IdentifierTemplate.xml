@@ -1,0 +1,7 @@
+#if($entity.getCurrentVersion().getPublicReferences().size()!=0)
+
+	#foreach( $element in $entity.getCurrentVersion().getPublicReferences())
+		<b>$element.getIdentifierType(): </b>$element.getAssignedID()
+	#end
+
+#end
