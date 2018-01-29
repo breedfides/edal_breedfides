@@ -10,26 +10,12 @@ license {
  	ext.year = Calendar.getInstance().get(Calendar.YEAR)
 	include "**/*.java"
 }
-/*
+
 uploadArchives {
   repositories {
     mavenDeployer {
     
-      beforeDeployment { 
-      	MavenDeployment deployment -> signing.signPom(deployment) 
-      }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-        proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-      }
-
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-        proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-      }
-
-      pom.project {
+        pom.project {
         name = projectname
         packaging = 'jar'
         artifactId = projectname
@@ -67,7 +53,7 @@ uploadArchives {
     }
   }
 }
-
+/*
 release {
     failOnCommitNeeded = true
     failOnPublishNeeded = true
