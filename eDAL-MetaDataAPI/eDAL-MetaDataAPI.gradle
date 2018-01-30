@@ -1,8 +1,11 @@
 plugins {
   id "aspectj.gradle" version "0.1.6"
+  id "net.researchgate.release" version "2.6.0"
 }
 
 apply plugin: 'aspectj.gradle'
+apply plugin: 'net.researchgate.release'
+
 
 license {
     header rootProject.file('eDAL-MetaDataAPI/src/main/resources/license.txt')

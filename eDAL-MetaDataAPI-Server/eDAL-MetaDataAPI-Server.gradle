@@ -1,3 +1,9 @@
+plugins {
+  id "net.researchgate.release" version "2.6.0"
+}
+
+apply plugin: 'net.researchgate.release'
+
 
 license {
     header rootProject.file('eDAL-MetaDataAPI-Server/src/main/resources/license.txt')
