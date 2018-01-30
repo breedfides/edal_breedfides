@@ -13,60 +13,45 @@ license {
 }
 
 uploadArchives {
-  repositories {
-    mavenDeployer {
-/*    
-      beforeDeployment { 
-      	MavenDeployment deployment -> signing.signPom(deployment) 
-      }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-        proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-      }
-
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-        proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-      }
-*/
-      pom.project {
-        name = projectname
-        packaging = 'jar'
-        artifactId = projectname
-        description = projectdescription
-        url = projecturl
-
-        scm {
-          connection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-client.git'
-          developerConnection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-client.git'
-          url 'https://bitbucket.org/ipk_bit_team/edal-api-client.git'
-        }
-
-        licenses {
-          license {
-            name 'Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)'
-            url 'http://creativecommons.org/licenses/by-nd/4.0/'
-          }
-        }
-
-        developers {
-          developer {
-            name 'Daniel Arend'
-            email 'arendd@ipk-gatersleben.de'
-            organization = 'IPK Gatersleben'
-            organizationUrl 'http://www.ipk.gatersleben.de'
-          }
-          developer {
-            name 'Matthias Lange'
-            email 'lange@ipk-gatersleben.de'
-            organization = 'IPK Gatersleben'
-            organizationUrl 'http://www.ipk.gatersleben.de'
-          }
-        }
-      }
-    }
-  }
+	repositories {
+		mavenDeployer {
+	      	pom.project {
+		        name = projectname
+		        packaging = 'jar'
+		        artifactId = projectname
+		        description = projectdescription
+		        url = projecturl
+	
+		        scm {
+		          	connection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-client.git'
+		          	developerConnection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-client.git'
+		          	url 'https://bitbucket.org/ipk_bit_team/edal-client.git'
+		        }
+	
+		        licenses {
+		          	license {
+		            	name 'Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)'
+		            	url 'http://creativecommons.org/licenses/by-nd/4.0/'
+		          	}
+		        }
+	
+		        developers {
+			          developer {
+			            name 'Daniel Arend'
+			            email 'arendd@ipk-gatersleben.de'
+			            organization = 'IPK Gatersleben'
+			            organizationUrl 'http://www.ipk.gatersleben.de'
+			          }
+			          developer {
+			            name 'Matthias Lange'
+			            email 'lange@ipk-gatersleben.de'
+			            organization = 'IPK Gatersleben'
+			            organizationUrl 'http://www.ipk.gatersleben.de'
+			          }
+		        }
+	      	}
+    	}
+  	}
 }
 
 release {
