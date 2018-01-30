@@ -13,9 +13,9 @@ license {
 }
 
 uploadArchives {
-  repositories {
-    mavenDeployer {
-    
+	repositories {
+		mavenDeployer {
+ /*   
       beforeDeployment { 
       	MavenDeployment deployment -> signing.signPom(deployment) 
       }
@@ -29,44 +29,44 @@ uploadArchives {
         authentication(userName: ossrhUsername, password: ossrhPassword)
         proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
       }
-
-      pom.project {
-        name = projectname
-        packaging = 'jar'
-        artifactId = projectname
-        description = projectdescription
-        url = projecturl
-
-        scm {
-          connection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-server.git'
-          developerConnection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-server.git'
-          url 'https://bitbucket.org/ipk_bit_team/edal-api-server.git'
-        }
-
-        licenses {
-          license {
-            name 'Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)'
-            url 'http://creativecommons.org/licenses/by-nd/4.0/'
-          }
-        }
-
-        developers {
-          developer {
-            name 'Daniel Arend'
-            email 'arendd@ipk-gatersleben.de'
-            organization = 'IPK Gatersleben'
-            organizationUrl 'http://www.ipk.gatersleben.de'
-          }
-          developer {
-            name 'Matthias Lange'
-            email 'lange@ipk-gatersleben.de'
-            organization = 'IPK Gatersleben'
-            organizationUrl 'http://www.ipk.gatersleben.de'
-          }
-        }
-      }
-    }
-  }
+*/
+	      	pom.project {
+		        name = projectname
+		        packaging = 'jar'
+		        artifactId = projectname
+		        description = projectdescription
+		        url = projecturl
+	
+		        scm {
+		          	connection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-server.git'
+		          	developerConnection 'scm:git:https://bitbucket.org/ipk_bit_team/edal-api-server.git'
+		          	url 'https://bitbucket.org/ipk_bit_team/edal-api-server.git'
+		        }
+	
+		        licenses {
+		          	license {
+		            	name 'Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)'
+		            	url 'http://creativecommons.org/licenses/by-nd/4.0/'
+		          	}
+		        }
+	
+		        developers {
+			          developer {
+			            name 'Daniel Arend'
+			            email 'arendd@ipk-gatersleben.de'
+			            organization = 'IPK Gatersleben'
+			            organizationUrl 'http://www.ipk.gatersleben.de'
+			          }
+			          developer {
+			            name 'Matthias Lange'
+			            email 'lange@ipk-gatersleben.de'
+			            organization = 'IPK Gatersleben'
+			            organizationUrl 'http://www.ipk.gatersleben.de'
+			          }
+		        }
+	      	}
+    	}
+  	}
 }
 
 release {

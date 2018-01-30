@@ -81,20 +81,24 @@ allprojects {
 }
 
 subprojects {
-	
 	uploadArchives {
 		repositories {
 			mavenDeployer {
+				if(!project.hasProperty('ossrhUsername') || !project.hasProperty('ossrhPassword')){   
+	            	println "WARNING: If you want to release to Sonatype please provide the 'ossrhUsername' and 'ossrhPassword' properties"
+				}
+				else{
 				beforeDeployment { 
-					MavenDeployment deployment -> signing.signPom(deployment) 
-				}
-				repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-					authentication(userName: ossrhUsername, password: ossrhPassword)
-					proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-				}
-				snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-					authentication(userName: ossrhUsername, password: ossrhPassword)
-					proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
+						MavenDeployment deployment -> signing.signPom(deployment) 
+					}
+					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+						authentication(userName: ossrhUsername, password: ossrhPassword)
+						proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
+					}
+					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+						authentication(userName: ossrhUsername, password: ossrhPassword)
+						proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
+					}
 				}
 			}
 		}

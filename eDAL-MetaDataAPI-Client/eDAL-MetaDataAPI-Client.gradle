@@ -15,7 +15,7 @@ license {
 uploadArchives {
   repositories {
     mavenDeployer {
-    
+/*    
       beforeDeployment { 
       	MavenDeployment deployment -> signing.signPom(deployment) 
       }
@@ -29,7 +29,7 @@ uploadArchives {
         authentication(userName: ossrhUsername, password: ossrhPassword)
         proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
       }
-
+*/
       pom.project {
         name = projectname
         packaging = 'jar'
