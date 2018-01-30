@@ -15,7 +15,6 @@ allprojects {
 	apply plugin: 'signing'
 	apply plugin: 'com.github.johnrengelman.shadow'
 	apply plugin: 'com.github.hierynomus.license'
-	apply plugin: 'net.researchgate.release'
 	
 	repositories {
 	    mavenCentral()
@@ -83,6 +82,7 @@ allprojects {
 }
 
 subprojects {
+	apply plugin: 'net.researchgate.release'
 
 uploadArchives {
 	repositories {
