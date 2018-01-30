@@ -56,7 +56,7 @@ uploadArchives {
     }
   }
 }
-/*
+
 release {
     failOnCommitNeeded = true
     failOnPublishNeeded = true
@@ -88,4 +88,4 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn uploadArchives*/
+afterReleaseBuild.dependsOn uploadArchives
