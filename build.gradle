@@ -1,11 +1,14 @@
 plugins {
   id "com.github.johnrengelman.shadow" version "2.0.2"
   id "com.github.hierynomus.license" version "0.14.0"
+  id "net.researchgate.release" version "2.6.0"
 }
 
 project.ext {
     aspectjVersion = '1.8.10'
 }
+
+apply plugin: 'net.researchgate.release'
 
 allprojects {
 
@@ -109,6 +112,39 @@ subprojects {
 		}
 	}
 }
+
+release {
+    failOnCommitNeeded = true
+    failOnPublishNeeded = true
+    failOnSnapshotDependencies = true
+    failOnUnversionedFiles = true
+    failOnUpdateNeeded = true
+    revertOnFail = true
+
+  	preCommitText = ''
+  	preTagCommitMessage = '[gradle-release-plugin] - prepare release '
+    tagCommitMessage = '[gradle-release-plugin] - creating tag: '
+    newVersionCommitMessage = '[gradle-release-plugin] - prepare for next development iteration '
+    
+    tagTemplate = "eDAL-MetaDataAPI-"+'$version'
+    versionPropertyFile = 'gradle.properties'
+    versionProperties = []
+    buildTasks = []
+   
+    scmAdapters = [
+        net.researchgate.release.GitAdapter
+    ]
+
+    git {
+        requireBranch = 'master'
+        pushToRemote = 'origin'
+        pushToBranchPrefix = ''
+        commitVersionFileOnly = false
+        signTag = false
+    }
+}
+
+project.tasks.afterReleaseBuild.dependsOn project.getSubprojects().collect({it.getTasks().getByName("uploadArchives")})
 
 //API Project specific stuff
 project(':eDAL-MetaDataAPI') {	
