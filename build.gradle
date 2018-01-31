@@ -12,6 +12,12 @@ apply plugin: 'net.researchgate.release'
 
 allprojects {
 
+	def currentJvm = org.gradle.internal.jvm.Jvm.current().toString()
+		
+	if(!currentJvm.contains("Oracle")){
+		ant.fail('ERROR: Please use an Oracle Java Runtime for the e!DAL-MetaDataAPI')
+	}
+
 	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'signing'
@@ -147,6 +153,7 @@ subprojects {
 		}
 		
 	}
+	uploadArchives.dependsOn test
 }
 
 release {
@@ -165,7 +172,7 @@ release {
     tagTemplate = "eDAL-MetaDataAPI-"+'$version'
     versionPropertyFile = 'gradle.properties'
     versionProperties = []
-    buildTasks = ['build']
+    buildTasks = []
    
     scmAdapters = [
         net.researchgate.release.GitAdapter
