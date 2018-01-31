@@ -164,7 +164,7 @@ release {
     
     tagTemplate = "eDAL-MetaDataAPI-"+'$version'
     versionPropertyFile = 'gradle.properties'
-    versionProperties = ['test']
+    versionProperties = []
     buildTasks = []
    
     scmAdapters = [
