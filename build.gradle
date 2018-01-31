@@ -165,7 +165,7 @@ release {
     tagTemplate = "eDAL-MetaDataAPI-"+'$version'
     versionPropertyFile = 'gradle.properties'
     versionProperties = []
-    buildTasks = []
+    buildTasks = ['build']
    
     scmAdapters = [
         net.researchgate.release.GitAdapter
