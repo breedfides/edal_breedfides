@@ -325,7 +325,8 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
 									} else {
-										this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "Ticket already accepted");
+										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
+												"Ticket already accepted");
 									}
 								} catch (EdalApprovalException | InstantiationException | NumberFormatException
 										| IllegalAccessException e) {
@@ -356,7 +357,8 @@ public class EdalHttpHandler extends AbstractHandler {
 												.reject(ticketReject, reviewerHashCode);
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 									} else {
-										this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "Ticket already rejected");
+										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
+												"Ticket already rejected");
 									}
 
 								} catch (EdalApprovalException | InstantiationException | NumberFormatException
@@ -476,7 +478,8 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
 									} else {
-										this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "Ticket already accepted");
+										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
+												"Ticket already accepted");
 									}
 								} catch (NumberFormatException | InstantiationException | IllegalAccessException
 										| EdalApprovalException e) {
@@ -510,7 +513,8 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
 									} else {
-										this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "Ticket already rejected");
+										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
+												"Ticket already rejected");
 									}
 								} catch (NumberFormatException | InstantiationException | IllegalAccessException
 										| EdalApprovalException e) {
@@ -621,7 +625,7 @@ public class EdalHttpHandler extends AbstractHandler {
 					} catch (IllegalArgumentException e) {
 
 						if (methodToken.toLowerCase().equals("robots.txt")) {
-							this.sendEmbeddedFile(response, "robots.txt", "text.txt");
+							this.sendEmbeddedFile(response, "robots.txt", "text/plain");
 						} else {
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -649,13 +653,17 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		final String url = request.getRequestURI().toString();
 
-		if (userAgent.contains("bot")) {
+		// System.out.println("Check for " + userAgent + ": " + url);
+
+		if (userAgent == null || userAgent.contains("bot")) {
 
 			if (url.endsWith(EdalHttpFunctions.DOWNLOAD.toString())
 					|| url.endsWith(EdalHttpFunctions.DOWNLOAD.toString().toLowerCase())
 					|| url.endsWith(EdalHttpFunctions.ZIP.toString())
 					|| url.endsWith(EdalHttpFunctions.ZIP.toString().toLowerCase())) {
 				return true;
+			} else if (url.toLowerCase().endsWith("robots.txt")) {
+				return false;
 			} else {
 				final StringTokenizer tokenizer = new StringTokenizer(url, EdalHttpServer.EDAL_PATH_SEPARATOR);
 
@@ -926,7 +934,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 			response.setContentType(contentType);
 
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+			response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
 			response.setContentLength(fileSize);
 
 			response.setStatus(HttpStatus.Code.OK.getCode());
