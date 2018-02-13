@@ -16,7 +16,9 @@
 	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 	
 	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetaTagTemplate.xml")
-
+	
+	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
+	
 </head>
 <body>
 	<div class="container-fluid">

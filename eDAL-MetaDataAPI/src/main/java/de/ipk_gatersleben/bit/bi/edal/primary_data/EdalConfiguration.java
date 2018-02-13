@@ -9,7 +9,10 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
@@ -24,9 +27,14 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -34,6 +42,11 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -44,7 +57,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -1317,6 +1329,40 @@ public final class EdalConfiguration {
 			this.getDataCiteUser();
 			this.getDataCitePassword();
 			this.getDataCitePrefix();
+
+			String dataCitePassword = this.getDataCitePassword();
+
+			if (dataCitePassword.startsWith("#")) {
+				try {
+
+					CodeSource codeSource = EdalConfiguration.class.getProtectionDomain().getCodeSource();
+					File currentFile = new File(codeSource.getLocation().toURI().getPath());
+					String currentPath = currentFile.getParentFile().getPath();
+
+					Properties prop = new Properties();
+					InputStream input = new FileInputStream(Paths.get(currentPath, "key.property").toFile());
+					prop.load(input);
+					input.close();
+
+					dataCitePassword = dataCitePassword.substring(1, dataCitePassword.length());
+
+					byte[] key = (prop.getProperty("key")).getBytes("UTF-8");
+					MessageDigest sha = MessageDigest.getInstance("SHA-256");
+					key = sha.digest(key);
+					key = Arrays.copyOf(key, 16);
+					SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+
+					byte[] crypted = Base64.getDecoder().decode(dataCitePassword);
+					Cipher cipher = Cipher.getInstance("AES");
+					cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+					this.setDataCitePassword(new String(cipher.doFinal(crypted)));
+
+				} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
+						| IllegalBlockSizeException | BadPaddingException | URISyntaxException | IOException e) {
+
+					EdalConfiguration.logger.warn("DataCite password decryption failed : " + e.getMessage());
+				}
+			}
 
 			DataCiteMDSConnector connector;
 			try {
