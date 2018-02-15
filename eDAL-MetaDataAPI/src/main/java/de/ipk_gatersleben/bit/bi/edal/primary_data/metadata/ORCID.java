@@ -17,7 +17,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -45,6 +48,8 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
+import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
+import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
@@ -149,6 +154,30 @@ public class ORCID implements Serializable {
 
 	private static class ORCIDRestConnector {
 
+		public class ConnectionFactoryWithProxy implements HttpURLConnectionFactory {
+
+			Proxy.Type type;
+			String proxyHost;
+			int proxyPort;
+			Proxy proxy;
+
+			public ConnectionFactoryWithProxy(Proxy.Type type, String proxyHost, int proxyPort) {
+				this.type = type;
+				this.proxyHost = proxyHost;
+				this.proxyPort = proxyPort;
+			}
+
+			private void initializeProxy() {
+				proxy = new Proxy(this.type, new InetSocketAddress(this.proxyHost, this.proxyPort));
+			}
+
+			public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
+				initializeProxy();
+				return (HttpURLConnection) url.openConnection(proxy);
+			}
+
+		}
+
 		private static final String CLIENT_ID = "QVBQLU9ONEgwSUcwWjYyQUJRUUI=";
 		private static final String CLIENT_SECRET = "MjU3MDhjNjItZGI1Ny00NTBlLThkMmYtYjk1ZmQ3OTYzMTli";
 
@@ -159,6 +188,8 @@ public class ORCID implements Serializable {
 
 		private static InetSocketAddress proxyAddress;
 		private static boolean searchedForProxy = false;
+
+		private URLConnectionClientHandler urlConnectionHandler = null;
 
 		private ORCIDRestConnector() throws ORCIDException {
 
@@ -172,6 +203,10 @@ public class ORCID implements Serializable {
 				System.setProperty("https.proxyHost", proxyAddress.getHostName());
 				System.setProperty("https.proxyPort", String.valueOf(proxyAddress.getPort()));
 				System.setProperty("java.net.useSystemProxies", "true");
+
+				urlConnectionHandler = new URLConnectionClientHandler(new ConnectionFactoryWithProxy(Proxy.Type.HTTP,
+						proxyAddress.getHostName(), proxyAddress.getPort()));
+
 			}
 
 			if (loadToken() == null) {
@@ -182,7 +217,14 @@ public class ORCID implements Serializable {
 		}
 
 		private String requestNewToken() throws ORCIDException {
-			Client client = Client.create();
+
+			Client client = null;
+
+			if (urlConnectionHandler == null) {
+				client = Client.create();
+			} else {
+				client = new Client(urlConnectionHandler);
+			}
 
 			Form input = new Form();
 			input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
@@ -250,7 +292,13 @@ public class ORCID implements Serializable {
 			givenName = givenName.replace(" ", "%20");
 			familyName = familyName.replace(" ", "%20");
 
-			Client client = Client.create();
+			Client client = null;
+
+			if (urlConnectionHandler == null) {
+				client = Client.create();
+			} else {
+				client = new Client(urlConnectionHandler);
+			}
 
 			WebResource resource = client.resource(
 					"https://pub.orcid.org/v2.0/search/?q=given-names:" + givenName + "+AND+family-name:" + familyName);
@@ -297,7 +345,13 @@ public class ORCID implements Serializable {
 
 		private void searchForOrcid(String orcid) throws ORCIDException {
 
-			Client client = Client.create();
+			Client client = null;
+
+			if (urlConnectionHandler == null) {
+				client = Client.create();
+			} else {
+				client = new Client(urlConnectionHandler);
+			}
 
 			WebResource resource = client.resource("https://pub.orcid.org/search/orcid-bio/?q=orcid:" + orcid);
 
@@ -327,7 +381,13 @@ public class ORCID implements Serializable {
 
 		private NaturalPerson getPersonForOrcid(String orcid) throws ORCIDException {
 
-			Client client = Client.create();
+			Client client = null;
+
+			if (urlConnectionHandler == null) {
+				client = Client.create();
+			} else {
+				client = new Client(urlConnectionHandler);
+			}
 
 			WebResource resource = client.resource("https://pub.orcid.org/v2.0/" + orcid + "/personal-details");
 
