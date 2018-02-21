@@ -87,7 +87,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.GooglePrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SamplePrincipal;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteMDSConnector;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRestConnector;
 
 /**
  * class to collect all parameters to start the eDAL system.
@@ -914,11 +916,19 @@ public final class EdalConfiguration {
 	private List<String> requestRegisteredDataCiteDomainName() throws EdalConfigurationException {
 
 		try {
-			final CloseableHttpClient httpclient = HttpClientBuilder.create()
-					.setProxy(new HttpHost(System.getProperty("https.proxyHost"),
-							Integer.valueOf(System.getProperty("https.proxyPort"))))
-					.setDefaultCookieStore(new BasicCookieStore()).setRedirectStrategy(new LaxRedirectStrategy())
-					.build();
+
+			CloseableHttpClient httpclient = null;
+			if (System.getProperty("https.proxyHost") != null && System.getProperty("https.proxyPort") != null) {
+
+				httpclient = HttpClientBuilder.create()
+						.setProxy(new HttpHost(System.getProperty("https.proxyHost"),
+								Integer.valueOf(System.getProperty("https.proxyPort"))))
+						.setDefaultCookieStore(new BasicCookieStore()).setRedirectStrategy(new LaxRedirectStrategy())
+						.build();
+			} else {
+				httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
+						.setRedirectStrategy(new LaxRedirectStrategy()).build();
+			}
 
 			final HttpGet httpGet = new HttpGet("https://mds.datacite.org/login");
 
@@ -1302,7 +1312,6 @@ public final class EdalConfiguration {
 		try {
 			this.validateDataCiteConnection();
 			this.validateDataCiteAuthentication();
-			// this.validateDateCiteSolrSearch();
 			this.validateDateCiteRestAPI();
 		} catch (final EdalConfigurationException e) {
 			EdalConfiguration.logger
@@ -1377,6 +1386,22 @@ public final class EdalConfiguration {
 
 			if (response.getStatus() == 404 || response.getStatus() == 200) {
 				EdalConfiguration.logger.info("DataCite Authentification Test: successful");
+
+				try {
+					DataCiteRestConnector restConnector = new DataCiteRestConnector(this);
+
+					if (restConnector.checkIfPrefixIsRegisteredForDataCenterId()) {
+						EdalConfiguration.logger.info("DataCite Prefix Test: successful");
+					} else {
+						throw new EdalConfigurationException(
+								"DataCite Prefix Test failed : this given prefix is not registered for the given DataCite account");
+					}
+
+				} catch (DataCiteException e) {
+					throw new EdalConfigurationException(
+							"DataCite Prefix Test failed : unabel tot check prefix");
+				}
+
 			}
 
 			else if (response.getStatus() == 401) {

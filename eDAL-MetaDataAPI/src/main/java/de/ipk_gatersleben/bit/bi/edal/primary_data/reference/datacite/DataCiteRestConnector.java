@@ -185,4 +185,37 @@ public class DataCiteRestConnector {
 		}
 
 	}
+
+	public boolean checkIfPrefixIsRegisteredForDataCenterId() {
+
+		this.restClient = Client.create();
+
+		this.webResource = this.restClient.resource("https://api.datacite.org/prefixes/" + this.prefix);
+
+		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+		if (response.getStatus() == 200) {
+
+			try {
+				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
+
+				JSONArray included = (JSONArray) json.get("included");
+				JSONObject relationships = (JSONObject) included.get(0);
+				JSONObject attributes = (JSONObject) relationships.get("attributes");
+				String dataCentreString = (String) attributes.get("symbol");
+
+				if (dataCentreString.toLowerCase().equals(this.configuration.getDataCiteUser().toLowerCase())) {
+					return true;
+				}
+
+			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException
+					| EdalConfigurationException e) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		return false;
+
+	}
 }
