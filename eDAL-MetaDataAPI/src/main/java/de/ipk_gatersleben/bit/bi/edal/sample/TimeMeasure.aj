@@ -18,6 +18,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Scanner;
+import java.util.UUID;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.SuppressAjWarnings;
@@ -35,12 +37,11 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.Permissio
  */
 public aspect TimeMeasure {
 
-	private static final boolean RUN = false;
+	private static final boolean RUN = true;
 
-	private static final Path path = Paths.get(System.getProperty("user.home"),
-			"performance");
+	private static final Path path = Paths.get(System.getProperty("user.home"), "performance");
 
-	private static final String nameSuffix = "_time.txt";
+	private static final String nameSuffix = "_time_3_10_10.txt";
 
 	pointcut setDefaultPermissions(): execution(protected * PrimaryDataEntity+.setDefaultPermissions (..));
 
@@ -76,16 +77,15 @@ public aspect TimeMeasure {
 
 		String methodName = joinPoint.getSignature().getName();
 
-		Path filePath = Paths.get(TimeMeasure.path.toString(), methodName
-				+ nameSuffix);
+		Path filePath = Paths.get(TimeMeasure.path.toString(), methodName + nameSuffix);
 
 		try {
 			if (Files.notExists(filePath, LinkOption.NOFOLLOW_LINKS)) {
 				Files.createDirectories(filePath.getParent());
 				Files.createFile(filePath);
 			}
-			Files.write(filePath, (";" + String.valueOf(endtime)).getBytes(),
-					StandardOpenOption.APPEND);
+	
+			Files.write(filePath, (String.valueOf(endtime) + "\n").getBytes(), StandardOpenOption.APPEND);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -98,21 +98,20 @@ public aspect TimeMeasure {
 	after() : shutdown(){
 		if (RUN) {
 			try {
-				Files.walkFileTree(TimeMeasure.path,
-						new SimpleFileVisitor<Path>() {
+				Files.walkFileTree(TimeMeasure.path, new SimpleFileVisitor<Path>() {
 
-							@Override
-							public FileVisitResult visitFile(Path file,
-									BasicFileAttributes attrs)
-									throws IOException {
-								if (file.getFileName().toString()
-										.contains(TimeMeasure.nameSuffix)) {
-									Files.write(file, ("\n".getBytes()),
-											StandardOpenOption.APPEND);
-								}
-								return FileVisitResult.CONTINUE;
-							}
-						});
+					@Override
+					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+						if (file.getFileName().toString().contains(TimeMeasure.nameSuffix)) {
+							// Files.write(file, ("\n".getBytes()), StandardOpenOption.APPEND);
+
+						}
+						return FileVisitResult.CONTINUE;
+					}
+				});
+
+				System.out.println("READY");
+
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
