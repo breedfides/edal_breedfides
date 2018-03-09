@@ -89,7 +89,7 @@ allprojects {
 	}
 	else{
 		signing {
-		    sign configurations.archives
+		    sign javadocJar, sourcesJar, shadowJar
 		}
 	}
 
