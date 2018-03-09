@@ -180,7 +180,7 @@ public class PerformanceAnalysisMultiThreaded extends ClientServerTest {
 
 	}
 
-	@Test
+	//@Test
 	public void TestStoreRead() throws Exception {
 
 		Authentication auth = new Authentication(EdalHelpers.authenticateUser("SampleUser", "password"));
@@ -191,7 +191,7 @@ public class PerformanceAnalysisMultiThreaded extends ClientServerTest {
 		PerformanceAnalysisMultiThreaded.rootDirectory = dataManagerClient.getRootDirectory();
 
 		int numberOfThreads = 3;
-		int numberOfFilesPerDirectory = 100;
+		int numberOfFilesPerDirectory = 10;
 		int numberOfDirectory = 10;
 
 		ThreadPoolExecutor executorWrite = new ThreadPoolExecutor(numberOfThreads, numberOfThreads, 1, TimeUnit.MINUTES,
