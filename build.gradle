@@ -2,6 +2,7 @@ plugins {
   id "com.github.johnrengelman.shadow" version "2.0.2"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
+  id 'io.codearte.nexus-staging' version '0.11.0'
 }
 
 project.ext {
@@ -157,8 +158,7 @@ subprojects {
 }
 
 nexusStaging {
-    username = ossrhUsername
-    password = ossrhPassword
+    stagingProfileId  = "edal_ipk_gatersleben_de"
 }
 
 release {
