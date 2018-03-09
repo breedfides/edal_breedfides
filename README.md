@@ -6,4 +6,4 @@ We created a new repository, because the structure of the API was changed to a m
 ```
 gradle build
 ```
-For more information about the API visit our [project website](edal.ipk-gatersleben.de/)
+For more information about the API visit our [project website](http://edal.ipk-gatersleben.de/)
