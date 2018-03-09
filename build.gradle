@@ -237,6 +237,9 @@ task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shad
 	classifier = 'MAIN'
 	description = "eDAL-Server"
 	exclude '*.p12'
+	
+	mergeServiceFiles()
+	 
 	manifest {
         attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer'
     }
