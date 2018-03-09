@@ -4,23 +4,3 @@ license {
  	ext.year = Calendar.getInstance().get(Calendar.YEAR)
 	include "**/*.java"
 }
-
-apply plugin: 'com.github.johnrengelman.shadow'
-
-
-task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-	group = "shadow"
-	classifier = 'MAIN'
-	description = "eDAL-Server"
-	exclude '*.p12'
-	manifest {
-        attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer'
-    }
-	from(project.convention.getPlugin(JavaPluginConvention).sourceSets.main.output)
-	configurations = [project.configurations.runtime]
-	exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
-}
-
-artifacts {
-	archives shadowJarServer
-}

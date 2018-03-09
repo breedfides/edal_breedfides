@@ -230,6 +230,24 @@ project(':eDAL-MetaDataAPI-Server') {
 	    compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.0'
 	    testCompile group: 'junit', name: 'junit', version:'4.10'
 	}
+	apply plugin: 'com.github.johnrengelman.shadow'
+
+task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+	group = "shadow"
+	classifier = 'MAIN'
+	description = "eDAL-Server"
+	exclude '*.p12'
+	manifest {
+        attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer'
+    }
+	from(project.convention.getPlugin(JavaPluginConvention).sourceSets.main.output)
+	configurations = [project.configurations.runtime]
+	exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+}
+
+artifacts {
+	archives shadowJarServer
+}
 }
 //Client Project specific stuff
 project(':eDAL-MetaDataAPI-Client') {
