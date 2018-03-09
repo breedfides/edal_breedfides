@@ -24,12 +24,3 @@ task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shad
 artifacts {
 	archives shadowJarServer
 }
-
-if(!project.hasProperty('signing.keyId') || !project.hasProperty('signing.password')|| !project.hasProperty('signing.secretKeyRingFile')){   
-		println "WARNING: If you want to sign your archives please provide the 'signing.keyId' and 'signing.password' and 'signing.secretKeyRingFile' properties"
-	}
-	else{
-		signing {
-		    sign configurations.archives
-		}
-	}
