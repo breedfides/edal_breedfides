@@ -252,7 +252,7 @@ public class PropertyLoader {
 		Locale.setDefault(Locale.ENGLISH);
 
 		try {
-			PGP_CONTRACT_URL = new URL("http://edal.ipk-gatersleben.de/document/PGP-contract.pdf");
+			PGP_CONTRACT_URL = new URL("http://edal-pgp.ipk-gatersleben.de/document/PGP-contract.pdf");
 			ADOBE_GET_URL = new URL("https://get.adobe.com/de/reader/");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
