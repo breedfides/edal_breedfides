@@ -156,6 +156,11 @@ subprojects {
 	uploadArchives.dependsOn test
 }
 
+nexusStaging {
+    username = ossrhUsername
+    password = ossrhPassword
+}
+
 release {
     failOnCommitNeeded = true
     failOnPublishNeeded = true
