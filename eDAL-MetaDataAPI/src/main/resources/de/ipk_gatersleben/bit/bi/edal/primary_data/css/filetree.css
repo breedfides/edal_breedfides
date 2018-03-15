@@ -62,7 +62,7 @@
 }
 
 .css-treeview label, .css-treeview label::before {
-	background: url("../FILEICONS/icons.png") no-repeat;
+	background: url("icons.png") no-repeat;
 }
 
 .css-treeview label, .css-treeview a, .css-treeview label::before {

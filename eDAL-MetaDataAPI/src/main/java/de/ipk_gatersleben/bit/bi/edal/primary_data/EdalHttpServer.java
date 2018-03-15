@@ -103,12 +103,12 @@ public class EdalHttpServer {
 		requestLog.setLogServer(true);
 		requestLog.setPreferProxiedForAddress(true);
 		requestLog.setLogTimeZone("GMT+1");
-		requestLog.setIgnorePaths(new String[] { "/" + EdalHttpFunctions.CSS.name() + "/*",
-				"/" + EdalHttpFunctions.LOGO.name() + "/*", "/" + EdalHttpFunctions.JS.name() + "/*",
-				"/" + EdalHttpFunctions.FILEICONS.name() + "/*", "/" + EdalHttpFunctions.ACCEPT.name() + "/*",
-				"/" + EdalHttpFunctions.REJECT.name() + "/*", "/" + EdalHttpFunctions.USER_ACCEPT.name() + "/*",
-				"/" + EdalHttpFunctions.USER_REJECT.name() + "/*", "/" + EdalHttpFunctions.LOGIN.name() + "/*",
-				"/favicon.ico", "/index.htm", "/robots.txt", "/Report/*", "/REPORT/*", "/report/*" });
+		requestLog.setIgnorePaths(
+				new String[] { "/" + EdalHttpFunctions.CSS.name() + "/*", "/" + EdalHttpFunctions.LOGO.name() + "/*",
+						"/" + EdalHttpFunctions.JS.name() + "/*", "/" + EdalHttpFunctions.ACCEPT.name() + "/*",
+						"/" + EdalHttpFunctions.REJECT.name() + "/*", "/" + EdalHttpFunctions.USER_ACCEPT.name() + "/*",
+						"/" + EdalHttpFunctions.USER_REJECT.name() + "/*", "/" + EdalHttpFunctions.LOGIN.name() + "/*",
+						"/favicon.ico", "/index.htm", "/robots.txt", "/Report/*", "/REPORT/*", "/report/*" });
 
 		RequestLogHandler requestLogHandler = new RequestLogHandler();
 		requestLogHandler.setRequestLog(requestLog);
@@ -422,8 +422,8 @@ public class EdalHttpServer {
 
 	/**
 	 * Generate an {@link URL} to access a
-	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
-	 * as reviewer over a temporal landing page.
+	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity} as
+	 * reviewer over a temporal landing page.
 	 * 
 	 * @param entityURL
 	 *            the normal {@link URL} to this

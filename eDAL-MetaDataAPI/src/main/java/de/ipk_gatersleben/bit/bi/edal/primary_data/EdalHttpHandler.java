@@ -431,15 +431,6 @@ public class EdalHttpHandler extends AbstractHandler {
 							}
 							break;
 
-						case FILEICONS:
-							if (tokenizer.hasMoreTokens()) {
-
-								final String fileUrl = tokenizer.nextToken();
-
-								this.sendEmbeddedFile(response, "fileicons" + "/" + fileUrl, "image/png");
-							}
-							break;
-
 						case USER_ACCEPT:
 							final String userAcceptTicket = tokenizer.nextToken();
 

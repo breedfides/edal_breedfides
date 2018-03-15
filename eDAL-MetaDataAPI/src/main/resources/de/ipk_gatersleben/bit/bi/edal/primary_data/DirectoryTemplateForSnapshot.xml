@@ -28,8 +28,10 @@
 		<div class="content">
 			#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/DescriptionTemplate.xml")
 			<hr style="margin: 5px;" />
-				<div id="ballsWaveG">
-					Loading:<img src="$serverURL/FILEICONS/ajax-loader.gif"></img>
+				<div id="loadingAnimation">
+					Loading, please wait: <i class="fa fa-refresh fa-spin" style="font-size:16px"></i>&nbsp;
+					<i class="fa fa-refresh fa-spin" style="font-size:16px"></i>&nbsp;
+					<i class="fa fa-refresh fa-spin" style="font-size:16px"></i>
 				</div>
 				$entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath()
 				#if($entity.getParentDirectory().toString() != "/")
@@ -37,7 +39,7 @@
 					<ol class="tree">
 						<label class="parent">
 							<a style="color: #333"
-								href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/">Up to Parent Directory</a>
+								href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/"> Up to Parent Directory</a>
 						</label>
 					</ol>
 				</div>

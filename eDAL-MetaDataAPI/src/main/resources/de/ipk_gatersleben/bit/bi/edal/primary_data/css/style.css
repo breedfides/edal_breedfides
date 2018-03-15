@@ -94,34 +94,6 @@ h3 {
 }
 
 }
-/* CSS Tree menu styles */
-li.file {
-	margin-left: 10px !important;
-}
-
-li.file a {
-	height: 25px;
-	padding-left: 21px;
-	color: black;
-	text-decoration: none;
-	display: block;
-}
-
-li.pdf a {
-	background: url(../FILEICONS/pdf.png) 0 0 no-repeat;
-}
-
-li.doc a {
-	background: url(../FILEICONS/doc.png) 0 0 no-repeat;
-}
-
-li.txt a {
-	background: url(../FILEICONS/txt.png) 0 0 no-repeat;
-}
-
-li.zip a {
-	background: url(../FILEICONS/) zip.png) 0 0 no-repeat;
-}
 
 
 /** CHANGES IN bootstrap.css */
@@ -353,7 +325,6 @@ li.zip a {
 		margin-bottom:0.5em;
 	}
 }
-
 
 table.dataTable {
     width: 100%;

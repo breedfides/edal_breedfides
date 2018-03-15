@@ -34,7 +34,7 @@
 					<ol class="tree">
 						<label class="parent">
 							<a style="color: #333"
-								href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/">Up to Parent Directory</a>
+								href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/"> Up to Parent Directory</a>
 						</label>
 					</ol>
 				</div>

@@ -17,98 +17,69 @@ li.folder {
 	list-style: none;	
 }
 
-li.file {
+/*li.file {
 	margin-left: -1px !important;
-}
-
-li.file a {
-	background: url(../FILEICONS/document.png) 0 0 no-repeat;
-	padding-left: 21px;
-	text-decoration: none;
-	display: block;
-}
-
-li.file a[href*='.pdf'] {
-	background: url(../FILEICONS/document.png) 0 0 no-repeat;
-}
-
-li.file a[href*='.html'] {
-	background: url(../FILEICONS/document.png) 0 0 no-repeat;
-}
-
-li.file a[href$='.css'] {
-	background: url(../FILEICONS/document.png) 0 0 no-repeat;
-}
-
-li.file a[href$='.js'] {
-	background: url(../FILEICONS/document.png) 0 0 no-repeat;
-}
+}*/
 
 li.myfile {
 	margin-left: -1px !important;
 }
 
-li.myfile a {
-	background: url(../FILEICONS/document.png) 27px 0 no-repeat;
-	padding-left: 50px;
-	text-decoration: none;
-}
+
 li.myfile a[href*='/DOWNLOAD'] {
 	background: none;
 	padding-left: 5px;
 	text-decoration: none;
 }
-li.myfile a[id*='.html'] {
-	background: url(../FILEICONS/html.png) 25px 0 no-repeat;
+
+li.myfile:before {
+  	 font-family: 'FontAwesome';
+     top: 0;
+     padding-left: 31px;
+     content: "\f016";
 }
-li.myfile a[id*='.css'] {
-	background: url(../FILEICONS/css.png) 25px 0 no-repeat;
+li.myfile.pdf:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c1";
 }
-li.myfile a[id*='.pdf'] {
-	background: url(../FILEICONS/pdf.png) 25px 0 no-repeat;
+li.myfile.jpg:before,li.myfile.png:before,li.myfile.bmp:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c5";
 }
-li.myfile a[id*='.js'] {
-	background: url(../FILEICONS/js.png) 25px 0 no-repeat;
+li.myfile.txt:before,li.myfile.xml:before,li.myfile.csv:before,li.myfile.js:before {
+  	 font-family: 'FontAwesome';
+     content: "\f0f6";
 }
-li.myfile a[id*='.zip'] {
-	background: url(../FILEICONS/zip.png) 25px 0 no-repeat;
+li.myfile.zip:before,li.myfile.jar:before,li.myfile.rar:before,li.myfile.iso:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c6";
 }
-li.myfile a[id*='.png'] {
-	background: url(../FILEICONS/png.png) 25px 0 no-repeat;
+li.myfile.xls:before,li.myfile.xsx:before,li.myfile.xlsx:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c3";
 }
-li.myfile a[id*='.jar'] {
-	background: url(../FILEICONS/jar.png) 25px 0 no-repeat;
+li.myfile.doc:before,li.myfile.docx:before,li.myfile.dot:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c2";
 }
-li.myfile a[id*='.iso'] {
-	background: url(../FILEICONS/iso.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.txt'] {
-	background: url(../FILEICONS/txt.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.jpg'] {
-	background: url(../FILEICONS/jpg.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.xls'] {
-	background: url(../FILEICONS/xls.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.xml'] {
-	background: url(../FILEICONS/xml.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.rar'] {
-	background: url(../FILEICONS/rar.png) 25px 0 no-repeat;
-}
-li.myfile a[id*='.csv'] {
-	background: url(../FILEICONS/csv.png) 25px 0 no-repeat;
+li.myfile.html:before,li.myfile.css:before,li.myfile.js:before {
+  	 font-family: 'FontAwesome';
+     content: "\f1c9";
 }
 
-
+/****** FOLDER-UP ICON START ******/
 label.parent a {
-	background: url(../FILEICONS/folderup.png) 0px 0px no-repeat;
 	cursor: pointer;
 	display: block;
-	padding-left: 20px;
+	padding-left: 0px;
 }
-
+label.parent a:before {
+  	font-family:FontAwesome;
+    top: 0;
+    left: 30px;
+    content: '\f07c';
+}
+/****** FOLDER-UP ICON END ******/
 li input {
 	position: absolute;
 	left: 0;
@@ -122,7 +93,7 @@ li input {
 }
 
 li input+ol {
-	background: url(../FILEICONS/toggle-small-expand.png) 40px 0px no-repeat;
+	background: url(toggle-small-expand.png) 40px 0px no-repeat;
 	margin: -1.65em 0 0 -44px; /* 15px */
 	height: 1.2em;
 }
@@ -132,16 +103,23 @@ li input+ol>li {
 	margin-left: -14px !important;
 	padding-left: 1px;
 }
-
+/****** FOLDER ICON START ******/
 li label {
-	background: url(../FILEICONS/folder-horizontal.png) 40px 2px no-repeat;
 	cursor: pointer;
 	display: block;
 	padding-left: 62px;
 }
+li label:before{
+	position: absolute;
+  	font-family:FontAwesome;
+    top: 0;
+    left: 44px;
+    content: '\f07b';
+}
+/****** FOLDER ICON END ******/
 
 li input:checked+ol {
-	background: url(../FILEICONS/toggle-small.png) 40px 0px no-repeat;
+	background: url(toggle-small.png) 40px 0px no-repeat;
 	margin: -1.65em 0 0 -44px; /* 20px */
 	padding: 1.563em 0 0 80px;
 	height: auto;

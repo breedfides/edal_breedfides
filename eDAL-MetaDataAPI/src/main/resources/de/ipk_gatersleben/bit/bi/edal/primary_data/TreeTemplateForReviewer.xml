@@ -23,7 +23,7 @@
 		</li>
 
 		#else
-		<li class="myfile">
+		<li class="myfile $object.toString().substring($object.toString().lastIndexOf('.') + 1)">
 			<a style="color: #333" id="$object.toString()"
 				href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
 			<a	href="$downloadURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode/DOWNLOAD" target="_blank">
@@ -41,7 +41,7 @@
 	var divObject =	document.getElementById('scrollbar');
 	divObject.scrollTop = divObject.scrollHeight;
 	$(function () {
-	$("#ballsWaveG").hide();
+	$("#loadingAnimation").hide();
 	});
 	}
 </script>

@@ -112,12 +112,12 @@
 																	eval("window.markers_" + data + "=new Array();");
 																	if(window.markermaps == 0){
 																		$(".dataTables_scrollBody").css({"height": ($(window).height()) * 0.35 });															
-																		createMarkers(xmlDoc,window.markers_$doi,"marker_red.png");
+																		createMarkers(xmlDoc,window.markers_$doi,"#FF0000");
 																	}
-																	if(window.markermaps == 1){createMarkers(xmlDoc,window.markers_$doi,"marker_green.png");}
-																	if(window.markermaps == 2){createMarkers(xmlDoc,window.markers_$doi,"marker_blue.png");}
-																	if(window.markermaps == 3){createMarkers(xmlDoc,window.markers_$doi,"marker_yellow.png");}
-																	if(window.markermaps > 4){createMarkers(xmlDoc,window.markers_$doi,"marker_black.png");}
+																	if(window.markermaps == 1){createMarkers(xmlDoc,window.markers_$doi,"#00FF00");}
+																	if(window.markermaps == 2){createMarkers(xmlDoc,window.markers_$doi,"#0000FF");}
+																	if(window.markermaps == 3){createMarkers(xmlDoc,window.markers_$doi,"#FFFF00");}
+																	if(window.markermaps > 4){createMarkers(xmlDoc,window.markers_$doi,"#000000");}
 																	window.markermaps=window.markermaps+1;
 																}
 																else {
@@ -172,13 +172,26 @@
 				window.markermaps=0;
 			}
 			function createMarkers(xmlDoc, markersArray, markerImage) {
-				var iconPath = "/FILEICONS/".concat(markerImage);
+				//var iconPath = "/FILEICONS/".concat(markerImage);
+				
+					var canvas = document.createElement("canvas");
+				    canvas.width = 24;
+				    canvas.height = 24;
+				    var ctx = canvas.getContext("2d");
+				    ctx.fillStyle = markerImage;
+				    ctx.font = "8px FontAwesome";
+				    ctx.textAlign = "center";
+				    ctx.textBaseline = "middle";
+				    ctx.fillText("\uf111", 8, 8);
+				    var dataURL = canvas.toDataURL('image/png')
+				
+				
 				var items =
 				xmlDoc.getElementsByTagName('marker');
 				var latlng;
 				for (var i = 0; i <	items.length; i++) {
 					latlng = new google.maps.LatLng(items[i].getAttribute('lat'),items[i].getAttribute('lng'));
-					window.marker = new	google.maps.Marker({position:latlng, title:items[i].getAttribute('title'), map:map, icon:iconPath});
+					window.marker = new	google.maps.Marker({position:latlng, title:items[i].getAttribute('title'), map:map, icon:dataURL});
 					markersArray.push(marker);
 				}
 			}

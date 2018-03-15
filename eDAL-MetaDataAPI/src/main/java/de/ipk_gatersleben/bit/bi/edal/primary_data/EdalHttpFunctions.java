@@ -39,5 +39,5 @@ public enum EdalHttpFunctions {
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
 	 * .
 	 */
-	EDAL, LOGIN, DOI, URL, LOGO, ZIP, CSS, JS, FILEICONS, USER_ACCEPT, USER_REJECT, REPORT, OAI;
+	EDAL, LOGIN, DOI, URL, LOGO, ZIP, CSS, JS, USER_ACCEPT, USER_REJECT, REPORT, OAI;
 }
