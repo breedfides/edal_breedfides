@@ -59,18 +59,17 @@
 							<div class="col-md-12-arendd">
 								<ul class="list-unstyled">
 									<div>
-										<table id="tabelle" class="compact cell-border hover"
+									 	<table id="tabelle" class="compact cell-border hover"
 											width="100%">
 											<thead>
 												<tr>
-													<th>DOI</th>
-													<th>title</th>
-													<th>distinct client IPs</th>
-													<th>download volume</th>
-													<th>
+													<th style="text-align:left;">DOI</th>
+													<th style="text-align:left;">title</th>
+													<th style="text-align:right;">distinct client IPs</th>
+													<th style="text-align:right;">download volume</th>
+													<th style="text-align:center;">
 														worldmap
-														<!-- <input type="checkbox" id="check_all" name="check_all"
-															title="Show" /> -->
+											
 													</th>
 												</tr>
 											</thead>
@@ -90,10 +89,10 @@
 														<td>#if($length<100) $line.toString().substring(0,$length)</td>#end
 														#if($length>=100) $line.toString().substring(0,100)...</td>#end
 													#end
-													#if($foreach.count == 3)<td>$line.toString()</td>#end
-													#if($foreach.count == 4)<td>$line.toString()</td>#end
+													#if($foreach.count == 3)<td style="text-align:right;">$line.toString()</td>#end
+													#if($foreach.count == 4)<td style="text-align:right;">$line.toString()</td>#end
 													#if($foreach.count == 5)
-													<td>
+													<td style="text-align:center;">
 													 	<input type="checkbox" id="check_$counter" name="check_$counter" title="Show" />
 														<label for="check_$counter">Show</label> 
 														<script>

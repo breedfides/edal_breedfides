@@ -13,7 +13,7 @@
 				#end
 		#end
 		#if($link =="true")
-		<div class="pull-right warning" style="margin-top:8px;">please always quote citation when using data: 
+		<div class="pull-right warning" style="margin-top:8px;">please always quote when using data: 
 			<strong><a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/BIBTEX">[BibTeX]</a></strong>&nbsp;
 			<strong><a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RIS">[RIS]</a></strong>&nbsp;
 			<strong><a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RDFXML">[RDF/XML]</a></strong>&nbsp;
@@ -25,7 +25,7 @@
 </div>
 <div class="row">
 	<div class="col-md-12">
-		<ul class="list-unstyled pad">
+		<ul class="list-unstyled pad" style="margin-bottom:0px;">
 			<li>
 				<strong>Citation: </strong>
 				#if($link=="true")

@@ -1,4 +1,4 @@
-<div class="scrollbar" id="scrollbar">
+<div class="scrollbar" id="scrollbar" style="min-height:30px;">
 	<ol class="tree">
 		#foreach($object in $allobjects) #if($object.isDirectory())
 		<li class="folder">
