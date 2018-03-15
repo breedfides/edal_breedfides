@@ -430,28 +430,6 @@ public class EdalHttpHandler extends AbstractHandler {
 								this.sendEmbeddedFile(response, "js" + "/" + fileUrl, "application/javascript");
 							}
 							break;
-						case FONTS:
-							if (tokenizer.hasMoreTokens()) {
-								final String fileUrl = tokenizer.nextToken();
-
-								if (fileUrl.contains("svg")) {
-									this.sendEmbeddedFile(response, "fonts" + "/" + fileUrl, "image/svg+xml");
-								}
-								if (fileUrl.contains("eot")) {
-									this.sendEmbeddedFile(response, "fonts" + "/" + fileUrl,
-											"application/vnd.ms-fontobject");
-								}
-								if (fileUrl.contains("woff")) {
-									this.sendEmbeddedFile(response, "fonts" + "/" + fileUrl, "application/x-font-woff");
-								}
-								if (fileUrl.contains("woff2")) {
-									this.sendEmbeddedFile(response, "fonts" + "/" + fileUrl, "application/x-font-woff");
-								}
-								if (fileUrl.contains("ttf")) {
-									this.sendEmbeddedFile(response, "fonts" + "/" + fileUrl, "application/x-font-ttf");
-								}
-							}
-							break;
 
 						case FILEICONS:
 							if (tokenizer.hasMoreTokens()) {
