@@ -8,7 +8,6 @@
 	<script src="https://cdn.datatables.net/plug-ins/1.10.7/integration/jqueryui/dataTables.jqueryui.js"></script>
 	<script src="$serverURL/JS/dataTables.colResize.js"></script>
 	<script src="$serverURL/JS/report.js"></script>
-	<script src="$serverURL/JS/script.js"></script>
 	
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-dropdown/2.0.3/jquery.dropdown.min.css" /> 
 	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
