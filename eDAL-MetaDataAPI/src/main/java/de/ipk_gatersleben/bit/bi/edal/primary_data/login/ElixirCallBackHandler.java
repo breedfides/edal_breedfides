@@ -77,7 +77,7 @@ public class ElixirCallBackHandler implements CallbackHandler {
 		try {
 
 			ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null,
-					"https://perun.elixir-czech.cz/oidc/authorize?" + "&response_type=code"
+					"https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
 							+ "&scope=email%20profile%20openid" + "&client_id="
 							+ new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8") + "&redirect_uri="
 							+ REDIRECT_URI);
@@ -163,7 +163,7 @@ public class ElixirCallBackHandler implements CallbackHandler {
 							.setRedirectStrategy(new LaxRedirectStrategy()).build();
 				}
 
-				WebResource resource = Client.create().resource("https://perun.elixir-czech.cz/oidc/token");
+				WebResource resource = Client.create().resource("https://login.elixir-czech.org/oidc/token");
 
 				Form input = new Form();
 				input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
@@ -182,7 +182,7 @@ public class ElixirCallBackHandler implements CallbackHandler {
 					String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication)).get("access_token").toString();
 
 					String resultOfUserinformationRequest = Client.create()
-							.resource("https://perun.elixir-czech.cz/oauth/rpc/json/oidcManager/userinfo")
+							.resource("https://login.elixir-czech.org/oidc/userinfo")
 							.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
 							.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
 
