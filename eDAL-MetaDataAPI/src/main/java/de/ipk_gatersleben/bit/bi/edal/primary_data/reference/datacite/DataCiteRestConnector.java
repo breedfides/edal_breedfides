@@ -71,44 +71,6 @@ public class DataCiteRestConnector {
 	}
 
 	/**
-	 * Get the number of currently registered DOIs
-	 * 
-	 * @param year
-	 *            the current year.
-	 * @param dataCiteInfix
-	 * @return the number of DOIs
-	 * @throws DataCiteException
-	 *             if unable to query DOIs
-	 */
-	private int getNumberOfResolvableDOIs(int year, String dataCiteInfix) throws DataCiteException {
-
-		this.restClient = Client.create();
-
-		this.webResource = this.restClient.resource("https://api.datacite.org/works?data-center-id=" + dataCiteInfix
-				+ "&registered=" + year + "&page[size]=999");
-
-		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
-		if (response.getStatus() == 200) {
-
-			try {
-				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
-
-				JSONArray data = (JSONArray) json.get("data");
-
-				return data.size();
-
-			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException e) {
-				throw new DataCiteException("unable to query the number of stored DOIs", e);
-			}
-
-		} else {
-			throw new DataCiteException("unable to query the number of stored DOIs");
-		}
-
-	}
-
-	/**
 	 * Get the string for the data center of the given prefix
 	 * 
 	 * @param prefix
@@ -174,8 +136,12 @@ public class DataCiteRestConnector {
 				String dataCentreName = dataCentreString.substring(dataCentreString.indexOf(".") + 1,
 						dataCentreString.length());
 
+				// int nextFreeDoiNumber = connector.getNextFreeDOI(year,
+				// getNumberOfResolvableDOIs(year, getDataCentreIdForPrefix(this.prefix)),
+				// dataCentreName);
+
 				int nextFreeDoiNumber = connector.getNextFreeDOI(year,
-						getNumberOfResolvableDOIs(year, getDataCentreIdForPrefix(this.prefix)), dataCentreName);
+						getNumberOfResolvableDOIsByPrefix(year, this.prefix), dataCentreName);
 
 				return this.prefix + "/" + dataCentreName + "/" + year + "/" + nextFreeDoiNumber;
 			}
@@ -184,6 +150,47 @@ public class DataCiteRestConnector {
 			throw new DataCiteException("unable to get number of stored DOIs", e);
 		}
 
+	}
+
+	/**
+	 * Get the number of currently registered DOIs
+	 * 
+	 * @param year
+	 *            the current year.
+	 * @param prefix
+	 *            the prefix of the datacentre
+	 * @return the number of DOIs
+	 * @throws DataCiteException
+	 *             if unable to query DOIs
+	 */
+	private int getNumberOfResolvableDOIsByPrefix(int year, String prefix) throws DataCiteException {
+
+		this.restClient = Client.create();
+
+		this.webResource = this.restClient.resource(
+				"https://api.datacite.org/works?query=prefix:" + prefix + "&registered=" + year + "&page[size]=999");
+
+		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+		if (response.getStatus() == 200) {
+
+			try {
+				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
+
+				JSONArray data = (JSONArray) json.get("data");
+
+				// System.out.println("NEU:"+year+"\t"+prefix+"\t"+dataCentreName +" :
+				// "+data.size());
+
+				return data.size();
+
+			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException e) {
+				throw new DataCiteException("unable to query the number of stored DOIs", e);
+			}
+
+		} else {
+			throw new DataCiteException("unable to query the number of stored DOIs");
+		}
 	}
 
 	public boolean checkIfPrefixIsRegisteredForDataCenterId() {
