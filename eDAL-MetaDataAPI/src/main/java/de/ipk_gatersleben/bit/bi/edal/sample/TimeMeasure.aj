@@ -37,11 +37,11 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.Permissio
  */
 public aspect TimeMeasure {
 
-	private static final boolean RUN = true;
+	private static final boolean RUN = false;
 
 	private static final Path path = Paths.get(System.getProperty("user.home"), "performance");
 
-	private static final String nameSuffix = "_time_3_10_10.txt";
+	private static final String nameSuffix = "_time_3_100_100_100KB.txt";
 
 	pointcut setDefaultPermissions(): execution(protected * PrimaryDataEntity+.setDefaultPermissions (..));
 
@@ -110,7 +110,7 @@ public aspect TimeMeasure {
 					}
 				});
 
-				System.out.println("READY");
+//				System.out.println("READY");
 
 			} catch (IOException e) {
 				e.printStackTrace();
