@@ -233,9 +233,6 @@ public class ElixirSwingBrowserDialog extends JDialog {
 
 	public static void main(String[] args) {
 
-		System.setProperty("http.proxyHost", "proxy1.ipk-gatersleben.de");
-		System.setProperty("http.proxyPort", "3128");
-
 		/**
 		 * important to be able to call Platform.runLater() again and have access to
 		 * JFXPanel

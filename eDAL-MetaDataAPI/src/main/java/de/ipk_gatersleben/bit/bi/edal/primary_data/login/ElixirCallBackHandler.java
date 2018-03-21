@@ -46,9 +46,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
 public class ElixirCallBackHandler implements CallbackHandler {
@@ -86,6 +83,14 @@ public class ElixirCallBackHandler implements CallbackHandler {
 
 		try {
 
+			if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
+
+				System.setProperty("http.proxyHost", httpProxyHost);
+				System.setProperty("http.proxyPort", String.valueOf(httpProxyPort));
+				System.setProperty("https.proxyHost", httpProxyHost);
+				System.setProperty("https.proxyPort", String.valueOf(httpProxyPort));
+			}
+			
 			ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null,
 					"https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
 							+ "&scope=email%20profile%20openid" + "&client_id="
@@ -182,22 +187,9 @@ public class ElixirCallBackHandler implements CallbackHandler {
 				data.add(new BasicNameValuePair("code", code));
 				
 				HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
-
-//				WebResource resource = Client.create().resource("https://login.elixir-czech.org/oidc/token");
-//
-//				Form input = new Form();
-//				input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
-//				input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
-//				input.add("grant_type", "authorization_code");
-//				input.add("redirect_uri", REDIRECT_URI);
-//				input.add("code", code);
-				
+			
 				httpPost.setEntity(new UrlEncodedFormEntity(data));
-				
-				
-//				final ClientResponse responseForAuth = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
-//						.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
-				
+								
 				CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
 
 

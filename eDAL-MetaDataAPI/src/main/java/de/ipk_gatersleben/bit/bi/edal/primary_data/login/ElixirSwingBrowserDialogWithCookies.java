@@ -304,19 +304,16 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 
 	public static void main(String[] args) {
 
-		System.setProperty("http.proxyHost", "proxy1.ipk-gatersleben.de");
-		System.setProperty("http.proxyPort", "3128");
-
 		/**
 		 * important to be able to call Platform.runLater() again and have access to
 		 * JFXPanel
 		 **/
 		Platform.setImplicitExit(false);
 
-		ElixirSwingBrowserDialog browser = new ElixirSwingBrowserDialog(null, "http://www.google.de");
+		ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null, "http://www.google.de");
 		browser.setVisible(true);
 
-		ElixirSwingBrowserDialog browser2 = new ElixirSwingBrowserDialog(null, "http://www.google.de");
+		ElixirSwingBrowserDialogWithCookies browser2 = new ElixirSwingBrowserDialogWithCookies(null, "http://www.google.de");
 		browser2.setVisible(true);
 
 		/** important to set it back to close JFX Thread at the end **/
