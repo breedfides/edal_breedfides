@@ -33,7 +33,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 /**
  * {@link Thread} for generating a ZIP file that contains all object within a
  * {@link PrimaryDataDirectory}. All file types in the
- * {@link FILE_TYPES_WITH_COMPRESSION_SUPPORT} list will be compressed with
+ * {@link ZipThread.FILE_TYPES_WITH_COMPRESSION_SUPPORT} list will be compressed with
  * compression level 1. All other file types will just stored (compression level
  * 0) in the ZIP file.
  * 
