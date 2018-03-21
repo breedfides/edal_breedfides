@@ -21,6 +21,8 @@ import javafx.scene.web.WebView;
 
 import javax.swing.*;
 
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -88,18 +90,8 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 
 				if (e.getSource().equals(btnHelp)) {
-					HelpTextDialog dialog = new HelpTextDialog();
 
-					dialog.addWindowListener(new WindowAdapter() {
-						@Override
-						public void windowClosed(WindowEvent event) {
-
-						}
-					});
-					dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-					dialog.setModal(true);
-					dialog.setLocationRelativeTo(parent);
-					dialog.setVisible(true);
+					EdalHelpers.openURL("http://edal-pgp.ipk-gatersleben.de/document/elixir.html");
 
 				} else {
 					loadURL(txtURL.getText());
@@ -147,7 +139,7 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 						Files.createFile(CookieStore);
 					} catch (IOException e) {
 						e.printStackTrace();
-					}	
+					}
 				}
 
 				try {
@@ -310,10 +302,12 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 		 **/
 		Platform.setImplicitExit(false);
 
-		ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null, "http://www.google.de");
+		ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null,
+				"http://www.google.de");
 		browser.setVisible(true);
 
-		ElixirSwingBrowserDialogWithCookies browser2 = new ElixirSwingBrowserDialogWithCookies(null, "http://www.google.de");
+		ElixirSwingBrowserDialogWithCookies browser2 = new ElixirSwingBrowserDialogWithCookies(null,
+				"http://www.google.de");
 		browser2.setVisible(true);
 
 		/** important to set it back to close JFX Thread at the end **/

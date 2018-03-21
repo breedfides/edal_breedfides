@@ -20,6 +20,9 @@ import javafx.scene.web.WebEvent;
 import javafx.scene.web.WebView;
 
 import javax.swing.*;
+
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -77,18 +80,8 @@ public class ElixirSwingBrowserDialog extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 
 				if (e.getSource().equals(btnHelp)) {
-					HelpTextDialog dialog = new HelpTextDialog();
 					
-					dialog.addWindowListener(new WindowAdapter() {
-						@Override
-						public void windowClosed(WindowEvent event) {
-
-						}
-					});
-					dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-					dialog.setModal(true);
-					dialog.setLocationRelativeTo(parent);
-					dialog.setVisible(true);
+					EdalHelpers.openURL("http://edal-pgp.ipk-gatersleben.de/document/elixir.html");
 					
 				} else {
 					loadURL(txtURL.getText());
