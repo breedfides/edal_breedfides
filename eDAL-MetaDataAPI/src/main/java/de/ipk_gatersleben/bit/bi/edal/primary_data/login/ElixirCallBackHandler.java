@@ -11,7 +11,10 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.login;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -23,9 +26,16 @@ import javax.swing.JOptionPane;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
@@ -149,35 +159,51 @@ public class ElixirCallBackHandler implements CallbackHandler {
 		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 				throws IOException, ServletException {
 
+			CloseableHttpClient httpclient;
 					
 			String code = request.getParameter("code");
 			try {
 
 				if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
 
-					HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
+					httpclient = HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
 							.setDefaultCookieStore(new BasicCookieStore())
 							.setRedirectStrategy(new LaxRedirectStrategy()).build();
 				} else {
-					HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
+					httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
 							.setRedirectStrategy(new LaxRedirectStrategy()).build();
 				}
 
-				WebResource resource = Client.create().resource("https://login.elixir-czech.org/oidc/token");
+				List<NameValuePair> data = new ArrayList<NameValuePair>();
+				data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
+				data.add(new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
+				data.add(new BasicNameValuePair("grant_type", "authorization_code"));
+				data.add(new BasicNameValuePair("redirect_uri", REDIRECT_URI));
+				data.add(new BasicNameValuePair("code", code));
+				
+				HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
 
-				Form input = new Form();
-				input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
-				input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
-				input.add("grant_type", "authorization_code");
-				input.add("redirect_uri", REDIRECT_URI);
-				input.add("code", code);
+//				WebResource resource = Client.create().resource("https://login.elixir-czech.org/oidc/token");
+//
+//				Form input = new Form();
+//				input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
+//				input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
+//				input.add("grant_type", "authorization_code");
+//				input.add("redirect_uri", REDIRECT_URI);
+//				input.add("code", code);
+				
+				httpPost.setEntity(new UrlEncodedFormEntity(data));
+				
+				
+//				final ClientResponse responseForAuth = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
+//						.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
+				
+				CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
 
-				final ClientResponse responseForAuth = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
-						.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
 
-				if (responseForAuth.getStatus() == HttpStatus.OK_200) {
+				if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
 
-					String resultForAuthentication = responseForAuth.getEntity(String.class);
+					String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
 					
 					String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication)).get("access_token").toString();
 
