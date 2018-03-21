@@ -9,7 +9,11 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.sample;
 
+import java.awt.Desktop;
+import java.awt.Desktop.Action;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -17,6 +21,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.Configuration;
@@ -25,7 +30,6 @@ import javax.security.auth.login.LoginException;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.io.FileDeleteStrategy;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.hibernate.stat.SecondLevelCacheStatistics;
@@ -51,8 +55,10 @@ import javafx.application.Platform;
  * 
  * @author arendd
  */
+
+@SuppressWarnings("restriction")
 public class EdalHelpers {
-	
+
 	static {
 		try {
 			Class.forName("javafx.embed.swing.JFXPanel");
@@ -793,5 +799,82 @@ public class EdalHelpers {
 		} catch (final NullPointerException e) {
 			System.out.println("couldnt found statistic");
 		}
+	}
+
+	/**
+	 * Function to open a browser and loading the given URL.
+	 * 
+	 * @param url
+	 *            the URL to open in a browser
+	 * @return true if the function was able to open the browser
+	 */
+	public static boolean openURL(String url) {
+
+		InetSocketAddress proxy = EdalConfiguration.guessProxySettings();
+		if (proxy != null) {
+			System.setProperty("http.proxyHost", proxy.getHostName());
+			System.setProperty("http.proxyPort", String.valueOf(proxy.getPort()));
+			System.setProperty("https.proxyHost", proxy.getHostName());
+			System.setProperty("https.proxyPort", String.valueOf(proxy.getPort()));
+		}
+
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.BROWSE)) {
+			try {
+				if (url.startsWith("mailto")) {
+					Desktop.getDesktop().mail(URI.create(url));
+				} else {
+					Desktop.getDesktop().browse(URI.create(url));
+				}
+				return true;
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "unable to open Browser :",
+						e.getMessage() + "\n please enter the URL manually into your browser: '" + url + "'", 0);
+				return false;
+			}
+		} else {
+			String os = System.getProperty("os.name").toLowerCase();
+			Runtime rt = Runtime.getRuntime();
+
+			try {
+
+				if (os.indexOf("win") >= 0) {
+
+					// this doesn't support showing urls in the form of
+					// "page.html#nameLink"
+					rt.exec("rundll32 url.dll,FileProtocolHandler " + url);
+
+				} else if (os.indexOf("mac") >= 0) {
+
+					rt.exec("open " + url);
+
+				} else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
+
+					// Do a best guess on unix until we get a platform
+					// independent way
+					// Build a list of browsers to try, in this order.
+					String[] browsers = { "epiphany", "firefox", "mozilla", "konqueror", "netscape", "opera", "links",
+							"lynx" };
+
+					// Build a command string which looks like "browser1
+					// "url" || browser2 "url" ||..."
+					StringBuffer cmd = new StringBuffer();
+					for (int i = 0; i < browsers.length; i++)
+						cmd.append((i == 0 ? "" : " || ") + browsers[i] + " \"" + url + "\" ");
+
+					rt.exec(new String[] { "sh", "-c", cmd.toString() });
+
+				} else {
+					JOptionPane.showMessageDialog(null, "unable to find OS versino to open Browser ",
+							"\n Please enter the URL manually into your browser: '" + url + "'", 0);
+					return false;
+				}
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "unable to open Browser :",
+						e.getMessage() + "\n please enter the URL manually into your browser: '" + url + "'", 0);
+				return false;
+			}
+			return true;
+		}
+
 	}
 }

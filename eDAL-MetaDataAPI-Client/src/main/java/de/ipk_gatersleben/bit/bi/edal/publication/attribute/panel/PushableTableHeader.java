@@ -16,10 +16,6 @@ import java.awt.Cursor;
 import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -27,7 +23,7 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import de.ipk_gatersleben.bit.bi.edal.publication.Utils;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class PushableTableHeader extends JPanel {
 
@@ -70,7 +66,7 @@ public class PushableTableHeader extends JPanel {
 //			System.out.println("Column index selected " + col + " " + name);
 
 			if (col == 1 && name.equals("ORCID")) {
-				Utils.openURL("https://orcid.org");
+				EdalHelpers.openURL("https://orcid.org");
 			}
 
 		}

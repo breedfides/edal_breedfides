@@ -24,6 +24,8 @@ import javax.swing.WindowConstants;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+
 /**
  * Class to build the agreement panel on top of the application
  * 
@@ -101,7 +103,7 @@ public class PublicationAgreementPanelSwingView extends JPanel implements MouseL
 
 		}
 		if (event.getSource().equals(this.pdfLabel)) {
-			boolean loadingSuccessful = Utils.openURL(PropertyLoader.PGP_CONTRACT_URL.toString());
+			boolean loadingSuccessful = EdalHelpers.openURL(PropertyLoader.PGP_CONTRACT_URL.toString());
 
 			if (loadingSuccessful) {
 				PublicationFrame.getMainPanel().enableAll();
@@ -119,7 +121,7 @@ public class PublicationAgreementPanelSwingView extends JPanel implements MouseL
 			}
 		}
 		if (event.getSource().equals(this.adobeLabel)) {
-			Utils.openURL(PropertyLoader.ADOBE_GET_URL.toString());
+			EdalHelpers.openURL(PropertyLoader.ADOBE_GET_URL.toString());
 		}
 
 	}

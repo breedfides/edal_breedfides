@@ -18,6 +18,8 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+
 /**
  * Class to define the layout of the {@link AttributeLabel}s on the left side of
  * the frame.
@@ -49,7 +51,7 @@ public class AttributeLabel extends JLabel {
 
 					String url = "http://creativecommons.org/licenses/";
 
-					Utils.openURL(url);
+					EdalHelpers.openURL(url);
 				}
 			});
 		}

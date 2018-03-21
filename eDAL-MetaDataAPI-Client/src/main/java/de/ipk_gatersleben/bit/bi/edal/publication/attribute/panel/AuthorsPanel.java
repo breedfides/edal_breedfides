@@ -31,7 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
@@ -52,6 +51,7 @@ import de.ipk_gatersleben.bit.bi.edal.publication.PublicationFrame;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationMainPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.SmallButton;
 import de.ipk_gatersleben.bit.bi.edal.publication.Utils;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 /**
  * Class to build the panel for defining the authors, their addresses and ORCIDs
@@ -351,7 +351,7 @@ public class AuthorsPanel extends JPanel implements ActionListener {
 					public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 						if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 							String url = hyperlinkEvent.getURL().toString();
-							Utils.openURL(url);
+							EdalHelpers.openURL(url);
 						}
 					}
 				});

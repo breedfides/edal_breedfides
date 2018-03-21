@@ -12,7 +12,6 @@ package de.ipk_gatersleben.bit.bi.edal.publication;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -20,7 +19,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Desktop.Action;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -28,8 +26,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URI;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -53,7 +49,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientPrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientPrimaryDataEntity;
@@ -702,82 +697,5 @@ public class Utils {
 		gbc.gridy = gridy;
 		gridBagLayout.setConstraints(c, gbc);
 		container.add(c);
-	}
-
-	/**
-	 * Function to open a browser and loading the given URL.
-	 * 
-	 * @param url
-	 *            the URL to open in a browser
-	 * @return true if the function was able to open the browser
-	 */
-	public static boolean openURL(String url) {
-
-		InetSocketAddress proxy = EdalConfiguration.guessProxySettings();
-		if (proxy != null) {
-			System.setProperty("http.proxyHost", proxy.getHostName());
-			System.setProperty("http.proxyPort", String.valueOf(proxy.getPort()));
-			System.setProperty("https.proxyHost", proxy.getHostName());
-			System.setProperty("https.proxyPort", String.valueOf(proxy.getPort()));
-		}
-
-		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.BROWSE)) {
-			try {
-				if (url.startsWith("mailto")) {
-					Desktop.getDesktop().mail(URI.create(url));
-				} else {
-					Desktop.getDesktop().browse(URI.create(url));
-				}
-				return true;
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, "unable to open Browser :",
-						e.getMessage() + "\n please enter the URL manually into your browser: '" + url + "'", 0);
-				return false;
-			}
-		} else {
-			String os = System.getProperty("os.name").toLowerCase();
-			Runtime rt = Runtime.getRuntime();
-
-			try {
-
-				if (os.indexOf("win") >= 0) {
-
-					// this doesn't support showing urls in the form of
-					// "page.html#nameLink"
-					rt.exec("rundll32 url.dll,FileProtocolHandler " + url);
-
-				} else if (os.indexOf("mac") >= 0) {
-
-					rt.exec("open " + url);
-
-				} else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
-
-					// Do a best guess on unix until we get a platform
-					// independent way
-					// Build a list of browsers to try, in this order.
-					String[] browsers = { "epiphany", "firefox", "mozilla", "konqueror", "netscape", "opera", "links",
-							"lynx" };
-
-					// Build a command string which looks like "browser1
-					// "url" || browser2 "url" ||..."
-					StringBuffer cmd = new StringBuffer();
-					for (int i = 0; i < browsers.length; i++)
-						cmd.append((i == 0 ? "" : " || ") + browsers[i] + " \"" + url + "\" ");
-
-					rt.exec(new String[] { "sh", "-c", cmd.toString() });
-
-				} else {
-					JOptionPane.showMessageDialog(null, "unable to find OS versino to open Browser ",
-							"\n Please enter the URL manually into your browser: '" + url + "'", 0);
-					return false;
-				}
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, "unable to open Browser :",
-						e.getMessage() + "\n please enter the URL manually into your browser: '" + url + "'", 0);
-				return false;
-			}
-			return true;
-		}
-
 	}
 }

@@ -21,6 +21,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class AgreementPanel extends JDialog implements HyperlinkListener {
 
@@ -82,7 +83,7 @@ public class AgreementPanel extends JDialog implements HyperlinkListener {
 	public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 		if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 			String url = hyperlinkEvent.getURL().toString();
-			Utils.openURL(url);
+			EdalHelpers.openURL(url);
 		}
 	}
 

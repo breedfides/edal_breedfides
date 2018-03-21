@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 /**
  * Class to show a html page in a panel.
@@ -65,7 +66,7 @@ public class PublicationHtmlTextPanel extends JPanel implements HyperlinkListene
 	public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 		if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 			String url = hyperlinkEvent.getURL().toString();
-			Utils.openURL(url);
+			EdalHelpers.openURL(url);
 		}
 	}
 }

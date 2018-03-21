@@ -32,7 +32,7 @@ import de.ipk_gatersleben.bit.bi.edal.publication.AttributeLabel;
 import de.ipk_gatersleben.bit.bi.edal.publication.PropertyLoader;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationFrame;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationVeloCityCreater;
-import de.ipk_gatersleben.bit.bi.edal.publication.Utils;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class LicenseCheckBoxPanel extends JPanel implements HyperlinkListener, ItemListener {
 
@@ -279,7 +279,7 @@ public class LicenseCheckBoxPanel extends JPanel implements HyperlinkListener, I
 	public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 		if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 			String url = hyperlinkEvent.getURL().toString();
-			Utils.openURL(url);
+			EdalHelpers.openURL(url);
 		}
 	}
 

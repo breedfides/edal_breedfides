@@ -44,6 +44,7 @@ import de.ipk_gatersleben.bit.bi.edal.publication.PublicationVeloCityCreater;
 import de.ipk_gatersleben.bit.bi.edal.publication.Utils;
 import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientDataManager;
 import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientPrimaryDataDirectory;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class ProgressBarDialog extends JDialog implements ActionListener, ItemListener, MouseListener {
 
@@ -239,10 +240,10 @@ public class ProgressBarDialog extends JDialog implements ActionListener, ItemLi
 	@Override
 	public void mouseClicked(MouseEvent event) {
 		if (event.getSource().equals(this.pdfLabel)) {
-			Utils.openURL(PropertyLoader.PGP_CONTRACT_URL.toString());
+			EdalHelpers.openURL(PropertyLoader.PGP_CONTRACT_URL.toString());
 		}
 		if (event.getSource().equals(this.adobeLink)) {
-			Utils.openURL(PropertyLoader.ADOBE_GET_URL.toString());
+			EdalHelpers.openURL(PropertyLoader.ADOBE_GET_URL.toString());
 		}
 
 	}

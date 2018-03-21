@@ -44,7 +44,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.ORCID;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
 import de.ipk_gatersleben.bit.bi.edal.publication.PropertyLoader;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationVeloCityCreater;
-import de.ipk_gatersleben.bit.bi.edal.publication.Utils;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 /**
  * Dialog to show the result of the ORICD search for a given author name
@@ -253,7 +253,7 @@ public class OrcidSearchForIdDialog extends JDialog implements ActionListener, H
 				public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 					if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 						String url = hyperlinkEvent.getURL().toString();
-						Utils.openURL(url);
+						EdalHelpers.openURL(url);
 					}
 				}
 			});
@@ -284,7 +284,7 @@ public class OrcidSearchForIdDialog extends JDialog implements ActionListener, H
 				dispose();
 			} else if (button.equals(this.redirectButton)) {
 				dispose();
-				Utils.openURL("https://orcid.org/orcid-search/search");
+				EdalHelpers.openURL("https://orcid.org/orcid-search/search");
 			}
 		}
 	}
@@ -301,7 +301,7 @@ public class OrcidSearchForIdDialog extends JDialog implements ActionListener, H
 	public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
 		if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 			String url = hyperlinkEvent.getURL().toString();
-			Utils.openURL(url);
+			EdalHelpers.openURL(url);
 		}
 	}
 
