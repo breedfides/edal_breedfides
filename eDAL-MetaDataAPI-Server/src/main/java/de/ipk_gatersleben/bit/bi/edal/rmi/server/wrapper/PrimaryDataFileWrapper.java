@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.security.auth.Subject;
 
+import com.healthmarketscience.rmiio.GZIPRemoteInputStream;
 import com.healthmarketscience.rmiio.RemoteInputStream;
 import com.healthmarketscience.rmiio.RemoteInputStreamServer;
 import com.healthmarketscience.rmiio.RemoteOutputStream;
@@ -28,6 +29,7 @@ import com.healthmarketscience.rmiio.SimpleRemoteInputStream;
 import com.healthmarketscience.rmiio.SimpleRemoteOutputStream;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
@@ -104,8 +106,8 @@ public class PrimaryDataFileWrapper extends PrimaryDataEntityWrapper implements 
 		RemoteInputStreamServer istream = null;
 		try {
 
-			istream = new SimpleRemoteInputStream(new BufferedInputStream(pin));
-
+			istream = new GZIPRemoteInputStream(new BufferedInputStream(pin, EdalConfiguration.STREAM_BUFFER_SIZE),SimpleRemoteInputStream.DUMMY_MONITOR,EdalConfiguration.STREAM_BUFFER_SIZE);
+			
 			StreamOutputToInputThread thread = new StreamOutputToInputThread(file, pout);
 
 			thread.start();
@@ -162,7 +164,7 @@ public class PrimaryDataFileWrapper extends PrimaryDataEntityWrapper implements 
 		/** original version without 'try-with-resource' **/
 		RemoteOutputStreamServer ostream = null;
 		try {
-			ostream = new SimpleRemoteOutputStream(new BufferedOutputStream(pout));
+			ostream = new SimpleRemoteOutputStream(new BufferedOutputStream(pout, EdalConfiguration.STREAM_BUFFER_SIZE));
 			// export the final stream for returning to the client
 			RemoteOutputStream result = ostream.export();
 			ostream = null;
