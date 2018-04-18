@@ -38,7 +38,7 @@ public class PublicationModulMain {
 	public static void main(String[] args) throws Exception {
 
 		/* test connect to eDAL server */
-		PropertyLoader.initialize();
+		PropertyLoader.initialize("ipk_properties.txt");
 
 		Boolean retry = true;
 

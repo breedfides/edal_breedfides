@@ -23,15 +23,15 @@ RESOURCE_LABEL		= Resource Type
 DEFAULT_UPLOAD_PATH_STRING = Please enter file or directory
 DEFAULT_TITLE_STRING = Please enter a publication title
 DEFAULT_LANGUAGE_STRING = English
-DEFAULT_PUBLISHER_STRING = Leibniz Institute of Plant Genetics and Crop Plant Research (IPK);Seeland OT Gatersleben, Corrensstraße 3;06466;Germany
+DEFAULT_PUBLISHER_STRING = Forschungszentrum Jülich GmbH;Jülich, Wilhelm-Johnen-Straße;52428;Germany
 DEFAULT_DESCRIPTION_STRING = Please enter a description
 DEFAULT_AUTHORS_STRING = Please set at least one creator
 DEFAULT_SUBJECTS_STRING = Please set at least one keyword
 DEFAULT_EMBARGO_STRING = Please set optional embargo date
 DEFAULT_RESOURCE_STRING = Dataset
 
-DEFAULT_AUTHOR_VALUE_ADDRESS = Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3
-DEFAULT_AUTHOR_VALUE_ZIP = 06466
+DEFAULT_AUTHOR_VALUE_ADDRESS = Forschungszentrum Jülich GmbH, Wilhelm-Johnen-Straße
+DEFAULT_AUTHOR_VALUE_ZIP = 52428
 DEFAULT_AUTHOR_VALUE_COUNTRY = Germany
 
 LICENSE_1 = CC0 1.0 Universal (Creative Commons Public Domain Dedication)

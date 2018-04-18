@@ -160,8 +160,9 @@ public class AuthorsPanel extends JPanel implements ActionListener {
 	private static final String[] roles = { AuthorsPanel.CREATOR, AuthorsPanel.CONTRIBUTOR };
 
 	private static String[] DEFAULT_AUTHOR_VALUE = new String[] { AuthorsPanel.roles[0], "", "", "", "",
-			"Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
-			"06466", "Germany" };
+			PropertyLoader.props.getProperty("DEFAULT_AUTHOR_VALUE_ADDRESS"),
+			PropertyLoader.props.getProperty("DEFAULT_AUTHOR_VALUE_ZIP"),
+			PropertyLoader.props.getProperty("DEFAULT_AUTHOR_VALUE_COUNTRY") };
 	private static final String[] COL_NAMES = { "Role", "ORCID", "Given Name", "Surname", "Group Authors", "Address",
 			"Zip", "Country" };
 
@@ -173,15 +174,15 @@ public class AuthorsPanel extends JPanel implements ActionListener {
 
 	private final JScrollPane scrollPane;
 
-	static {
-		if (PublicationFrame.loggedUser.toLowerCase().contains("ipk-gatersleben")) {
-			DEFAULT_AUTHOR_VALUE = new String[] { AuthorsPanel.roles[0], "", "", "", "",
-					"Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
-					"06466", "Germany" };
-		} else {
-			DEFAULT_AUTHOR_VALUE = new String[] { AuthorsPanel.roles[0], "", "", "", "", "", "", "" };
-		}
-	}
+//	static {
+//		if (PublicationFrame.loggedUser.toLowerCase().contains("ipk-gatersleben")) {
+//			DEFAULT_AUTHOR_VALUE = new String[] { AuthorsPanel.roles[0], "", "", "", "",
+//					"Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
+//					"06466", "Germany" };
+//		} else {
+//			DEFAULT_AUTHOR_VALUE = new String[] { AuthorsPanel.roles[0], "", "", "", "", "", "", "" };
+//		}
+//	}
 
 	public AuthorsPanel() {
 
@@ -479,8 +480,8 @@ public class AuthorsPanel extends JPanel implements ActionListener {
 			}
 
 			if (currentColumn != -1 && currentRow != -1) {
-			AuthorTableModelListener.leavedOrcidField = false;
-			AuthorTableModelListener.leavedName = false;
+				AuthorTableModelListener.leavedOrcidField = false;
+				AuthorTableModelListener.leavedName = false;
 			}
 			this.scrollPane.getVerticalScrollBar().setValue(this.scrollPane.getVerticalScrollBar().getMaximum());
 

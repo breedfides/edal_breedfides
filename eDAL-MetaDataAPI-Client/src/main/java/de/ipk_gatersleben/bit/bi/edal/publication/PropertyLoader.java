@@ -53,7 +53,7 @@ public class PropertyLoader {
 
 	private static Path userAttributeFile = Paths.get(System.getProperty("user.home"), ".eDAL", "attributes.txt");
 
-	private static String propertyFile = "properties.txt";
+	private static String propertyFile = null;
 
 	public static URL PGP_CONTRACT_URL = null;
 
@@ -84,15 +84,16 @@ public class PropertyLoader {
 	public static final Color DISABLED_FONT_COLOR = Color.LIGHT_GRAY;
 
 	public static final Color OPEN_ACCESS_COLOR = new Color(0, 128, 0);
-	
-	public static final Color TABLE_HAS_VALUE_BACKGROUND_COLOR = (Color) UIManager.getDefaults().get("ComboBox.selectionBackground");
+
+	public static final Color TABLE_HAS_VALUE_BACKGROUND_COLOR = (Color) UIManager.getDefaults()
+			.get("ComboBox.selectionBackground");
 
 	public static final Font OPEN_ACCESS_FONT = new Font(Font.SANS_SERIF, Font.BOLD, PropertyLoader.DEFAULT_FONT_SIZE);
 
 	public static final int DEFAULT_FONT_SIZE = 12;
-	
+
 	public static final int ATTRIBUTE_LABEL_FONT_SIZE = 13;
-	
+
 	public static final int SMALL_BUTTON_FONT_SIZE = 11;
 
 	public static final Font DEFAULT_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, PropertyLoader.DEFAULT_FONT_SIZE);
@@ -231,7 +232,9 @@ public class PropertyLoader {
 
 	}
 
-	public static void initialize() {
+	public static void initialize(String propsFile) {
+
+		propertyFile = propsFile;
 
 		try {
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -296,19 +299,26 @@ public class PropertyLoader {
 		if (publisherString == null || publisherString.isEmpty()) {
 			return PropertyLoader.props.getProperty("DEFAULT_PUBLISHER_STRING");
 		} else {
-			StringBuffer buffer = new StringBuffer();
 
-			String[] publisher = publisherString.split(";");
+			if (publisherString.equals(PropertyLoader.props.getProperty("DEFAULT_PUBLISHER_STRING"))) {
 
-			for (int i = 0; i < publisher.length; i++) {
+				StringBuffer buffer = new StringBuffer();
 
-				buffer.append(publisher[i]);
+				String[] publisher = publisherString.split(";");
 
-				if (i != publisher.length - 1) {
-					buffer.append(", ");
+				for (int i = 0; i < publisher.length; i++) {
+
+					buffer.append(publisher[i]);
+
+					if (i != publisher.length - 1) {
+						buffer.append(", ");
+					}
 				}
+				return buffer.toString();
 			}
-			return buffer.toString();
+			else {
+				return PropertyLoader.props.getProperty("DEFAULT_PUBLISHER_STRING");
+			}
 		}
 	}
 

@@ -40,7 +40,6 @@ public class PublicationVeloCityCreater {
 	private static final String AGREEMENT_TEMPLATE = RESOURCES + "agreement.html";
 	private static final String AGREEMENT_EMAIL_TEMPLATE = RESOURCES + "confirmation_mail.html";
 	private static final String LICENSE_TEMPLATE = RESOURCES + "license.html";
-	private static final String LOGIN_DIALOG_TEMPLATE = RESOURCES + "login.html";
 	private static final String ORCID_SEARCH_TEMPLATE = RESOURCES + "orcid_search.html";
 	private static final String ORCID_SEARCH_HEADER_TEMPLATE = RESOURCES + "orcid_search_header.html";
 
@@ -245,28 +244,6 @@ public class PublicationVeloCityCreater {
 		context.put("humanreadable", humanReadableUrl);
 
 		Velocity.mergeTemplate(LICENSE_TEMPLATE, CODING_UTF_8, context, output);
-
-		try {
-			output.flush();
-			output.close();
-		} catch (final IOException e) {
-			throw new EdalException("unable to create license HTML : " + e.getMessage(), e);
-		}
-		return output.toString();
-	}
-
-	public static String generateHtmlForLoginDialog() throws EdalException {
-
-		URL ipkLogoUrl = PublicationFrame.class.getResource("ipk_login.png");
-		URL googleLogoUrl = PublicationFrame.class.getResource("google_login.png");
-
-		VelocityContext context = new VelocityContext();
-		context.put("bgcolor", PropertyLoader.HEADER_FOOTER_COLOR);
-		context.put("ipk", ipkLogoUrl);
-		context.put("google", googleLogoUrl);
-		StringWriter output = new StringWriter();
-
-		Velocity.mergeTemplate(LOGIN_DIALOG_TEMPLATE, CODING_UTF_8, context, output);
 
 		try {
 			output.flush();
