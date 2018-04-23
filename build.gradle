@@ -42,7 +42,14 @@ allprojects {
 	
 	test {
 	    useJUnit()
-	    maxParallelForks = Runtime.runtime.availableProcessors()-2
+
+  		if(Runtime.runtime.availableProcessors()>=4){
+	    	maxParallelForks = Runtime.runtime.availableProcessors()-2
+	    }
+	    else{
+	    	maxParallelForks = Runtime.runtime.availableProcessors()
+	    }
+
 	    minHeapSize = "1024m"
 	    maxHeapSize = "2048m"
 	
