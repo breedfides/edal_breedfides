@@ -10,17 +10,18 @@
 package de.ipk_gatersleben.bit.bi.edal.test;
 
 import java.net.InetSocketAddress;
+
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.eclipse.jetty.http.HttpStatus;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
 public class TestDataCiteRestAPI {
@@ -36,14 +37,14 @@ public class TestDataCiteRestAPI {
 
 		// get all by year and datacenter id
 
-		WebResource resource = Client.create()
-				.resource("https://api.datacite.org/works?data-center-id=tib.ipk&year=2017&page[size]=999");
+		WebTarget resource = JerseyClientBuilder.createClient()
+				.target("https://api.datacite.org/works?data-center-id=tib.ipk&year=2017&page[size]=999");
 
-		final ClientResponse request = resource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response request = resource.request(MediaType.APPLICATION_JSON).get();
 
 		if (request.getStatus() == HttpStatus.OK_200) {
 
-			String result = request.getEntity(String.class);
+			String result = request.readEntity(String.class);
 
 			// System.out.println(resultForAuthentication);
 
@@ -54,18 +55,19 @@ public class TestDataCiteRestAPI {
 			System.out.println(array.size());
 
 		} else {
-			System.out.println(request.getEntity(String.class));
+			System.out.println(request.readEntity(String.class));
 		}
 
 		////////////////////////////////////////
 
-		WebResource resource2 = Client.create().resource("https://api.datacite.org/works?query=10.5073&page[size]=1");
+		WebTarget resource2 = JerseyClientBuilder.createClient()
+				.target("https://api.datacite.org/works?query=10.5073&page[size]=1");
 
-		final ClientResponse request2 = resource2.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response request2 = resource2.request(MediaType.APPLICATION_JSON).get();
 
 		if (request2.getStatus() == HttpStatus.OK_200) {
 
-			String result = request2.getEntity(String.class);
+			String result = request2.readEntity(String.class);
 
 			// System.out.println(resultForAuthentication);
 
@@ -80,13 +82,13 @@ public class TestDataCiteRestAPI {
 			JSONObject object2 = (JSONObject) object.get("attributes");
 
 			System.out.println(object2);
-			
+
 			String object3 = (String) object2.get("data-center-id");
 
 			System.out.println(object3);
 
 		} else {
-			System.out.println(request2.getEntity(String.class));
+			System.out.println(request2.readEntity(String.class));
 		}
 	}
 

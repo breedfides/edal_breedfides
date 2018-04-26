@@ -42,10 +42,10 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.sun.jersey.api.client.Client;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
 public class ElixirCallBackHandler implements CallbackHandler {
@@ -90,7 +90,7 @@ public class ElixirCallBackHandler implements CallbackHandler {
 				System.setProperty("https.proxyHost", httpProxyHost);
 				System.setProperty("https.proxyPort", String.valueOf(httpProxyPort));
 			}
-			
+
 			ElixirSwingBrowserDialogWithCookies browser = new ElixirSwingBrowserDialogWithCookies(null,
 					"https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
 							+ "&scope=email%20profile%20openid" + "&client_id="
@@ -127,8 +127,8 @@ public class ElixirCallBackHandler implements CallbackHandler {
 		}
 	}
 
-	private void initServer(final String httpProxyHost, final int httpProxyPort, ElixirSwingBrowserDialogWithCookies browser)
-			throws Exception {
+	private void initServer(final String httpProxyHost, final int httpProxyPort,
+			ElixirSwingBrowserDialogWithCookies browser) throws Exception {
 
 		if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
 
@@ -165,7 +165,7 @@ public class ElixirCallBackHandler implements CallbackHandler {
 				throws IOException, ServletException {
 
 			CloseableHttpClient httpclient;
-					
+
 			String code = request.getParameter("code");
 			try {
 
@@ -181,27 +181,27 @@ public class ElixirCallBackHandler implements CallbackHandler {
 
 				List<NameValuePair> data = new ArrayList<NameValuePair>();
 				data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
-				data.add(new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
+				data.add(
+						new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
 				data.add(new BasicNameValuePair("grant_type", "authorization_code"));
 				data.add(new BasicNameValuePair("redirect_uri", REDIRECT_URI));
 				data.add(new BasicNameValuePair("code", code));
-				
-				HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
-			
-				httpPost.setEntity(new UrlEncodedFormEntity(data));
-								
-				CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
 
+				HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
+
+				httpPost.setEntity(new UrlEncodedFormEntity(data));
+
+				CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
 
 				if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
 
 					String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
-					
-					String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication)).get("access_token").toString();
 
-					String resultOfUserinformationRequest = Client.create()
-							.resource("https://login.elixir-czech.org/oidc/userinfo")
-							.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
+					String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
+							.get("access_token").toString();
+
+					String resultOfUserinformationRequest = JerseyClientBuilder.createClient()
+							.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
 							.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
 
 					JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);

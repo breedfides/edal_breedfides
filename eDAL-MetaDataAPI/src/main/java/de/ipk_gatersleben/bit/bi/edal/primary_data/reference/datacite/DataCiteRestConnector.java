@@ -9,18 +9,16 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite;
 
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -34,8 +32,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 public class DataCiteRestConnector {
 
 	private String prefix = "";
-	private Client restClient = null;
-	private WebResource webResource = null;
+	private JerseyClient restClient = null;
+	private WebTarget webTarget = null;
 	private EdalConfiguration configuration = null;
 
 	/**
@@ -81,16 +79,16 @@ public class DataCiteRestConnector {
 	 */
 	private String getDataCentreIdForPrefix(String prefix) throws DataCiteException {
 
-		this.restClient = Client.create();
+		this.restClient = JerseyClientBuilder.createClient();
 
-		this.webResource = this.restClient.resource("https://api.datacite.org/prefixes/" + prefix);
+		this.webTarget = this.restClient.target("https://api.datacite.org/prefixes/" + prefix);
 
-		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response response = this.webTarget.request(MediaType.APPLICATION_JSON).get();
 
 		if (response.getStatus() == 200) {
 
 			try {
-				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
+				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
 				JSONArray included = (JSONArray) json.get("included");
 				JSONObject relationships = (JSONObject) included.get(0);
 				JSONObject attributes = (JSONObject) relationships.get("attributes");
@@ -98,7 +96,7 @@ public class DataCiteRestConnector {
 
 				return dataCentreString;
 
-			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException e) {
+			} catch (NullPointerException | ParseException e) {
 				throw new DataCiteException("unable to query the data centre ID", e);
 			}
 
@@ -165,17 +163,17 @@ public class DataCiteRestConnector {
 	 */
 	private int getNumberOfResolvableDOIsByPrefix(int year, String prefix) throws DataCiteException {
 
-		this.restClient = Client.create();
+		this.restClient = JerseyClientBuilder.createClient();
 
-		this.webResource = this.restClient.resource(
+		this.webTarget = this.restClient.target(
 				"https://api.datacite.org/works?query=prefix:" + prefix + "&registered=" + year + "&page[size]=999");
 
-		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response response = this.webTarget.request(MediaType.APPLICATION_JSON).get();
 
 		if (response.getStatus() == 200) {
 
 			try {
-				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
+				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
 
 				JSONArray data = (JSONArray) json.get("data");
 
@@ -184,7 +182,7 @@ public class DataCiteRestConnector {
 
 				return data.size();
 
-			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException e) {
+			} catch (NullPointerException | ParseException e) {
 				throw new DataCiteException("unable to query the number of stored DOIs", e);
 			}
 
@@ -195,16 +193,16 @@ public class DataCiteRestConnector {
 
 	public boolean checkIfPrefixIsRegisteredForDataCenterId() {
 
-		this.restClient = Client.create();
+		this.restClient = JerseyClientBuilder.createClient();
 
-		this.webResource = this.restClient.resource("https://api.datacite.org/prefixes/" + this.prefix);
+		this.webTarget = this.restClient.target("https://api.datacite.org/prefixes/" + this.prefix);
 
-		final ClientResponse response = this.webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response response = this.webTarget.request(MediaType.APPLICATION_JSON).get();
 
 		if (response.getStatus() == 200) {
 
 			try {
-				JSONObject json = (JSONObject) new JSONParser().parse(response.getEntity(String.class));
+				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
 
 				JSONArray included = (JSONArray) json.get("included");
 				JSONObject relationships = (JSONObject) included.get(0);
@@ -215,8 +213,7 @@ public class DataCiteRestConnector {
 					return true;
 				}
 
-			} catch (NullPointerException | ClientHandlerException | UniformInterfaceException | ParseException
-					| EdalConfigurationException e) {
+			} catch (NullPointerException | ParseException | EdalConfigurationException e) {
 				return false;
 			}
 		} else {

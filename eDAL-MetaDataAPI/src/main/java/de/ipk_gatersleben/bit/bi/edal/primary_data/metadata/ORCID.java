@@ -17,21 +17,27 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -41,15 +47,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
-import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
-import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
@@ -154,30 +151,6 @@ public class ORCID implements Serializable {
 
 	private static class ORCIDRestConnector {
 
-		public class ConnectionFactoryWithProxy implements HttpURLConnectionFactory {
-
-			Proxy.Type type;
-			String proxyHost;
-			int proxyPort;
-			Proxy proxy;
-
-			public ConnectionFactoryWithProxy(Proxy.Type type, String proxyHost, int proxyPort) {
-				this.type = type;
-				this.proxyHost = proxyHost;
-				this.proxyPort = proxyPort;
-			}
-
-			private void initializeProxy() {
-				proxy = new Proxy(this.type, new InetSocketAddress(this.proxyHost, this.proxyPort));
-			}
-
-			public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
-				initializeProxy();
-				return (HttpURLConnection) url.openConnection(proxy);
-			}
-
-		}
-
 		private static final String CLIENT_ID = "QVBQLU9ONEgwSUcwWjYyQUJRUUI=";
 		private static final String CLIENT_SECRET = "MjU3MDhjNjItZGI1Ny00NTBlLThkMmYtYjk1ZmQ3OTYzMTli";
 
@@ -189,7 +162,7 @@ public class ORCID implements Serializable {
 		private static InetSocketAddress proxyAddress;
 		private static boolean searchedForProxy = false;
 
-		private URLConnectionClientHandler urlConnectionHandler = null;
+		private ClientConfig clientConfig = null;
 
 		private ORCIDRestConnector() throws ORCIDException {
 
@@ -204,8 +177,16 @@ public class ORCID implements Serializable {
 				System.setProperty("https.proxyPort", String.valueOf(proxyAddress.getPort()));
 				System.setProperty("java.net.useSystemProxies", "true");
 
-				urlConnectionHandler = new URLConnectionClientHandler(new ConnectionFactoryWithProxy(Proxy.Type.HTTP,
-						proxyAddress.getHostName(), proxyAddress.getPort()));
+				clientConfig = new ClientConfig();
+
+				if (proxyAddress.isUnresolved()) {
+					clientConfig.property(ClientProperties.PROXY_URI,
+							"http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort());
+				} else {
+					clientConfig.property(ClientProperties.PROXY_URI,
+							proxyAddress.getHostName() + ":" + proxyAddress.getPort());
+				}
+				clientConfig.connectorProvider(new ApacheConnectorProvider());
 
 			}
 
@@ -218,30 +199,30 @@ public class ORCID implements Serializable {
 
 		private String requestNewToken() throws ORCIDException {
 
-			Client client = null;
+			JerseyClient client = null;
 
-			if (urlConnectionHandler == null) {
-				client = Client.create();
+			if (clientConfig == null) {
+				client = JerseyClientBuilder.createClient();
 			} else {
-				client = new Client(urlConnectionHandler);
+				client = JerseyClientBuilder.createClient(clientConfig);
 			}
 
 			Form input = new Form();
-			input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
-			input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
-			input.add("scope", "/read-public");
-			input.add("grant_type", "client_credentials");
+			input.param("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
+			input.param("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
+			input.param("scope", "/read-public");
+			input.param("grant_type", "client_credentials");
 
-			WebResource resource = client.resource("https://pub.orcid.org/oauth/token");
+			WebTarget resource = client.target("https://pub.orcid.org/oauth/token");
 
-			final ClientResponse response = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
-					.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
+			final Response response = resource.request(MediaType.APPLICATION_JSON)
+					.post(Entity.entity(input, MediaType.APPLICATION_FORM_URLENCODED));
 
 			if (response.getStatus() == 200) {
 				JSONObject jsonObject = null;
 				try {
-					jsonObject = (JSONObject) new JSONParser().parse((String) response.getEntity(String.class));
-				} catch (ClientHandlerException | UniformInterfaceException | ParseException e) {
+					jsonObject = (JSONObject) new JSONParser().parse((String) response.readEntity(String.class));
+				} catch (ParseException e) {
 					throw new ORCIDException("Parsing of user token failed: " + e);
 				}
 
@@ -292,24 +273,24 @@ public class ORCID implements Serializable {
 			givenName = givenName.replace(" ", "%20");
 			familyName = familyName.replace(" ", "%20");
 
-			Client client = null;
+			JerseyClient client = null;
 
-			if (urlConnectionHandler == null) {
-				client = Client.create();
+			if (clientConfig == null) {
+				client = JerseyClientBuilder.createClient();
 			} else {
-				client = new Client(urlConnectionHandler);
+				client = JerseyClientBuilder.createClient(clientConfig);
 			}
 
-			WebResource resource = client.resource(
+			WebTarget resource = client.target(
 					"https://pub.orcid.org/v2.0/search/?q=given-names:" + givenName + "+AND+family-name:" + familyName);
 
-			final ClientResponse response = resource.type("application/orcid+xml")
-					.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+			final Response response = resource.request("application/orcid+xml")
+					.header("Authorization", "Bearer " + this.accessToken).get();
 			try {
 
 				if (response.getStatus() == 200) {
 
-					String result = response.getEntity(String.class);
+					String result = response.readEntity(String.class);
 					Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 							.parse(new InputSource(new StringReader(result)));
 					NodeList list = document.getElementsByTagName("search:result");
@@ -345,22 +326,22 @@ public class ORCID implements Serializable {
 
 		private void searchForOrcid(String orcid) throws ORCIDException {
 
-			Client client = null;
+			JerseyClient client = null;
 
-			if (urlConnectionHandler == null) {
-				client = Client.create();
+			if (clientConfig == null) {
+				client = JerseyClientBuilder.createClient();
 			} else {
-				client = new Client(urlConnectionHandler);
+				client = JerseyClientBuilder.createClient(clientConfig);
 			}
 
-			WebResource resource = client.resource("https://pub.orcid.org/search/orcid-bio/?q=orcid:" + orcid);
+			WebTarget resource = client.target("https://pub.orcid.org/search/orcid-bio/?q=orcid:" + orcid);
 
-			final ClientResponse response = resource.type("application/orcid+xml")
-					.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+			final Response response = resource.request("application/orcid+xml")
+					.header("Authorization", "Bearer " + this.accessToken).get(Response.class);
 
 			if (response.getStatus() == 200) {
 
-				String result = response.getEntity(String.class);
+				String result = response.readEntity(String.class);
 
 				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder builder;
@@ -381,22 +362,22 @@ public class ORCID implements Serializable {
 
 		private NaturalPerson getPersonForOrcid(String orcid) throws ORCIDException {
 
-			Client client = null;
+			JerseyClient client = null;
 
-			if (urlConnectionHandler == null) {
-				client = Client.create();
+			if (clientConfig == null) {
+				client = JerseyClientBuilder.createClient();
 			} else {
-				client = new Client(urlConnectionHandler);
+				client = JerseyClientBuilder.createClient(clientConfig);
 			}
 
-			WebResource resource = client.resource("https://pub.orcid.org/v2.0/" + orcid + "/personal-details");
+			WebTarget resource = client.target("https://pub.orcid.org/v2.0/" + orcid + "/personal-details");
 
-			final ClientResponse response = resource.type("application/orcid+xml")
-					.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+			final Response response = resource.request("application/orcid+xml")
+					.header("Authorization", "Bearer " + this.accessToken).get();
 
 			if (response.getStatus() == 200) {
 
-				String result = response.getEntity(String.class);
+				String result = response.readEntity(String.class);
 				try {
 
 					Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder()

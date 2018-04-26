@@ -16,6 +16,7 @@ import java.net.URL;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -25,9 +26,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.glassfish.jersey.client.ClientResponse;
 import org.xml.sax.XMLReader;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -80,141 +80,134 @@ public class DataCiteTest {
 
 	public static void main(String[] args) throws Exception {
 
-//		JAXBContext jaxbContext = JAXBContext.newInstance(XmlResource.class);
-//		Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-//
-//		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-//		jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION,
-//				"http://datacite.org/schema/kernel-2.2 http://schema.datacite.org/meta/kernel-2.2/metadata.xsd");
-//
-//		XmlResource resource = new XmlResource();
-//
-//		XmlContributors contributors = new XmlContributors();
-//		XmlContributor contributor = new XmlContributor("Lange, Matthias", ContributorType.Supervisor);
-//
-//		contributors.addContributor(contributor);
-//
-//		XmlCreators creators = new XmlCreators();
-//		XmlCreator creator = new XmlCreator("Arend, Daniel");
-//		XmlNameIdentifier nameid = new XmlNameIdentifier("testid");
-//		nameid.setNameIdentifierScheme("testSchema");
-//		creator.setNameIdentifier(nameid);
-//		creators.addCreator(creator);
-//
-//		XmlDates dates = new XmlDates();
-//		XmlDate date = new XmlDate(new java.util.Date().toString(), DateType.Created);
-//		dates.addDate(date);
-//
-//		XmlSubjects subjects = new XmlSubjects();
-//		XmlSubject subject = new XmlSubject("bioinformatics", null);
-//		subjects.addSubject(subject);
-//
-//		XmlTitles titles = new XmlTitles();
-//		XmlTitle title = new XmlTitle("eDAL-API", null);
-//		XmlTitle subtitle = new XmlTitle("Storage backend", TitleType.Subtitle);
-//		titles.addTitle(title);
-//		titles.addTitle(subtitle);
-//
-//		XmlIdentifier identifier = new XmlIdentifier("10.5072/EDALTEST/123456");
-//
-//		XmlSizes sizes = new XmlSizes();
-//		sizes.addSize("1.0 MB");
-//
-//		XmlResourceType type = new XmlResourceType("testDOI", ResourceType.Software);
-//
-//		XmlFormats formats = new XmlFormats();
-//		formats.addFormat("application/zip");
-//
-//		XmlDescriptions descriptions = new XmlDescriptions();
-//		XmlDescription description = new XmlDescription();
-//		description.setDescriptionType(DescriptionType.Abstract);
-//		description.setContent("datacite test");
-//		descriptions.addDescription(description);
-//
-//		XmlRightsList rightsList = new XmlRightsList();
-//
-//		rightsList.addRights(new XmlRights("open source"));
-//
-//		resource.setDescriptions(descriptions);
-//		resource.setVersion("1.0");
-//		resource.setRightsList(rightsList);
-//		resource.setPublicationYear("2012");
-//		resource.setFormats(formats);
-//		resource.setResourceType(type);
-//		resource.setIdentifier(identifier);
-//		resource.setTitles(titles);
-//		resource.setSubjects(subjects);
-//		// resource.setDates(dates);
-//		resource.setContributors(contributors);
-//		resource.setCreators(creators);
-//		resource.setPublicationYear("2012");
-//		resource.setPublisher("Leibniz Institute of Plant Genetics and Crop		 Plant Research");
-//		resource.setLanguage("eng");
-//		resource.setSizes(sizes);
-//		jaxbMarshaller.marshal(resource, System.out);
-//
-//		StringWriter strw = new StringWriter();
-//
-//		jaxbMarshaller.marshal(resource, strw);
+		// JAXBContext jaxbContext = JAXBContext.newInstance(XmlResource.class);
+		// Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+		//
+		// jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+		// jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION,
+		// "http://datacite.org/schema/kernel-2.2
+		// http://schema.datacite.org/meta/kernel-2.2/metadata.xsd");
+		//
+		// XmlResource resource = new XmlResource();
+		//
+		// XmlContributors contributors = new XmlContributors();
+		// XmlContributor contributor = new XmlContributor("Lange, Matthias",
+		// ContributorType.Supervisor);
+		//
+		// contributors.addContributor(contributor);
+		//
+		// XmlCreators creators = new XmlCreators();
+		// XmlCreator creator = new XmlCreator("Arend, Daniel");
+		// XmlNameIdentifier nameid = new XmlNameIdentifier("testid");
+		// nameid.setNameIdentifierScheme("testSchema");
+		// creator.setNameIdentifier(nameid);
+		// creators.addCreator(creator);
+		//
+		// XmlDates dates = new XmlDates();
+		// XmlDate date = new XmlDate(new java.util.Date().toString(),
+		// DateType.Created);
+		// dates.addDate(date);
+		//
+		// XmlSubjects subjects = new XmlSubjects();
+		// XmlSubject subject = new XmlSubject("bioinformatics", null);
+		// subjects.addSubject(subject);
+		//
+		// XmlTitles titles = new XmlTitles();
+		// XmlTitle title = new XmlTitle("eDAL-API", null);
+		// XmlTitle subtitle = new XmlTitle("Storage backend", TitleType.Subtitle);
+		// titles.addTitle(title);
+		// titles.addTitle(subtitle);
+		//
+		// XmlIdentifier identifier = new XmlIdentifier("10.5072/EDALTEST/123456");
+		//
+		// XmlSizes sizes = new XmlSizes();
+		// sizes.addSize("1.0 MB");
+		//
+		// XmlResourceType type = new XmlResourceType("testDOI", ResourceType.Software);
+		//
+		// XmlFormats formats = new XmlFormats();
+		// formats.addFormat("application/zip");
+		//
+		// XmlDescriptions descriptions = new XmlDescriptions();
+		// XmlDescription description = new XmlDescription();
+		// description.setDescriptionType(DescriptionType.Abstract);
+		// description.setContent("datacite test");
+		// descriptions.addDescription(description);
+		//
+		// XmlRightsList rightsList = new XmlRightsList();
+		//
+		// rightsList.addRights(new XmlRights("open source"));
+		//
+		// resource.setDescriptions(descriptions);
+		// resource.setVersion("1.0");
+		// resource.setRightsList(rightsList);
+		// resource.setPublicationYear("2012");
+		// resource.setFormats(formats);
+		// resource.setResourceType(type);
+		// resource.setIdentifier(identifier);
+		// resource.setTitles(titles);
+		// resource.setSubjects(subjects);
+		// // resource.setDates(dates);
+		// resource.setContributors(contributors);
+		// resource.setCreators(creators);
+		// resource.setPublicationYear("2012");
+		// resource.setPublisher("Leibniz Institute of Plant Genetics and Crop Plant
+		// Research");
+		// resource.setLanguage("eng");
+		// resource.setSizes(sizes);
+		// jaxbMarshaller.marshal(resource, System.out);
+		//
+		// StringWriter strw = new StringWriter();
+		//
+		// jaxbMarshaller.marshal(resource, strw);
 
-		
-	
-		
-		
-		
-		
 		EdalConfiguration configuration = null;
 
 		try {
-			configuration = new EdalConfiguration("TIB", "", "10.5072",
-					new InternetAddress(""), new InternetAddress(""), new InternetAddress(""),
-					new InternetAddress(""));
+			configuration = new EdalConfiguration("TIB", "", "10.5072", new InternetAddress(""),
+					new InternetAddress(""), new InternetAddress(""), new InternetAddress(""));
 		} catch (AddressException | EdalConfigurationException e1) {
 			e1.printStackTrace();
 		}
 
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(true,
-						configuration), EdalHelpers
-						.authenticateWinOrUnixOrMacUser());
-	
+				EdalHelpers.getFileSystemImplementationProvider(true, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+
 		PrimaryDataFile file = rootDirectory.createPrimaryDataFile("TestFile.txt");
-		
+
 		MetaData metadata = file.getMetaData().clone();
-		
+
 		Persons p = new Persons();
 		p.add(new NaturalPerson("Daniel", "Arend", "address", "zip", "country"));
 		metadata.setElementValue(EnumDublinCoreElements.CREATOR, p);
 		metadata.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, p);
 
-		metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson("IPK", "Gatersleben","zip","country"));
-		
+		metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,
+				new LegalPerson("IPK", "Gatersleben", "zip", "country"));
+
 		Subjects s = new Subjects();
 		s.add(new UntypedData("TestDOI"));
-		
+
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, s);
-		
+
 		file.setMetaData(metadata);
-		
-		DataCiteXmlMapper  mapper = new DataCiteXmlMapper(file.getCurrentVersion());
-		
+
+		DataCiteXmlMapper mapper = new DataCiteXmlMapper(file.getCurrentVersion());
+
 		XmlResource resource = mapper.createXmlResource();
-		
+
 		resource.setIdentifier(new XmlIdentifier("10.5072/EDALTEST/123456"));
-		
-		
+
 		StringWriter strw = new StringWriter();
 		mapper.createXmlMarshaller().marshal(resource, strw);
 		System.out.println(strw.getBuffer());
-	
+
 		mapper.validateSchema(resource);
 
-		
-		
-		
 		DataCiteMDSConnector myClient = new DataCiteMDSConnector(configuration);
 
-		ClientResponse cr = null;
+		Response cr = null;
 		try {
 			cr = myClient.postMetadata(XmlFunctions.parse(strw.toString()));
 		} catch (DataCiteException e) {
@@ -222,10 +215,8 @@ public class DataCiteTest {
 		}
 
 		System.out.println(cr.getStatus());
-		
-		
 
-		DataManager.shutdown();	
+		DataManager.shutdown();
 
 	}
 }

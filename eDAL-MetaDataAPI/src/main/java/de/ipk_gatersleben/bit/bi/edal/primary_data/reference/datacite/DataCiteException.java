@@ -9,7 +9,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite;
 
-import com.sun.jersey.api.client.ClientResponse.Status;
+import javax.ws.rs.core.Response.Status;
 
 /**
  * Exception class to describe problems with the DataCite client.
@@ -28,8 +28,7 @@ public class DataCiteException extends Exception {
 	 *            a {@link Status} object.
 	 */
 	public DataCiteException(final Status status) {
-		super("failed to register DOI/URL/Metadata: "
-				+ status.getReasonPhrase());
+		super("failed to register DOI/URL/Metadata: " + status.getReasonPhrase());
 		this.status = status;
 	}
 
@@ -40,8 +39,7 @@ public class DataCiteException extends Exception {
 	 *            a {@link String} object.
 	 */
 	public DataCiteException(String message) {
-		super("failed to register DOI/URL/Metadata: "
-				+ message);
+		super("failed to register DOI/URL/Metadata: " + message);
 	}
 
 	/**

@@ -18,15 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBException;
-
 import org.eclipse.jetty.http.HttpStatus;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -311,11 +308,11 @@ public class DataCiteReference implements Referenceable {
 			if (publicReference.getAssignedID().startsWith(EdalConfiguration.DATACITE_TESTPREFIX)) {
 				return null;
 			} else {
-				Client client = Client.create();
+				JerseyClient client = JerseyClientBuilder.createClient();
 
-				WebResource resource = null;
+				WebTarget resource = null;
 				try {
-					resource = client.resource("https://data.datacite.org/"
+					resource = client.target("https://data.datacite.org/"
 							+ type.getType().substring(0, type.getType().indexOf("/")) + "/"
 							+ type.getType().substring(type.getType().indexOf("/"), type.getType().length()) + "/"
 							+ publicReference.getAssignedID());
@@ -323,21 +320,20 @@ public class DataCiteReference implements Referenceable {
 					e.printStackTrace();
 				}
 
-				final ClientResponse response = resource.accept(type.getType() + ";charset=UTF-8")
-						.get(ClientResponse.class);
+				final Response response = resource.request(type.getType() + ";charset=UTF-8").get();
 
 				if (response.getStatus() == (HttpStatus.Code.OK.getCode())) {
 
-					StringBuffer buf = new StringBuffer(response.getEntity(String.class));
+					StringBuffer buf = new StringBuffer(response.readEntity(String.class));
 
-					client.destroy();
+					client.close();
 					return buf;
 				} else {
-					client.destroy();
+					client.close();
 					return null;
 				}
 			}
-		} catch (UniformInterfaceException | ClientHandlerException | PublicReferenceException e) {
+		} catch (PublicReferenceException e) {
 			e.printStackTrace();
 			return null;
 		}

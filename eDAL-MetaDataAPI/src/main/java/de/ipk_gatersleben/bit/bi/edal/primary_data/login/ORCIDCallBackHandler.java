@@ -24,7 +24,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.swing.JOptionPane;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
@@ -43,19 +47,14 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
@@ -220,16 +219,16 @@ public class ORCIDCallBackHandler implements CallbackHandler {
 
 			try {
 
-				Client client = Client.create();
+				JerseyClient client = JerseyClientBuilder.createClient();
 
-				WebResource resource = client.resource("https://pub.orcid.org/v2.0/" + orcid + "/email");
+				WebTarget resource = client.target("https://pub.orcid.org/v2.0/" + orcid + "/email");
 
-				final ClientResponse response = resource.type("application/vnd.orcid+xml ")
-						.header("Authorization", "Bearer " + accessToken).get(ClientResponse.class);
+				final Response response = resource.request("application/vnd.orcid+xml ")
+						.header("Authorization", "Bearer " + accessToken).get();
 
 				if (response.getStatus() == 200) {
 
-					String result = response.getEntity(String.class);
+					String result = response.readEntity(String.class);
 
 					Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 							.parse(new InputSource(new StringReader(result)));
@@ -254,24 +253,24 @@ public class ORCIDCallBackHandler implements CallbackHandler {
 		}
 
 		private void requestNewToken() throws IOException {
-			Client client = Client.create();
+			JerseyClient client = JerseyClientBuilder.createClient();
 
 			Form input = new Form();
-			input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8"));
-			input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET), "UTF-8"));
-			input.add("scope", "/read-public");
-			input.add("grant_type", "client_credentials");
+			input.param("client_id", new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8"));
+			input.param("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET), "UTF-8"));
+			input.param("scope", "/read-public");
+			input.param("grant_type", "client_credentials");
 
-			WebResource resource = client.resource("https://pub.orcid.org/oauth/token");
+			WebTarget resource = client.target("https://pub.orcid.org/oauth/token");
 
-			final ClientResponse response = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
-					.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
+			final Response response = resource.request(MediaType.APPLICATION_JSON)
+					.post(Entity.entity(input, MediaType.APPLICATION_FORM_URLENCODED));
 
 			if (response.getStatus() == 200) {
 				JSONObject jsonObject = null;
 				try {
-					jsonObject = (JSONObject) new JSONParser().parse((String) response.getEntity(String.class));
-				} catch (ClientHandlerException | UniformInterfaceException | ParseException e) {
+					jsonObject = (JSONObject) new JSONParser().parse((String) response.readEntity(String.class));
+				} catch (ParseException e) {
 					throw new IOException("Parsing of user token failed: " + e);
 				}
 

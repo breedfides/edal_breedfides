@@ -9,14 +9,15 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.w3c.dom.Document;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -44,8 +45,8 @@ public class DataCiteMDSConnector {
 
 	private static boolean testModus = false;
 
-	private WebResource webResource = null;
-	private final Client dataCiteClient;
+	private WebTarget webTarget = null;
+	private final JerseyClient dataCiteClient;
 
 	public DataCiteMDSConnector(EdalConfiguration configuration) throws EdalException {
 
@@ -66,8 +67,12 @@ public class DataCiteMDSConnector {
 
 		if (configuration.isInTestMode()) {
 			testModus = true;
-			this.dataCiteClient = Client.create();
-			this.dataCiteClient.addFilter(new HTTPBasicAuthFilter(dataCiteTestUser, dataCiteTestPassword));
+			this.dataCiteClient = JerseyClientBuilder.createClient();
+
+			HttpAuthenticationFeature feature = HttpAuthenticationFeature.basicBuilder().nonPreemptive()
+					.credentials(DataCiteMDSConnector.dataCiteTestUser, DataCiteMDSConnector.dataCiteTestPassword)
+					.build();
+			this.dataCiteClient.register(feature);
 		}
 
 		else {
@@ -78,9 +83,11 @@ public class DataCiteMDSConnector {
 				throw new EdalException("unable to init Configuration : " + e.getMessage(), e);
 			}
 
-			this.dataCiteClient = Client.create();
-			this.dataCiteClient.addFilter(
-					new HTTPBasicAuthFilter(DataCiteMDSConnector.dataCiteUser, DataCiteMDSConnector.dataCitePassword));
+			this.dataCiteClient = JerseyClientBuilder.createClient();
+
+			HttpAuthenticationFeature feature = HttpAuthenticationFeature.basicBuilder().nonPreemptive()
+					.credentials(DataCiteMDSConnector.dataCiteUser, DataCiteMDSConnector.dataCitePassword).build();
+			this.dataCiteClient.register(feature);
 
 		}
 
@@ -96,20 +103,19 @@ public class DataCiteMDSConnector {
 	 * 
 	 * @param doi
 	 *            the requested DOI
-	 * @return a {@link ClientResponse} object.
+	 * @return a {@link Response} object.
 	 */
-	public ClientResponse getDOI(final String doi) {
+	public Response getDOI(final String doi) {
 
 		// set the URL to request the URL for a DOI
 		if (testModus) {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_TEST_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_TEST_URL);
 		} else {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_URL);
 		}
 
 		// append the path with the DOI and do the GET request
-		final ClientResponse response = this.webResource.path("/" + doi).accept(MediaType.TEXT_HTML)
-				.get(ClientResponse.class);
+		final Response response = this.webTarget.path("/" + doi).request(MediaType.TEXT_HTML).get();
 
 		return response;
 	}
@@ -119,19 +125,18 @@ public class DataCiteMDSConnector {
 	 * 
 	 * @param doi
 	 *            the requested DOI
-	 * @return a {@link ClientResponse} object.
+	 * @return a {@link Response} object.
 	 */
-	public ClientResponse getMetadata(final String doi) {
+	public Response getMetadata(final String doi) {
 
 		// set the URL to request meta data for a DOI
 		if (testModus) {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.METADATA_TEST_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.METADATA_TEST_URL);
 		} else {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.METADATA_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.METADATA_URL);
 		}
 		// append the path with the DOI and do the GET request
-		final ClientResponse response = this.webResource.path("/" + doi).accept(MediaType.APPLICATION_XML_TYPE)
-				.get(ClientResponse.class);
+		final Response response = this.webTarget.path("/" + doi).request(MediaType.APPLICATION_XML_TYPE).get();
 
 		return response;
 	}
@@ -143,18 +148,18 @@ public class DataCiteMDSConnector {
 	 *            the new DOI.
 	 * @param url
 	 *            the corresponding URL for the new DOi
-	 * @return a {@link ClientResponse} object.
+	 * @return a {@link Response} object.
 	 * @throws DataCiteException
-	 *             if {@link ClientResponse} is not a good response.
+	 *             if {@link Response} is not a good response.
 	 */
 
-	public ClientResponse postDOI(final String doi, final String url) throws DataCiteException {
+	public Response postDOI(final String doi, final String url) throws DataCiteException {
 
 		// set the URL to post the URL for a DOI
 		if (testModus) {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_TEST_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_TEST_URL);
 		} else {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_URL);
 		}
 		final String requestBody = "doi=" + doi + "\r\n" + "url=" + url;
 
@@ -164,8 +169,8 @@ public class DataCiteMDSConnector {
 			newRequestbody = requestBody.replace("bit-252", "doi");
 		}
 		// set the content-type and request body, and post the request
-		final ClientResponse response = this.webResource.type(MediaType.TEXT_PLAIN_TYPE + ";charset=utf-8")
-				.entity(newRequestbody).post(ClientResponse.class);
+		final Response response = this.webTarget.request(MediaType.TEXT_PLAIN_TYPE + ";charset=utf-8")
+				.post(Entity.entity(newRequestbody, MediaType.TEXT_PLAIN_TYPE + ";charset=utf-8"));
 
 		if (response.getStatus() != DataCiteMDSConnector.GOOD_RESPONSE) {
 			throw new DataCiteException(response.getStatusInfo().getReasonPhrase());
@@ -179,24 +184,24 @@ public class DataCiteMDSConnector {
 	 * 
 	 * @param xml
 	 *            a XML-{@link Document} object.
-	 * @return a {@link ClientResponse} object.
+	 * @return a {@link Response} object.
 	 * @throws DataCiteException
-	 *             if {@link ClientResponse} is not a good response.
+	 *             if {@link Response} is not a good response.
 	 */
-	public ClientResponse postMetadata(final Document xml) throws DataCiteException {
+	public Response postMetadata(final Document xml) throws DataCiteException {
 
 		// set the URL to post the meta data for a DOI
 		if (testModus) {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.METADATA_TEST_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.METADATA_TEST_URL);
 		} else {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.METADATA_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.METADATA_URL);
 		}
 
 		final String requestBody = XmlFunctions.toString(xml);
 
 		// set the content-type and request body, and post the request
-		final ClientResponse response = this.webResource.type(MediaType.APPLICATION_XML_TYPE + ";charset=utf-8")
-				.entity(requestBody).post(ClientResponse.class);
+		final Response response = this.webTarget.request(MediaType.APPLICATION_XML_TYPE + ";charset=utf-8")
+				.post(Entity.entity(requestBody, MediaType.APPLICATION_XML_TYPE + ";charset=utf-8"));
 
 		if (response.getStatus() != DataCiteMDSConnector.GOOD_RESPONSE) {
 			throw new DataCiteException(response.getStatusInfo().getReasonPhrase());
@@ -208,18 +213,18 @@ public class DataCiteMDSConnector {
 	public int getNextFreeDOI(int year, int startDoi, String datacentre) {
 		// set the URL to request the URL for a DOI
 		if (testModus) {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_TEST_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_TEST_URL);
 		} else {
-			this.webResource = this.dataCiteClient.resource(DataCiteMDSConnector.DOI_URL);
+			this.webTarget = this.dataCiteClient.target(DataCiteMDSConnector.DOI_URL);
 		}
 
 		boolean isDoiFree = false;
 
 		while (!isDoiFree) {
 			// append the path with the DOI and do the GET request
-			final ClientResponse response = this.webResource
+			final Response response = this.webTarget
 					.path("/" + this.prefix + "/" + datacentre + "/" + year + "/" + String.valueOf(startDoi))
-					.accept(MediaType.TEXT_HTML).get(ClientResponse.class);
+					.request(MediaType.TEXT_HTML).get();
 
 			if (response.getStatus() == 200) {
 				startDoi++;

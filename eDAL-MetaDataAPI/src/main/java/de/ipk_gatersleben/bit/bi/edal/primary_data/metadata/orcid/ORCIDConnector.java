@@ -22,10 +22,16 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -34,13 +40,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
@@ -122,24 +121,25 @@ public class ORCIDConnector {
 	}
 
 	private String requestNewToken() throws Exception {
-		Client client = Client.create();
+		
+		JerseyClient client = JerseyClientBuilder.createClient();
 
 		Form input = new Form();
-		input.add("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
-		input.add("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
-		input.add("scope", "/read-public");
-		input.add("grant_type", "client_credentials");
+		input.param("client_id", new String(Base64.getDecoder().decode(CLIENT_ID)));
+		input.param("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET)));
+		input.param("scope", "/read-public");
+		input.param("grant_type", "client_credentials");
 
-		WebResource resource = client.resource("https://pub.orcid.org/oauth/token");
+		WebTarget resource = client.target("https://pub.orcid.org/oauth/token");
 
-		final ClientResponse response = resource.type(MediaType.APPLICATION_FORM_URLENCODED)
-				.accept(MediaType.APPLICATION_JSON).post(ClientResponse.class, input);
+		final Response response = resource.request(MediaType.APPLICATION_JSON)
+				.post(Entity.entity(input, MediaType.APPLICATION_FORM_URLENCODED));
 
 		if (response.getStatus() == 200) {
 			JSONObject jsonObject = null;
 			try {
-				jsonObject = (JSONObject) new JSONParser().parse((String) response.getEntity(String.class));
-			} catch (ClientHandlerException | UniformInterfaceException | ParseException e) {
+				jsonObject = (JSONObject) new JSONParser().parse((String) response.readEntity(String.class));
+			} catch (ParseException e) {
 				throw new Exception("Parsing of user token failed: " + e);
 			}
 
@@ -187,16 +187,16 @@ public class ORCIDConnector {
 
 	private void getNameByOrcid(String orcid) throws Exception {
 
-		Client client = Client.create();
+		JerseyClient client = JerseyClientBuilder.createClient();
 
-		WebResource resource = client.resource("https://pub.orcid.org/v2.0/" + orcid + "/personal-details");
+		WebTarget resource = client.target("https://pub.orcid.org/v2.0/" + orcid + "/personal-details");
 
-		final ClientResponse response = resource.type("application/orcid+xml")
-				.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+		final Response response = resource.request("application/orcid+xml")
+				.header("Authorization", "Bearer " + this.accessToken).get();
 
 		if (response.getStatus() == 200) {
 
-			String result = response.getEntity(String.class);
+			String result = response.readEntity(String.class);
 
 			try {
 
@@ -221,16 +221,16 @@ public class ORCIDConnector {
 
 	private void getCurrentAffiliationByOrcid(String orcid) throws Exception {
 
-		Client client = Client.create();
+		JerseyClient client = JerseyClientBuilder.createClient();
 
-		WebResource resource = client.resource("https://pub.orcid.org/v2.0/" + orcid + "/employments");
+		WebTarget resource = client.target("https://pub.orcid.org/v2.0/" + orcid + "/employments");
 
-		final ClientResponse response = resource.type("application/vnd.orcid+xml ")
-				.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+		final Response response = resource.request("application/vnd.orcid+xml ")
+				.header("Authorization", "Bearer " + this.accessToken).get();
 
 		if (response.getStatus() == 200) {
 
-			String result = response.getEntity(String.class);
+			String result = response.readEntity(String.class);
 
 			try {
 
@@ -260,17 +260,17 @@ public class ORCIDConnector {
 
 	private void searchForName(String givenName, String familyName) throws Exception {
 
-		Client client = Client.create();
+		JerseyClient client = JerseyClientBuilder.createClient();
 
-		WebResource resource = client.resource(
+		WebTarget resource = client.target(
 				"https://pub.orcid.org/v2.0/search/?q=given-names:" + givenName + "+AND+family-name:" + familyName);
 
-		final ClientResponse response = resource.type("application/orcid+xml")
-				.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+		final Response response = resource.request("application/orcid+xml")
+				.header("Authorization", "Bearer " + this.accessToken).get();
 
 		if (response.getStatus() == 200) {
 
-			String result = response.getEntity(String.class);
+			String result = response.readEntity(String.class);
 
 			Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 					.parse(new InputSource(new StringReader(result)));
@@ -292,7 +292,7 @@ public class ORCIDConnector {
 
 	private void searchForAffiliation(String givenName, String familyName, String affiliation) throws Exception {
 
-		Client client = Client.create();
+		JerseyClient client = JerseyClientBuilder.createClient();
 
 		String query = "";
 
@@ -322,14 +322,14 @@ public class ORCIDConnector {
 			}
 		}
 
-		WebResource resource = client.resource("https://pub.orcid.org/search/orcid-bio/?q=" + query);
+		WebTarget resource = client.target("https://pub.orcid.org/search/orcid-bio/?q=" + query);
 
-		final ClientResponse response = resource.type("application/orcid+xml")
-				.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
+		final Response response = resource.request("application/orcid+xml")
+				.header("Authorization", "Bearer " + this.accessToken).get();
 
 		if (response.getStatus() == 200) {
 
-			String result = response.getEntity(String.class);
+			String result = response.readEntity(String.class);
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder builder;
 			builder = factory.newDocumentBuilder();

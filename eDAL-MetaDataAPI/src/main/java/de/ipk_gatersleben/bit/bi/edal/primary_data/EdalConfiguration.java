@@ -53,7 +53,9 @@ import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
@@ -72,14 +74,13 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.net.SMTPAppender;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 
 import com.github.markusbernhardt.proxy.ProxySearch;
 import com.github.markusbernhardt.proxy.ProxySearch.Strategy;
 import com.github.markusbernhardt.proxy.util.PlatformUtil;
 import com.github.markusbernhardt.proxy.util.PlatformUtil.Platform;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 import com.sun.security.auth.NTUserPrincipal;
 import com.sun.security.auth.UnixPrincipal;
 
@@ -1381,8 +1382,7 @@ public final class EdalConfiguration {
 						"DataCite Authentification Test failed : unable to create DataCiteMDSConnector");
 			}
 
-			final ClientResponse response = connector
-					.getDOI(this.getDataCitePrefix() + "/" + UUID.randomUUID().toString());
+			final Response response = connector.getDOI(this.getDataCitePrefix() + "/" + UUID.randomUUID().toString());
 
 			if (response.getStatus() == 404 || response.getStatus() == 200) {
 				EdalConfiguration.logger.info("DataCite Authentification Test: successful");
@@ -1398,8 +1398,7 @@ public final class EdalConfiguration {
 					}
 
 				} catch (DataCiteException e) {
-					throw new EdalConfigurationException(
-							"DataCite Prefix Test failed : unabel tot check prefix");
+					throw new EdalConfigurationException("DataCite Prefix Test failed : unabel tot check prefix");
 				}
 
 			}
@@ -1481,11 +1480,11 @@ public final class EdalConfiguration {
 	 */
 	private boolean validateDateCiteRestAPI() throws EdalConfigurationException {
 
-		Client client = Client.create();
+		JerseyClient client = JerseyClientBuilder.createClient();
 
-		WebResource webResource = client.resource("https://api.datacite.org/prefixes/" + this.dataCitePrefix);
+		WebTarget webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix);
 
-		final ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		final Response response = webResource.request(MediaType.APPLICATION_JSON).get();
 
 		if (response.getStatus() == 200) {
 			EdalConfiguration.logger.info("DataCite RestAPI Test : successful");
@@ -1494,7 +1493,7 @@ public final class EdalConfiguration {
 
 			EdalConfiguration.logger.error("DataCite RestAPI Test failed");
 			throw new EdalConfigurationException(
-					"unable to connect to DataCite RestAPI: " + response.getEntity(String.class));
+					"unable to connect to DataCite RestAPI: " + response.readEntity(String.class));
 		}
 
 	}
