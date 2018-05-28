@@ -244,7 +244,7 @@ project(':eDAL-MetaDataAPI-Server') {
 
 task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 	group = "shadow"
-	classifier = 'MAIN'
+	classifier = 'jar-with-dependencies'
 	description = "eDAL-Server"
 	exclude '*.p12'
 	
