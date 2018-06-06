@@ -64,6 +64,7 @@ allprojects {
     strictCheck false
  	ext.year = Calendar.getInstance().get(Calendar.YEAR)
 	include "**/*.java"
+	exclude "**/*package-info.java"
 }
 	
 	sourceSets {
