@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -47,7 +48,11 @@ public class EdalHttpServer {
 
 	private String domainNameToUse = null;
 
+	private EdalConfiguration configuration = null;
+
 	protected EdalHttpServer(final EdalConfiguration configuration) {
+
+		this.configuration = configuration;
 
 		if (configuration.getStaticServerAdress() == null) {
 			try {
@@ -313,11 +318,26 @@ public class EdalHttpServer {
 						.info("HTTP-Server is listening on : " + EdalHttpServer.getServerURL());
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
 			if (this.useSSL) {
 				DataManager.getImplProv().getLogger().error("Unable to start HTTPS Server : " + e.getMessage());
+				if (e.getClass().equals(SocketException.class) && e.getMessage().equals("Permission denied")) {
+					try {
+						DataManager.getImplProv().getLogger().warn("Unable to bind HTTPS Server to port "
+								+ this.configuration.getHttpPort() + ". Try to run again with root permission.");
+					} catch (EdalConfigurationException e1) {
+						e1.printStackTrace();
+					}
+				}
 			} else {
 				DataManager.getImplProv().getLogger().error("Unable to start HTTP Server : " + e.getMessage());
+				if (e.getClass().equals(SocketException.class) && e.getMessage().equals("Permission denied")) {
+					try {
+						DataManager.getImplProv().getLogger().warn("Unable to bind HTTPS Server to port "
+								+ this.configuration.getHttpPort() + ". Try to run again with root permission.");
+					} catch (EdalConfigurationException e1) {
+						e1.printStackTrace();
+					}
+				}
 			}
 			System.exit(0);
 		}
