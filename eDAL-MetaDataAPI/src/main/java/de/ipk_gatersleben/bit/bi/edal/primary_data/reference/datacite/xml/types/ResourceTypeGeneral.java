@@ -17,7 +17,7 @@ import java.util.Map;
  * 
  * @author arendd
  */
-public enum ResourceType {
+public enum ResourceTypeGeneral {
 
 	/**
 	 * Constant AUDIOVISUAL
@@ -84,16 +84,16 @@ public enum ResourceType {
 	/**
 	 * Field enumConstants.
 	 */
-	private static final Map<String, ResourceType> ENUM_CONSTANTS = new HashMap<String, ResourceType>();
+	private static final Map<String, ResourceTypeGeneral> ENUM_CONSTANTS = new HashMap<String, ResourceTypeGeneral>();
 
 	static {
-		for (ResourceType c : ResourceType.values()) {
-			ResourceType.ENUM_CONSTANTS.put(c.value, c);
+		for (ResourceTypeGeneral c : ResourceTypeGeneral.values()) {
+			ResourceTypeGeneral.ENUM_CONSTANTS.put(c.value, c);
 		}
 
 	};
 
-	private ResourceType(final String value) {
+	private ResourceTypeGeneral(final String value) {
 		this.value = value;
 	}
 
@@ -104,8 +104,8 @@ public enum ResourceType {
 	 *            the value for the resource type
 	 * @return the constant for this value
 	 */
-	public static ResourceType fromValue(final String value) {
-		ResourceType c = ResourceType.ENUM_CONSTANTS.get(value);
+	public static ResourceTypeGeneral fromValue(final String value) {
+		ResourceTypeGeneral c = ResourceTypeGeneral.ENUM_CONSTANTS.get(value);
 		if (c != null) {
 			return c;
 		}

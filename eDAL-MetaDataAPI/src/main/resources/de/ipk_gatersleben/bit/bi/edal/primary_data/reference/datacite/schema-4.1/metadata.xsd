@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://datacite.org/schema/kernel-4"
-	targetNamespace="http://datacite.org/schema/kernel-4"
-	elementFormDefault="qualified" xml:lang="EN">
-	<xs:import namespace="http://www.w3.org/XML/1998/namespace"
-		schemaLocation="classpath:de/ipk_gatersleben/bit/bi/edal/primary_data/reference/datacite/schema-4.1/w3c.xsd" />
-	<xs:include schemaLocation="include/datacite-titleType-v4.xsd" />
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://datacite.org/schema/kernel-4" targetNamespace="http://datacite.org/schema/kernel-4" elementFormDefault="qualified" xml:lang="EN">
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace"	schemaLocation="http://www.w3.org/2009/01/xml.xsd" />
 	<xs:include schemaLocation="include/datacite-titleType-v4.xsd" />
 	<xs:include schemaLocation="include/datacite-contributorType-v4.xsd" />
 	<xs:include schemaLocation="include/datacite-dateType-v4.1.xsd" />

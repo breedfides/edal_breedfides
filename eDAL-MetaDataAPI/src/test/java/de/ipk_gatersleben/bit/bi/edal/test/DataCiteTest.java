@@ -70,7 +70,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTit
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ContributorType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DateType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DescriptionType;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceTypeGeneral;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.TitleType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
