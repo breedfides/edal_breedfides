@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceTypeGeneral;
 
 /**
  * The type of a resource. You may enter an additional free text description.
@@ -30,7 +30,7 @@ public class XmlResourceType implements Serializable {
 	/**
 	 * Field resourceTypeGeneral.
 	 */
-	private ResourceType resourceTypeGeneral;
+	private ResourceTypeGeneral resourceTypeGeneral;
 
 	/**
 	 * internal content storage
@@ -66,7 +66,7 @@ public class XmlResourceType implements Serializable {
 	 * @param resourceTypeGeneral
 	 *            the resourceType to set.
 	 */
-	public XmlResourceType(String content, ResourceType resourceTypeGeneral) {
+	public XmlResourceType(String content, ResourceTypeGeneral resourceTypeGeneral) {
 		this(content);
 		setResourceTypeGeneral(resourceTypeGeneral);
 	}
@@ -88,7 +88,7 @@ public class XmlResourceType implements Serializable {
 	 * @return the value of field 'resourceTypeGeneral'.
 	 */
 	@XmlAttribute
-	public ResourceType getResourceTypeGeneral() {
+	public ResourceTypeGeneral getResourceTypeGeneral() {
 		return this.resourceTypeGeneral;
 	}
 
@@ -109,7 +109,7 @@ public class XmlResourceType implements Serializable {
 	 * @param resourceTypeGeneral
 	 *            the value of field 'resourceTypeGeneral'.
 	 */
-	public void setResourceTypeGeneral(final ResourceType resourceTypeGeneral) {
+	public void setResourceTypeGeneral(final ResourceTypeGeneral resourceTypeGeneral) {
 		this.resourceTypeGeneral = resourceTypeGeneral;
 	}
 

@@ -60,7 +60,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlSub
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitle;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitles;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DescriptionType;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceTypeGeneral;
 
 /**
  * Class to map an eDAL {@link MetaData} object to a valid DataCite XML
@@ -477,7 +477,7 @@ public class DataCiteXmlMapper {
 
 				final XmlResourceType resourceType = new XmlResourceType(
 						((DataType) this.getMetaData().getElementValue(EnumDublinCoreElements.TYPE)).getString());
-				resourceType.setResourceTypeGeneral(ResourceType.Dataset);
+				resourceType.setResourceTypeGeneral(ResourceTypeGeneral.Dataset);
 				resource.setResourceType(resourceType);
 
 			}
@@ -487,7 +487,7 @@ public class DataCiteXmlMapper {
 
 				final XmlResourceType resourceType = new XmlResourceType("directory");
 
-				resourceType.setResourceTypeGeneral(ResourceType.Collection);
+				resourceType.setResourceTypeGeneral(ResourceTypeGeneral.Collection);
 				resource.setResourceType(resourceType);
 			}
 
