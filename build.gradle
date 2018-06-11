@@ -107,7 +107,7 @@ subprojects {
 	uploadArchives {
 		repositories {
 			mavenDeployer {
-				println "INFO: Start Upload"
+				println "INFO: Start Upload of "+project.name
 				if(!project.hasProperty('ossrhUsername') || !project.hasProperty('ossrhPassword')){   
 	            	println "WARNING: If you want to release to Sonatype please provide the 'ossrhUsername' and 'ossrhPassword' properties"
 				}
@@ -118,14 +118,14 @@ subprojects {
 					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
 						authentication(userName: ossrhUsername, password: ossrhPassword)
 						if(project.hasProperty('systemProp.https.proxyHost') && project.hasProperty('systemProp.https.proxyPort')){
-							println "INFO: Using system proxy for upload"
+							println "INFO: Using system proxy for upload : "+System.properties['https.proxyHost']+":"+System.properties['https.proxyPort']
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}
 					}
 					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
 						authentication(userName: ossrhUsername, password: ossrhPassword)
 						if(project.hasProperty('systemProp.https.proxyHost') && project.hasProperty('systemProp.https.proxyPort')){
-							println "INFO: Using system proxy for upload"
+							println "INFO: Using system proxy for upload : "+System.properties['https.proxyHost']+":"+System.properties['https.proxyPort']
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}					}
 				}
