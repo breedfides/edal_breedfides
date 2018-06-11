@@ -10,6 +10,7 @@ project.ext {
 }
 
 apply plugin: 'net.researchgate.release'
+apply plugin: "io.codearte.nexus-staging"
 
 allprojects {
 
@@ -126,7 +127,8 @@ subprojects {
 						if(project.hasProperty('systemProp.https.proxyHost') && project.hasProperty('systemProp.https.proxyPort')){
 							println "INFO: Using system proxy for upload : "+System.properties['https.proxyHost']+":"+System.properties['https.proxyPort']
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-						}					}
+						}					
+					}
 				}
 				pom.project {
 		        name = projectname
@@ -172,10 +174,12 @@ subprojects {
 
 nexusStaging {
     stagingProfileId  = "edal_ipk_gatersleben_de"
+	username = nexusUsername
+	password = nexusPassword
 }
 
 release {
-    failOnCommitNeeded = true
+    failOnCommitNeeded = false
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
