@@ -117,12 +117,14 @@ subprojects {
 					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
 						authentication(userName: ossrhUsername, password: ossrhPassword)
 						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
+							println "INFO: Using system proxy for upload"
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}
 					}
 					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
 						authentication(userName: ossrhUsername, password: ossrhPassword)
 						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
+							println "INFO: Using system proxy for upload"
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}					}
 				}
