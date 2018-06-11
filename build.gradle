@@ -107,7 +107,6 @@ subprojects {
 	uploadArchives {
 		repositories {
 			mavenDeployer {
-				println "INFO: Start Upload of "+project.name
 				if(!project.hasProperty('ossrhUsername') || !project.hasProperty('ossrhPassword')){   
 	            	println "WARNING: If you want to release to Sonatype please provide the 'ossrhUsername' and 'ossrhPassword' properties"
 				}
