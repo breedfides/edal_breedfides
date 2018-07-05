@@ -261,7 +261,7 @@ public class DataManager {
 	 *             values or the eDAL system is not started.
 	 * @return the specified {@link PrimaryDataEntity}
 	 */
-	static PrimaryDataEntity getPrimaryDataEntityByID(String uuid, long versionNumber) throws EdalException {
+	public static PrimaryDataEntity getPrimaryDataEntityByID(String uuid, long versionNumber) throws EdalException {
 
 		if (getImplProv() == null || getSubject() == null) {
 			throw new EdalException("Unable to load entity : start eDAL system first");
@@ -469,6 +469,14 @@ public class DataManager {
 	public static Subject getSubject() {
 
 		return DataManager.threadlocalsubject.get();
+	}
+
+	/**
+	 * 
+	 */
+	public static EdalHttpServer getHttpServer() {
+
+		return DataManager.server;
 	}
 
 	/**
@@ -840,7 +848,7 @@ public class DataManager {
 		System.setSecurityManager(null);
 		System.clearProperty("java.security.manager");
 		System.clearProperty("java.security.policy");
-		
+
 		implementationprovider.getLogger().info("EDALClient successfully closed !");
 
 		DataManager.alreadyClosed = true;

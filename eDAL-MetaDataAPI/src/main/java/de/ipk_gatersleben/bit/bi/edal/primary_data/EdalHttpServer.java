@@ -49,6 +49,9 @@ public class EdalHttpServer {
 	private String domainNameToUse = null;
 
 	private EdalConfiguration configuration = null;
+	
+	private HandlerCollection handlerCollection = new HandlerCollection(true);
+
 
 	protected EdalHttpServer(final EdalConfiguration configuration) {
 
@@ -118,13 +121,29 @@ public class EdalHttpServer {
 		RequestLogHandler requestLogHandler = new RequestLogHandler();
 		requestLogHandler.setRequestLog(requestLog);
 
-		ContextHandler contextHandler = new ContextHandler("/");
-		contextHandler.setHandler(new EdalHttpHandler());
+		ContextHandler edalContextHandler = new ContextHandler("/");
+		edalContextHandler.setHandler(new EdalHttpHandler());
+		
+//		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+//		restHandler.setContextPath("/rest");	
+//		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+//		jerseyServlet.setInitOrder(0);
+//		jerseyServlet.setInitParameter("jersey.config.server.provider.packages", "de.ipk_gatersleben.bit.bi.edal.primary_data");
 
-		HandlerCollection collection = new HandlerCollection();
+//		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+//		contextHandlerCollection.addHandler(edalContextHandler);
+//		contextHandlerCollection.addHandler(restHandler);
+		
+		
+	
+//		collection.addHandler(restHandler);
 
-		collection.addHandler(contextHandler);
-		collection.addHandler(requestLogHandler);
+		handlerCollection.addHandler(edalContextHandler);
+		
+//		collection.addHandler(contextHandlerCollection);
+		
+		handlerCollection.addHandler(requestLogHandler);
+		
 
 		if (this.useSSL) {
 
@@ -153,7 +172,7 @@ public class EdalHttpServer {
 				connector.setPort(configuration.getHttpPort());
 				sslConnector.setPort(configuration.getHttpsPort());
 				this.eDALServer.setConnectors(new Connector[] { sslConnector, connector });
-				this.eDALServer.setHandler(collection);
+				this.eDALServer.setHandler(handlerCollection);
 
 				if (configuration.getStaticServerAdress() != null) {
 
@@ -181,7 +200,7 @@ public class EdalHttpServer {
 			try {
 				connector.setPort(configuration.getHttpPort());
 				this.eDALServer.setConnectors(new Connector[] { connector });
-				this.eDALServer.setHandler(collection);
+				this.eDALServer.setHandler(handlerCollection);
 
 				if (configuration.getStaticServerAdress() != null) {
 
@@ -463,5 +482,9 @@ public class EdalHttpServer {
 		} catch (MalformedURLException e) {
 			throw new EdalException("unable to generate ReviewerURL", e);
 		}
+	}
+	
+	public HandlerCollection getHandlers() {
+		return this.handlerCollection;
 	}
 }

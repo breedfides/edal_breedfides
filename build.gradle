@@ -107,21 +107,21 @@ subprojects {
 	uploadArchives {
 		repositories {
 			mavenDeployer {
-				if(!project.hasProperty('ossrhUsername') || !project.hasProperty('ossrhPassword')){   
-	            	println "WARNING: If you want to release to Sonatype please provide the 'ossrhUsername' and 'ossrhPassword' properties"
+				if(!project.hasProperty('nexusUsername') || !project.hasProperty('nexusPassword')){   
+	            	println "WARNING: If you want to release to Sonatype please provide the 'nexusUsername' and 'nexusPassword' properties"
 				}
 				else{
 				beforeDeployment { 
 						MavenDeployment deployment -> signing.signPom(deployment) 
 					}
 					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-						authentication(userName: ossrhUsername, password: ossrhPassword)
+						authentication(userName: nexusUsername, password: nexusPassword)
 						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}
 					}
 					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-						authentication(userName: ossrhUsername, password: ossrhPassword)
+						authentication(userName: nexusUsername, password: nexusPassword)
 						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}					}
@@ -231,11 +231,18 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'org.apache.lucene', name: 'lucene-queryparser', version:'5.3.1'
 	    testCompile group: 'junit', name: 'junit', version:'4.10'
 	    
-	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version:'2.25'
-	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version:'2.25'
-	    compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version:'2.25'
-    
-	    
+	   	compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.4.7.v20170914'
+	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version:'2.27'
+	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version:'2.27'
+	    compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version:'2.27'
+	    compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version:'2.27'
+     	compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-jetty-http', version:'2.27'
+     	compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version:'2.27'	    
+     	
+     //	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-moxy', version:'2.27'
+     	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version:'2.27'	 
+     	compile group: 'org.glassfish.jersey.security', name: 'oauth2-client', version:'2.27'	    
+     	   
 	}
 }
 
