@@ -173,9 +173,11 @@ subprojects {
 }
 
 nexusStaging {
-    stagingProfileId  = "edal_ipk_gatersleben_de"
-	username = nexusUsername
-	password = nexusPassword
+	if(project.hasProperty('nexusUsername') && project.hasProperty('nexusPassword')){
+		stagingProfileId  = "edal_ipk_gatersleben_de"	
+		username = nexusUsername
+		password = nexusPassword
+	}
 }
 
 release {
