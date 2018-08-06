@@ -567,7 +567,7 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 
 		/** set publicReferenceSize **/
-		context.put("size", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
+		context.put("metadatasize", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
