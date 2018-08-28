@@ -564,7 +564,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				addressFrom = new InternetAddress(DataManager.getConfiguration().getEdalEmailAddress(),
 						ApprovalServiceProviderImplementation.EMAIL_SENDER);
 			} catch (final UnsupportedEncodingException e) {
-				DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e.getMessage());
+				DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e);
 			}
 
 		} else {
@@ -591,7 +591,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				addressFrom = new InternetAddress(DataManager.getConfiguration().getMailSmtpLogin(),
 						ApprovalServiceProviderImplementation.EMAIL_SENDER);
 			} catch (final UnsupportedEncodingException e) {
-				DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e.getMessage());
+				DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e);
 			}
 
 		}
@@ -608,7 +608,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 			Transport.send(mail);
 
 		} catch (final MessagingException e) {
-			DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e.getMessage());
+			DataManager.getConfiguration().getErrorLogger().fatal(emailAddress + " : " + e);
 		}
 	}
 
