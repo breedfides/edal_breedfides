@@ -2,7 +2,7 @@ include ':eDAL-MetaDataAPI'
 include ':eDAL-MetaDataAPI-Server'
 include ':eDAL-MetaDataAPI-Client'
 
-rootProject.name = 'eDAL'
+rootProject.name = 'electronicDataArchiveLibrary'
 
 rootProject.children.each {
   it.buildFileName = it.name + '.gradle'

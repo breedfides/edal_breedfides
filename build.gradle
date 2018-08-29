@@ -10,6 +10,7 @@ project.ext {
 }
 
 apply plugin: 'net.researchgate.release'
+apply plugin: "io.codearte.nexus-staging"
 
 allprojects {
 
@@ -116,15 +117,18 @@ subprojects {
 					}
 					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
 						authentication(userName: nexusUsername, password: nexusPassword)
-						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
+						if(project.hasProperty('systemProp.https.proxyHost') && project.hasProperty('systemProp.https.proxyPort')){
+							println "INFO: Using system proxy for upload : "+System.properties['https.proxyHost']+":"+System.properties['https.proxyPort']
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
 						}
 					}
 					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
 						authentication(userName: nexusUsername, password: nexusPassword)
-						if(System.hasProperty('https.proxyHost') && System.hasProperty('https.proxyPort')){
+						if(project.hasProperty('systemProp.https.proxyHost') && project.hasProperty('systemProp.https.proxyPort')){
+							println "INFO: Using system proxy for upload : "+System.properties['https.proxyHost']+":"+System.properties['https.proxyPort']
 							proxy(host: System.properties['https.proxyHost'], port: System.properties['https.proxyPort'] as Integer, type: 'http')
-						}					}
+						}					
+					}
 				}
 				pom.project {
 		        name = projectname
@@ -169,11 +173,15 @@ subprojects {
 }
 
 nexusStaging {
-    stagingProfileId  = "edal_ipk_gatersleben_de"
+	if(project.hasProperty('nexusUsername') && project.hasProperty('nexusPassword')){
+		stagingProfileId  = "edal_ipk_gatersleben_de"	
+		username = nexusUsername
+		password = nexusPassword
+	}
 }
 
 release {
-    failOnCommitNeeded = true
+    failOnCommitNeeded = false
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
@@ -216,7 +224,7 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.5.4.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-ehcache', version:'5.0.9.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.0.9.Final'
-	
+	    compile group: 'com.sun.jersey', name: 'jersey-client', version:'1.18'
 	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'
 	    compile group: 'org.apache.commons', name: 'commons-lang3', version:'3.4'
 	    compile group: 'com.sun.mail', name: 'javax.mail', version:'1.5.4'
@@ -230,19 +238,6 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.3'
 	    compile group: 'org.apache.lucene', name: 'lucene-queryparser', version:'5.3.1'
 	    testCompile group: 'junit', name: 'junit', version:'4.10'
-	    
-	   	compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.4.7.v20170914'
-	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version:'2.27'
-	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version:'2.27'
-	    compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version:'2.27'
-	    compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version:'2.27'
-     	compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-jetty-http', version:'2.27'
-     	compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version:'2.27'	    
-     	
-     //	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-moxy', version:'2.27'
-     	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version:'2.27'	 
-     	compile group: 'org.glassfish.jersey.security', name: 'oauth2-client', version:'2.27'	    
-     	   
 	}
 }
 

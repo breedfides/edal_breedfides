@@ -567,7 +567,7 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 
 		/** set publicReferenceSize **/
-		context.put("size", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
+		context.put("metadatasize", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
@@ -778,7 +778,7 @@ class VeloCityHtmlGenerator {
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
 		/** set publicReferenceSize **/
-		context.put("size", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
+		context.put("metadatasize", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
