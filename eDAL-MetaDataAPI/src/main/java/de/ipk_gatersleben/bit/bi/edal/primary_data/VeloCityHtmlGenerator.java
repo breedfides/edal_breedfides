@@ -40,7 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -59,10 +59,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ContentNegotiationType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.Referenceable;
 
 /**
  * VeloCity template generator to create HTML output for

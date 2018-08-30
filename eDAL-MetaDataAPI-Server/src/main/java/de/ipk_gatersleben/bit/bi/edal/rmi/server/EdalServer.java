@@ -38,8 +38,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.sun.security.auth.NTUserPrincipal;
 import com.sun.security.auth.UnixPrincipal;
@@ -84,9 +84,6 @@ public class EdalServer {
 	/** The {@link Logger} for the eDAL-Server */
 	private static Logger logger;
 
-	/** The Logger for output to the console */
-	private static Logger consoleLogger;
-
 	/** Activate server log */
 	private static boolean serverLog = false;
 
@@ -97,10 +94,9 @@ public class EdalServer {
 	private static String RMI_SERVER_HOST_NAME = null;
 
 	static {
-		PropertyConfigurator.configure(EdalServer.class.getResource("log4j.properties"));
 
-		EdalServer.logger = Logger.getLogger("eDAL-Server");
-		EdalServer.consoleLogger = Logger.getLogger("eDAL-Server-Console");
+		EdalServer.logger = LogManager.getLogger("eDAL-Server");
+
 		try {
 			System.setProperty("java.rmi.server.hostname", InetAddress.getLocalHost().getHostAddress());
 		} catch (UnknownHostException e) {
@@ -176,7 +172,7 @@ public class EdalServer {
 
 		final Options options = new Options();
 
-		EdalServer.consoleLogger.info("eDAL repository server" + "\nIPK-Gatersleben.  All rights reserved.\n");
+		EdalServer.logger.info("eDAL repository server" + "\nIPK-Gatersleben.  All rights reserved.\n");
 
 		Option helpOption = new Option("h", "help", false, "print help");
 
@@ -726,20 +722,6 @@ public class EdalServer {
 					EdalServer.logger.info("HTTP-Listener ready and listening at port: " + httpListenPort);
 				}
 
-				if (config.isUseSSL()) {
-					EdalServer.consoleLogger.info("\nRMI-Server is using secure SSL Connection");
-				} else {
-					EdalServer.consoleLogger.info("\nRMI-Server is using unsecure Connection");
-				}
-				EdalServer.consoleLogger
-						.info("RMI-Server ready and listening at ports: " + registryPort + ", " + dataPort);
-
-				if (config.isUseSSLForHttpListener()) {
-					EdalServer.consoleLogger.info("HTTP-Listener ready and listening at port: " + httpListenPort);
-					EdalServer.consoleLogger.info("HTTPS-Listener ready and listening at port: " + httpsListenPort);
-				} else {
-					EdalServer.consoleLogger.info("HTTP-Listener ready and listening at port: " + httpListenPort);
-				}
 			}
 		} catch (final PrimaryDataDirectoryException | EdalAuthenticateException | IOException e) {
 			EdalServer.logger.error(e);
@@ -759,8 +741,8 @@ public class EdalServer {
 	 */
 	public static void stopServer(final String host, final int port) throws RemoteException {
 
-		PropertyConfigurator.configure(EdalServer.class.getResource("log4j.properties"));
-		EdalServer.logger = Logger.getLogger("eDAL-Server");
+//		PropertyConfigurator.configure(EdalServer.class.getResource("log4j.properties"));
+		EdalServer.logger = LogManager.getLogger("eDAL-Server");
 
 		EdalServer.logger.info("Stopping RMI-Server at port: " + port);
 

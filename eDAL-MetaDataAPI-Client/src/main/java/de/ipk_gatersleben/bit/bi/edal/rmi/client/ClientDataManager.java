@@ -35,8 +35,8 @@ import java.util.concurrent.TimeoutException;
 import javax.security.auth.Subject;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.healthmarketscience.rmiio.RemoteInputStreamClient;
 import com.healthmarketscience.rmiio.RemoteOutputStreamClient;
@@ -66,9 +66,8 @@ public class ClientDataManager {
 	public static Logger logger = null;
 
 	static {
-		PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
 
-		ClientDataManager.logger = Logger.getLogger("eDAL-Client");
+		ClientDataManager.logger = LogManager.getLogger("eDAL-Client");
 		ClientDataManager.subject = null;
 		ClientDataManager.dataManager = null;
 	}
@@ -210,8 +209,8 @@ public class ClientDataManager {
 		 * it is important to reload the log4j configuration again, because it
 		 * will be overwritten by the EdalServer, when calling lookup.
 		 */
-		PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
-		ClientDataManager.logger = Logger.getLogger("eDAL-Client");
+//		PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
+		ClientDataManager.logger = LogManager.getLogger("eDAL-Client");
 
 		Registry registry = null;
 		try {
@@ -229,8 +228,8 @@ public class ClientDataManager {
 			 * it is important to reload the log4j configuration again, because
 			 * it will be overwritten by the EdalServer, when calling lookup.
 			 */
-			PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
-			ClientDataManager.logger = Logger.getLogger("eDAL-Client");
+//			PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
+			ClientDataManager.logger = LogManager.getLogger("eDAL-Client");
 			ClientDataManager.logger.info("Unsecure connection successful");
 
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -260,8 +259,8 @@ public class ClientDataManager {
 			 * it is important to reload the log4j configuration again, because
 			 * it will be overwritten by the EdalServer, when calling lookup.
 			 */
-			PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
-			ClientDataManager.logger = Logger.getLogger("eDAL-Client");
+//			PropertyConfigurator.configure(ClientDataManager.class.getResource("log4j.properties"));
+			ClientDataManager.logger = LogManager.getLogger("eDAL-Client");
 
 			ClientDataManager.logger.info("Secure connection successful");
 

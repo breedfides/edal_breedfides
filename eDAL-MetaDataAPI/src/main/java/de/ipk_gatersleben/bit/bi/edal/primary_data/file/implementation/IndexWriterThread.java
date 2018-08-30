@@ -23,8 +23,8 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
@@ -41,7 +41,6 @@ import org.hibernate.search.SearchFactory;
 
 import org.hibernate.search.indexes.IndexReaderAccessor;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 
@@ -87,9 +86,7 @@ public class IndexWriterThread extends Thread {
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 
-		PropertyConfigurator.configure(EdalConfiguration.class.getResource("log4j.properties"));
-
-		this.indexWriterThreadLogger = Logger.getLogger("IndexWriterThread");
+		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
 
 		this.indexDirectory = indexDirectory;

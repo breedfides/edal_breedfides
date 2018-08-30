@@ -9,12 +9,19 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.glassfish.jersey.server.ResourceConfig;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
-public class CustomApplication extends ResourceConfig {
-	public CustomApplication() {
-		packages("de.ipk_gatersleben.bit.bi.edal.rest.server");
-		register(MultiPartFeature.class);
+@Path("/secured")
+public class SecuredResource {
+
+	@GET
+	@Path("message")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String securedMethod() {
+		return "Login Successful";
 	}
+
 }

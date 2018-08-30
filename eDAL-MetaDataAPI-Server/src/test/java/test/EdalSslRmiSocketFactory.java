@@ -13,7 +13,6 @@
  */
 package test;
 
-import de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +33,9 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @deprecated
@@ -51,8 +51,7 @@ public class EdalSslRmiSocketFactory extends RMISocketFactory {
 	private static final Logger log;
 
 	static {
-		PropertyConfigurator.configure(EdalServer.class.getResource("log4j.properties"));
-		log = Logger.getLogger(EdalSslRmiSocketFactory.class.getSimpleName());
+		log = LogManager.getLogger(EdalSslRmiSocketFactory.class.getSimpleName());
 	}
 
 	public EdalSslRmiSocketFactory(int port, URL path2KeyStore) {

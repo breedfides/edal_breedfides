@@ -25,11 +25,11 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
-import de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer;
 
 /**
  * eDAL implementation for the {@link SslRMIServerSocketFactory} using a
@@ -47,8 +47,7 @@ public class EdalSslRmiServerSocketFactory extends SslRMIServerSocketFactory {
 	private static final Logger log;
 
 	static {
-		PropertyConfigurator.configure(EdalServer.class.getResource("log4j.properties"));
-		log = Logger.getLogger(EdalSslRmiServerSocketFactory.class
+		log = LogManager.getLogger(EdalSslRmiServerSocketFactory.class
 				.getSimpleName());
 	}
 

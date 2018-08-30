@@ -23,7 +23,7 @@ import java.util.TreeSet;
 
 import junit.framework.Assert;
 
-import org.apache.log4j.helpers.Loader;
+import org.apache.logging.log4j.core.util.Loader;
 import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -75,7 +75,7 @@ public class TestZipFileRmi extends ClientServerTest {
 		final ClientPrimaryDataDirectory rootDirectory = dataManagerClient
 				.getRootDirectory();
 
-		final Path path = Paths.get(Loader.getResource("bmc_article.zip")
+		final Path path = Paths.get(Loader.getResource("bmc_article.zip",null)
 				.toURI());
 
 		if (Files.notExists(path, LinkOption.NOFOLLOW_LINKS)) {

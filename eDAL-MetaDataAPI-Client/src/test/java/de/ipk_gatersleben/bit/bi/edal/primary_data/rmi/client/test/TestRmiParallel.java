@@ -20,8 +20,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -112,7 +114,9 @@ public class TestRmiParallel extends ClientServerTest {
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(numberOfThreads, numberOfThreads, 1, TimeUnit.MINUTES,
 				new ArrayBlockingQueue<Runnable>(numberOfThreads));
 
-		Logger.getLogger("eDAL-API").setLevel(Level.OFF);
+		
+		Configurator.setLevel("eDAL-API", Level.OFF);
+		
 		for (int i = 0; i < numberOfThreads; i++) {
 			CreateDirectoryRandomStructureThread thread = new CreateDirectoryRandomStructureThread(numberOfFiles);
 			System.out.println("Starting Thread " + i);
@@ -125,7 +129,7 @@ public class TestRmiParallel extends ClientServerTest {
 			System.out.println("Awaiting completion of threads.");
 		}
 		
-		Logger.getLogger("eDAL-API").setLevel(Level.ALL);
+		Configurator.setLevel("eDAL-API", Level.ALL);
 //		Thread.sleep(Long.MAX_VALUE);
 	}
 }

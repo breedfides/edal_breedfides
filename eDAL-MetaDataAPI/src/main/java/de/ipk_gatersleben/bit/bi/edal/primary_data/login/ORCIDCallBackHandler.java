@@ -41,7 +41,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -55,8 +54,6 @@ import org.json.simple.parser.ParseException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 
 public class ORCIDCallBackHandler implements CallbackHandler {
 
@@ -72,7 +69,6 @@ public class ORCIDCallBackHandler implements CallbackHandler {
 			System.exit(-1);
 		}
 
-		PropertyConfigurator.configure(EdalConfiguration.class.getResource("log4j.properties"));
 	}
 
 	private static final int LOCALHOST_HTTP_PORT = 6789;

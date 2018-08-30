@@ -69,11 +69,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.net.SMTPAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.appender.SmtpAppender;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 
@@ -117,8 +115,7 @@ public final class EdalConfiguration {
 			e.printStackTrace();
 		}
 
-		PropertyConfigurator.configure(EdalConfiguration.class.getResource("log4j.properties"));
-		EdalConfiguration.logger = Logger.getLogger("eDAL-API");
+		EdalConfiguration.logger = LogManager.getLogger("eDAL-API");
 	}
 
 	public static final String DATACITE_SEARCH_URL = "http://search.datacite.org/api/";
@@ -1776,25 +1773,14 @@ public final class EdalConfiguration {
 
 						transport.close();
 					}
-					final Logger edalLogger = Logger.getLogger("EDAL_SMTP_ERROR_APPENDER");
+					final Logger edalLogger = LogManager.getLogger("EDAL_SMTP_ERROR_APPENDER");
 
-					final SMTPAppender smtp = new SMTPAppender();
+					final SmtpAppender smtp = SmtpAppender.createAppender(null, "SMTP-APP",
+							this.getErrorEmailAddress().getAddress(), null, null, this.getEdalEmailAddress(), null,
+							"[eDAL ERROR]", null, mailServerNames, "0", this.getMailSmtpLogin(),
+							this.getMailSmtpPassword(), "SMTP_DEBUG", "512", null, null, null);
 
-					smtp.setName("SMTP-APP");
-					smtp.setFrom(this.getEdalEmailAddress());
-					smtp.setTo(this.getErrorEmailAddress().getAddress());
-					smtp.setSubject("[eDAL ERROR]");
-					smtp.setSMTPHost(mailServerNames);
-
-					if (this.getMailSmtpLogin() != null && !this.getMailSmtpLogin().isEmpty()) {
-						smtp.setSMTPUsername(this.getMailSmtpLogin());
-						smtp.setSMTPPassword(this.getMailSmtpPassword());
-					}
-					smtp.setThreshold(Level.FATAL);
-					smtp.setBufferSize(512);
-					smtp.setLayout(new SimpleLayout());
-					smtp.activateOptions();
-					edalLogger.addAppender(smtp);
+					((org.apache.logging.log4j.core.Logger) edalLogger).addAppender(smtp);
 
 					this.setErrorLogger(edalLogger);
 
