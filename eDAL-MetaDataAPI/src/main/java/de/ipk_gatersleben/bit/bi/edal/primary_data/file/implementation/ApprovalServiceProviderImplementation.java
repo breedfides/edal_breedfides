@@ -1070,6 +1070,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 								String newId = "";
 								try {
 									newId = this.setPublicReferenceToTrue(ticket.getTicket());
+									ticket.getReference().changeReleaseDate(Calendar.getInstance());
 									this.deleteReviewStatus(ticket.getReference());
 									this.deleteTicket(ticket.getTicket());
 
