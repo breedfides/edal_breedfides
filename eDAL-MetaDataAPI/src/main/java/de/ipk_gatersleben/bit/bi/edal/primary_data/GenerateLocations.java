@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashSet;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import com.maxmind.db.CHMCache;
 import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.model.CityResponse;
@@ -77,5 +80,48 @@ public class GenerateLocations {
 		}
 		locationXML.append("</markers>");
 		return locationXML.toString();
+	}
+
+	@SuppressWarnings("unchecked")
+	public static JSONArray generateGpsLocationsToJson(HashSet<String> ipList) {
+
+		JSONArray list = new JSONArray();
+
+		for (String ip : ipList) {
+
+			try {
+				InetAddress ipAddress = InetAddress.getByName(ip);
+				CityResponse response = reader.city(ipAddress);
+				Location location = response.getLocation();
+
+				if (location != null) {
+					JSONObject str = new JSONObject();
+
+					String cityName = response.getCity().getName();
+
+					if (cityName != null) {
+
+						if (cityName.contains("'")) {
+							cityName = cityName.replace("'", " ");
+						}
+						str.put("lat", location.getLatitude());
+						str.put("long", location.getLongitude());
+						str.put("city", cityName);
+
+					} else {
+						str.put("lat", location.getLatitude());
+						str.put("long", location.getLongitude());
+						str.put("city", null);
+					}
+
+					if (!list.contains(str)) {
+						list.add(str);
+					}
+				}
+			} catch (Exception e) {
+			}
+
+		}
+		return list;
 	}
 }

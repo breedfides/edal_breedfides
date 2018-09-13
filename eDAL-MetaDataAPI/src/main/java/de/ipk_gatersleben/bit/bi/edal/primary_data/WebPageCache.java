@@ -25,8 +25,10 @@ public class WebPageCache {
 	private static Cache cache = null;
 	private static CacheManager manager = null;
 	public static int cache_depth = 0;
+	public String cacheName;
 
-	public WebPageCache() {
+	public WebPageCache(String cacheName) {
+		this.cacheName = cacheName;
 	}
 
 	public static void release() {
@@ -36,9 +38,8 @@ public class WebPageCache {
 	}
 
 	public void init() {
-		manager = CacheManager.create(WebPageCache.class.getResourceAsStream("webcache.xml"));
-
-		cache = manager.getCache("jetty.webpage.cache");
+		manager = CacheManager.getInstance();
+		cache = manager.getCache(this.cacheName);
 	}
 
 	public void put(String key, ByteArrayOutputStream fileSystemHandler) {
