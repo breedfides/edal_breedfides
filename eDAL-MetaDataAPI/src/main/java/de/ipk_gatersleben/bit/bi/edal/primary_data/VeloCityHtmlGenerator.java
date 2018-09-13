@@ -45,6 +45,9 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpStatus.Code;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -565,7 +568,8 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 
 		/** set publicReferenceSize **/
-		context.put("metadatasize", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
+		context.put("metadatasize",
+				DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
@@ -776,7 +780,8 @@ class VeloCityHtmlGenerator {
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
 		/** set publicReferenceSize **/
-		context.put("metadatasize", DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
+		context.put("metadatasize",
+				DataSize.StorageUnit.of(publicReferenceDirectorySize).format(publicReferenceDirectorySize));
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
@@ -1159,7 +1164,7 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 		context.put("type", EnumDublinCoreElements.TYPE);
 		context.put("format", EnumDublinCoreElements.FORMAT);
-		
+
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -1173,6 +1178,8 @@ class VeloCityHtmlGenerator {
 
 	protected OutputStreamWriter generateHtmlForReport(final String yearNumber, final HttpStatus.Code responseCode,
 			final OutputStream outputStream, final CountDownLatch latch) throws Exception {
+
+		JSONArray finalArray = new JSONArray();
 
 		final Map<String, HashSet<String>> accessMap = new HashMap<String, HashSet<String>>();
 
@@ -1289,6 +1296,17 @@ class VeloCityHtmlGenerator {
 										String.valueOf(entry.getValue()),
 										String.valueOf(downloadedVolume.get(entry.getKey())),
 										GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
+
+						JSONObject obj = new JSONObject();
+						obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
+						obj.put("doi", reference.getAssignedID());
+						obj.put("title", reference.getVersion().getMetaData().toString());
+						obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
+						obj.put("accesses", String.valueOf(entry.getValue()));
+						obj.put("locations",
+								GenerateLocations.generateGpsLocationsToJson(ipMap.get(reference.getInternalID())));
+
+						finalArray.add(obj);
 					}
 				} else {
 					accessStatistic.put(reference.getAssignedID(),
@@ -1296,6 +1314,17 @@ class VeloCityHtmlGenerator {
 									String.valueOf(entry.getValue()),
 									String.valueOf(downloadedVolume.get(entry.getKey())),
 									GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
+
+					JSONObject obj = new JSONObject();
+					obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
+					obj.put("doi", reference.getAssignedID());
+					obj.put("title", reference.getVersion().getMetaData().toString());
+					obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
+					obj.put("accesses", String.valueOf(entry.getValue()));
+					obj.put("locations",
+							GenerateLocations.generateGpsLocationsToJson(ipMap.get(reference.getInternalID())));
+
+					finalArray.add(obj);
 				}
 
 				years.add(Integer.valueOf(
@@ -1333,8 +1362,15 @@ class VeloCityHtmlGenerator {
 		context.put("responseCode", responseCode.getCode());
 		/* set title */
 		context.put("title", "Request-Statistics");
-		/* set message */
+		/* set accessStatistic */
 		context.put("accessStatistic", statisticList);
+		/* set accessStatistic */
+		context.put("json", finalArray.toString().replace("\\/", "/"));
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+		
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		/* set number of DOIs */
@@ -1378,6 +1414,10 @@ class VeloCityHtmlGenerator {
 
 		thread.start();
 
+//		String s = finalArray.toString().replace("\\/", "/");
+//
+//		System.out.println(s);
+		
 		return output;
 
 	}

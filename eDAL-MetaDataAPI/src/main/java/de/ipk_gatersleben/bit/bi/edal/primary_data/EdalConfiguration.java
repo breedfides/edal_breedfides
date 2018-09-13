@@ -420,6 +420,10 @@ public final class EdalConfiguration {
 	 */
 	private List<String> aliasDomainNames = null;
 
+	private String instanceNameLong = "Plant Genomics & Phenomics Research Data Repository";
+	private String instanceNameShort = "PGP-Repository";
+
+	
 	/**
 	 * default constructor set default values for parameter that has not specified
 	 * explicitly by user <br>
@@ -1805,5 +1809,21 @@ public final class EdalConfiguration {
 
 	public void setCleanBrokenEntities(boolean cleanBrokenEntities) {
 		this.cleanBrokenEntities = cleanBrokenEntities;
+	}
+
+	public String getInstanceNameLong() {
+		return instanceNameLong;
+	}
+
+	public void setInstanceNameLong(String instanceNameLong) {
+		this.instanceNameLong = instanceNameLong;
+	}
+
+	public String getInstanceNameShort() {
+		return instanceNameShort;
+	}
+
+	public void setInstanceNameShort(String instanceNameShort) {
+		this.instanceNameShort = instanceNameShort;
 	}
 }

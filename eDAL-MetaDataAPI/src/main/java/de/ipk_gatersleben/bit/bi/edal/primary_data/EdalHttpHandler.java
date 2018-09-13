@@ -81,7 +81,8 @@ public class EdalHttpHandler extends AbstractHandler {
 
 	private static final Long LIMIT_INLINE_FILE_SIZE = new Long(10 * 1024 * 1024);
 
-	public static WebPageCache cache = new WebPageCache();
+	public static WebPageCache contentPagecache = new WebPageCache("contentpage");
+	public static WebPageCache reportPagecache = new WebPageCache("reportpage");
 
 	static VeloCityHtmlGenerator velocityHtmlGenerator;
 
@@ -98,7 +99,8 @@ public class EdalHttpHandler extends AbstractHandler {
 					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
 		}
 
-		cache.init();
+		contentPagecache.init();
+		reportPagecache.init();
 		velocityHtmlGenerator = new VeloCityHtmlGenerator();
 	}
 
@@ -411,6 +413,15 @@ public class EdalHttpHandler extends AbstractHandler {
 								if (logoUrl.equalsIgnoreCase("edal_scaled.png")) {
 									this.sendEmbeddedFile(response, "edal_scaled.png", "image/png");
 								}
+								else if (logoUrl.equalsIgnoreCase("edal_logo.png")) {
+									this.sendEmbeddedFile(response, "edal_logo.png", "image/png");
+								}
+								else if (logoUrl.equalsIgnoreCase("ipk_logo.jpg")) {
+									this.sendEmbeddedFile(response, "ipk_logo.jpg", "image/jpg");
+								}
+								else if (logoUrl.equalsIgnoreCase("header_bg2.png")) {
+									this.sendEmbeddedFile(response, "header_bg2.png", "image/png");
+								}
 							}
 							break;
 
@@ -501,14 +512,17 @@ public class EdalHttpHandler extends AbstractHandler {
 							break;
 
 						case REPORT:
-
-							if (tokenizer.countTokens() == 0) {
-								this.sendReport(response, HttpStatus.Code.OK, null);
-							} else if (tokenizer.countTokens() == 1) {
-								this.sendReport(response, HttpStatus.Code.OK, tokenizer.nextToken());
-							} else if (tokenizer.countTokens() == 2) {
-								this.sendCSVReport(response, HttpStatus.Code.OK, tokenizer.nextToken(),
-										tokenizer.nextToken());
+							try {
+								if (tokenizer.countTokens() == 0) {
+									this.sendReport(response, HttpStatus.Code.OK, null);
+								} else if (tokenizer.countTokens() == 1) {
+									this.sendReport(response, HttpStatus.Code.OK, tokenizer.nextToken());
+								} else if (tokenizer.countTokens() == 2) {
+									this.sendCSVReport(response, HttpStatus.Code.OK, tokenizer.nextToken(),
+											tokenizer.nextToken());
+								}
+							} catch (EdalException e) {
+								e.printStackTrace();
 							}
 							break;
 
@@ -1027,7 +1041,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		String cacheKey = generateCacheKey(identifierType, internalId, entity, versionNumber, 0);
 
-		if (cache.get(cacheKey) == null) {
+		if (contentPagecache.get(cacheKey) == null) {
 
 			DataManager.getImplProv().getLogger().debug("Regenerate Webpage : " + cacheKey);
 
@@ -1061,7 +1075,7 @@ public class EdalHttpHandler extends AbstractHandler {
 					teeOutputStream.flush();
 					teeOutputStream.close();
 
-					cache.put(cacheKey, cacheFileOutputStream);
+					contentPagecache.put(cacheKey, cacheFileOutputStream);
 				} catch (EofException eof) {
 
 					DataManager.getImplProv().getLogger()
@@ -1087,7 +1101,7 @@ public class EdalHttpHandler extends AbstractHandler {
 			response.setStatus(HttpStatus.Code.OK.getCode());
 
 			try {
-				ByteArrayOutputStream cacheFileInputStream = cache.get(cacheKey);
+				ByteArrayOutputStream cacheFileInputStream = contentPagecache.get(cacheKey);
 				try {
 					cacheFileInputStream.writeTo(response.getOutputStream());
 					cacheFileInputStream.close();
@@ -1136,7 +1150,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		String cacheKey = generateCacheKey(identifierType, internalId, entity, versionNumber, reviewerCode);
 
-		if (cache.get(cacheKey) == null) {
+		if (contentPagecache.get(cacheKey) == null) {
 
 			DataManager.getImplProv().getLogger().debug("Regenerate Webpage : " + cacheKey);
 
@@ -1198,7 +1212,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 			try {
 
-				ByteArrayOutputStream cacheFileInputStream = cache.get(cacheKey);
+				ByteArrayOutputStream cacheFileInputStream = contentPagecache.get(cacheKey);
 
 				cacheFileInputStream.writeTo(response.getOutputStream());
 				cacheFileInputStream.close();
@@ -1335,39 +1349,78 @@ public class EdalHttpHandler extends AbstractHandler {
 	 *            the corresponding HTTP exchange.
 	 * @param responseCode
 	 *            the response code for this message (e.g. 200,404...).
+	 * @throws EdalException
 	 */
-	private void sendReport(final HttpServletResponse response, final HttpStatus.Code responseCode, String yearNumber) {
+	private void sendReport(final HttpServletResponse response, final HttpStatus.Code responseCode, String yearNumber)
+			throws EdalException {
 
-		try {
+		String cacheKey = "ReportCache";
 
-			response.setStatus(responseCode.getCode());
+		if (contentPagecache.get(cacheKey) == null) {
+			try {
+
+				response.setStatus(responseCode.getCode());
+
+				response.setContentType("text/html");
+
+				ByteArrayOutputStream cacheFileOutputStream = new ByteArrayOutputStream();
+
+				TeeOutputStream teeOutputStream = new TeeOutputStream(response.getOutputStream(),
+						cacheFileOutputStream);
+
+				CountDownLatch latch = new CountDownLatch(1);
+
+				OutputStreamWriter outputStreamWriter = null;
+
+				outputStreamWriter = velocityHtmlGenerator.generateHtmlForReport(yearNumber, responseCode,
+						teeOutputStream, latch);
+
+				try {
+					latch.await();
+					outputStreamWriter.flush();
+					outputStreamWriter.close();
+					teeOutputStream.flush();
+					teeOutputStream.close();
+
+					reportPagecache.put(cacheKey, cacheFileOutputStream);
+
+				} catch (EofException eof) {
+					DataManager.getImplProv().getLogger().warn("HTTP Request for report page canceled by user!");
+					outputStreamWriter.close();
+					teeOutputStream.flush();
+					teeOutputStream.close();
+				} catch (InterruptedException e) {
+					throw new EdalException(e);
+				}
+
+			} catch (Exception e) {
+				DataManager.getImplProv().getLogger()
+						.error("Unable to send " + responseCode + "-message : " + e.getClass());
+			}
+		} else {
+			DataManager.getImplProv().getLogger().debug("Reload Webpage from Cache : " + cacheKey);
 
 			response.setContentType("text/html");
-
-			final OutputStream responseBody = response.getOutputStream();
-
-			CountDownLatch latch = new CountDownLatch(1);
-
-			OutputStreamWriter outputStreamWriter = null;
-
-			outputStreamWriter = velocityHtmlGenerator.generateHtmlForReport(yearNumber, responseCode, responseBody,
-					latch);
+			response.setStatus(HttpStatus.Code.OK.getCode());
 
 			try {
-				latch.await();
-				outputStreamWriter.flush();
-				outputStreamWriter.close();
+				ByteArrayOutputStream cacheFileInputStream = contentPagecache.get(cacheKey);
+				try {
+					cacheFileInputStream.writeTo(response.getOutputStream());
+					cacheFileInputStream.close();
+					response.getOutputStream().flush();
+					response.getOutputStream().close();
 
-			} catch (EofException eof) {
-				DataManager.getImplProv().getLogger().warn("HTTP Request for report page canceled by user!");
-				outputStreamWriter.close();
-			} catch (InterruptedException e) {
+				} catch (EofException eof) {
+					DataManager.getImplProv().getLogger()
+							.warn("HTTP Request for reportpage failed, unable to reload from cache");
+					cacheFileInputStream.close();
+					response.getOutputStream().flush();
+					response.getOutputStream().close();
+				}
+			} catch (IOException e) {
 				throw new EdalException(e);
 			}
-
-		} catch (Exception e) {
-			DataManager.getImplProv().getLogger()
-					.error("Unable to send " + responseCode + "-message : " + e.getClass());
 		}
 	}
 

@@ -249,6 +249,12 @@ public class EdalServer {
 		Option deactivateCleanBrokenEntitiesOption = new Option("c", "stopClean", false,
 				"Deactivate the default clean function for Entities, which were broken during upload process. Deactivate only if you use the system also as storgae backend");
 
+		Option instanceNameLongOption = new Option("inl", "instanceNameLong", true,
+				"Set the name of the runnign e!DAL instance (long version)");
+
+		Option instanceNameShortOption = new Option("ins", "instanceNameShort", true,
+				"Set the name of the runnign e!DAL instance (short version)");
+
 		options.addOption(helpOption);
 		options.addOption(registryPortOption);
 		options.addOption(mountPathOption);
@@ -294,9 +300,11 @@ public class EdalServer {
 
 		options.addOption(deactivateCleanBrokenEntitiesOption);
 
+		options.addOption(instanceNameLongOption);
+		options.addOption(instanceNameShortOption);
+
 		/**
-		 * First check all mandatory parameter to create an EdalConfiguration
-		 * object
+		 * First check all mandatory parameter to create an EdalConfiguration object
 		 */
 		EdalConfiguration configuration = null;
 
@@ -587,6 +595,13 @@ public class EdalServer {
 			configuration.setCleanBrokenEntities(false);
 		}
 
+		if (cmd.hasOption(instanceNameLongOption.getOpt())) {
+			configuration.setInstanceNameLong(cmd.getOptionValue(instanceNameLongOption.getOpt()));
+		}
+		if (cmd.hasOption(instanceNameShortOption.getOpt())) {
+			configuration.setInstanceNameLong(cmd.getOptionValue(instanceNameShortOption.getOpt()));
+		}
+
 		EdalServer.startServer(configuration, EdalServer.registryPort, EdalServer.dataPort, EdalServer.cleanDatabase,
 				EdalServer.serverLog);
 	}
@@ -601,13 +616,12 @@ public class EdalServer {
 	 * @param dataPort
 	 *            the data port for RMI
 	 * @param cleanDB
-	 *            <b><code>true</code></b>: <em>TAKE CARE!!</em> if the mount
-	 *            path exist; the existing database and index files will be
+	 *            <b><code>true</code></b>: <em>TAKE CARE!!</em> if the mount path
+	 *            exist; the existing database and index files will be
 	 *            dropped!!<b><br>
 	 *            <code>false</code></b>: mount to existing mount path
 	 * @param startLogging
-	 *            <b><code>true</code></b>: print out server log to System.out.
-	 *            <br>
+	 *            <b><code>true</code></b>: print out server log to System.out. <br>
 	 *            <b><code>false</code></b>: no output of server log.
 	 */
 	public static void startServer(final EdalConfiguration config, final int registryPort, final int dataPort,
@@ -659,10 +673,9 @@ public class EdalServer {
 				if (config.isUseSSL()) {
 
 					/**
-					 * It is not allowed to call createRegistry() twice within
-					 * one JVM and there is no possibility to delete it. So the
-					 * only way is to catch the exception and ignore it.
-					 * Otherwise the Junit tests will not run
+					 * It is not allowed to call createRegistry() twice within one JVM and there is
+					 * no possibility to delete it. So the only way is to catch the exception and
+					 * ignore it. Otherwise the Junit tests will not run
 					 */
 					try {
 						Registry registry = LocateRegistry.createRegistry(registryPort,
@@ -687,10 +700,9 @@ public class EdalServer {
 
 					}
 					/**
-					 * It is not allowed to call createRegistry() twice within
-					 * one JVM and there is no possibility to delete it. So the
-					 * only way is to catch the exception and ignore it.
-					 * Otherwise the Junit tests will not run
+					 * It is not allowed to call createRegistry() twice within one JVM and there is
+					 * no possibility to delete it. So the only way is to catch the exception and
+					 * ignore it. Otherwise the Junit tests will not run
 					 */
 					try {
 						Registry registry = LocateRegistry.createRegistry(registryPort);

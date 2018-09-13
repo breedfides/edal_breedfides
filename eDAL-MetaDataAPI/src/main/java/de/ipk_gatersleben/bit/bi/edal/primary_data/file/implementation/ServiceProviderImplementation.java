@@ -472,7 +472,7 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		if (updated) {
 			DataManager.getImplProv().getLogger().info("Cleaning Webpage_Cache...");
-			EdalHttpHandler.cache.clean();
+			EdalHttpHandler.contentPagecache.clean();
 			DataManager.getImplProv().getLogger().info("Webpage_Cache cleaned");
 		}
 	}

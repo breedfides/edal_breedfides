@@ -1,213 +1,114 @@
-<!--
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
-    Copyright (c) 2017 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
-    All rights reserved. This program and the accompanying materials
-    are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
-    which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+    <title>$title - $serverURL</title>
 
-    Contributors:
-         Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="$serverURL/CSS/report.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css" />
+    
+    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
+    
+  </head>
 
--->
-<!DOCTYPE html>
-<html>
-<head>
-	<title>$title - $serverURL</title>
-		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
-		
-		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
-		
-</head>
-	<body>
-		<div class="container-fluid">
-			#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplate.xml")
-			
-			<div class="content">
-				<div class="row">
-					<div class="col-md-1" style="margin-top:-7px;">
-						<div class="row">
-							<div class="error-img">
-								#if($responseCode == 404)<i class="fa fa-5x fa-chain-broken text-danger"></i>#end
-								#if($responseCode == 403)<i class="fa fa-5x fa-times-circle text-danger"></i>#end
-								#if($responseCode == 423)<i class="fa fa-5x fa-lock text-danger"></i>#end
-								#if($responseCode == 200)<i class="fa fa-3x fa-bar-chart text-danger"></i>#end
-								#if($responseCode == 509)<i class="fa fa-5x fa-thumbs-down text-danger"></i>#end
-								<!-- <input type="button" value="year" data-jq-dropdown="#jq-dropdown-1"
-									class="btn btn-primary jq-dropdown-open" /> -->
-									<br/>
-									<br/>
-									<b>Filter:</b>
-									<br/>
-									<a href="$serverURL/report">All</a>
-									#foreach ($year in $years)
-									<br/><a href="$serverURL/report/$year">$year</a>
-									#end
-									<br/>
-									<b>Export:</b>
-									<br/><a href="$serverURL/report/$filter/CSV">CSV</a><br/>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-11">
-						<div class="row">
-							<div class="col-md-12-arendd" style="margin-bottom:-30px;">
-								<h3>Request - Statistics</h3>
-								<h4><b>DOIs: $dois - distinct client IP addresses: $totalAccesses - download volume: $totalDownloadVolume</b></h4>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-12-arendd">
-								<ul class="list-unstyled">
-									<div>
-									 	<table id="tabelle" class="compact cell-border hover"
-											width="100%">
-											<thead>
-												<tr>
-													<th style="text-align:left;">DOI</th>
-													<th style="text-align:left;">title</th>
-													<th style="text-align:right;">distinct client IPs</th>
-													<th style="text-align:right;">download volume</th>
-													<th style="text-align:center;">
-														worldmap
-											
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												#set ($counter = -1)
-												#foreach ($entry in $accessStatistic)
-												#set ($counter = $counter + 1)
-												<tr>
-													#foreach($line in $entry.split("\t"))
-													#if($foreach.count==1)
-														<td><a href="http://dx.doi.org/$line.toString()" target="_blank">$line.toString()</a></td>
-														#set($length=$line.toString().length())
-														#set($doi=$line.toString().substring(8,$length).replace("/",""))
-													#end
-													#if($foreach.count == 2)
-														#set($length=$line.toString().length())
-														<td>#if($length<100) $line.toString().substring(0,$length)</td>#end
-														#if($length>=100) $line.toString().substring(0,100)...</td>#end
-													#end
-													#if($foreach.count == 3)<td style="text-align:right;">$line.toString()</td>#end
-													#if($foreach.count == 4)<td style="text-align:right;">$line.toString()</td>#end
-													#if($foreach.count == 5)
-													<td style="text-align:center;">
-													 	<input type="checkbox" id="check_$counter" name="check_$counter" title="Show" />
-														<label for="check_$counter">Show</label> 
-														<script>
-															document.getElementById("check_$counter").onclick = function() {
-																if(window.init == 0){
-																	$("#worldmapul").toggle();
-																	initialize();
-																	window.init=1;
-																	$(".dataTables_scrollBody").css({"height": ($(window).height())*0.7 });																													
-																}
-																if (document.getElementById("check_$counter").checked) {
-																	if($("#worldmapul").is(":hidden")){
-																		$("#worldmapul").toggle();
-																	}
-																	var xmlDoc = loadMyXml("$accessStatistic.get($counter).split('\t')[4]");
-																	var data = "$doi";
-																	eval("window.markers_" + data + "=new Array();");
-																	if(window.markermaps == 0){
-																		$(".dataTables_scrollBody").css({"height": ($(window).height()) * 0.35 });															
-																		createMarkers(xmlDoc,window.markers_$doi,"#FF0000");
-																	}
-																	if(window.markermaps == 1){createMarkers(xmlDoc,window.markers_$doi,"#00FF00");}
-																	if(window.markermaps == 2){createMarkers(xmlDoc,window.markers_$doi,"#0000FF");}
-																	if(window.markermaps == 3){createMarkers(xmlDoc,window.markers_$doi,"#FFFF00");}
-																	if(window.markermaps > 4){createMarkers(xmlDoc,window.markers_$doi,"#000000");}
-																	window.markermaps=window.markermaps+1;
-																}
-																else {
-																	//alert(window.markermaps);
-																	var temp = window.markers_$doi;
-																	for (var i = 0; i < temp.length; i++){temp[i].setMap(null);}
-																	window.markermaps=window.markermaps-1;
-																	if(window.markermaps==0){
-																		$("#worldmapul").toggle();
-																		$(".dataTables_scrollBody").css({"height": ($(window).height())*0.7 });															
-																	}
-																}
-															}
-														</script>
-													</td>
-													#end
-													#end
-												</tr>
-												#end
-												<tfoot></tfoot>
-											</tbody>
-										</table>
-									</div>
-								</ul>
-							</div>
-						</div>	
-					</div>
-				</div>
-				<hr />
-				<div class="footer">
-					<ul class="list-inline muted pad">
-						<li class="marg" style="margin-left: -8px;">
-							<small><b>e!DAL-Server at $serverURL.getHost():$serverURL.getPort() - data volume: $datastock - number of files: $filenumber - active data contributors: $users</b></small>
-						</li>
-					</ul>
-				</div>
-			</div>
-			<div id="worldmapul" style="display:none;">
-				<div class="map" id="worldmap" style="width: 100%; height: 320px; "></div>
-			</div>
-		</div>
+  <body>
+    <div id="grid-container"> 
+        <header>
+            <nav>
+                <div class="container-fluid">
+                    <div class="row header" style="height:80px;">
+                        <div class="col my-auto">
+                            <a href="http://edal.ipk-gatersleben.de"><img src="$serverURL/LOGO/edal_logo.png" /></a>
+                        </div>
+                        <div id="edal-report-title-long" class="col-auto text-center my-auto">
+                            $repositoryNameLong
+                        </div>
+                        <div id="edal-report-title-short" class="col-auto text-center my-auto">
+                                $repositoryNameShort
+                        </div>
+                        <div class="col text-right pt-1">
+                            <a href="http://www.ipk-gatersleben.de"><img src="$serverURL/LOGO/ipk_logo.jpg" /></a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header> 
+        <div id="controls" class="pt-2 pb-2">
+            <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
+                <span class="h2 mr-5">Request - Statistics</span>
+                <span class="h6" style="display:inline-block;">DOIs: $dois - distinct client IP addresses: $totalAccesses - download volume: $totalDownloadVolume</span>
+            </div>
+            <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
+                <div class="mr-5" style="display:inline-block;color:white;">
 
-		<script type="text/javascript" src="$serverURL/JS/datatable.js"></script>
-		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCijZGmmBN1zUiQkCvJ58dBvzvx32FWKXE"></script>
-		<script type="text/javascript">
-			function initialize() {
-				window.map = new google.maps.Map(document.getElementById('worldmap'), {
-					center : new google.maps.LatLng(38, 15),
-					zoom : 1,
-					mapTypeId : google.maps.MapTypeId.TERRAIN
-				});
-				window.markermaps=0;
-			}
-			function createMarkers(xmlDoc, markersArray, markerImage) {
-				//var iconPath = "/FILEICONS/".concat(markerImage);
-				
-					var canvas = document.createElement("canvas");
-				    canvas.width = 24;
-				    canvas.height = 24;
-				    var ctx = canvas.getContext("2d");
-				    ctx.fillStyle = markerImage;
-				    ctx.font = "8px FontAwesome";
-				    ctx.textAlign = "center";
-				    ctx.textBaseline = "middle";
-				    ctx.fillText("\uf111", 8, 8);
-				    var dataURL = canvas.toDataURL('image/png')
-				
-				
-				var items =
-				xmlDoc.getElementsByTagName('marker');
-				var latlng;
-				for (var i = 0; i <	items.length; i++) {
-					latlng = new google.maps.LatLng(items[i].getAttribute('lat'),items[i].getAttribute('lng'));
-					window.marker = new	google.maps.Marker({position:latlng, title:items[i].getAttribute('title'), map:map, icon:dataURL});
-					markersArray.push(marker);
-				}
-			}
-			function loadMyXml(xmlUrl) {
-				if(window.DOMParser){
-					parser=new DOMParser();
-					xmlDoc=parser.parseFromString(xmlUrl,"text/xml");
-				}
-				else{
-					xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-					xmlDoc.async=false;
-					xmlDoc.loadXML(xmlUrl);
-				}
-			return xmlDoc;
-			}
-			google.maps.event.addDomListener(window, 'load', initialize);
-		</script>
-	</body>
+                    <div id="edal-report-filter-container">
+                        <span class="mr-2">Filter:</span>
+                        <a class="btn btn-light btn-sm edal-report-year-filter" href="#" role="button">All</a>
+                        <span id="edal-report-year-filters"></span>
+                    </div>
+
+                    <div id="edal-report-export-container">
+                        <span class="mr-2">Export:</span>
+                        <a id="edal-report-export-csv" class="btn btn-outline-light btn-sm" href="#" role="button">CSV</a>&nbsp;
+                        <a id="edal-report-export-clipboard" class="btn btn-outline-light btn-sm" href="#" role="button">Copy to clipboard</a>&nbsp;
+                    </div>
+
+                </div>
+                <div id="edal-report-search-container">
+                    <input id="edal-report-search" type="text" class="form-control form-control-sm" style="min-width:350px;" placeholder="Search..." />
+                </div>
+            </div>
+        </div> 
+
+        <div id="grid-container-table-and-map">
+            <div id="edal-report-table-container" class="px-3" style="overflow-y: hidden;">
+                <table id="report" class="table table-hover table-bordered table-sm" width="100%"></table>
+            </div>
+            <div id="map-container" style="">
+                <div id="map" style="width:100%;height:100%;"></div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort() - data volume: $datastock - number of files: $filenumber - active data contributors: $users</span>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+
+
+    <!-------------------------------------
+    -------- Edal Report Javascript -------
+    -------------------------------------->
+    <script src="$serverURL/JS/edal_report.js"></script>
+
+    <script>
+        var reportData = $json;
+    </script>
+    
+    <script>
+    EdalReport.init(reportData);
+
+    function initMap() { // This callback is needed because of the asynchronicity of GoogleMapsAPI
+        EdalReport.initGoogleMap();
+    }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCijZGmmBN1zUiQkCvJ58dBvzvx32FWKXE&callback=initMap" async defer></script>
+
+  </body>
 </html>
