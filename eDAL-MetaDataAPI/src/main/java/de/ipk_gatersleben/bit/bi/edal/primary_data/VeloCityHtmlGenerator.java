@@ -17,23 +17,19 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
@@ -44,7 +40,6 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.http.HttpStatus.Code;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -62,10 +57,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ContentNegotiationType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.Referenceable;
 
 /**
  * VeloCity template generator to create HTML output for
@@ -74,61 +67,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.Referenceable;
  * @author arendd
  */
 class VeloCityHtmlGenerator {
-
-	private static class CSVUtils {
-
-		private static final char DEFAULT_SEPARATOR = ',';
-
-		// https://tools.ietf.org/html/rfc4180
-		private static String followCVSformat(final String value) {
-
-			String result = value;
-			if (result.contains("\"")) {
-				result = result.replace("\"", "\"\"");
-			}
-			return result;
-
-		}
-
-		public static void writeLine(final Writer w, final List<String> values) throws IOException {
-			CSVUtils.writeLine(w, values, CSVUtils.DEFAULT_SEPARATOR, ' ');
-		}
-
-		@SuppressWarnings("unused")
-		public static void writeLine(final Writer w, final List<String> values, final char separators)
-				throws IOException {
-			CSVUtils.writeLine(w, values, separators, ' ');
-		}
-
-		public static void writeLine(final Writer w, final List<String> values, char separators, final char customQuote)
-				throws IOException {
-
-			boolean first = true;
-
-			// default customQuote is empty
-
-			if (separators == ' ') {
-				separators = CSVUtils.DEFAULT_SEPARATOR;
-			}
-
-			final StringBuilder sb = new StringBuilder();
-			for (final String value : values) {
-				if (!first) {
-					sb.append(separators);
-				}
-				if (customQuote == ' ') {
-					sb.append(CSVUtils.followCVSformat(value));
-				} else {
-					sb.append(customQuote).append(CSVUtils.followCVSformat(value)).append(customQuote);
-				}
-
-				first = false;
-			}
-			sb.append("\n");
-			w.append(sb.toString());
-
-		}
-	}
 
 	private static final String STRING_VERSION = "version";
 	private static final String STRING_NO_PUBLIC_REFERENCE_FOR_THIS_VERSION_SET = "No Public Reference for this version set!";
@@ -160,149 +98,6 @@ class VeloCityHtmlGenerator {
 		Velocity.setProperty("input.encoding", "UTF-8");
 		Velocity.setProperty("output.encoding", "UTF-8");
 		Velocity.init();
-	}
-
-	protected OutputStreamWriter generateCSVForReport(final String function, final String filetype,
-			final Code responseCode, final OutputStream responseBody, final CountDownLatch latch) throws Exception {
-
-		final Map<String, HashSet<String>> accessMap = new HashMap<String, HashSet<String>>();
-
-		final Map<String, HashSet<String>> ipMap = new HashMap<String, HashSet<String>>();
-
-		final Map<String, Long> downloadedVolume = new HashMap<String, Long>();
-
-		final Map<String, Long> accessNumbers = new HashMap<String, Long>();
-
-		final Map<String, String[]> accessStatistic = new TreeMap<String, String[]>();
-
-		final Path pathToLogFiles = Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(),
-				"jetty_log");
-
-		for (final File file : pathToLogFiles.toFile().listFiles()) {
-
-			final FileInputStream is = new FileInputStream(file);
-			final BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-			String strLine;
-
-			while ((strLine = br.readLine()) != null) {
-
-				final String[] split = strLine.split("\t");
-
-				if (split[5].startsWith("GET /DOI/")) {
-
-					final String publicReferenceId = split[5].split("/")[2];
-
-					if (publicReferenceId.length() == 36) {
-
-						if (split[5].endsWith("ZIP HTTP/1.1") && split[6].equals("200")) {
-
-							final String directoryId = split[5].split("/")[3];
-
-							if (CalculateDirectorySizeThread.directorySizes
-									.containsKey(publicReferenceId + "/" + directoryId)) {
-
-								if (downloadedVolume.containsKey(publicReferenceId)) {
-									downloadedVolume.put(publicReferenceId,
-											downloadedVolume.get(publicReferenceId)
-													+ CalculateDirectorySizeThread.directorySizes
-															.get(publicReferenceId + "/" + directoryId));
-								} else {
-									downloadedVolume.put(publicReferenceId, CalculateDirectorySizeThread.directorySizes
-											.get(publicReferenceId + "/" + directoryId));
-								}
-
-							}
-						}
-
-						final String ipAddress = split[1];
-
-						if (accessMap.containsKey(ipAddress)) {
-							accessMap.get(ipAddress).add(publicReferenceId);
-						} else {
-							accessMap.put(ipAddress, new HashSet<String>(Arrays.asList(publicReferenceId)));
-						}
-
-						if (downloadedVolume.containsKey(publicReferenceId)) {
-							downloadedVolume.put(publicReferenceId,
-									downloadedVolume.get(publicReferenceId) + Long.parseLong(split[7]));
-						} else {
-							downloadedVolume.put(publicReferenceId, Long.parseLong(split[7]));
-						}
-						if (ipMap.containsKey(publicReferenceId)) {
-							ipMap.get(publicReferenceId).add(ipAddress);
-
-						} else {
-							ipMap.put(publicReferenceId, new HashSet<String>(Arrays.asList(ipAddress)));
-						}
-
-					}
-				}
-
-			}
-			br.close();
-			is.close();
-
-		}
-
-		for (final Entry<String, HashSet<String>> entry : accessMap.entrySet()) {
-			for (final String string : entry.getValue()) {
-				if (accessNumbers.containsKey(string)) {
-					final Long number = accessNumbers.get(string) + 1;
-					accessNumbers.put(string, number);
-				} else {
-					accessNumbers.put(string, new Long(1));
-				}
-			}
-		}
-
-		for (final Entry<String, Long> entry : accessNumbers.entrySet()) {
-
-			PublicReference reference = null;
-
-			try {
-				final ApprovalServiceProvider appService = DataManager.getImplProv().getApprovalServiceProvider()
-						.newInstance();
-				reference = appService.getPublicReferenceByInternalId(entry.getKey());
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | EdalException e) {
-			}
-
-			if (reference != null && reference.getAssignedID() != null) {
-
-				if (function != null) {
-					if (reference.getAssignedID().contains(function)) {
-						accessStatistic.put(reference.getAssignedID(),
-								new String[] { reference.getVersion().getMetaData().toString(),
-										String.valueOf(entry.getValue()),
-										String.valueOf(downloadedVolume.get(entry.getKey())) });
-					} else if (function.equals("ALL")) {
-						accessStatistic.put(reference.getAssignedID(),
-								new String[] { reference.getVersion().getMetaData().toString(),
-										String.valueOf(entry.getValue()),
-										String.valueOf(downloadedVolume.get(entry.getKey())) });
-					}
-				} else {
-					accessStatistic.put(reference.getAssignedID(),
-							new String[] { reference.getVersion().getMetaData().toString(),
-									String.valueOf(entry.getValue()),
-									String.valueOf(downloadedVolume.get(entry.getKey())) });
-				}
-			}
-		}
-
-		final OutputStreamWriter output = new OutputStreamWriter(responseBody);
-
-		for (final Entry<String, String[]> entry : accessStatistic.entrySet()) {
-
-			final String size = entry.getValue()[2] != null
-					? DataSize.StorageUnit.of(new Long(entry.getValue()[2])).format(new Long(entry.getValue()[2]))
-					: "0";
-
-			CSVUtils.writeLine(output, Arrays.asList(entry.getKey(), entry.getValue()[0], entry.getValue()[1], size));
-		}
-
-		latch.countDown();
-		return output;
 	}
 
 	/**
@@ -1178,7 +973,8 @@ class VeloCityHtmlGenerator {
 		return outputStreamWriter;
 	}
 
-	protected OutputStreamWriter generateHtmlForReport(final String yearNumber, final HttpStatus.Code responseCode,
+	@SuppressWarnings("unchecked")
+	protected OutputStreamWriter generateHtmlForReport(final HttpStatus.Code responseCode,
 			final OutputStream outputStream, final CountDownLatch latch) throws Exception {
 
 		JSONArray finalArray = new JSONArray();
@@ -1192,8 +988,6 @@ class VeloCityHtmlGenerator {
 		final Map<String, Long> uniqueAccessNumbers = new HashMap<String, Long>();
 
 		final Map<String, String[]> accessStatistic = new TreeMap<String, String[]>();
-
-		final SortedSet<Integer> years = new TreeSet<>();
 
 		final Path pathToLogFiles = Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(),
 				"jetty_log");
@@ -1291,46 +1085,22 @@ class VeloCityHtmlGenerator {
 
 			if (reference != null && reference.getAssignedID() != null) {
 
-				if (yearNumber != null) {
-					if (reference.getAssignedID().contains(yearNumber)) {
-						accessStatistic.put(reference.getAssignedID(),
-								new String[] { reference.getVersion().getMetaData().toString(),
-										String.valueOf(entry.getValue()),
-										String.valueOf(downloadedVolume.get(entry.getKey())),
-										GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
+				accessStatistic.put(reference.getAssignedID(),
+						new String[] { reference.getVersion().getMetaData().toString(),
+								String.valueOf(entry.getValue()), String.valueOf(downloadedVolume.get(entry.getKey())),
+								GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
 
-						JSONObject obj = new JSONObject();
-						obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
-						obj.put("doi", reference.getAssignedID());
-						obj.put("title", reference.getVersion().getMetaData().toString());
-						obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
-						obj.put("accesses", String.valueOf(entry.getValue()));
-						obj.put("locations",
-								GenerateLocations.generateGpsLocationsToJson(ipMap.get(reference.getInternalID())));
+				JSONObject obj = new JSONObject();
+				obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
+				obj.put("doi", reference.getAssignedID());
+				obj.put("title", reference.getVersion().getMetaData().toString());
+				obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
+				obj.put("accesses", String.valueOf(entry.getValue()));
+				obj.put("locations",
+						GenerateLocations.generateGpsLocationsToJson(ipMap.get(reference.getInternalID())));
 
-						finalArray.add(obj);
-					}
-				} else {
-					accessStatistic.put(reference.getAssignedID(),
-							new String[] { reference.getVersion().getMetaData().toString(),
-									String.valueOf(entry.getValue()),
-									String.valueOf(downloadedVolume.get(entry.getKey())),
-									GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
+				finalArray.add(obj);
 
-					JSONObject obj = new JSONObject();
-					obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
-					obj.put("doi", reference.getAssignedID());
-					obj.put("title", reference.getVersion().getMetaData().toString());
-					obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
-					obj.put("accesses", String.valueOf(entry.getValue()));
-					obj.put("locations",
-							GenerateLocations.generateGpsLocationsToJson(ipMap.get(reference.getInternalID())));
-
-					finalArray.add(obj);
-				}
-
-				years.add(Integer.valueOf(
-						reference.getAssignedID().split("/")[reference.getAssignedID().split("/").length - 2]));
 			}
 		}
 
@@ -1372,29 +1142,16 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-		
+
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		/* set number of DOIs */
-
-		if (yearNumber == null) {
-			// context.put("dois", publicReferences.size());
-			context.put("dois", statisticList.size());
-			context.put("filter", "ALL");
-		} else {
-			context.put("dois", statisticList.size());
-			context.put("filter", yearNumber);
-		}
+		context.put("dois", statisticList.size());
 
 		/* set number of total accesses */
 		context.put("totalAccesses", totalAccesses);
 		/* set number of total downloaded volume */
 		context.put("totalDownloadVolume", totalDownloadVolumeString);
-
-		/* all available years */
-		final Object[] yearsArray = years.toArray();
-		Arrays.sort(yearsArray, Collections.reverseOrder());
-		context.put("years", yearsArray);
 
 		/* value for total data volume of all stored entities */
 		final DataSize size = new DataSize(CalculateDirectorySizeThread.totalVolumeDataStock);
@@ -1416,10 +1173,10 @@ class VeloCityHtmlGenerator {
 
 		thread.start();
 
-//		String s = finalArray.toString().replace("\\/", "/");
-//
-//		System.out.println(s);
-		
+		// String s = finalArray.toString().replace("\\/", "/");
+		//
+		// System.out.println(s);
+
 		return output;
 
 	}

@@ -20,9 +20,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -45,7 +43,6 @@ import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.EnumUtils;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.http.HttpStatus.Code;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -412,14 +409,11 @@ public class EdalHttpHandler extends AbstractHandler {
 
 								if (logoUrl.equalsIgnoreCase("edal_scaled.png")) {
 									this.sendEmbeddedFile(response, "edal_scaled.png", "image/png");
-								}
-								else if (logoUrl.equalsIgnoreCase("edal_logo.png")) {
+								} else if (logoUrl.equalsIgnoreCase("edal_logo.png")) {
 									this.sendEmbeddedFile(response, "edal_logo.png", "image/png");
-								}
-								else if (logoUrl.equalsIgnoreCase("ipk_logo.jpg")) {
+								} else if (logoUrl.equalsIgnoreCase("ipk_logo.jpg")) {
 									this.sendEmbeddedFile(response, "ipk_logo.jpg", "image/jpg");
-								}
-								else if (logoUrl.equalsIgnoreCase("header_bg2.png")) {
+								} else if (logoUrl.equalsIgnoreCase("header_bg2.png")) {
 									this.sendEmbeddedFile(response, "header_bg2.png", "image/png");
 								}
 							}
@@ -513,14 +507,9 @@ public class EdalHttpHandler extends AbstractHandler {
 
 						case REPORT:
 							try {
-								if (tokenizer.countTokens() == 0) {
-									this.sendReport(response, HttpStatus.Code.OK, null);
-								} else if (tokenizer.countTokens() == 1) {
-									this.sendReport(response, HttpStatus.Code.OK, tokenizer.nextToken());
-								} else if (tokenizer.countTokens() == 2) {
-									this.sendCSVReport(response, HttpStatus.Code.OK, tokenizer.nextToken(),
-											tokenizer.nextToken());
-								}
+
+								this.sendReport(response, HttpStatus.Code.OK);
+
 							} catch (EdalException e) {
 								e.printStackTrace();
 							}
@@ -708,49 +697,6 @@ public class EdalHttpHandler extends AbstractHandler {
 			e1.printStackTrace();
 		}
 
-	}
-
-	private void sendCSVReport(HttpServletResponse response, Code responseCode, String function, String filetype) {
-
-		try {
-
-			response.setStatus(responseCode.getCode());
-
-			response.setContentType("text/comma-separated-values");
-
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-
-			String filename = "eDAL_report_" + EdalHttpServer.getServerURL().getHost() + "_" + function + "_"
-					+ sdf.format(Calendar.getInstance().getTime()) + ".csv";
-
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-
-			final OutputStream responseBody = response.getOutputStream();
-
-			CountDownLatch latch = new CountDownLatch(1);
-
-			OutputStreamWriter outputStreamWriter = null;
-
-			outputStreamWriter = velocityHtmlGenerator.generateCSVForReport(function, filetype, responseCode,
-					responseBody, latch);
-
-			try {
-				latch.await();
-				outputStreamWriter.flush();
-				outputStreamWriter.close();
-
-			} catch (EofException eof) {
-				DataManager.getImplProv().getLogger().warn("HTTP Request for CSV report canceled by user!");
-				outputStreamWriter.close();
-				responseBody.close();
-			} catch (InterruptedException e) {
-				throw new EdalException(e);
-			}
-
-		} catch (Exception e) {
-			DataManager.getImplProv().getLogger()
-					.error("unable to send " + responseCode + "-message : " + e.getClass());
-		}
 	}
 
 	private boolean ticketForReviewerAlreadyClicked(int reviewerHashCode, String ticketAccept) {
@@ -1351,12 +1297,12 @@ public class EdalHttpHandler extends AbstractHandler {
 	 *            the response code for this message (e.g. 200,404...).
 	 * @throws EdalException
 	 */
-	private void sendReport(final HttpServletResponse response, final HttpStatus.Code responseCode, String yearNumber)
+	private void sendReport(final HttpServletResponse response, final HttpStatus.Code responseCode)
 			throws EdalException {
 
 		String cacheKey = "ReportCache";
 
-		if (contentPagecache.get(cacheKey) == null) {
+		if (reportPagecache.get(cacheKey) == null) {
 			try {
 
 				response.setStatus(responseCode.getCode());
@@ -1372,8 +1318,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 				OutputStreamWriter outputStreamWriter = null;
 
-				outputStreamWriter = velocityHtmlGenerator.generateHtmlForReport(yearNumber, responseCode,
-						teeOutputStream, latch);
+				outputStreamWriter = velocityHtmlGenerator.generateHtmlForReport(responseCode, teeOutputStream, latch);
 
 				try {
 					latch.await();
@@ -1389,11 +1334,14 @@ public class EdalHttpHandler extends AbstractHandler {
 					outputStreamWriter.close();
 					teeOutputStream.flush();
 					teeOutputStream.close();
+					reportPagecache.clean();
 				} catch (InterruptedException e) {
+					reportPagecache.clean();
 					throw new EdalException(e);
 				}
 
 			} catch (Exception e) {
+				reportPagecache.clean();
 				DataManager.getImplProv().getLogger()
 						.error("Unable to send " + responseCode + "-message : " + e.getClass());
 			}
@@ -1404,7 +1352,7 @@ public class EdalHttpHandler extends AbstractHandler {
 			response.setStatus(HttpStatus.Code.OK.getCode());
 
 			try {
-				ByteArrayOutputStream cacheFileInputStream = contentPagecache.get(cacheKey);
+				ByteArrayOutputStream cacheFileInputStream = reportPagecache.get(cacheKey);
 				try {
 					cacheFileInputStream.writeTo(response.getOutputStream());
 					cacheFileInputStream.close();
@@ -1417,8 +1365,10 @@ public class EdalHttpHandler extends AbstractHandler {
 					cacheFileInputStream.close();
 					response.getOutputStream().flush();
 					response.getOutputStream().close();
+					reportPagecache.clean();
 				}
 			} catch (IOException e) {
+				reportPagecache.clean();
 				throw new EdalException(e);
 			}
 		}
