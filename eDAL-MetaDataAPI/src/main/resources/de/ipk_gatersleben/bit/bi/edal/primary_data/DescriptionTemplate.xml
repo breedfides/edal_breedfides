@@ -43,7 +43,7 @@
 			<li><strong>Abstract: </strong>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)</li>
 			<li><strong>License: </strong>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</li>
 			#if($link=="true")
-				#foreach($element in $entity.getCurrentVersion().getPublicReferences())
+				#foreach($element in $citation_entity.getVersions().last().getPublicReferences())
 					<li><strong>$element.getIdentifierType(): </strong>$element.getAssignedID()</li>
 				#end
 			#end

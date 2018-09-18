@@ -544,6 +544,7 @@ class VeloCityHtmlGenerator {
 		} else {
 			context.put(STRING_CITATION_ENTITY, currentDirectory);
 		}
+		
 		/** set date of the PublicReference */
 		context.put(VeloCityHtmlGenerator.STRING_DATE, date);
 
@@ -1167,9 +1168,9 @@ class VeloCityHtmlGenerator {
 
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 
-		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
+		final MergingReportOutputThread thread = new MergingReportOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml", VeloCityHtmlGenerator.CODING_UTF_8,
-				context, output, latch, null);
+				context, output, latch);
 
 		thread.start();
 
