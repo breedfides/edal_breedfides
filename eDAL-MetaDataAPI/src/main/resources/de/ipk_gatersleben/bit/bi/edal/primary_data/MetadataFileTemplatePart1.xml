@@ -1,0 +1,67 @@
+	#foreach( $element in $allElements)
+	#if( $element.name() == "PUBLISHER" || $element.name() == "SUBJECT")
+	<tr>
+		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>
+		<td>
+		#if($element.name()=="SIZE")$metadatasize
+		#else$entity.getVersionByDate($date).getMetaData().getElementValue($element).toHTML()
+		#end</td>
+	</tr>
+	#end
+	#if($element.name() == "CONTRIBUTOR" )
+	<tr>
+		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
+		<td>	
+			#set($persons = $entity.getVersionByDate($date).getMetaData().getElementValue($element))
+			<div id="edal-contributor-short">
+				#foreach( $person in $persons)
+					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+						$person.getGivenName() $person.getSureName()#if($foreach.count<$persons.size()), #end  
+					#else
+						$person.getLegalName()#if($foreach.count<$persons.size()), #end  
+					#end	
+			
+				#end
+				<a id="edal-contributor-show-full" href="#">[Show full information]</a></div>
+			<div id="edal-contributor-long" style="display:none;">
+				#foreach( $person in $persons)
+					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+					#else
+						$person.getLegalName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+					#end<br/>	
+				#end
+	       		<a id="edal-contributor-hide-full" href="#">[Hide full information]</a>
+	       	</div>
+       	</td>
+	</tr>
+	#end
+	#if($element.name() == "CREATOR")
+	<tr>
+		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
+		<td>	
+			#set($persons = $entity.getVersionByDate($date).getMetaData().getElementValue($element))
+			<div id="edal-creator-short">
+				#foreach( $person in $persons)
+					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+						$person.getGivenName() $person.getSureName()#if($foreach.count<$persons.size()), #end  
+					#else
+						$person.getLegalName()#if($foreach.count<$persons.size()), #end  
+					#end	
+			
+				#end
+				<a id="edal-creator-show-full" href="#">[Show full information]</a></div>
+			<div id="edal-creator-long" style="display:none;">
+				#foreach( $person in $persons)
+					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+					#else
+						$person.getLegalName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+					#end<br/>	
+				#end
+	       		<a id="edal-creator-hide-full" href="#">[Hide full information]</a>
+	       	</div>
+       	</td>
+	</tr>
+	#end
+	#end

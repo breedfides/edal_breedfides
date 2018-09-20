@@ -1,0 +1,74 @@
+<!--
+
+    Copyright (c) 2017 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+    which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+
+    Contributors:
+         Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+
+-->
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Metadata - $entity.getVersionByDate($date).getName()</title>
+	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
+	
+	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetaTagTemplate.xml")
+	
+	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
+	
+</head>
+<body>
+	<div class="container-fluid">
+		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/JsonLdTemplate.xml")
+		
+		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplate.xml")
+		<div class="content">
+			#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/DescriptionTemplate.xml")
+				<hr style="margin: 5px;" />
+				$entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath()
+				#if($entity.getParentDirectory().toString() != "/")
+				<div style="margin-bottom:-12px">
+					<ol class="tree">
+						<label class="parent">
+							<a style="color: #333"
+								href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/"> Up to Parent Directory</a>
+						</label>
+					</ol>
+				</div>
+				#end
+				#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForSnapshot.xml")
+				<div id="file-content">
+					<hr style="margin: 5px;" />
+					<div class="row">
+						<div class="col-md-12 collapse-group">
+							<h4>
+								<i class="fa fa-info-circle"></i>
+								#set ($a= $entity)
+								$a.switchCurrentVersion($entity.getVersionByDate($date))
+								$a.getPath()
+							</h4>
+							<p>
+								<a class="btn btn-default btn-sm" href="$downloadURL/$identifierType/$internalId/$entity.getID()/$entity.getVersionByDate($date).getRevision()/DOWNLOAD" target="_blank">
+									<i class="fa fa-download"></i> Download
+								</a>
+								<a class="btn btn2 btn-default btn-sm" href="#">
+									<i class="fa fa-forward"></i> Metadata
+								</a>
+							</p>
+							<div class="table-responsive small collapse2">
+							<table class="table table-striped table-hover">
+							#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataFileTemplate.xml")
+							</table>
+							</div>
+						</div>
+					</div>
+					<hr style="margin: 5px;" />
+					#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/VersionInformationTemplate.xml")
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

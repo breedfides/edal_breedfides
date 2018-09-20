@@ -373,7 +373,11 @@ class VeloCityHtmlGenerator {
 		context.put("DataSizeClass", DataSize.StorageUnit.class);
 
 		context.put("EnumSize", de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements.SIZE);
-
+		
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		List<PrimaryDataEntity> list = null;
 
 		try {
@@ -587,6 +591,11 @@ class VeloCityHtmlGenerator {
 
 		context.put("EnumSize", de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements.SIZE);
 
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+		
 		List<PrimaryDataEntity> list = null;
 
 		try {
@@ -632,6 +641,11 @@ class VeloCityHtmlGenerator {
 		context.put("message", message);
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
+		
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 
 		final StringWriter output = new StringWriter();
 
@@ -777,6 +791,11 @@ class VeloCityHtmlGenerator {
 
 		/** set rights enum **/
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
+		
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
 
@@ -962,6 +981,11 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 		context.put("type", EnumDublinCoreElements.TYPE);
 		context.put("format", EnumDublinCoreElements.FORMAT);
+		
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 

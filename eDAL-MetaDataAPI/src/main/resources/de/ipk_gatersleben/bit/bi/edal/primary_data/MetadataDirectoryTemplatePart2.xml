@@ -1,0 +1,13 @@
+	#foreach( $element in $allElements)
+	#if($element.name() == "SOURCE" || $element.name() == "COVERAGE" || $element.name() == "DATE" || $element.name() == "LANGUAGE" || $element.name() == "RELATION")
+	<tr>
+		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>
+		<td>
+		#if($element.name()=="SIZE")$metadatasize
+		#else$entity.getVersionByDate($date).getMetaData().getElementValue($element).toHTML()
+		#end</td>
+	</tr>
+	
+	#end
+	#end
+		

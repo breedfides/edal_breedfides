@@ -1,0 +1,20 @@
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	
+	<script	src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.js"></script> 
+	<script src="https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>	
+	<script src="https://cdn.datatables.net/plug-ins/1.10.7/integration/jqueryui/dataTables.jqueryui.js"></script>
+	<script src="$serverURL/JS/dataTables.colResize.js"></script>
+	<script src="$serverURL/JS/report.js"></script>
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-dropdown/2.0.3/jquery.dropdown.min.css" /> 
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.16/css/dataTables.jqueryui.css" />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.css" /> 
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="$serverURL/CSS/style.css" />
+	<link rel="stylesheet" href="$serverURL/CSS/filetree.css" />
+	<link rel="stylesheet" href="$serverURL/CSS/tree.css" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Audiowide&amp;subset=latin,latin-ext" />
