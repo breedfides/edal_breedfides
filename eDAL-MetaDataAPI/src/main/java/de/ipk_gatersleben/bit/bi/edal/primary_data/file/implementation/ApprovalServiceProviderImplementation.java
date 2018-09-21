@@ -280,7 +280,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				throw new EdalApprovalException("unable to check open review processes: " + e.getMessage(),
 						e.getCause());
 			}
-		
+
 		}
 		session.close();
 	}
@@ -885,10 +885,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 				final Transaction transaction2 = session2.beginTransaction();
 
+				Calendar releaseDate = Calendar.getInstance();
+
 				publicReference.setAssignedID(newId);
 				publicReference.setPublic(true);
-				publicReference.setAcceptedDate(Calendar.getInstance());
+				publicReference.setAcceptedDate(releaseDate);
 				publicReference.setPublicationStatus(PublicationStatus.ACCEPTED);
+				publicReference.setReleaseDate(releaseDate);
+				publicReference.changeReleaseDate(releaseDate);
 				session2.update(publicReference);
 
 				transaction2.commit();
@@ -905,11 +909,16 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 			String newId = "";
 			try {
+				
+				Calendar releaseDate = Calendar.getInstance();
+				
 				newId = publicRef.getReferencable().acceptApprovalRequest(publicRef);
 				publicRef.setAssignedID(newId);
 				publicRef.setPublic(true);
-				publicRef.setAcceptedDate(Calendar.getInstance());
+				publicRef.setAcceptedDate(releaseDate);
 				publicRef.setPublicationStatus(PublicationStatus.ACCEPTED);
+				publicRef.setReleaseDate(releaseDate);
+				publicRef.changeReleaseDate(releaseDate);
 
 				final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
@@ -1070,7 +1079,6 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 								String newId = "";
 								try {
 									newId = this.setPublicReferenceToTrue(ticket.getTicket());
-									ticket.getReference().changeReleaseDate(Calendar.getInstance());
 									this.deleteReviewStatus(ticket.getReference());
 									this.deleteTicket(ticket.getTicket());
 
@@ -1078,8 +1086,8 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 										this.sendAcceptedMail(newId, ticket.getEmailNotificationAddress(),
 												this.createLandingPageURL(ticket.getReference()), publicReference);
 									} catch (final EdalApprovalException e) {
-										throw new EdalApprovalException("unable to send Accepted-Email: " + e.getMessage(),
-												e.getCause());
+										throw new EdalApprovalException(
+												"unable to send Accepted-Email: " + e.getMessage(), e.getCause());
 									}
 
 									ApprovalServiceProviderImplementation.synchronizedMap.remove(ticket.getTicket());
@@ -1088,7 +1096,6 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 											"unable to set PublicReference to TRUE: " + e.getMessage(), e.getCause());
 								}
 
-								
 							}
 
 						} else {
