@@ -407,9 +407,7 @@ public class EdalHttpHandler extends AbstractHandler {
 							if (tokenizer.hasMoreTokens()) {
 								final String logoUrl = tokenizer.nextToken();
 
-								if (logoUrl.equalsIgnoreCase("edal_scaled.png")) {
-									this.sendEmbeddedFile(response, "edal_scaled.png", "image/png");
-								} else if (logoUrl.equalsIgnoreCase("edal_logo.png")) {
+								if (logoUrl.equalsIgnoreCase("edal_logo.png")) {
 									this.sendEmbeddedFile(response, "edal_logo.png", "image/png");
 								} else if (logoUrl.equalsIgnoreCase("ipk_logo.jpg")) {
 									this.sendEmbeddedFile(response, "ipk_logo.jpg", "image/jpg");
@@ -902,7 +900,7 @@ public class EdalHttpHandler extends AbstractHandler {
 	 * Generate a HTML output with the
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData} of the
 	 * given {@link PrimaryDataEntity} and send the output over HTTP.
-	 * 
+	 *
 	 * @param response
 	 *            the corresponding HTTP exchange.
 	 * @param entity
@@ -1021,7 +1019,7 @@ public class EdalHttpHandler extends AbstractHandler {
 					teeOutputStream.flush();
 					teeOutputStream.close();
 
-//					contentPageCache.put(cacheKey, cacheFileOutputStream);
+					 contentPageCache.put(cacheKey, cacheFileOutputStream);
 				} catch (EofException eof) {
 
 					DataManager.getImplProv().getLogger()
@@ -1032,7 +1030,8 @@ public class EdalHttpHandler extends AbstractHandler {
 					teeOutputStream.close();
 
 				} catch (InterruptedException e) {
-					DataManager.getImplProv().getLogger().warn("HTTP Request for '" + entity.getName() + "' canceled by user!");
+					DataManager.getImplProv().getLogger()
+							.warn("HTTP Request for '" + entity.getName() + "' canceled by user!");
 					throw new EdalException(e);
 				}
 

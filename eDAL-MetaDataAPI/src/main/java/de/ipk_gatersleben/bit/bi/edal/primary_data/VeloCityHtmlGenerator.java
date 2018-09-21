@@ -221,10 +221,10 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate the HTML output of a {@link PrimaryDataDirectory} for the landing
 	 * page of the HTTP handler.
-	 * 
+	 *
 	 * @param directory
 	 *            the {@link PrimaryDataDirectory} to present on the landing page.
-	 * 
+	 *
 	 * @return the HTML output in a {@link StringWriter}.
 	 * @throws EdalException
 	 *             if unable to create output.
@@ -297,6 +297,8 @@ class VeloCityHtmlGenerator {
 		Calendar date = null;
 
 		Long publicReferenceDirectorySize = new Long(0);
+		
+		String publicReferenceFileDirectoryNumber = new String();
 
 		try {
 			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
@@ -325,6 +327,12 @@ class VeloCityHtmlGenerator {
 
 		if (CalculateDirectorySizeThread.directorySizes.containsKey(internalId + "/" + directory.getID())) {
 			publicReferenceDirectorySize = CalculateDirectorySizeThread.directorySizes
+					.get(internalId + "/" + directory.getID());
+		}
+		
+		if (CalculateDirectorySizeThread.directoryFiles
+				.containsKey(internalId + "/" + directory.getID())) {
+			publicReferenceFileDirectoryNumber = CalculateDirectorySizeThread.directoryFiles
 					.get(internalId + "/" + directory.getID());
 		}
 
@@ -373,13 +381,21 @@ class VeloCityHtmlGenerator {
 		context.put("DataSizeClass", DataSize.StorageUnit.class);
 
 		context.put("EnumSize", de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements.SIZE);
-		
+
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		List<PrimaryDataEntity> list = null;
 
+		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
+
+			context.put("directorynumber", publicReferenceFileDirectoryNumber.split(",")[0]);
+
+			context.put("filenumber", publicReferenceFileDirectoryNumber.split(",")[1]);
+		}
+		
+		
 		try {
 			list = directory.listPrimaryDataEntities();
 
@@ -464,6 +480,8 @@ class VeloCityHtmlGenerator {
 
 		Long publicReferenceDirectorySize = new Long(0);
 
+		String publicReferenceFileDirectoryNumber = new String();
+
 		try {
 			primaryDataEntityVersion = currentDirectory.getVersionByRevisionNumber(versionNumber);
 
@@ -479,6 +497,11 @@ class VeloCityHtmlGenerator {
 					if (CalculateDirectorySizeThread.directorySizes
 							.containsKey(internalId + "/" + currentDirectory.getID())) {
 						publicReferenceDirectorySize = CalculateDirectorySizeThread.directorySizes
+								.get(internalId + "/" + currentDirectory.getID());
+					}
+					if (CalculateDirectorySizeThread.directoryFiles
+							.containsKey(internalId + "/" + currentDirectory.getID())) {
+						publicReferenceFileDirectoryNumber = CalculateDirectorySizeThread.directoryFiles
 								.get(internalId + "/" + currentDirectory.getID());
 					}
 
@@ -515,6 +538,11 @@ class VeloCityHtmlGenerator {
 									publicReferenceDirectorySize = CalculateDirectorySizeThread.directorySizes
 											.get(internalId + "/" + currentDirectory.getID());
 								}
+								if (CalculateDirectorySizeThread.directoryFiles
+										.containsKey(internalId + "/" + currentDirectory.getID())) {
+									publicReferenceFileDirectoryNumber = CalculateDirectorySizeThread.directoryFiles
+											.get(internalId + "/" + currentDirectory.getID());
+								}
 							} else {
 								return this.generateEmbeddedHtmlForErrorMessage(HttpStatus.Code.NOT_FOUND,
 										VeloCityHtmlGenerator.STRING_NO_PUBLIC_REFERENCE_FOR_THIS_VERSION_SET,
@@ -548,7 +576,7 @@ class VeloCityHtmlGenerator {
 		} else {
 			context.put(STRING_CITATION_ENTITY, currentDirectory);
 		}
-		
+
 		/** set date of the PublicReference */
 		context.put(VeloCityHtmlGenerator.STRING_DATE, date);
 
@@ -587,6 +615,8 @@ class VeloCityHtmlGenerator {
 
 		context.put("SizeList", CalculateDirectorySizeThread.directorySizes);
 
+		context.put("directorynumber", publicReferenceFileDirectoryNumber.split(",")[0]);
+
 		context.put("DataSizeClass", DataSize.StorageUnit.class);
 
 		context.put("EnumSize", de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements.SIZE);
@@ -595,7 +625,26 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-		
+
+		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
+
+			context.put("directorynumber", publicReferenceFileDirectoryNumber.split(",")[0]);
+
+			context.put("filenumber", publicReferenceFileDirectoryNumber.split(",")[1]);
+		}
+
+		if (CalculateDirectorySizeThread.referenceContent.containsKey(internalId)) {
+
+			context.put("referenceDirectoryContent",
+					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[0]);
+			context.put("referenceFileContent",
+					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[1]);
+
+			context.put("referenceDataVolume", DataSize.StorageUnit
+					.of(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2]))
+					.format(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2])));
+		}
+
 		List<PrimaryDataEntity> list = null;
 
 		try {
@@ -641,7 +690,7 @@ class VeloCityHtmlGenerator {
 		context.put("message", message);
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
-		
+
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
@@ -664,7 +713,7 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate the HTML output of a {@link PrimaryDataFile} for the landing page of
 	 * the HTTP handler.
-	 * 
+	 *
 	 * @param file
 	 *            the {@link PrimaryDataFile} to present on the landing page.
 	 * @return the HTML output in a {@link StringWriter}.
@@ -791,7 +840,7 @@ class VeloCityHtmlGenerator {
 
 		/** set rights enum **/
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
-		
+
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
@@ -981,11 +1030,23 @@ class VeloCityHtmlGenerator {
 		context.put("rights", EnumDublinCoreElements.RIGHTS);
 		context.put("type", EnumDublinCoreElements.TYPE);
 		context.put("format", EnumDublinCoreElements.FORMAT);
-		
+
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+
+		if (CalculateDirectorySizeThread.referenceContent.containsKey(internalId)) {
+
+			context.put("referenceDirectoryContent",
+					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[0]);
+			context.put("referenceFileContent",
+					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[1]);
+
+			context.put("referenceDataVolume", DataSize.StorageUnit
+					.of(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2]))
+					.format(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2])));
+		}
 
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
@@ -1185,7 +1246,7 @@ class VeloCityHtmlGenerator {
 
 		/* value for total file number of all stored entities */
 		final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.ENGLISH);
-		context.put("filenumber", numberFormat.format(ServiceProviderImplementation.numberOfFiles));
+		context.put("filenumber", numberFormat.format(ServiceProviderImplementation.totalNumberOfFiles));
 
 		/* value for total number of users */
 		context.put("users", DataManager.getImplProv().getServiceProvider().newInstance().getNumberOfUsers());
