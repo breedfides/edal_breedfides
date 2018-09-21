@@ -56,11 +56,11 @@
                             </p>
                             
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">Abstract:</span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
+                                <span style="font-weight:500;">Abstract: </span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
                             </p>
 
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">License:</span> <a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
+                                <span style="font-weight:500;">License: </span><a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
                             </p>
 
                             <p class="my-0 mt-1">

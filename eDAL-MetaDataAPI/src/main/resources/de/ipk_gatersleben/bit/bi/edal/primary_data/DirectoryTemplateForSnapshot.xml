@@ -69,11 +69,11 @@
                             </p>
                             
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">Abstract:</span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
+                                <span style="font-weight:500;">Abstract: </span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
                             </p>
 
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">License:</span> <a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
+                                <span style="font-weight:500;">License: </span><a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
                             </p>
 
                             <p class="my-0 mt-1">
@@ -84,18 +84,19 @@
 								#end
 							#end
                             </p>
+                            <p class="my-0 mt-1">
+                                <span style="font-weight:500;">Content: </span>$referenceDirectoryContent Directories $referenceFileContent Files ($referenceDataVolume)
+                            </p>
 
                         </div>
                     </div>
 
                     <div class="card mt-3">
                         <div class="card-body p-3">
-                            <h6>Files</h6>
-
+                            <h6>Files:</h6>
                             <div id="edal-detail-path">
-                                $entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath()
+                                $entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath() <span style="font-weight:500;">[$directorynumber Directories $filenumber Files]</span>
                             </div>
-
 
 							#if($entity.getParentDirectory().toString() != "/")
 							<div id="edal-detail-directory-up">

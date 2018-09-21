@@ -69,11 +69,11 @@
                             </p>
                             
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">Abstract:</span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
+                                <span style="font-weight:500;">Abstract: </span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
                             </p>
 
                             <p class="my-0 mt-2">
-                                <span style="font-weight:500;">License:</span> <a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
+                                <span style="font-weight:500;">License: </span><a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
                             </p>
 
                             <p class="my-0 mt-1">
@@ -83,6 +83,9 @@
 									$element.getAssignedID()
 								#end
 							#end
+                            </p>
+                             <p class="my-0 mt-1">
+                                <span style="font-weight:500;">Content: </span>$referenceDirectoryContent Directories $referenceFileContent Files ($referenceDataVolume)
                             </p>
 
                         </div>
@@ -129,14 +132,14 @@
                                 <div class="col-lg">
 
                                     <table class="table table-bordered table-sm">
-                                       	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart1.xml")
+                                       	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataFileTemplatePart1.xml")
                                     </table>
 
                                 </div>
                                 <div class="col-lg">
 
                                     <table class="table table-bordered table-sm">
-                                        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart2.xml")
+                                        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataFileTemplatePart2.xml")
                                     </table>
 
                                 </div>

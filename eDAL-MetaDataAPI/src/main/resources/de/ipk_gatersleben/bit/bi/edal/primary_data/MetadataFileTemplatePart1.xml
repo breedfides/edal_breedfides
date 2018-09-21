@@ -1,16 +1,15 @@
 	#foreach( $element in $allElements)
-	#if( $element.name() == "PUBLISHER" || $element.name() == "SUBJECT")
+	#if( $element.name() == "PUBLISHER" || $element.name() == "SUBJECT" || $element.name() == "SIZE")
 	<tr>
-		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>
+		<td width="120px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>
 		<td>
-		#if($element.name()=="SIZE")$metadatasize
-		#else$entity.getVersionByDate($date).getMetaData().getElementValue($element).toHTML()
-		#end</td>
+		$entity.getVersionByDate($date).getMetaData().getElementValue($element).toHTML()
+		</td>
 	</tr>
 	#end
 	#if($element.name() == "CONTRIBUTOR" )
 	<tr>
-		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
+		<td width="120px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
 		<td>	
 			#set($persons = $entity.getVersionByDate($date).getMetaData().getElementValue($element))
 			<div id="edal-contributor-short">
@@ -26,7 +25,11 @@
 			<div id="edal-contributor-long" style="display:none;">
 				#foreach( $person in $persons)
 					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
-						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()
+						#if($person.getOrcid())
+						, <a href="https://orcid.org/$person.getOrcid()" target="_blank">$person.getOrcid()</a>
+						#end
+						#if($foreach.count<$persons.size()); #end  
 					#else
 						$person.getLegalName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
 					#end<br/>	
@@ -38,7 +41,7 @@
 	#end
 	#if($element.name() == "CREATOR")
 	<tr>
-		<td width="100px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
+		<td width="120px"><a href="http://purl.org/dc/elements/1.1/$element.name().toLowerCase()">$element.name():</a></td>	
 		<td>	
 			#set($persons = $entity.getVersionByDate($date).getMetaData().getElementValue($element))
 			<div id="edal-creator-short">
@@ -54,7 +57,11 @@
 			<div id="edal-creator-long" style="display:none;">
 				#foreach( $person in $persons)
 					#if($person.class.name == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
-						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
+						$person.getGivenName() $person.getSureName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()
+						#if($person.getOrcid())
+						, <a href="https://orcid.org/$person.getOrcid()" target="_blank">$person.getOrcid()</a>
+						#end
+						#if($foreach.count<$persons.size()); #end  
 					#else
 						$person.getLegalName(), $person.getAddressLine(), $person.getZip(), $person.getCountry()#if($foreach.count<$persons.size()); #end  
 					#end<br/>	

@@ -1,39 +1,33 @@
-
-#foreach($object in $allobjects) #if($object.isDirectory())
-<tr>
-	<td class="item folder">
-		<a
-			href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
-	</td>
-
-	<td class="itemsize">
-		<a
-			href="$downloadURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode/ZIP"
-			target="_blank">#if($SizeList.containsKey("$internalId/$object.getID()"))
-			$DataSizeClass.of($SizeList.get("$internalId/$object.getID()")).format($SizeList.get("$internalId/$object.getID()"))
-			#end
-		</a>
-	</td>
-
-
-</label>
-</li>
-</tr>
-#else
-<tr>
-
-	<td
-		class="item file $object.toString().substring($object.toString().lastIndexOf('.') + 1)">
-		<a
-			href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
-	</td>
-	<td class="itemsize">
-		<a
-			href="$downloadURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode/DOWNLOAD"
-			target="_blank">$object.getMetaData().getElementValue($EnumSize).toHTML()</a>
-	</td>
-
-</tr>
-
-
-#end #end
+#foreach($object in $allobjects) 
+	#if($object.isDirectory())
+		<tr>
+			<td class="item folder">
+				<a
+					href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
+			</td>
+			<td class="itemsize">
+				<a
+					href="$downloadURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode/ZIP"
+					target="_blank">#if($SizeList.containsKey("$internalId/$object.getID()"))
+					$DataSizeClass.of($SizeList.get("$internalId/$object.getID()")).format($SizeList.get("$internalId/$object.getID()"))
+					#end
+				</a>
+			</td>
+		</label>
+		</li>
+		</tr>
+	#else
+		<tr>
+			<td
+				class="item file $object.toString().substring($object.toString().lastIndexOf('.') + 1)">
+				<a
+					href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
+			</td>
+			<td class="itemsize">
+				<a
+					href="$downloadURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode/DOWNLOAD"
+					target="_blank">$object.getMetaData().getElementValue($EnumSize).toHTML()</a>
+			</td>
+		</tr>
+	#end 
+#end
