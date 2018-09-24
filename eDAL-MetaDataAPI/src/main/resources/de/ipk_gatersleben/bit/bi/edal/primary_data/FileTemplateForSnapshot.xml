@@ -46,7 +46,7 @@
 
     <div id="grid-container-content" style="overflow-y: auto;padding-bottom:20px;">
 
-        <div class="container-fluid mt-4 px-4">
+        <div class="container-fluid mt-2 px-4">
             <div class="row">
                 <div class="col">
 
@@ -91,7 +91,7 @@
                         </div>
                     </div>
 
-                    <div class="card mt-3">
+                    <div class="card mt-2">
                         <div class="card-body p-3">
                             <h6>Files</h6>
 
@@ -121,7 +121,7 @@
 
                 </div>
             </div>
-            <div class="row mt-4" id="edal-metadata-details">
+            <div class="row mt-2" id="edal-metadata-details">
                 <div class="col">
 
                     <div class="card p-3">
