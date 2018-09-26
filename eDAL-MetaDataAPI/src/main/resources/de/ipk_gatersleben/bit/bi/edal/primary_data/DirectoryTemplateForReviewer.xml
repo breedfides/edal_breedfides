@@ -5,13 +5,15 @@
     <title>Metadata - $entity.getVersionByDate($date).getName()</title>
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
+	
+	<link rel="stylesheet" href="$serverURL/CSS/content.css" />
 			
 </head>
 <body>
 
 <div id="grid-container"> 
 		
-		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplate.xml")
+		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplateContent.xml")
 
     <div id="controls" class="pt-2 pb-2">
         <div class="px-3 clearfix" id="edal-detail-quote-wrapper">
@@ -76,7 +78,7 @@
                         <div class="card-body p-3">
                             <h6>Files:</h6>
                             <div id="edal-detail-path">
-                                $entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath() <span style="font-weight:500;">[$directorynumber Directories $filenumber Files]</span>
+                                $entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath()
                             </div>
 
 							#if($entity.getParentDirectory().toString() != "/")

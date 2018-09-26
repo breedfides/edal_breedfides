@@ -6,13 +6,15 @@
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
     
+    <link rel="stylesheet" href="$serverURL/CSS/report.css">
+    	
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
     
   </head>
 
   <body>
     <div id="grid-container"> 
-        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplate.xml")
+        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplateReport.xml")
         <div id="controls" class="pt-2 pb-2">
             <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
                 <span class="h2 mr-5">Request - Statistics</span>

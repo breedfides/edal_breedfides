@@ -1,0 +1,20 @@
+ <header>
+        <nav>
+            <div class="container-fluid">
+                <div class="row header">
+                    <div class="col my-auto">
+                        <a href="http://edal.ipk-gatersleben.de"><img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" /></a>
+                    </div>
+                    <div id="edal-report-title-long" class="col-auto text-center my-auto">
+                        $repositoryNameLong
+                    </div>
+                    <div id="edal-report-title-short" class="col-auto text-center my-auto">
+                            $repositoryNameShort
+                    </div>
+                    <div class="col text-right pt-1">
+                        <a href="http://www.ipk-gatersleben.de"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+ </header> 

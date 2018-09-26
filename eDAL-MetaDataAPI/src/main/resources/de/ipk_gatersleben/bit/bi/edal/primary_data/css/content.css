@@ -292,6 +292,11 @@ a.edal-detail-quote-btn {
     border-bottom:1px solid rgb(240,240,240);
 }
 
+td.file:before {
+    font-family: 'FontAwesome';
+    content: "\f016";
+    margin-right:4px;
+}
 
 td.file.pdf:before {
     font-family: 'FontAwesome';

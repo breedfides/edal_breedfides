@@ -6,6 +6,8 @@
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 	
+	<link rel="stylesheet" href="$serverURL/CSS/content.css" />
+	
 	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetaTagTemplate.xml")
 		
 	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
@@ -17,7 +19,7 @@
 
 		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/JsonLdTemplate.xml")
 		
-		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplate.xml")
+		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplateContent.xml")
 
     <div id="controls" class="pt-2 pb-2">
         <div class="px-3 clearfix" id="edal-detail-quote-wrapper">
