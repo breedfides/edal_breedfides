@@ -11,6 +11,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 
 import org.json.simple.JSONArray;
@@ -18,6 +19,7 @@ import org.json.simple.JSONObject;
 
 import com.maxmind.db.CHMCache;
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.Location;
 
@@ -30,6 +32,12 @@ import com.maxmind.geoip2.record.Location;
 public class GenerateLocations {
 
 	private static DatabaseReader reader = null;
+
+	private static JSONArray allIPsList = new JSONArray();
+
+	public static JSONArray getAllIPsList() {
+		return allIPsList;
+	}
 
 	static {
 
@@ -117,11 +125,16 @@ public class GenerateLocations {
 					if (!list.contains(str)) {
 						list.add(str);
 					}
+					if (!allIPsList.contains(str)) {
+						allIPsList.add(str);
+					}
 				}
-			} catch (Exception e) {
+			} catch (IOException | GeoIp2Exception  e) {
+//				e.printStackTrace();
 			}
 
 		}
 		return list;
 	}
+
 }

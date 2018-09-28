@@ -1250,7 +1250,10 @@ class VeloCityHtmlGenerator {
 
 		/* value for total number of users */
 		context.put("users", DataManager.getImplProv().getServiceProvider().newInstance().getNumberOfUsers());
-
+		
+		/* all IP map */
+		context.put("jsonall", GenerateLocations.getAllIPsList());
+		
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 
 		final MergingReportOutputThread thread = new MergingReportOutputThread(

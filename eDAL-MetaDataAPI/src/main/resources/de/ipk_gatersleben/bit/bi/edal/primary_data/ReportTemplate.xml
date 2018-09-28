@@ -34,6 +34,11 @@
                         <a id="edal-report-export-csv" class="btn btn-outline-light btn-sm" href="#" role="button">CSV</a>&nbsp;
                         <a id="edal-report-export-clipboard" class="btn btn-outline-light btn-sm" href="#" role="button">Copy to clipboard</a>&nbsp;
                     </div>
+                    
+                      <div id="edal-report-export-container">
+                        <span class="mr-2">Show all on map:</span>
+                        <a id="edal-report-show-map-all-locations" class="btn btn-outline-light btn-sm" href="#" role="button">Show</a>&nbsp;
+                    </div>
 
                 </div>
                 <div id="edal-report-search-container">
@@ -74,10 +79,11 @@
 
     <script>
         var reportData = $json;
+        var mapData = $jsonall;
     </script>
     
     <script>
-    EdalReport.init(reportData);
+    EdalReport.init(reportData, mapData);
 
     function initMap() { // This callback is needed because of the asynchronicity of GoogleMapsAPI
         EdalReport.initGoogleMap();
