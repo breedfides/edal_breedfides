@@ -43,8 +43,10 @@ public class CalculateDirectorySizeThread extends Thread {
 	private static Scheduler scheduler;
 
 	public static Map<String, Long> directorySizes = null;
-
+	public static Map<String, String> directoryFiles = null;
 	public static long totalVolumeDataStock = 0;
+	public static Map<String, String> referenceContent = null;
+
 
 	public CalculateDirectorySizeThread() {
 
@@ -97,17 +99,17 @@ public class CalculateDirectorySizeThread extends Thread {
 		} else {
 			directorySizes = new HashMap<String, Long>();
 		}
-
-		path = ServiceProviderImplementation.PATH_FOR_TOTAL_FILE_NUMBER;
+		
+		path = ServiceProviderImplementation.PATH_FOR_DIRECTORY_FILE_MAP;
 
 		if (Files.exists(path)) {
-			ServiceProviderImplementation.numberOfFiles = new Long(0);
+			directoryFiles = new HashMap<String, String>();
 
 			try {
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()));
-				Object readLong = ois.readObject();
-				if (readLong != null && readLong instanceof Long) {
-					ServiceProviderImplementation.numberOfFiles = (Long) readLong;
+				Object readMap = ois.readObject();
+				if (readMap != null && readMap instanceof HashMap) {
+					directoryFiles.putAll((Map<String, String>) readMap);
 				}
 				ois.close();
 			} catch (Exception e) {
@@ -115,7 +117,47 @@ public class CalculateDirectorySizeThread extends Thread {
 			}
 
 		} else {
-			ServiceProviderImplementation.numberOfFiles = new Long(0);
+			directoryFiles = new HashMap<String, String>();
+		}
+		
+		path = ServiceProviderImplementation.PATH_FOR_REFERENCE_CONTENT;
+
+		if (Files.exists(path)) {
+			referenceContent = new HashMap<String, String>();
+
+			try {
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()));
+				Object readMap = ois.readObject();
+				if (readMap != null && readMap instanceof HashMap) {
+					referenceContent.putAll((Map<String, String>) readMap);
+				}
+				ois.close();
+			} catch (Exception e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
+			}
+
+		} else {
+			referenceContent = new HashMap<String, String>();
+		}
+
+		path = ServiceProviderImplementation.PATH_FOR_TOTAL_FILE_NUMBER;
+
+		if (Files.exists(path)) {
+			ServiceProviderImplementation.totalNumberOfFiles = new Long(0);
+
+			try {
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()));
+				Object readLong = ois.readObject();
+				if (readLong != null && readLong instanceof Long) {
+					ServiceProviderImplementation.totalNumberOfFiles = (Long) readLong;
+				}
+				ois.close();
+			} catch (Exception e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
+			}
+
+		} else {
+			ServiceProviderImplementation.totalNumberOfFiles = new Long(0);
 		}
 
 		path = ServiceProviderImplementation.PATH_FOR_TOTAL_VOLUME;

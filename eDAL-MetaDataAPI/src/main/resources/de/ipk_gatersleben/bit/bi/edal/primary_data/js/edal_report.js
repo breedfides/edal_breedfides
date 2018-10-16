@@ -3,13 +3,16 @@ let EdalReport = new function() {
     this.markerColors = ['#ff0000', '#cccc00', '#0000ff', '#ffff00', '#66ffff', '#000000'];
     this.doiMarkers = {};
     this.doiColor = {};
+    this.allMarkers = [];
     this.yearFilter = null;
     this.searchFilter = null;
     this.stateEntriesShown = 0;
+    this.stateShowAllMarkers = false;
     this.allYears = [];
 
-    this.init = function(reportData) {
+    this.init = function(reportData, mapData) {
         this.reportData = reportData;
+        this.mapData = mapData;
         this.reportDataKeyed = _.keyBy(reportData, 'doi');
         this.allYears = _.uniq(_.map(reportData, 'year')).sort().reverse();
 
@@ -52,7 +55,7 @@ let EdalReport = new function() {
         this.datatable = $('#report').DataTable({
             data: self.reportData,
             dom: 't',
-            // dom: 'Bfrtip',
+            //dom: 'Bfrtip',
             order: [[2, 'desc']],
             buttons: [
                 {
@@ -77,7 +80,6 @@ let EdalReport = new function() {
                 {
                     title: "DOI",
                     data: "doi",
-                    orderable: false,
                     class: "edal-report-doi",
                     render: function (data, type, row) {
                         return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
@@ -207,9 +209,49 @@ let EdalReport = new function() {
             event.preventDefault();
             self.datatable.button('.buttons-csv').trigger();
         });
+
         $(document).on('click', '#edal-report-export-clipboard', function(event) {
             event.preventDefault();
             self.datatable.button('.buttons-copy').trigger();
+        });
+
+        $(document).on('click', '#edal-report-show-map-all-locations', function(event) {
+            event.preventDefault();
+            let state = $(this).text();
+            if (state === 'Show') {
+                self.showGoogleMap();
+                self.showAllMarkers();
+                $(this).text('Hide');
+            } else {
+                self.hideGoogleMap();
+                self.hideAllMarkers();
+                $(this).text('Show');
+            }
+        });
+        
+    };
+
+    this.showAllMarkers = function() {
+        this.stateShowAllMarkers = true;
+        let self = this;
+        const markerImg = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAaUlEQVQImX3OsQ3CUBRD0SPCCNmALqLJBjBP5kFeBaosAl3qPwBCehR8JCosWdduLKuqMYnW2oBja21IoqpGSWDCFffOKYm9jy449Xzo/QwzNjzx6twwf2dX1I/XJHZ9asENj84F/Hv7BtAVNyeCakVFAAAAAElFTkSuQmCC';
+        const icon = {
+            url: markerImg,
+        };
+        _.forEach(this.mapData, function(loc) {           
+            let marker = new google.maps.Marker({
+                position: {lat: loc.lat, lng: loc.long},
+                icon: icon,
+            });
+            marker.setMap(self.map);
+            self.allMarkers.push(marker);
+        });
+    };
+
+    this.hideAllMarkers = function() {
+        this.stateShowAllMarkers = false;
+        _.forEach(this.allMarkers, function(marker) {
+            marker.setMap(null);
         });
     };
 
@@ -248,24 +290,34 @@ let EdalReport = new function() {
     this.toogleGoogleMapVisibility = function(elemShowMapLink) {
         let numberShown = $("a.worldmap-link:contains('Hide')").length;
         if (numberShown > 0) {
-            $('#map-container').show();
-            $('#grid-container-table-and-map').css('grid-template-rows', '1fr 300px');
-            // $('div.dataTables_scrollBody').height(330);
+            this.showGoogleMap();
         } else {
-            $('#map-container').hide();
-            $('#grid-container-table-and-map').css('grid-template-rows', '1fr');
-            // $('div.dataTables_scrollBody').height("100%");
+            if (this.stateShowAllMarkers === false) {
+                this.hideGoogleMap();
+            }
         }
+
         let pos = elemShowMapLink.parent().position();
 
         setTimeout(function(){
             let isInViewport = $(elemShowMapLink.parent()).isInViewport();
             var currScrollPos = $('div.dataTables_scrollBody').scrollTop();
             if (!isInViewport) {
-                // $('div.dataTables_scrollBody').scrollTop(pos.top-50);
                 $('div.dataTables_scrollBody').scrollTop(currScrollPos+300);
             }
         }, 100);
+    };
+
+    this.showGoogleMap = function() {
+        $('#map-container').show();
+        $('#grid-container-table-and-map').css('grid-template-rows', '1fr 300px');
+    };
+
+    this.hideGoogleMap = function() {
+        if (this.stateEntriesShown === 0) {
+            $('#map-container').hide();
+            $('#grid-container-table-and-map').css('grid-template-rows', '1fr');
+        }
     };
 
     this.niceBytes = function(x) {

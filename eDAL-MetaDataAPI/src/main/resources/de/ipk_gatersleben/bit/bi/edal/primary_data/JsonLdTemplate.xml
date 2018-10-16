@@ -37,6 +37,44 @@
 			#end
 			#if($foreach.count < $size),#{else} #end
 		 	#end
+		 	#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($contributor))
+			#set($size=$persons.size())
+			#foreach($person in $persons.getPersons())
+			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+					{	
+						"@type":"Person",
+			 			"givenName":"$person.getGivenName()",
+			 			"familyName":"$person.getSureName()",
+			 			"address":"$person.getAddressLine(), $person.getZip(), $person.getCountry()" 
+					}
+			#else
+					{
+						"@type":"Organization",
+						"name":"$person.getLegalName()" 	
+					}
+			#end
+			#if($foreach.count < $size),#{else} #end
+		 	#end
+		 	],
+		 	"creator":[
+			#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($creator))
+			#set($size=$persons.size())
+			#foreach($person in $persons.getPersons())
+			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
+					{	
+						"@type":"Person",
+			 			"givenName":"$person.getGivenName()",
+			 			"familyName":"$person.getSureName()",
+			 			"address":"$person.getAddressLine(), $person.getZip(), $person.getCountry()" 
+					}
+			#else
+					{
+						"@type":"Organization",
+						"name":"$person.getLegalName()" 	
+					}
+			#end
+			#if($foreach.count < $size),#{else} #end
+		 	#end
 		 	],
 		 	"contributor":[
 			#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($contributor))

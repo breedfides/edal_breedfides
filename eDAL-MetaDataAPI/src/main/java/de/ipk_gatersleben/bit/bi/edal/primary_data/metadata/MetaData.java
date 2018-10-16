@@ -291,7 +291,7 @@ public class MetaData implements Cloneable, Serializable {
 				? (creator_natural.getGivenName().length() > 0 ? creator_natural.getGivenName().substring(0, 1) + ". "
 						: "")
 						+ (creator_natural.getSureName().length() > 0
-								? creator_natural.getSureName() + (persons.size() > 1 ? " et al. " : " ")
+								? creator_natural.getSureName() + (persons.size() > 1 ? " et al." : "")
 								: MetaData.UNKNOWN_STRING)
 				: creator_legal != null ? creator_legal.getLegalName().length() > 0 ? creator_legal.getLegalName()
 						: MetaData.UNKNOWN_STRING : MetaData.UNKNOWN_STRING);

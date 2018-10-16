@@ -66,8 +66,8 @@ public class ElixirCallBackHandler implements CallbackHandler {
 	private static String username = null;
 	private static Server server = null;
 
-	private final static String CLIENT_ID = "N2U5OThkOTMtYTdhNS00MzUxLWIxNDktZjQ2YTRlMGU3N2Zj";
-	private final static String CLIENT_SECRET = "WFdVYTAyN2NkeWtVcUN3b1pvampTQ2xWRnA0SEhVanRvOW11YkpoUkh2cUNaNzBJNVhRd2lNVm1oR2dOQVBiMnBMOXl1eFQyUDRleGlWMVNpYjFoLWc=";
+	private final static String CLIENT_ID = "YzEyOThmNzctZWEzNC00NDJiLTgyNDQtNGE2YTE0OGQyZGMx";
+	private final static String CLIENT_SECRET = "QU9sSk5IcWZfLV84NEEwVTd1MkI0LWJ5V0N0djBjdGVhTVN1Q3Brd2RPRkp4TUZ4YkFyOWZaS241WjV5RjNEdzA3MmZNeGt0R0thVTBib3VLU2lxYnJF";
 	private final static String REDIRECT_URI = "http://localhost:" + LOCALHOST_HTTP_PORT + "/callback";
 
 	public ElixirCallBackHandler() {

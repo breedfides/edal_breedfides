@@ -1,217 +1,400 @@
 html {
-	position: relative;
-	min-height: 100%;
-	height: 100%;
+    position: relative;
+    min-height: 100%;
+    height: 100%;
 }
-
 body {
-	min-height: 100%;
-	height: 100%;
-}
-
-nav {
-	background: white !important;
-	border-bottom: 1px solid rgb(125, 125, 125);
-	box-shadow: 0px 4px 7px rgba(0, 0, 0, 0.15);
-	height: 83px;
-	z-index: 100;
-	position: relative;
-}
-
-#logo-edal {
-	position: absolute;
-	top: 15px;
-	left: 25px;
-}
-
-#logo-ipk {
-	position: absolute;
-	top: 2px;
-	right: 25px;
-	padding: 0;
-	margin: 0;
-}
-
-a.edal-report-year-filter {
-	padding-top: 1px;
-	padding-bottom: 1px;
-}
-
-#edal-report-export-container a.btn {
-	padding-top: 1px;
-	padding-bottom: 1px;
-}
-
-table#report {
-	border-bottom: 2px solid rgb(230, 230, 230);
-}
-
-table#report tr td {
-	font-size: 90%;
-	padding-top: 1px;
-	padding-bottom: 1px;
-}
-
-table#report tr td.edal-report-title {
-	max-width: 200px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-table#report tr td.edal-report-doi {
-	max-width: 80px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-@
-supports ( -moz-appearance:none ){ table#report tr td.edal-report-doi {
-	max-width: none;
-}
-
-}
-div#edal-report-table-container {
-	margin-bottom: 10px;
-}
-
-div#report_wrapper {
-	height: 100%;
-	box-sizing: border-box;
-	margin-bottom: 25px;
-}
-
-div.dataTables_scroll {
-	height: 100%;
-	box-sizing: border-box;
-}
-
-div.dataTables_scrollBody {
-	height: calc(100% - 42px);
-	/* fixes additional height of the datatables header */
-	box-sizing: border-box;
-}
-
-@media ( max-width : 850px) {
-	div.dataTables_scrollBody {
-		height: calc(100% - 67px);
-	}
-}
-
-#edal-report-title-long {
-	font-size: 1.4rem;
-}
-
-#edal-report-title-short {
-	font-size: 1.2rem;
-}
-
-@media ( max-width : 970px) {
-	#edal-report-title-long {
-		display: none;
-	}
-	#edal-report-title-short {
-		display: block;
-	}
-}
-
-@media ( min-width : 971px) {
-	#edal-report-title-long {
-		display: block;
-	}
-	#edal-report-title-short {
-		display: none;
-	}
-}
-
-#grid-container {
-	display: grid;
-	grid-template-rows: 83px auto 1fr auto;
-	grid-template-columns: 1fr;
-	height: 100vh;
-}
-
-#grid-container-table-and-map {
-	display: grid;
-	grid-template-rows: 1fr;
-	grid-template-columns: 1fr;
-	min-height: 0;
-	min-width: 0;
-}
-
-#controls {
-	background: url(../LOGO/header_bg2.png) 0px -150px,
-		linear-gradient(to bottom, rgba(0, 179, 244, 1) 0%,
-		rgba(0, 155, 216, 1) 100%);
-	background-position: center 21%;
-}
-
-#edal-report-filter-container {
-	display: inline-block;
-	color: white;
-}
-
-#edal-report-export-container {
-	display: inline-block;
-	color: white;
-}
-
-#edal-report-search-container {
-	float: right;
-	display: inline-block;
-}
-
-@media ( max-width : 1240px) {
-	#edal-report-search-container {
-		padding-top: 10px;
-		float: none;
-		display: block;
-		width: 350px;
-	}
-}
-
-@media ( max-width : 850px) {
-	#edal-report-export-container {
-		display: block;
-		margin-top: 10px;
-	}
+    min-height: 100%;
+    height: 100%;
 }
 
 header {
-	height: 90px;
-	z-index: 99;
+    height:90px;
+    z-index:99;
 }
 
-div.row.header>div {
-	height: 80px;
-	vertical-align: middle;
-	padding-top: 15px;
+div.row.header > div {
+    height:80px;
+    vertical-align:middle;
+    padding-top:15px;
+}
+
+
+
+
+nav {
+	background: white !important;
+    border-bottom: 1px solid rgb(125, 125, 125);
+    box-shadow: 0px 4px 7px rgba(0, 0, 0, 0.15);
+    height:83px;
+    z-index:100;
+    position: relative;
+}
+
+
+a.edal-report-year-filter {
+    padding-top:1px;
+    padding-bottom:1px;
+}
+
+#edal-report-export-container a.btn {
+    padding-top:1px;
+    padding-bottom:1px;
+}
+
+
+
+#edal-report-title-long {
+    font-size:1.4rem;
+}
+
+#edal-report-title-short {
+    font-size:1.2rem;
+}
+
+@media (max-width: 970px) {
+    #edal-report-title-long {
+        display:none;
+    }
+    #edal-report-title-short {
+        display: flex;
+    }
+}
+
+@media (min-width: 971px) {
+    #edal-report-title-long {
+        display:block;
+    }
+    #edal-report-title-short {
+        display:none;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+table#report {
+    border-bottom:2px solid rgb(230, 230, 230);
+}
+
+table#report tr td {
+    font-size:90%;
+    padding-top:1px;
+    padding-bottom:1px;
+}
+
+
+
+table#report tr td.edal-report-title {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table#report tr td.edal-report-doi {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@supports ( -moz-appearance:none ){
+    table#report tr td.edal-report-doi {
+        max-width: none;
+      }
+}
+
+
+
+div#edal-report-table-container {
+    margin-bottom:10px;
+}
+
+div#report_wrapper {
+    height: 100%;
+    box-sizing: border-box;
+    margin-bottom:25px;
+}
+div.dataTables_scroll {
+    height: 100%;
+    box-sizing: border-box;
+}
+div.dataTables_scrollBody {
+    height: calc(100% - 42px); /* fixes additional height of the datatables header */
+    box-sizing: border-box;
+    
+}
+
+@media (max-width: 850px) {
+    div.dataTables_scrollBody {
+        height: calc(100% - 67px);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+#grid-container {
+    display: grid; 
+    grid-template-rows: 83px auto 1fr auto;
+    grid-template-columns: 1fr; 
+    height: 100vh;
+}
+
+#grid-container-table-and-map {
+    /*display: block;
+    height: 50%;
+    overflow-y: auto;*/
+}
+
+
+div#map-container {
+    display: none;
+    height: 300px;
+    width:100%;
+    border-top: 1px solid rgb(150, 150, 150);
 }
 
 footer {
-	background-color: #f5f5f5;
-	font-size: 80%;
-	text-align: center;
-	box-shadow: 0px -4px 7px rgba(0, 0, 0, 0.05);
-	border-top: 1px solid rgb(200, 200, 200);
-	padding: 8px 0 8px 0;
+    background-color: #f5f5f5;
+    font-size:80%;
+    text-align:center;
+    box-shadow: 0px -4px 7px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgb(200, 200, 200);
+    padding:8px 0 8px 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
 }
 
-div#map-container {
-	display: none;
-	height: 300px;
-	width: 100%;
-	border-top: 1px solid rgb(150, 150, 150);
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	z-index: 111;
+@supports (display: grid) {
+    #grid-container-table-and-map {
+        display: grid; 
+        grid-template-rows: 1fr;
+        grid-template-columns: 1fr;
+        min-height:0;
+        min-width:0;
+    }
+    
+    div#map-container {
+        height:300px;
+        border-top: 1px solid rgb(150, 150, 150);
+        position:relative;
+    }
+
+    footer {
+        position: relative;
+    }
 }
 
-@
-supports (display: grid ) {div #map-container { height:300px;
-	border-top: 1px solid rgb(150, 150, 150);
-	position: relative;
+
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    #grid-container-table-and-map {
+        display: block;
+        height: 50%;
+        overflow-y: auto;
+    }
+    div#map-container {
+        position: fixed;
+        height: 20%;
+        bottom: 40px;
+        left: 0;
+        z-index: 111;
+    }
 }
+
+
+
+
+
+#controls {
+    background: url(../LOGO/header_bg2.png) 0px -150px, linear-gradient(to bottom, rgba(0, 179, 244, 1) 0%, rgba(0, 155, 216, 1) 100%);
+    background-position: center 21%;
+}
+
+#edal-report-filter-container {
+    display:inline-block;
+    color:white;
+}
+
+#edal-report-export-container {
+    display:inline-block;
+    color:white;
+}
+
+#edal-report-search-container {
+    float:right;
+    display:inline-block;
+}
+
+@media (max-width: 1240px) {
+    #edal-report-search-container {
+        padding-top:10px;
+        float:none;
+        display:block;
+        width:350px;
+    }
+}
+
+@media (max-width: 850px) {
+    #edal-report-export-container {
+        display:block;
+        margin-top:10px;
+    }
+}
+
+
+
+
+
+
+
+
+/*
+@media (max-width: 600px) {
+    #logo-ipk {
+        height: 42px;
+        margin-top: 2px;
+    }
+    #logo-edal {
+        height: 36px;
+        margin-top: 0px;
+    }
+    header {
+        height: 70px;
+    }
+    div.row.header {
+        height: 60px;
+    }
+    div.row.header > div {
+        height: 60px;
+    }
+    nav {
+        height: 63px;
+    }
+    #grid-container {
+        grid-template-rows: 63px auto 1fr auto;
+    }
+    a.edal-report-year-filter {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        font-size: 0.7rem;
+    }
+    div#edal-report-export-container > a {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        font-size: 0.7rem;
+    }
+    #edal-detail-quote-container > span {
+        font-size: 0.80rem;
+    }
+    footer {
+        font-size: 0.6rem;
+    }
+    div#controls span.h2 {
+        font-size: 1.6rem;
+    }
+    div#controls span.h6 {
+        font-size: 0.8rem;
+    }
+    #edal-report-filter-container > span {
+        font-size: 0.85rem;
+    }
+    #edal-report-export-container > span {
+        font-size: 0.85rem;
+    }
+}
+*/
+
+
+@media (max-width: 600px) ,  only screen and (max-width: 400px) and (orientation : portrait) {
+    #logo-ipk {
+        height: 42px;
+        margin-top: 2px;
+    }
+    #logo-edal {
+        height: 36px;
+        margin-top: 0px;
+    }
+    header {
+        height: 70px;
+    }
+    div.row.header {
+        height: 60px;
+    }
+    div.row.header > div.col-auto {
+        height: 60px;
+        padding-top: 0px;
+        line-height: 1.0em;
+        display: flex;
+        align-items: center;
+    }
+    nav {
+        height: 63px;
+    }
+    #grid-container {
+        grid-template-rows: 63px auto 1fr auto;
+    }
+    a.edal-report-year-filter, #edal-report-export-container > a {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        font-size: 0.7rem;
+    }
+    #edal-report-export-container > span, #edal-report-filter-container > span {
+        font-size: 0.80rem;
+    }
+    #edal-report-title-short {
+        font-size: 0.9rem;
+    }
+    div#controls span.h2 {
+        font-size: 1.6rem;
+    }
+    div#controls span.h6 {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 800px) {
+    footer {
+        font-size: 0.6rem;
+    } 
+}
+
+@media only screen and (max-width: 400px) and (orientation : portrait) {
+
+    #logo-ipk {
+        height: 34px;
+        margin-top: 2px;
+    }
+    #logo-edal {
+        height: 28px;
+        margin-top: 0px;
+    }
+
+    /*div.row.header > div {
+        border: 1px solid blue;
+    }*/
+    #edal-detail-title-short {
+        font-size: 0.7rem;
+    }
+
+    #edal-report-title-short {
+        font-size: 0.8rem;
+    }
 }

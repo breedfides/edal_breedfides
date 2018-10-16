@@ -63,13 +63,22 @@ public class ServiceProviderImplementation implements ServiceProvider {
 	public static final Path PATH_FOR_DIRECTORY_SIZE_MAP = Paths
 			.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "directory_size_map.dat");
 
+	public static final Path PATH_FOR_DIRECTORY_FILE_MAP = Paths
+			.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "directory_file_map.dat");
+
 	public static final Path PATH_FOR_TOTAL_FILE_NUMBER = Paths
 			.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "number_of_files.dat");
 
 	public static final Path PATH_FOR_TOTAL_VOLUME = Paths
 			.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "total_volume.dat");
 
-	public static Long numberOfFiles;
+	public static final Path PATH_FOR_REFERENCE_CONTENT = Paths
+			.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "reference_content.dat");
+
+	public static Long totalNumberOfFiles;
+	public static Long numberOfReferenceFiles;
+	public static Long numberOfReferenceDirectories;
+	public static Long volumeOfReference;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
 	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 30;
@@ -156,15 +165,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 			PrimaryDataEntity entity = reference.getVersion().getEntity();
 
 			if (entity.getVersions().size() == 3 && !entity.isDirectory()) {
-
 				deleteFileAndPermissions((PrimaryDataFileImplementation) entity);
-
 			}
 
 			else if (entity.getVersions().size() == 3 && entity.isDirectory()) {
-
 				deleteRecursiveDirectory((PrimaryDataDirectoryImplementation) entity);
-
 			}
 		}
 
@@ -375,36 +380,46 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		}
 	}
 
-	private Long listDir(final PublicReference reference, PrimaryDataDirectory directory)
+	private Long listDirectory(final PublicReference reference, PrimaryDataDirectory currentDirectory)
 			throws PrimaryDataDirectoryException, MetaDataException {
-
+		
 		if (CalculateDirectorySizeThread.directorySizes
-				.containsKey(reference.getInternalID() + "/" + directory.getID())) {
-			return CalculateDirectorySizeThread.directorySizes.get(reference.getInternalID() + "/" + directory.getID());
+				.containsKey(reference.getInternalID() + "/" + currentDirectory.getID())) {
+			return CalculateDirectorySizeThread.directorySizes
+					.get(reference.getInternalID() + "/" + currentDirectory.getID());
 		}
 
-		final List<PrimaryDataEntity> list = directory.listPrimaryDataEntities();
-		Long dirSize = new Long(0);
+		final List<PrimaryDataEntity> list = currentDirectory.listPrimaryDataEntities();
+		Long volumeOfCurrentDirectory = new Long(0);
+		Long numberOfFilesInCurrentDirectory = new Long(0);
+		Long numberOfDirectoriesInCurrentDirectory = new Long(0);
 		if (list != null) {
 
 			for (final PrimaryDataEntity primaryDataEntity : list) {
 
 				DataSize mySize = primaryDataEntity.getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
-				dirSize = dirSize + mySize.getFileSize();
-
+				volumeOfCurrentDirectory = volumeOfCurrentDirectory + mySize.getFileSize();
+				volumeOfReference = volumeOfReference + mySize.getFileSize();
 				if (primaryDataEntity.isDirectory()) {
-					dirSize = dirSize + listDir(reference, (PrimaryDataDirectory) primaryDataEntity);
+					volumeOfCurrentDirectory = volumeOfCurrentDirectory
+							+ listDirectory(reference, (PrimaryDataDirectory) primaryDataEntity);
+					numberOfReferenceDirectories += 1;
+					numberOfDirectoriesInCurrentDirectory += 1;
 				} else {
 					if (reference.getPublicationStatus().equals(PublicationStatus.ACCEPTED)) {
-						numberOfFiles += 1;
+						numberOfReferenceFiles += 1;
+						totalNumberOfFiles += 1;
+						numberOfFilesInCurrentDirectory += 1;
 					}
 				}
 			}
-			CalculateDirectorySizeThread.directorySizes.put(reference.getInternalID() + "/" + directory.getID(),
-					dirSize);
-
+			CalculateDirectorySizeThread.directorySizes.put(reference.getInternalID() + "/" + currentDirectory.getID(),
+					volumeOfCurrentDirectory);
+			CalculateDirectorySizeThread.directoryFiles.put(reference.getInternalID() + "/" + currentDirectory.getID(),
+					numberOfDirectoriesInCurrentDirectory.toString() + ","
+							+ numberOfFilesInCurrentDirectory.toString());
 		}
-		return dirSize;
+		return volumeOfCurrentDirectory;
 	}
 
 	private void storeValuesToDisk() {
@@ -419,10 +434,20 @@ public class ServiceProviderImplementation implements ServiceProvider {
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
 		}
 
+		file = ServiceProviderImplementation.PATH_FOR_DIRECTORY_FILE_MAP.toFile();
+
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+			oos.writeObject(CalculateDirectorySizeThread.directoryFiles);
+			oos.close();
+		} catch (Exception e) {
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
+		}
+
 		file = ServiceProviderImplementation.PATH_FOR_TOTAL_FILE_NUMBER.toFile();
 		try {
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
-			oos.writeObject(ServiceProviderImplementation.numberOfFiles);
+			oos.writeObject(ServiceProviderImplementation.totalNumberOfFiles);
 			oos.close();
 		} catch (Exception e) {
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
@@ -432,6 +457,15 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		try {
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
 			oos.writeObject(CalculateDirectorySizeThread.totalVolumeDataStock);
+			oos.close();
+		} catch (Exception e) {
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
+		}
+
+		file = ServiceProviderImplementation.PATH_FOR_REFERENCE_CONTENT.toFile();
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+			oos.writeObject(CalculateDirectorySizeThread.referenceContent);
 			oos.close();
 		} catch (Exception e) {
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().error(e);
@@ -453,15 +487,23 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		for (PublicReferenceImplementation reference : references) {
 
+			numberOfReferenceFiles = new Long(0);
+			numberOfReferenceDirectories = new Long(0);
+			volumeOfReference = new Long(0);
+
 			if (!CalculateDirectorySizeThread.directorySizes
 					.containsKey(reference.getInternalID() + "/" + reference.getVersion().getEntity().getID())) {
 
 				try {
-					Long size = listDir(reference, ((PrimaryDataDirectory) reference.getVersion().getEntity()));
+					Long size = listDirectory(reference, ((PrimaryDataDirectory) reference.getVersion().getEntity()));
 
 					if (reference.getPublicationStatus().equals(PublicationStatus.ACCEPTED)) {
 						CalculateDirectorySizeThread.totalVolumeDataStock += size;
 					}
+
+					CalculateDirectorySizeThread.referenceContent.put(reference.getInternalID(),
+							numberOfReferenceDirectories + "," + numberOfReferenceFiles + "," + volumeOfReference);
+
 					storeValuesToDisk();
 					updated = true;
 				} catch (PrimaryDataDirectoryException | MetaDataException e) {
@@ -472,7 +514,7 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		if (updated) {
 			DataManager.getImplProv().getLogger().info("Cleaning Webpage_Cache...");
-			EdalHttpHandler.contentPagecache.clean();
+			EdalHttpHandler.contentPageCache.clean();
 			DataManager.getImplProv().getLogger().info("Webpage_Cache cleaned");
 		}
 	}
@@ -515,8 +557,7 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 							if (ent.isDirectory() && ent.getPublicReferences().size() == 0) {
 								/*
-								 * check if a PublicReference for the Entity
-								 * exist, if not: upload failed
+								 * check if a PublicReference for the Entity exist, if not: upload failed
 								 */
 
 								Calendar today = Calendar.getInstance();

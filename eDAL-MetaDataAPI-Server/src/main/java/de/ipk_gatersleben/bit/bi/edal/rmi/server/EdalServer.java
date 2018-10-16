@@ -599,7 +599,7 @@ public class EdalServer {
 			configuration.setInstanceNameLong(cmd.getOptionValue(instanceNameLongOption.getOpt()));
 		}
 		if (cmd.hasOption(instanceNameShortOption.getOpt())) {
-			configuration.setInstanceNameLong(cmd.getOptionValue(instanceNameShortOption.getOpt()));
+			configuration.setInstanceNameShort(cmd.getOptionValue(instanceNameShortOption.getOpt()));
 		}
 
 		EdalServer.startServer(configuration, EdalServer.registryPort, EdalServer.dataPort, EdalServer.cleanDatabase,
