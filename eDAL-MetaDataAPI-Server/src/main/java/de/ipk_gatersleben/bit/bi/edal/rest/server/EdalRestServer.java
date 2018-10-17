@@ -42,7 +42,7 @@ public class EdalRestServer {
 
 		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
 				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"));
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
 
 		configuration.setUseSSL(false);
 
@@ -72,19 +72,17 @@ public class EdalRestServer {
 
 	}
 
-	public static String getEntityMetadata(String uuid, long versionNumber) {
-		PrimaryDataEntity ent=null;
-		
-		/** REMOVE PACKAGE VISABILITY FROM DATAMANAGER FUNCTION **/
-		try {
-			ent = DataManager.getPrimaryDataEntityByID(uuid, versionNumber);
-		} catch (EdalException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return ent.getMetaData().toString();
-		
-		
-	}
+//	public static String getEntityMetadata(String uuid, long versionNumber) {
+//		PrimaryDataEntity ent=null;
+//		
+//		/** REMOVE PACKAGE VISABILITY FROM DATAMANAGER FUNCTION **/
+//		try {
+//			ent = DataManager.getPrimaryDataEntityByID(uuid, versionNumber);
+//		} catch (EdalException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return ent.getMetaData().toString();	
+//	}
 
 }

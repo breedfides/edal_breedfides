@@ -3,27 +3,27 @@
 	<appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY" />
-			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n" />
+			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level%logger{36} - %msg%n" />
 		</Console>
-		<RollingFile name="RollingFileError">
-			<ThresholdFilter level="error" onMatch="ACCEPT"	onMismatch="DENY" />
-			<FileName>${sys:user.home}/.eDAL/eDAL_Error.log</FileName>
-			<FilePattern>${sys:user.home}/.eDAL/time-based-logs-error/%d{yyyy-MM-dd-hh-mm}.log.zip</FilePattern>
-			<PatternLayout><Pattern>%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} -	%msg%n</Pattern></PatternLayout>
-			<!-- interval '1' means one file every day  -->
-			<Policies><TimeBasedTriggeringPolicy interval="1" modulate="false"/></Policies>
-			<!-- max '60' keep up 60 files before removing -->
-			<DefaultRolloverStrategy max="5" />
+		<RollingFile name="RollingFileInfo" fileName="${sys:user.home}/.eDAL/eDAL_INFO.log"
+			filePattern="eDAL_INFO-%d{yyyy-MM-dd}-%i.log">
+			<PatternLayout>
+				<Pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level%c{-3} : %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="60" />
 		</RollingFile>
-		<RollingFile name="RollingFileInfo">
-			<ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" />
-			<FileName>${sys:user.home}/.eDAL/eDAL_INFO.log</FileName>
-			<FilePattern>${sys:user.home}/.eDAL/time-based-logs-info/%d{yyyy-MM-dd-hh-mm}.log.zip</FilePattern>
-			<PatternLayout><Pattern>%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} -	%msg%n</Pattern></PatternLayout>
-			<!-- interval '1' means one file every day  -->
-			<Policies><TimeBasedTriggeringPolicy interval="1" modulate="false"/></Policies>
-			<!-- max '60' keep up 60 files before removing -->
-			<DefaultRolloverStrategy max="5" />
+		<RollingFile name="RollingFileError" fileName="${sys:user.home}/.eDAL/eDAL_ERROR.log"
+			filePattern="eDAL_ERROR-%d{yyyy-MM-dd}-%i.log">
+			<PatternLayout>
+				<Pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level%c{-3} : %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="60" />
 		</RollingFile>
 	</appenders>
 	<loggers>
@@ -33,24 +33,27 @@
 		<Logger name="org.hibernate" level="ERROR" additivity="false">
 			<AppenderRef ref="RollingFileError" />
 		</Logger>
-		<Logger name="org.eclipse.jetty" level="ERROR" additivity="false">
+		<Logger name="org.eclipse.jetty" level="ERROR"
+			additivity="false">
 			<AppenderRef ref="RollingFileError" />
 		</Logger>
 		<Logger name="com.mchange" level="ERROR" additivity="false">
 			<AppenderRef ref="RollingFileError" />
 		</Logger>
-		<Logger name="com.healthmarketscience" level="ERROR" additivity="false">
+		<Logger name="com.healthmarketscience" level="ERROR"
+			additivity="false">
 			<AppenderRef ref="RollingFileError" />
 		</Logger>
-		<Logger name="IndexWriterThread" level="INFO" additivity="false">
+		<Logger name="IndexWriterThread" level="INFO"
+			additivity="false">
 			<AppenderRef ref="RollingFileInfo" />
 		</Logger>
-	 	<Logger name="eDAL-API" level="INFO" additivity="false">
+		<Logger name="eDAL-API" level="INFO" additivity="false">
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>
 		<root level="INFO">
 			<appender-ref ref="RollingFileInfo" />
-		</root> 
+		</root>
 	</loggers>
 </configuration>

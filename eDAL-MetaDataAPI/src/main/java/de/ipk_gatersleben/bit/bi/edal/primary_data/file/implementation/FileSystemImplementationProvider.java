@@ -18,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import net.sf.ehcache.CacheManager;
 
@@ -38,6 +39,7 @@ import org.hibernate.stat.Statistics;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
+import org.hibernate.tool.schema.TargetType;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -124,7 +126,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.setConnection(DriverManager.getConnection(
 						"jdbc:h2:split:30:" + this.getMountPath() + ";IFEXISTS=TRUE;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE",
 						this.getDatabaseUsername(), this.getDatabasePassword()));
-				
+
 				this.getLogger().info("Database connection established");
 			} catch (final ClassNotFoundException e) {
 				this.getLogger().error("Could not find driver for H2 connection !");
@@ -157,7 +159,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		config.configure(FileSystemImplementationProvider.class.getResource("hibernate.cfg.xml"));
 
-		config.setProperty("hibernate.connection.url", "jdbc:h2:split:30:" + this.getMountPath()+";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE");
+		config.setProperty("hibernate.connection.url",
+				"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE");
 		config.setProperty("hibernate.connection.username", this.getDatabaseUsername());
 		config.setProperty("hibernate.connection.password", this.getDatabasePassword());
 		config.setProperty("hibernate.search.default.exclusive_index_use", "false");
@@ -178,7 +181,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		} catch (final SQLException e) {
 			exists = false;
 		}
-
+		
 		CacheManager.create(FileSystemImplementationProvider.class.getResourceAsStream("ehcache.xml"));
 
 		if (!exists) {
@@ -224,12 +227,16 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			metadata.addAnnotatedClass(MyDateEvents.class);
 			metadata.addAnnotatedClass(MyORCID.class);
 
-			SchemaExport export = new SchemaExport((MetadataImplementor) metadata.buildMetadata());
-			export.create(false, true);
+			SchemaExport export = new SchemaExport();
+			export.setDelimiter(";");
+			export.setFormat(true);
+			EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
+
+			export.createOnly(targetTypes, metadata.buildMetadata());
 
 			try {
 
-				Metadata meta = metadata.getMetadataBuilder().build();
+				Metadata meta = metadata.buildMetadata();
 
 				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
 
@@ -295,9 +302,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			metadata.addAnnotatedClass(MyEdalDateRange.class);
 			metadata.addAnnotatedClass(MyDateEvents.class);
 			metadata.addAnnotatedClass(MyORCID.class);
-			
+
 			try {
-				
+
 				Metadata meta = metadata.getMetadataBuilder().build();
 
 				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
@@ -310,9 +317,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 			/* validate database schema */
 			try {
-				SchemaValidator sv = new SchemaValidator((MetadataImplementor) metadata.buildMetadata());
+				SchemaValidator sv = new SchemaValidator();
 
-				sv.validate();
+				sv.validate(metadata.buildMetadata());
 
 				this.getLogger().info("Database Schema Validation : successful");
 
@@ -322,9 +329,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 						+ configuration.getMountPath() + "' (" + e.getMessage() + ") ");
 				this.getLogger().error("Please delete path or specify another mount path !");
 				System.exit(0);
-//				 System.out.println("run schema update");
-//				 new SchemaUpdate((MetadataImplementor) metadata.buildMetadata()).execute(true, true);
-//				 System.exit(0);
+				// System.out.println("run schema update");
+				// new SchemaUpdate((MetadataImplementor)
+				// metadata.buildMetadata()).execute(true, true);
+				// System.exit(0);
 
 			}
 		}

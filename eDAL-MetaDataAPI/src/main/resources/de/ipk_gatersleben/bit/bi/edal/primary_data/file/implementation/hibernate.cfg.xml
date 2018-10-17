@@ -37,7 +37,7 @@
 		<property name="hibernate.c3p0.max_statements">100</property>
 
 		<!-- database cache properties -->
-		<property name="net.sf.ehcache.configurationResourceName">de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/ehcache.xml</property>
+		<!-- <property name="net.sf.ehcache.configurationResourceName">de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/ehcache.xml</property> -->
 		<property name="hibernate.cache.use_second_level_cache">true</property>
 		<property name="hibernate.cache.use_query_cache">true</property>
 		<property name="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.EhCacheRegionFactory</property>
@@ -50,7 +50,7 @@
 
 		<!-- indexing properties -->
 		<property name="hibernate.search.default.directory_provider">filesystem</property>
-		<property name="hibernate.search.lucene_version">LUCENE_5_3_1</property>		
+		<property name="hibernate.search.lucene_version">LUCENE_5_5</property>		
 		<!-- <property name="hibernate.search.indexing_strategy">manual</property> -->
 
 	</session-factory>

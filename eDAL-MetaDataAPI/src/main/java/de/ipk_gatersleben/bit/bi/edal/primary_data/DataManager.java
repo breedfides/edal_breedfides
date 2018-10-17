@@ -261,7 +261,7 @@ public class DataManager {
 	 *             values or the eDAL system is not started.
 	 * @return the specified {@link PrimaryDataEntity}
 	 */
-	public static PrimaryDataEntity getPrimaryDataEntityByID(String uuid, long versionNumber) throws EdalException {
+	static PrimaryDataEntity getPrimaryDataEntityByID(String uuid, long versionNumber) throws EdalException {
 
 		if (getImplProv() == null || getSubject() == null) {
 			throw new EdalException("Unable to load entity : start eDAL system first");
@@ -473,6 +473,7 @@ public class DataManager {
 
 	/**
 	 * 
+	 * @return the cuurent {@link EdalHttpServer}
 	 */
 	public static EdalHttpServer getHttpServer() {
 

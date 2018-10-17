@@ -9,6 +9,8 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.util.Arrays;
+
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.internal.util.StringHelper;
 
@@ -39,10 +41,10 @@ public class ImprovedH2Dialect extends H2Dialect {
 	public String getAddForeignKeyConstraintString(String constraintName, String[] foreignKey, String referencedTable, String[] primaryKey, boolean referencesPrimaryKey) {
 		final StringBuilder res = new StringBuilder(40);
 
-		res.append(" add constraint if not exists ").append(quote(constraintName)).append(" foreign key (").append(StringHelper.join(", ", foreignKey)).append(") references ").append(referencedTable);
+		res.append(" add constraint if not exists ").append(quote(constraintName)).append(" foreign key (").append(StringHelper.join(", ", Arrays.asList(foreignKey).iterator())).append(") references ").append(referencedTable);
 
 		if (!referencesPrimaryKey) {
-			res.append(" (").append(StringHelper.join(", ", primaryKey)).append(')');
+			res.append(" (").append(StringHelper.join(", ", Arrays.asList(primaryKey).iterator())).append(')');
 		}
 
 		return res.toString();

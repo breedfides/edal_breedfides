@@ -104,13 +104,13 @@ public class RestEntryPoint {
 		return Response.ok(root, MediaType.APPLICATION_OCTET_STREAM).build();
 	}
 
-	@GET
-	@Path("getMetaData/{uuid}/{version}")
-	@Produces(MediaType.TEXT_PLAIN)
-	public String getMetaData(@PathParam("uuid") String uuid, @PathParam("version") String version) {
-
-		return EdalRestServer.getEntityMetadata(uuid, Long.valueOf(version));
-	}
+//	@GET
+//	@Path("getMetaData/{uuid}/{version}")
+//	@Produces(MediaType.TEXT_PLAIN)
+//	public String getMetaData(@PathParam("uuid") String uuid, @PathParam("version") String version) {
+//
+//		return EdalRestServer.getEntityMetadata(uuid, Long.valueOf(version));
+//	}
 
 }
 

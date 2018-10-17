@@ -73,7 +73,7 @@
 	<cache name="contentpage" maxElementsInMemory="1000"
 		eternal="true" overflowToDisk="false" memoryStoreEvictionPolicy="LRU" />
 
-	<cache name="reportpage" overflowToDisk="false"
+	<cache name="reportpage" maxElementsInMemory="1" overflowToDisk="false"
 		memoryStoreEvictionPolicy="LRU" timeToLiveSeconds="43200" />
 
 </ehcache> 
