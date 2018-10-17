@@ -26,7 +26,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
  * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider#createMetaDataInstance()}
  * m which is implemented by the particular eDAL implementation e.g.
  * 
- * Instance <tt>MetaData</tt> or an extended subclass is not supported
+ * Instance MetaData or an extended subclass is not supported
  * 
  * @author lange
  * @author arendd

@@ -23,7 +23,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElemen
 public class ViewerContainer {
 private static Map<EnumDublinCoreElements,MetadataViewer> map = new HashMap<EnumDublinCoreElements,MetadataViewer>();
 	/**
-	 * register <tt>viewer</tt> for <tt>element</tt>
+	 * register viewer for element
 	 *
 	 * @param     element   the metadatatype
 	 * @param     viewer    the metadatatype corresponding viewer

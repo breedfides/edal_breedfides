@@ -22,7 +22,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElemen
 public class EditorContainer {
 	private static Map<EnumDublinCoreElements,AbstractMetaDataEditor> map = new HashMap<EnumDublinCoreElements,AbstractMetaDataEditor>();
 	/**
-     * register <tt>editor</tt> for <tt>element</tt>
+     * register editor for element
      *
      * @param     element   the metadatatype
      * @param     editor    the metadatatype corresponding editor
