@@ -1,5 +1,5 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "com.github.johnrengelman.shadow" version "4.0.1"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
   id 'io.codearte.nexus-staging' version '0.11.0'
@@ -43,6 +43,8 @@ allprojects {
 	
 	test {
 	    useJUnit()
+      
+      	systemProperties['junit.jupiter.execution.parallel.enabled'] = true
 
   		if(Runtime.runtime.availableProcessors()>=4){
 	    	maxParallelForks = Runtime.runtime.availableProcessors()-2
@@ -239,7 +241,9 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.8.1'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
 	    compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
-	    testCompile group: 'junit', name: 'junit', version:'4.10'
+	   
+	    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version:'5.3.1'
+	   	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version:'5.3.1'
 	    
 	   	compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.4.7.v20170914'
 	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version:'2.27'
@@ -261,7 +265,6 @@ project(':eDAL-MetaDataAPI-Server') {
 		compile project(':eDAL-MetaDataAPI')
 	    compile group: 'commons-cli', name: 'commons-cli', version:'1.4'
 	   	compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.2'
-	    testCompile group: 'junit', name: 'junit', version:'4.10'
 	}
 	apply plugin: 'com.github.johnrengelman.shadow'
 
@@ -292,6 +295,5 @@ project(':eDAL-MetaDataAPI-Client') {
     	compile group: 'org.swinglabs.swingx', name: 'swingx-all', version:'1.6.4'
     	compile group: 'com.miglayout', name: 'miglayout-core', version:'4.2'
     	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
-    	testCompile group: 'junit', name: 'junit', version:'4.10'
     }
 }
