@@ -64,7 +64,7 @@
                                 <span style="font-weight:500;">License: </span><a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
                             </p>
 
-                            <p class="my-0 mt-1">
+                            <p class="my-0 mt-2">
                             #if($link=="true")
 	                            #foreach($element in $citation_entity.getVersions().last().getPublicReferences())
 	                                <span style="font-weight:500;">$element.getIdentifierType():</span>  
@@ -84,19 +84,14 @@
                                 $entity.switchCurrentVersion($entity.getVersionByDate($date))$entity.getPath()
                             </div>
 
-
 							#if($entity.getParentDirectory().toString() != "/")
 							<div id="edal-detail-directory-up">
-								<a
-									href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/$reviewerCode">Up to parent directory</a>
+								<a href="$serverURL/$identifierType/$internalId/$entity.getParentDirectory().getID()/$entity.getParentDirectory().getVersionByDate($date).getRevision()/$reviewerCode">Up to parent directory</a>
 							</div>
 							#end
                             
-                            
                             <div id="edal-detail-directory-table-wrapper">
-                                <table id="edal-detail-directory-table">
-                                    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForReviewer.xml")
-                                </table>
+                                <table id="edal-detail-directory-table">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForReviewer.xml")</table>
                             </div>
 
                             <a href="$downloadURL/$identifierType/$internalId/$entity.getID()/$entity.getVersionByDate($date).getRevision()/$reviewerCode/DOWNLOAD" target="_blank" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span> Download</a>
@@ -115,18 +110,10 @@
                         <div class="container-fluid p-0">
                             <div class="row">
                                 <div class="col-lg">
-
-                                    <table class="table table-bordered table-sm">
-                                       	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart1.xml")
-                                    </table>
-
+                                    <table class="table table-bordered table-sm">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart1.xml")</table>
                                 </div>
                                 <div class="col-lg">
-
-                                    <table class="table table-bordered table-sm">
-                                        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart2.xml")
-                                    </table>
-
+                                    <table class="table table-bordered table-sm">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart2.xml")</table>
                                 </div>
                             </div>
                         </div>
