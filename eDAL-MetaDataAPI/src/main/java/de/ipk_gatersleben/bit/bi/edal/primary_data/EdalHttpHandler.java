@@ -413,6 +413,8 @@ public class EdalHttpHandler extends AbstractHandler {
 									this.sendEmbeddedFile(response, "ipk_logo.jpg", "image/jpg");
 								} else if (logoUrl.equalsIgnoreCase("header_bg2.png")) {
 									this.sendEmbeddedFile(response, "header_bg2.png", "image/png");
+								} else if (logoUrl.equalsIgnoreCase("edal_icon.png")) {
+									this.sendEmbeddedFile(response, "edal_icon.png", "image/png");
 								}
 							}
 							break;
