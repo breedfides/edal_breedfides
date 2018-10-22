@@ -95,10 +95,11 @@ a.edal-detail-quote-btn {
 
 #edal-detail-title-long {
     font-size: 1.4rem;
+    padding-top: 25px;
 }
 
 #edal-detail-title-short {
-    font-size: 1.0rem;
+    font-size: 1.2rem;
 }
 
 @media (max-width: 970px) {

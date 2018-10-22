@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     
-    <title>$title - $serverURL</title>
+    <title>$title - $repositoryNameShort</title>
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
     
