@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 
-    <title>Metadata - $entity.getVersionByDate($date).getName()</title>
+    <title>$repositoryNameShort - $entity.getVersionByDate($date).getName()</title>
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 	

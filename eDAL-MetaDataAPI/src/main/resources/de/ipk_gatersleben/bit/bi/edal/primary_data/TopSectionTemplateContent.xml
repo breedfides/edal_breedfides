@@ -9,7 +9,7 @@
                         $repositoryNameLong
                     </div>
                     <div id="edal-detail-title-short" class="col-auto text-center my-auto">
-                            $repositoryNameShort
+                        $repositoryNameShort
                     </div>
                     <div class="col text-right pt-1">
                         <a href="http://www.ipk-gatersleben.de"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a>
