@@ -321,7 +321,7 @@ let EdalReport = new function() {
     };
 
     this.niceBytes = function(x) {
-        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         let l = 0, n = parseInt(x, 10) || 0;
         while(n >= 1024 && ++l)
             n = n/1024;

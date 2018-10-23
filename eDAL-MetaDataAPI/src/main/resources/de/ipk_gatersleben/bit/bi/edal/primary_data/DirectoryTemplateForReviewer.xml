@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 
-    <title>Metadata - $entity.getVersionByDate($date).getName()</title>
+    <title>$repositoryNameShort - $entity.getVersionByDate($date).getName()</title>
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 	
@@ -62,7 +62,7 @@
                                 <span style="font-weight:500;">License: </span><a href="#">$citation_entity.getVersionByDate($date).getMetaData().getElementValue($rights).toHTML()</a>
                             </p>
 
-                            <p class="my-0 mt-1">
+                            <p class="my-0 mt-2">
                             #if($link=="true")
 	                            #foreach($element in $citation_entity.getVersions().last().getPublicReferences())
 	                                <span style="font-weight:500;">$element.getIdentifierType():</span>  
@@ -88,7 +88,6 @@
 							</div>
 							#end
                             
-                            
                             <div id="edal-detail-directory-table-wrapper">
                                 <table id="edal-detail-directory-table">
                                     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForReviewer.xml")
@@ -102,25 +101,15 @@
             </div>
             <div class="row mt-2" id="edal-metadata-details">
                 <div class="col">
-
                     <div class="card p-3">
                         <h6>Metadata</h6>
-
                         <div class="container-fluid p-0">
                             <div class="row">
                                 <div class="col-lg">
-
-                                    <table class="table table-bordered table-sm">
-                                       	#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart1.xml")
-                                    </table>
-
+                                    <table class="table table-bordered table-sm">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart1.xml")</table>
                                 </div>
                                 <div class="col-lg">
-
-                                    <table class="table table-bordered table-sm">
-                                        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart2.xml")
-                                    </table>
-
+                                    <table class="table table-bordered table-sm">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataDirectoryTemplatePart2.xml")</table>
                                 </div>
                             </div>
                         </div>

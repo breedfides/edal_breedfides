@@ -8,7 +8,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>$responseCode $title</title>
+		<title>$repositoryNameShort - $responseCode $title</title>
 		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 		
 		<link rel="stylesheet" href="$serverURL/CSS/content.css" />
