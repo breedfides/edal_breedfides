@@ -29,15 +29,16 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
-import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.type.BooleanType;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -100,17 +101,28 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 	public PrimaryDataEntity getEntity() {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		
+
 		session.setDefaultReadOnly(true);
 
-		final Criteria fileQuery = session.createCriteria(PrimaryDataFileImplementation.class).add(Restrictions.eq("class", PrimaryDataFileImplementation.class)).add(Restrictions.eq("id", this.getPrimaryEntityId())).setCacheable(true);
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
-		final PrimaryDataFile pdf = (PrimaryDataFile) fileQuery.uniqueResult();
+		fileCriteria.where(builder.and(builder.equal(fileRoot.type(),  PrimaryDataFileImplementation.class),
+				builder.equal(fileRoot.get("id"), this.getPrimaryEntityId())));
 
+		final PrimaryDataFile pdf = session.createQuery(fileCriteria).uniqueResult();
+	
 		if (pdf == null) {
-			final Criteria directoryQuery = session.createCriteria(PrimaryDataDirectoryImplementation.class).add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class)).add(Restrictions.eq("id", this.getPrimaryEntityId())).setCacheable(true);
+						
+			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
 
-			final PrimaryDataDirectory pdd = (PrimaryDataDirectory) directoryQuery.uniqueResult();
+			directoryCriteria.where(builder.and(builder.equal(directoryRoot.type(),  PrimaryDataDirectoryImplementation.class),
+					builder.equal(directoryRoot.get("id"), this.getPrimaryEntityId())));
+
+			final PrimaryDataDirectory pdd = session.createQuery(directoryCriteria).uniqueResult();
+			
 			session.close();
 			return pdd;
 		} else {
@@ -144,7 +156,7 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 	/** {@inheritDoc} */
 	@Override
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	@JoinColumn(name="METADATA_ID")
+	@JoinColumn(name = "METADATA_ID")
 	public MetaDataImplementation getMetaData() {
 		return this.metaData;
 	}
@@ -184,7 +196,8 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 
 	/** {@inheritDoc} */
 	@Override
-	public void setAllReferencesPublic(final InternetAddress emailNotificationAddress, final Calendar releaseDate) throws PublicReferenceException {
+	public void setAllReferencesPublic(final InternetAddress emailNotificationAddress, final Calendar releaseDate)
+			throws PublicReferenceException {
 
 		for (final PublicReferenceImplementation publicReferenceImplementation : this.getInternReferences()) {
 			publicReferenceImplementation.setPublic(emailNotificationAddress, releaseDate);
@@ -217,8 +230,7 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 	 * Setter for the field <code>internReferences</code>.
 	 * 
 	 * @param internReferences
-	 *            a {@link List} of {@link PublicReferenceImplementation}
-	 *            objects.
+	 *            a {@link List} of {@link PublicReferenceImplementation} objects.
 	 */
 	protected void setInternReferences(final List<PublicReferenceImplementation> internReferences) {
 		this.internReferences = internReferences;

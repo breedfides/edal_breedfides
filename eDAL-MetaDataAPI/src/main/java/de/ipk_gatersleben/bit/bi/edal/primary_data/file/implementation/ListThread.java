@@ -12,9 +12,12 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 import java.util.Calendar;
 import java.util.List;
 
-import org.hibernate.Criteria;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
+import org.hibernate.query.Query;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -25,8 +28,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 
 public class ListThread extends Thread {
 
+	private static final String QUERY_LIST_CACHE = "query.list";
 	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
-	private static final String STRING_CLASS = "class";
 
 	private AsynchronList<PrimaryDataEntity> asynList = null;
 	private PrimaryDataDirectory parentDirectory = null;
@@ -45,12 +48,11 @@ public class ListThread extends Thread {
 		return this.asynList;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
 
-//		System.out.println("START LIST THREAD");
-//		Long start = System.currentTimeMillis();
+		// System.out.println("START LIST THREAD");
+		// Long start = System.currentTimeMillis();
 
 		try {
 			Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
@@ -59,35 +61,50 @@ public class ListThread extends Thread {
 			int firstPage = 0;
 			int pagesSteps = 1000;
 
-			Criteria directoryQuery = session.createCriteria(PrimaryDataDirectoryImplementation.class).add(Restrictions.eq(STRING_CLASS, PrimaryDataDirectoryImplementation.class)).add(Restrictions.eq(STRING_PARENT_DIRECTORY, this.parentDirectory)).setCacheable(true).setCacheRegion("query.list").setFirstResult(firstPage).setMaxResults(pagesSteps);
+			CriteriaBuilder builder = session.getCriteriaBuilder();
 
+			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+			directoryCriteria.where(builder.and(
+					builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class)),
+					builder.equal(directoryRoot.get(STRING_PARENT_DIRECTORY), this.parentDirectory));
+			
+			Query<PrimaryDataDirectoryImplementation> directoryQuery = session.createQuery(directoryCriteria).setCacheable(true).
+					setCacheRegion(QUERY_LIST_CACHE).setFirstResult(firstPage).setMaxResults(pagesSteps);
+
+			
+			
 			List<PrimaryDataDirectoryImplementation> directories = null;
 
-			while ((directories = (List<PrimaryDataDirectoryImplementation>) directoryQuery.list()).size() > 0) {
+			while ((directories = directoryQuery.list()).size() > 0) {
 
 				session.clear();
 				System.gc();
 
-				// DataManager.getImplProv().getLogger().debug("Run loop for listing directories : "
+				// DataManager.getImplProv().getLogger().debug("Run loop for listing directories
+				// : "
 				// + directoryQuery.list().size());
 
 				for (PrimaryDataDirectoryImplementation directory : directories) {
 
 					if (nextVersionDate == null) {
 						try {
-							directory.switchCurrentVersion(directory.getVersionByRevisionNumber(directory.getVersions().size() - 1));
+							directory.switchCurrentVersion(
+									directory.getVersionByRevisionNumber(directory.getVersions().size() - 1));
 
 							asynList.add(directory);
 							asynList.notifyNewDataAvailable();
 
 						} catch (PrimaryDataEntityVersionException e) {
-							throw new PrimaryDataDirectoryException("Can not switch version of '" + this + "' :" + e.getMessage());
+							throw new PrimaryDataDirectoryException(
+									"Can not switch version of '" + this + "' :" + e.getMessage());
 						}
 					} else {
 
 						for (PrimaryDataEntityVersion version : directory.getVersions()) {
 
-							if (version.getRevisionDate().before(nextVersionDate) && version.getRevisionDate().after(currentVersionDate)) {
+							if (version.getRevisionDate().before(nextVersionDate)
+									&& version.getRevisionDate().after(currentVersionDate)) {
 								try {
 									directory.switchCurrentVersion(version);
 
@@ -96,7 +113,8 @@ public class ListThread extends Thread {
 									break;
 
 								} catch (PrimaryDataEntityVersionException e) {
-									throw new PrimaryDataDirectoryException("Can not switch version of '" + this + "' :" + e.getMessage());
+									throw new PrimaryDataDirectoryException(
+											"Can not switch version of '" + this + "' :" + e.getMessage());
 								}
 							}
 						}
@@ -115,14 +133,21 @@ public class ListThread extends Thread {
 
 			firstPage = 0;
 
-			Criteria fileQuery = session.createCriteria(PrimaryDataFileImplementation.class).add(Restrictions.eq(STRING_CLASS, PrimaryDataFileImplementation.class)).add(Restrictions.eq(STRING_PARENT_DIRECTORY, this.parentDirectory)).setCacheable(true).setCacheRegion("query.list").setFirstResult(firstPage).setMaxResults(pagesSteps);
-
+			CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+			Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+			fileCriteria.where(builder.and(
+					builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class)),
+					builder.equal(fileRoot.get(STRING_PARENT_DIRECTORY), this.parentDirectory));
+			
+			Query<PrimaryDataFileImplementation> fileQuery = session.createQuery(fileCriteria).setCacheable(true).
+					setCacheRegion(QUERY_LIST_CACHE).setFirstResult(firstPage).setMaxResults(pagesSteps);
+						
 			List<PrimaryDataFileImplementation> files = null;
 
-//			Long startfiles = System.currentTimeMillis();
-//			Long endfiles = null;
+			// Long startfiles = System.currentTimeMillis();
+			// Long endfiles = null;
 
-			while ((files = (List<PrimaryDataFileImplementation>) fileQuery.list()).size() > 0) {
+			while ((files = fileQuery.list()).size() > 0) {
 
 				session.clear();
 				System.gc();
@@ -140,13 +165,15 @@ public class ListThread extends Thread {
 							asynList.notifyNewDataAvailable();
 
 						} catch (PrimaryDataEntityVersionException e) {
-							throw new PrimaryDataDirectoryException("Can not switch version of '" + this + "' :" + e.getMessage());
+							throw new PrimaryDataDirectoryException(
+									"Can not switch version of '" + this + "' :" + e.getMessage());
 						}
 					} else {
 
 						for (PrimaryDataEntityVersion version : file.getVersions()) {
 
-							if (version.getRevisionDate().before(nextVersionDate) && version.getRevisionDate().after(currentVersionDate)) {
+							if (version.getRevisionDate().before(nextVersionDate)
+									&& version.getRevisionDate().after(currentVersionDate)) {
 								try {
 									file.switchCurrentVersion(version);
 
@@ -155,7 +182,8 @@ public class ListThread extends Thread {
 									break;
 
 								} catch (PrimaryDataEntityVersionException e) {
-									throw new PrimaryDataDirectoryException("Can not switch version of '" + this + "' :" + e.getMessage());
+									throw new PrimaryDataDirectoryException(
+											"Can not switch version of '" + this + "' :" + e.getMessage());
 								}
 							}
 						}
@@ -170,9 +198,10 @@ public class ListThread extends Thread {
 
 				fileQuery.setFirstResult(firstPage += pagesSteps);
 
-//				endfiles = System.currentTimeMillis();
-//				System.out.println("FINISHED FILE_LIST " + Thread.currentThread().getId() + " in : " + (endfiles - startfiles) + " msec");
-//				startfiles = System.currentTimeMillis();
+				// endfiles = System.currentTimeMillis();
+				// System.out.println("FINISHED FILE_LIST " + Thread.currentThread().getId() + "
+				// in : " + (endfiles - startfiles) + " msec");
+				// startfiles = System.currentTimeMillis();
 
 			}
 
@@ -185,11 +214,13 @@ public class ListThread extends Thread {
 
 			asynList.notifyNoMoreNewData();
 
-//			Long end = System.currentTimeMillis();
-//			System.out.println("FINISHED LIST_THREAD in : " + (end - start) / 1000 + "sec");
+			// Long end = System.currentTimeMillis();
+			// System.out.println("FINISHED LIST_THREAD in : " + (end - start) / 1000 +
+			// "sec");
 
 		} catch (Exception e) {
-			DataManager.getImplProv().getLogger().error("Can not list all PrimaryDataEntities of '" + parentDirectory.getName() + "' :" + e.getMessage());
+			DataManager.getImplProv().getLogger().error(
+					"Can not list all PrimaryDataEntities of '" + parentDirectory.getName() + "' :" + e.getMessage());
 		}
 	}
 }

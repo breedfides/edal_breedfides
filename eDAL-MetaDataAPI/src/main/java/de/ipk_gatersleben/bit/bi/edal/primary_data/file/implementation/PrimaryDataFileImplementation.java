@@ -41,14 +41,15 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
-import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.SortNatural;
-import org.hibernate.criterion.Restrictions;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -191,12 +192,17 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Criteria query = session.createCriteria(EdalPermissionImplementation.class)
-				.add(Restrictions.eq("internId", this.getID()))
-				.add(Restrictions.eq("internVersion", this.getCurrentVersion().getRevision()));
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<EdalPermissionImplementation> criteria = builder.createQuery(EdalPermissionImplementation.class);
+		Root<EdalPermissionImplementation> rootPermission = criteria.from(EdalPermissionImplementation.class);
 
-		@SuppressWarnings("unchecked")
-		final List<EdalPermissionImplementation> privatePerms = query.list();
+		criteria.where(
+				builder.and(
+				builder.equal(rootPermission.get("internId"), this.getID()),
+				builder.equal(rootPermission.get("internVersion"), this.getCurrentVersion().getRevision())
+				));
+
+		final List<EdalPermissionImplementation> privatePerms = session.createQuery(criteria).getResultList();
 
 		final Map<Principal, List<EdalPermission>> publicMap = new HashMap<>();
 
@@ -205,13 +211,19 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 
 				if (!publicMap.containsKey(p.getPrincipal().toPrincipal())) {
 
-					final Criteria tmpQuery = session.createCriteria(EdalPermissionImplementation.class)
-							.add(Restrictions.eq("internId", this.getID()))
-							.add(Restrictions.eq("internVersion", this.getCurrentVersion().getRevision()))
-							.add(Restrictions.eq("principal", p.getPrincipal()));
+					CriteriaQuery<EdalPermissionImplementation> tmpQuery= builder.createQuery(EdalPermissionImplementation.class);
+					Root<EdalPermissionImplementation> rootTempPermission = criteria.from(EdalPermissionImplementation.class);
 
-					@SuppressWarnings("unchecked")
-					final List<EdalPermissionImplementation> userPerms = tmpQuery.list();
+					tmpQuery.where(
+							builder.and(
+									builder.and(
+											builder.equal(rootTempPermission.get("internId"), this.getID()),
+											builder.equal(rootTempPermission.get("internVersion"), this.getCurrentVersion().getRevision())),
+									builder.equal(rootTempPermission.get("principal"), p.getPrincipal())
+									));
+					
+					
+					final List<EdalPermissionImplementation> userPerms = session.createQuery(tmpQuery).getResultList();
 					final List<EdalPermission> publicPerms = new ArrayList<>(privatePerms.size());
 
 					for (final EdalPermissionImplementation permission : userPerms) {
@@ -286,8 +298,8 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 		} catch (final IOException e) {
 
 			if (e.getMessage() == null) {
-				throw new PrimaryDataFileException(
-						"Can not read File '" + this + "': OutputStream no longer available", e);
+				throw new PrimaryDataFileException("Can not read File '" + this + "': OutputStream no longer available",
+						e);
 			} else {
 				throw new PrimaryDataFileException("Can not read '" + this + "': " + e.getMessage(), e);
 			}
@@ -406,10 +418,18 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 
 			final Transaction transaction2 = session.beginTransaction();
 
-			final PrincipalImplementation existingPrincipal = (PrincipalImplementation) session
-					.createCriteria(PrincipalImplementation.class).add(Restrictions.eq("name", principal.getName()))
-					.add(Restrictions.eq("type", principal.getClass().getSimpleName())).uniqueResult();
-
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<PrincipalImplementation> criteria= builder.createQuery(PrincipalImplementation.class);
+			Root<PrincipalImplementation> root = criteria.from(PrincipalImplementation.class);
+			
+			criteria.where(
+					builder.and(
+					builder.equal(root.get("name"), principal.getName()),
+					builder.equal(root.get("type"), principal.getClass().getSimpleName())
+					));
+			
+			final PrincipalImplementation existingPrincipal = session.createQuery(criteria).uniqueResult();
+			
 			if (existingPrincipal != null) {
 				privateVersion.setOwner(existingPrincipal);
 			} else {

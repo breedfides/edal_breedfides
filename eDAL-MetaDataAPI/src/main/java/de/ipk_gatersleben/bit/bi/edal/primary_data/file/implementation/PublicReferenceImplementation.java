@@ -28,13 +28,15 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.type.BooleanType;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -97,14 +99,14 @@ public final class PublicReferenceImplementation extends PublicReference
 		final Session session = ((FileSystemImplementationProvider) DataManager
 				.getImplProv()).getSession();
 
-		final PrincipalImplementation principal = (PrincipalImplementation) session
-				.createCriteria(PrincipalImplementation.class)
-				.add(Restrictions.eq("name", pub.getRequestedPrincipal()
-						.getName()))
-				.add(Restrictions.eq("type", pub.getRequestedPrincipal()
-						.getClass().getSimpleName())).setCacheable(true)
-				.setCacheRegion("query.principal").uniqueResult();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
 
+		CriteriaQuery<PrincipalImplementation> principalCriteria = builder.createQuery(PrincipalImplementation.class);
+		Root<PrincipalImplementation> principalRoot = principalCriteria.from(PrincipalImplementation.class);
+		principalCriteria.where(builder.and(builder.equal(principalRoot.get("name"),pub.getRequestedPrincipal().getName())),builder.equal(principalRoot.get("type"), pub.getRequestedPrincipal().getClass().getSimpleName()));
+
+		PrincipalImplementation principal = session.createQuery(principalCriteria).setCacheable(true).setCacheRegion("query.principal").uniqueResult();
+		
 		this.privateRequestedPrincipal = principal;
 		this.internalID = pub.getInternalID();
 		session.close();

@@ -28,8 +28,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalHttpHandler;
@@ -53,7 +56,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  *
  */
 
-@SuppressWarnings("unchecked")
 public class ServiceProviderImplementation implements ServiceProvider {
 
 	public static boolean cleaned = false;
@@ -147,10 +149,14 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		List<PublicReferenceImplementation> references = (List<PublicReferenceImplementation>) session
-				.createCriteria(PublicReferenceImplementation.class)
-				.add(Restrictions.eq("publicationStatus", PublicationStatus.REJECTED)).list();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
 
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+		referenceCriteria.where(builder.equal(referenceRoot.get("publicationStatus"), PublicationStatus.REJECTED));
+
+		List<PublicReferenceImplementation> references = session.createQuery(referenceCriteria).list();
+	
 		session.getTransaction().commit();
 		session.close();
 
@@ -278,10 +284,14 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		Session s = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		s.beginTransaction();
 
-		List<PrimaryDataEntityVersionImplementation> allExistingVersionsInDB = s
-				.createCriteria(PrimaryDataEntityVersionImplementation.class)
-				.add(Restrictions.eq("primaryEntityId", file.getID())).list();
+		CriteriaBuilder builder = s.getCriteriaBuilder();
 
+		CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = builder.createQuery(PrimaryDataEntityVersionImplementation.class);
+		Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
+		versionCriteria.where(builder.equal(versionRoot.get("primaryEntityId"), file.getID()));
+
+		List<PrimaryDataEntityVersionImplementation> allExistingVersionsInDB = s.createQuery(versionCriteria).list();
+		
 		s.getTransaction().commit();
 		s.close();
 
@@ -307,10 +317,12 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 			session.delete(file);
 
-			List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
-					.createCriteria(EdalPermissionImplementation.class).add(Restrictions.eq("internId", file.getID()))
-					.list();
+			CriteriaQuery<EdalPermissionImplementation> permissionCriteria = builder.createQuery(EdalPermissionImplementation.class);
+			Root<EdalPermissionImplementation> permissionRoot = permissionCriteria.from(EdalPermissionImplementation.class);
+			permissionCriteria.where(builder.equal(permissionRoot.get("internId"), file.getID()));
 
+			List<EdalPermissionImplementation> permissions = session.createQuery(permissionCriteria).list();
+			
 			for (EdalPermissionImplementation permission : permissions) {
 				session.delete(permission);
 			}
@@ -336,10 +348,14 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		Session s = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		s.beginTransaction();
 
-		List<PrimaryDataEntityVersionImplementation> allExistingVersionsInDB = s
-				.createCriteria(PrimaryDataEntityVersionImplementation.class)
-				.add(Restrictions.eq("primaryEntityId", directory.getID())).list();
+		CriteriaBuilder builder = s.getCriteriaBuilder();
 
+		CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = builder.createQuery(PrimaryDataEntityVersionImplementation.class);
+		Root<PrimaryDataEntityVersionImplementation> principalRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
+		versionCriteria.where(builder.equal(principalRoot.get("primaryEntityId"),directory.getID()));
+
+		List<PrimaryDataEntityVersionImplementation> allExistingVersionsInDB = s.createQuery(versionCriteria).list();
+		
 		s.getTransaction().commit();
 		s.close();
 
@@ -361,12 +377,13 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		try {
 			Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			session.beginTransaction();
-
 			session.delete(directory);
 
-			List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
-					.createCriteria(EdalPermissionImplementation.class)
-					.add(Restrictions.eq("internId", directory.getID())).list();
+			CriteriaQuery<EdalPermissionImplementation> permissionCriteria = builder.createQuery(EdalPermissionImplementation.class);
+			Root<EdalPermissionImplementation> permissionRoot = permissionCriteria.from(EdalPermissionImplementation.class);
+			permissionCriteria.where(builder.equal(permissionRoot.get("internId"),directory.getID()));
+
+			List<EdalPermissionImplementation> permissions = s.createQuery(permissionCriteria).list();
 
 			for (EdalPermissionImplementation permission : permissions) {
 				session.delete(permission);
@@ -478,9 +495,14 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		List<PublicReferenceImplementation> references = (List<PublicReferenceImplementation>) session
-				.createCriteria(PublicReferenceImplementation.class).list();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> permissionRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+		referenceCriteria.select(permissionRoot);
 
+		List<PublicReferenceImplementation> references = session.createQuery(referenceCriteria).list();
+	
 		session.close();
 
 		boolean updated = false;
@@ -524,8 +546,13 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		List<PrincipalImplementation> numberOfUsers = (List<PrincipalImplementation>) session
-				.createCriteria(PrincipalImplementation.class).list();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+		CriteriaQuery<PrincipalImplementation> principalCriteria = builder.createQuery(PrincipalImplementation.class);
+		Root<PrincipalImplementation> principalRoot = principalCriteria.from(PrincipalImplementation.class);
+		principalCriteria.select(principalRoot);
+
+		List<PrincipalImplementation> numberOfUsers = session.createQuery(principalCriteria).list();
 
 		session.getTransaction().commit();
 		session.close();
@@ -540,8 +567,14 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		List<PrincipalImplementation> users = (List<PrincipalImplementation>) session
-				.createCriteria(PrincipalImplementation.class).list();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+		CriteriaQuery<PrincipalImplementation> principalCriteria = builder.createQuery(PrincipalImplementation.class);
+		Root<PrincipalImplementation> principalRoot = principalCriteria.from(PrincipalImplementation.class);
+		principalCriteria.select(principalRoot);
+
+		List<PrincipalImplementation> users = session.createQuery(principalCriteria).list();
+
 
 		session.getTransaction().commit();
 		session.close();

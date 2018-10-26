@@ -20,10 +20,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import net.sf.ehcache.CacheManager;
 
 import org.apache.logging.log4j.Logger;
-import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -32,12 +36,9 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.boot.spi.MetadataImplementor;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.stat.Statistics;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
 import org.hibernate.tool.schema.TargetType;
 
@@ -446,17 +447,23 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		final Session session = this.getSessionFactory().openSession();
 
-		final Criteria getFile = session.createCriteria(PrimaryDataFileImplementation.class)
-				.add(Restrictions.eq("class", PrimaryDataFileImplementation.class)).add(Restrictions.eq("ID", uuid));
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
-		final PrimaryDataFile file = (PrimaryDataFile) getFile.uniqueResult();
+		fileCriteria.where(builder.and(builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class),builder.equal(fileRoot.get("ID"), uuid)));
+
+		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();
 
 		if (file == null) {
-			final Criteria getDirectory = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-					.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
-					.add(Restrictions.eq("ID", uuid));
 
-			final PrimaryDataDirectory directory = (PrimaryDataDirectory) getDirectory.uniqueResult();
+			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+			
+			directoryCriteria.where(builder.and(builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class),builder.equal(directoryRoot.get("ID"), uuid)));
+			
+			final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();
 
 			if (directory == null) {
 				session.close();
@@ -551,11 +558,20 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		final Session session = this.getSessionFactory().openSession();
 
-		final Criteria checkRoot = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-				.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
-				.add(Restrictions.isNull("parentDirectory"));
+//		final Criteria checkRoot = session.createCriteria(PrimaryDataDirectoryImplementation.class)
+//				.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
+//				.add(Restrictions.isNull("parentDirectory"));
 
-		if (checkRoot.uniqueResult() == null) {
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+		CriteriaQuery<PrimaryDataDirectoryImplementation> rootDirectoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> rootDirectoryRoot = rootDirectoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+
+		rootDirectoryCriteria
+				.where(builder.and(builder.equal(rootDirectoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+						builder.isNull((rootDirectoryRoot.get("parentDirectory")))));
+
+		if (session.createQuery(rootDirectoryCriteria).uniqueResult() == null) {
 
 			session.close();
 
@@ -585,11 +601,13 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 
 		else {
+			
+			CriteriaQuery<SupportedPrincipals> principalCriteria = builder.createQuery(SupportedPrincipals.class);
+			Root<SupportedPrincipals> principalRoot = principalCriteria.from(SupportedPrincipals.class);
+			
+			principalCriteria.select(principalRoot);
 
-			final Criteria principals = session.createCriteria(SupportedPrincipals.class);
-
-			@SuppressWarnings("unchecked")
-			final List<SupportedPrincipals> privatePrincipals = principals.list();
+			final List<SupportedPrincipals> privatePrincipals = session.createQuery(principalCriteria).list();
 
 			final List<SupportedPrincipals> publicPrincipals = new ArrayList<SupportedPrincipals>(
 					supportedPrincipals.size());
@@ -608,8 +626,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 			DataManager.getImplProv().getLogger().info("Getting existing RootDirectory...");
 
-			final PrimaryDataDirectoryImplementation existingRootDirectory = (PrimaryDataDirectoryImplementation) checkRoot
-					.uniqueResult();
+			final PrimaryDataDirectoryImplementation existingRootDirectory = session.createQuery(rootDirectoryCriteria).uniqueResult();
 
 			session.close();
 

@@ -23,6 +23,10 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
@@ -33,8 +37,6 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.SearchFactory;
@@ -136,9 +138,9 @@ public class IndexWriterThread extends Thread {
 			final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
 			/** high value fetch objects faster, but more memory is needed */
-			final int batchSize = 10000;
+			final int fetchSize = 10000;
 
-			fullTextSession.setFlushMode(FlushMode.MANUAL);
+			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 			fullTextSession.setCacheMode(CacheMode.NORMAL);
 			final Transaction transaction = fullTextSession.beginTransaction();
 
@@ -148,8 +150,14 @@ public class IndexWriterThread extends Thread {
 
 			final long queryStartTime = System.currentTimeMillis();
 
-			final ScrollableResults results = fullTextSession.createCriteria(MyUntypedData.class)
-					.add(Restrictions.gt("id", this.lastIndexedID)).addOrder(Order.asc("id")).setFetchSize(batchSize)
+			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+
+			CriteriaQuery<MyUntypedData> criteria = criteriaBuilder.createQuery(MyUntypedData.class);
+			Root<MyUntypedData> root = criteria.from(MyUntypedData.class);
+			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
+					.orderBy(criteriaBuilder.asc(root.get("id")));
+
+			final ScrollableResults results = session.createQuery(criteria).setFetchSize(fetchSize)
 					.scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;
@@ -164,14 +172,14 @@ public class IndexWriterThread extends Thread {
 				/** index each element */
 				fullTextSession.index(results.get(0));
 
-				if (indexedObjects % batchSize == 0) {
+				if (indexedObjects % fetchSize == 0) {
 
 					try {
 						/** apply changes to indexes */
 						fullTextSession.flushToIndexes();
 						/** free memory since the queue is processed */
 						fullTextSession.clear();
-						flushedObjects += batchSize;
+						flushedObjects += fetchSize;
 					} catch (Exception e) {
 						throw new Error("Unable to read/write index files");
 					}
@@ -234,15 +242,20 @@ public class IndexWriterThread extends Thread {
 
 			final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
-			fullTextSession.setFlushMode(FlushMode.MANUAL);
+			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 			fullTextSession.setCacheMode(CacheMode.NORMAL);
 			final Transaction transaction = fullTextSession.beginTransaction();
 
 			final long queryStartTime = System.currentTimeMillis();
 
-			final ScrollableResults results = fullTextSession.createCriteria(MyUntypedData.class)
-					.add(Restrictions.gt("id", this.lastIndexedID)).addOrder(Order.asc("id"))
-					.scroll(ScrollMode.FORWARD_ONLY);
+			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+
+			CriteriaQuery<MyUntypedData> criteria = criteriaBuilder.createQuery(MyUntypedData.class);
+			Root<MyUntypedData> root = criteria.from(MyUntypedData.class);
+			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
+					.orderBy(criteriaBuilder.asc(root.get("id")));
+
+			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;
 			int flushedObjects = 0;
@@ -376,7 +389,7 @@ public class IndexWriterThread extends Thread {
 		session.setDefaultReadOnly(true);
 		final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
-		fullTextSession.setFlushMode(FlushMode.MANUAL);
+		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 		fullTextSession.setCacheMode(CacheMode.NORMAL);
 
 		Transaction transaction = fullTextSession.beginTransaction();
