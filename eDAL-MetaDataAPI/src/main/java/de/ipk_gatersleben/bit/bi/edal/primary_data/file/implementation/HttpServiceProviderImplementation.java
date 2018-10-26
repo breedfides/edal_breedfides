@@ -13,19 +13,18 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.SortedSet;
 
-import org.hibernate.Criteria;
-import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
+import org.hibernate.Session;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 
@@ -44,24 +43,26 @@ public class HttpServiceProviderImplementation implements HttpServiceProvider {
 
 	final Session session = ((FileSystemImplementationProvider) DataManager
 		.getImplProv()).getSession();
-
-	final Criteria getFile = session
-		.createCriteria(PrimaryDataFileImplementation.class)
-		.add(Restrictions.eq("class",
-			PrimaryDataFileImplementation.class))
-		.add(Restrictions.eq("ID", uuid));
-
-	final PrimaryDataFile file = (PrimaryDataFile) getFile.uniqueResult();
+	
+	CriteriaBuilder builder = session.getCriteriaBuilder();
+	
+	CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+	Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+	fileCriteria.where(builder.and(
+			builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class)),
+			builder.equal(fileRoot.get("ID"), uuid));
+	
+	final PrimaryDataFileImplementation file = session.createQuery(fileCriteria).uniqueResult();
 
 	if (file == null) {
-	    final Criteria getDirectory = session
-		    .createCriteria(PrimaryDataDirectoryImplementation.class)
-		    .add(Restrictions.eq("class",
-			    PrimaryDataDirectoryImplementation.class))
-		    .add(Restrictions.eq("ID", uuid));
+	    
+	    CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+		directoryCriteria.where(builder.and(
+				builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class)),
+				builder.equal(directoryRoot.get("ID"), uuid));
 
-	    final PrimaryDataDirectory directory = (PrimaryDataDirectory) getDirectory
-		    .uniqueResult();
+		final PrimaryDataDirectoryImplementation directory = session.createQuery(directoryCriteria).uniqueResult();
 
 	    if (directory == null) {
 		throw new EdalException(
@@ -163,19 +164,25 @@ public class HttpServiceProviderImplementation implements HttpServiceProvider {
 	final Session session = ((FileSystemImplementationProvider) DataManager
 		.getImplProv()).getSession();
 
-	final PrimaryDataFile file = (PrimaryDataFile) session
-		.createCriteria(PrimaryDataFileImplementation.class)
-		.add(Restrictions.eq("class",
-			PrimaryDataFileImplementation.class))
-		.add(Restrictions.eq("ID", uuid)).uniqueResult();
+	CriteriaBuilder builder = session.getCriteriaBuilder();
+	
+	CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+	Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+	fileCriteria.where(builder.and(
+			builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class)),
+			builder.equal(fileRoot.get("ID"), uuid));
+	
+	final PrimaryDataFileImplementation file = session.createQuery(fileCriteria).uniqueResult();
 
 	if (file == null) {
 
-	    final PrimaryDataDirectory directory = (PrimaryDataDirectory) session
-		    .createCriteria(PrimaryDataDirectoryImplementation.class)
-		    .add(Restrictions.eq("class",
-			    PrimaryDataDirectoryImplementation.class))
-		    .add(Restrictions.eq("ID", uuid)).uniqueResult();
+	    CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+		directoryCriteria.where(builder.and(
+				builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class)),
+				builder.equal(directoryRoot.get("ID"), uuid));
+
+		final PrimaryDataDirectoryImplementation directory = session.createQuery(directoryCriteria).uniqueResult();
 
 	    if (directory == null) {
 		session.close();
@@ -257,17 +264,24 @@ public class HttpServiceProviderImplementation implements HttpServiceProvider {
 	final Session session = ((FileSystemImplementationProvider) DataManager
 		.getImplProv()).getSession();
 
-	final ReviewersImplementation reviewer = (ReviewersImplementation) session
-		.createCriteria(ReviewersImplementation.class)
-		.add(Restrictions.eq("hashCode", reviewerCode)).uniqueResult();
+	CriteriaBuilder builder = session.getCriteriaBuilder();
+	 
+    CriteriaQuery<ReviewersImplementation> reviewerCriteria = builder.createQuery(ReviewersImplementation.class);
+	Root<ReviewersImplementation> reviewerRoot = reviewerCriteria.from(ReviewersImplementation.class);
+	reviewerCriteria.where(builder.equal(reviewerRoot.get("hashCode"),reviewerCode));
+
+	final ReviewersImplementation reviewer = session.createQuery(reviewerCriteria).uniqueResult();
 
 	if (reviewer != null) {
+		
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+		fileCriteria.where(builder.and(
+				builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class)),
+				builder.equal(fileRoot.get("ID"), uuid));
+		
+		final PrimaryDataFileImplementation file = session.createQuery(fileCriteria).uniqueResult();
 
-	    final PrimaryDataFile file = (PrimaryDataFile) session
-		    .createCriteria(PrimaryDataFileImplementation.class)
-		    .add(Restrictions.eq("class",
-			    PrimaryDataFileImplementation.class))
-		    .add(Restrictions.eq("ID", uuid)).uniqueResult();
 
 	    if (file != null) {
 		try {
@@ -281,12 +295,15 @@ public class HttpServiceProviderImplementation implements HttpServiceProvider {
 		    throw new EdalException(e.getMessage(), e);
 		}
 	    } else {
-		final PrimaryDataDirectory directory = (PrimaryDataDirectory) session
-			.createCriteria(
-				PrimaryDataDirectoryImplementation.class)
-			.add(Restrictions.eq("class",
-				PrimaryDataDirectoryImplementation.class))
-			.add(Restrictions.eq("ID", uuid)).uniqueResult();
+	    	
+	    	CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+	  		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+	  		directoryCriteria.where(builder.and(
+	  				builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class)),
+	  				builder.equal(directoryRoot.get("ID"), uuid));
+
+	  		final PrimaryDataDirectoryImplementation directory = session.createQuery(directoryCriteria).uniqueResult();
+	  		
 		if (directory == null) {
 		    session.close();
 		    throw new EdalException(

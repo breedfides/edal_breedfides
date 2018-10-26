@@ -33,6 +33,9 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.hibernate.Criteria;
@@ -45,6 +48,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.SortNatural;
 import org.hibernate.criterion.CriteriaSpecification;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.query.NativeQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.query.dsl.QueryBuilder;
@@ -153,18 +157,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		session.setDefaultReadOnly(true);
 
-		final SQLQuery fileQuery = session
-				.createSQLQuery("SELECT DISTINCT t4.ID, t4.TYPE, t4.PARENTDIRECTORY_ID FROM "
-						+ "UNTYPEDDATA t1, METADATA_MAP t2, ENTITY_VERSIONS t3, ENTITIES t4 "
-						+ "where t3.METADATA_ID=t2.METADATA_ID " + "and t1.id=t2.MYMAP_ID and t2.MYMAP_KEY=15 "
-						+ "and t1.STRING=:name and t3.PRIMARYENTITYID=t4.ID "
-						+ "and t4.TYPE='F' and t4.PARENTDIRECTORY_ID=:parent")
-				.addEntity(PrimaryDataFileImplementation.class);
+		final NativeQuery<PrimaryDataFileImplementation> fileQuery = session
+				.createNativeQuery(
+						"SELECT DISTINCT t4.ID, t4.TYPE, t4.PARENTDIRECTORY_ID FROM "
+								+ "UNTYPEDDATA t1, METADATA_MAP t2, ENTITY_VERSIONS t3, ENTITIES t4 "
+								+ "where t3.METADATA_ID=t2.METADATA_ID " + "and t1.id=t2.MYMAP_ID and t2.MYMAP_KEY=15 "
+								+ "and t1.STRING=:name and t3.PRIMARYENTITYID=t4.ID "
+								+ "and t4.TYPE='F' and t4.PARENTDIRECTORY_ID=:parent",
+						PrimaryDataFileImplementation.class);
 
-		fileQuery.setString("name", name);
-		fileQuery.setString("parent", this.getID());
+		fileQuery.setParameter("name", name);
+		fileQuery.setParameter("parent", this.getID());
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 		final List<PrimaryDataFileImplementation> files = fileQuery.list();
 
 		for (final PrimaryDataFileImplementation file : files) {
@@ -175,18 +179,17 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 		}
 
-		final SQLQuery directoryQuery = session
-				.createSQLQuery("SELECT DISTINCT t4.ID, t4.TYPE, t4.PARENTDIRECTORY_ID FROM "
+		final NativeQuery<PrimaryDataDirectoryImplementation> directoryQuery = session.createNativeQuery(
+				"SELECT DISTINCT t4.ID, t4.TYPE, t4.PARENTDIRECTORY_ID FROM "
 						+ "UNTYPEDDATA t1, METADATA_MAP t2, ENTITY_VERSIONS t3, ENTITIES t4 "
 						+ "where t3.METADATA_ID=t2.METADATA_ID " + "and t1.id=t2.MYMAP_ID and t2.MYMAP_KEY=15 "
 						+ "and t1.STRING=:name and t3.PRIMARYENTITYID=t4.ID "
-						+ "and t4.TYPE='D' and t4.PARENTDIRECTORY_ID=:parent")
-				.addEntity(PrimaryDataDirectoryImplementation.class);
+						+ "and t4.TYPE='D' and t4.PARENTDIRECTORY_ID=:parent",
+				PrimaryDataDirectoryImplementation.class);
 
-		directoryQuery.setString("name", name);
-		directoryQuery.setString("parent", this.getID());
+		directoryQuery.setParameter("name", name);
+		directoryQuery.setParameter("parent", this.getID());
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 		final List<PrimaryDataDirectoryImplementation> dirs = directoryQuery.list();
 
 		for (final PrimaryDataDirectoryImplementation dir : dirs) {
@@ -293,12 +296,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Criteria query = session.createCriteria(EdalPermissionImplementation.class)
-				.add(Restrictions.eq("internId", this.getID()))
-				.add(Restrictions.eq("internVersion", this.getCurrentVersion().getRevision()));
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<EdalPermissionImplementation> criteria = builder.createQuery(EdalPermissionImplementation.class);
+		Root<EdalPermissionImplementation> root = criteria.from(EdalPermissionImplementation.class);
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final List<EdalPermissionImplementation> privatePerms = query.list();
+		criteria.where(builder.and(builder.equal(root.get("internId"), this.getID()),
+				builder.equal(root.get("internVersion"), this.getCurrentVersion().getRevision())));
+
+		final List<EdalPermissionImplementation> privatePerms = session.createQuery(criteria).list();
 
 		final Map<Principal, List<EdalPermission>> publicMap = new HashMap<>();
 
@@ -307,13 +312,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 				if (!publicMap.containsKey(p.getPrincipal().toPrincipal())) {
 
-					final Criteria tmpQuery = session.createCriteria(EdalPermissionImplementation.class)
-							.add(Restrictions.eq("internId", this.getID()))
-							.add(Restrictions.eq("internVersion", this.getCurrentVersion().getRevision()))
-							.add(Restrictions.eq("principal", p.getPrincipal()));
+					CriteriaQuery<EdalPermissionImplementation> tmpCriteria = builder
+							.createQuery(EdalPermissionImplementation.class);
+					Root<EdalPermissionImplementation> tmpRoot = tmpCriteria.from(EdalPermissionImplementation.class);
 
-					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final List<EdalPermissionImplementation> userPerms = tmpQuery.list();
+					tmpCriteria.where(builder.and(
+							builder.and(
+									builder.equal(tmpRoot.get("internId"), this.getID()),
+									builder.equal(tmpRoot.get("internVersion"),
+											this.getCurrentVersion().getRevision())),
+									builder.equal(tmpRoot.get("principal"), p.getPrincipal())));
+
+					final List<EdalPermissionImplementation> userPerms = session.createQuery(tmpCriteria).list();
 					final List<EdalPermission> publicPerms = new ArrayList<EdalPermission>(privatePerms.size());
 
 					for (final EdalPermissionImplementation permission : userPerms) {
@@ -1436,14 +1446,17 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Criteria directoryCriteria = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-				.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID, version.getPrimaryEntityId()))
-				.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-						PrimaryDataDirectoryImplementation.class))
-				.setCacheable(true).setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+		CriteriaBuilder builder = session.getCriteriaBuilder();
 
-		final PrimaryDataDirectory directory = (PrimaryDataDirectory) directoryCriteria.uniqueResult();
+		CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
 
+		directoryCriteria.where(builder.and(		
+						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),version.getPrimaryEntityId())),
+						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_CLASS), PrimaryDataDirectoryImplementation.class));
+		
+		final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();	
+	
 		if (directory != null && this.checkIfParentEntity(entity, directory)) {
 			try {
 				/**
@@ -1458,15 +1471,16 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			session.close();
 			return directory;
 		}
+		
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
-		final Criteria fileCriteria = session.createCriteria(PrimaryDataFileImplementation.class)
-				.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID, version.getPrimaryEntityId()))
-				.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-						PrimaryDataFileImplementation.class))
-				.setCacheable(true).setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
-
-		final PrimaryDataFile file = (PrimaryDataFile) fileCriteria.uniqueResult();
-
+		fileCriteria.where(builder.and(		
+						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),version.getPrimaryEntityId())),
+						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_CLASS), PrimaryDataFileImplementation.class));
+		
+		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();	
+		
 		if (file != null && this.checkIfParentEntity(entity, file)) {
 			try {
 				/**
@@ -1563,10 +1577,17 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 			final Transaction transaction2 = session.beginTransaction();
 
-			final PrincipalImplementation existingPrincipal = (PrincipalImplementation) session
-					.createCriteria(PrincipalImplementation.class).add(Restrictions.eq("name", principal.getName()))
-					.add(Restrictions.eq("type", principal.getClass().getSimpleName())).uniqueResult();
+			CriteriaBuilder builder = session.getCriteriaBuilder();
 
+			CriteriaQuery<PrincipalImplementation> criteria = builder.createQuery(PrincipalImplementation.class);
+			Root<PrincipalImplementation> root = criteria.from(PrincipalImplementation.class);
+
+			criteria.where(builder.and(		
+							builder.equal(root.get("name"),principal.getName())),
+							builder.equal(root.get("type"), principal.getClass().getSimpleName()));
+			
+			PrincipalImplementation existingPrincipal = session.createQuery(criteria).uniqueResult();
+			
 			if (existingPrincipal != null) {
 				privateVersion.setOwner(existingPrincipal);
 			} else {

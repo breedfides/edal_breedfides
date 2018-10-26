@@ -32,12 +32,14 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.apache.velocity.exception.VelocityException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.CriteriaSpecification;
-import org.hibernate.criterion.Restrictions;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -98,9 +100,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Transaction transaction = session.beginTransaction();
 
-		@SuppressWarnings("unchecked")
-		final List<TicketImplementation> ticketImplementation = session.createCriteria(TicketImplementation.class)
-				.list();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.select(ticketRoot);
+
+		final List<TicketImplementation> ticketImplementation = session.createQuery(ticketCriteria).list();
 
 		for (final TicketImplementation ticket : ticketImplementation) {
 			ApprovalServiceProviderImplementation.synchronizedMap.put(ticket.getTicket(), ticket.getReference());
@@ -123,8 +130,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final TicketImplementation ticketImplementation = (TicketImplementation) session
-				.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+		final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 		session.close();
 
@@ -228,26 +241,39 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		final ReviewersImplementation reviewerImplementation = (ReviewersImplementation) session
-				.createCriteria(ReviewersImplementation.class).add(Restrictions.eq("hashCode", reviewerCode))
-				.uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<ReviewersImplementation> reviewerCriteria = builder.createQuery(ReviewersImplementation.class);
+		Root<ReviewersImplementation> reviewerRoot = reviewerCriteria.from(ReviewersImplementation.class);
+
+		reviewerCriteria.where(builder.equal(reviewerRoot.get("hashCode"), reviewerCode));
+
+		final ReviewersImplementation reviewerImplementation = session.createQuery(reviewerCriteria).uniqueResult();
 
 		if (reviewerImplementation == null) {
 			throw new EdalApprovalException("unable to find a reviewer with this code");
 		}
 
-		final TicketImplementation ticketImplementation = (TicketImplementation) session
-				.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+		final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 		if (ticketImplementation == null) {
 			throw new EdalApprovalException("unable to find a ticket with this code");
 		}
 
-		@SuppressWarnings("unchecked")
-		final List<ReviewStatusImplementation> reviewStatusList = session
-				.createCriteria(ReviewStatusImplementation.class)
-				.add(Restrictions.eq("emailAddress", reviewerImplementation.getEmailAddress()))
-				.add(Restrictions.eq("publicReference", ticketImplementation.getReference())).list();
+		CriteriaQuery<ReviewStatusImplementation> reviewStatusCriteria = builder
+				.createQuery(ReviewStatusImplementation.class);
+		Root<ReviewStatusImplementation> reviewStatusRoot = reviewStatusCriteria.from(ReviewStatusImplementation.class);
+
+		reviewStatusCriteria.where(builder.and(
+				builder.equal(reviewStatusRoot.get("emailAddress"), reviewerImplementation.getEmailAddress()),
+				builder.equal(reviewStatusRoot.get("publicReference"), ticketImplementation.getReference())));
+
+		final List<ReviewStatusImplementation> reviewStatusList = session.createQuery(reviewStatusCriteria).list();
 
 		for (final ReviewStatusImplementation reviewStatusImplementation : reviewStatusList) {
 			reviewStatusImplementation.setStatusType(status);
@@ -264,10 +290,16 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
 		for (final Entry<PublicReference, List<ReviewStatus>> result : results.entrySet()) {
 
-			final TicketImplementation ticket = (TicketImplementation) session
-					.createCriteria(TicketImplementation.class).add(Restrictions.eq("reference", result.getKey()))
+			CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+			Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+			ticketCriteria.where(builder.equal(ticketRoot.get("reference"), result.getKey()));
+
+			final TicketImplementation ticket = (TicketImplementation) session.createQuery(ticketCriteria)
 					.uniqueResult();
 
 			DataManager.getImplProv().getLogger()
@@ -338,9 +370,15 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		@SuppressWarnings("unchecked")
-		final List<ReviewStatusImplementation> reviewStatus = session.createCriteria(ReviewStatusImplementation.class)
-				.add(Restrictions.eq("publicReference", reference)).list();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<ReviewStatusImplementation> reviewStatusCriteria = builder
+				.createQuery(ReviewStatusImplementation.class);
+		Root<ReviewStatusImplementation> reviewStatusRoot = reviewStatusCriteria.from(ReviewStatusImplementation.class);
+
+		reviewStatusCriteria.where(builder.equal(reviewStatusRoot.get("publicReference"), reference));
+
+		final List<ReviewStatusImplementation> reviewStatus = session.createQuery(reviewStatusCriteria).list();
 
 		for (final ReviewStatusImplementation reviewStatusImplementation : reviewStatus) {
 			session.delete(reviewStatusImplementation);
@@ -363,8 +401,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		session.beginTransaction();
 
-		final TicketImplementation ticketImplementation = (TicketImplementation) session
-				.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+		final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 		session.delete(ticketImplementation);
 		session.getTransaction().commit();
@@ -381,10 +425,22 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		@SuppressWarnings("unchecked")
-		final List<PublicReferenceImplementation> publicReferences = session
-				.createCriteria(PublicReferenceImplementation.class).add(Restrictions.isNull("acceptedDate"))
-				.add(Restrictions.isNull("rejectedDate"))
+		// @SuppressWarnings("unchecked")
+		// final List<PublicReferenceImplementation> publicReferences = session
+		// .createCriteria(PublicReferenceImplementation.class).add(Restrictions.isNull("acceptedDate"))
+		// .add(Restrictions.isNull("rejectedDate"))
+		// .setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY).list();
+
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder
+				.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+
+		referenceCriteria.where(builder.and(builder.isNull(referenceRoot.get("acceptedDate")),
+				builder.isNull(referenceRoot.get("rejectedDate"))));
+
+		final List<PublicReferenceImplementation> publicReferences = session.createQuery(referenceCriteria)
 				.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY).list();
 
 		DataManager.getImplProv().getLogger().debug("open PublicReferences : " + publicReferences.size());
@@ -427,8 +483,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final int year = Calendar.getInstance().get(Calendar.YEAR);
 
-		final int numberOfStoredIds = session.createCriteria(UrlImplementation.class).add(Restrictions.eq("year", year))
-				.list().size();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<UrlImplementation> urlCriteria = builder.createQuery(UrlImplementation.class);
+		Root<UrlImplementation> urlRoot = urlCriteria.from(UrlImplementation.class);
+
+		urlCriteria.where(builder.equal(urlRoot.get("year"), year));
+
+		final int numberOfStoredIds = session.createQuery(urlCriteria).list().size();
 
 		try {
 
@@ -469,10 +531,15 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final PublicReferenceImplementation publicReference = (PublicReferenceImplementation) session
-				.createCriteria(PublicReferenceImplementation.class).add(Restrictions.eq("internalID", internalId))
-				.uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
 
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+
+		referenceCriteria.where(builder.equal(referenceRoot.get("internalID"),internalId));
+		
+		final PublicReferenceImplementation publicReference = session.createQuery(referenceCriteria).uniqueResult();
+		
 		session.close();
 
 		if (publicReference != null) {
@@ -494,8 +561,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	public void rejectTicketByUser(final String ticket, final int reviewerHashCode) throws EdalApprovalException {
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final TicketImplementation ticketImplementation = (TicketImplementation) session
-				.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+		final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 		session.close();
 		if (ticketImplementation != null) {
@@ -672,15 +745,20 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final int hashCode = emailAddress.getAddress().hashCode();
+		final int reviewerCode = emailAddress.getAddress().hashCode();
 
-		ReviewersImplementation reviewer = (ReviewersImplementation) session
-				.createCriteria(ReviewersImplementation.class).add(Restrictions.eq("hashCode", hashCode))
-				.add(Restrictions.eq("emailAddress", emailAddress.getAddress())).uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
 
+		CriteriaQuery<ReviewersImplementation> reviewerCriteria = builder.createQuery(ReviewersImplementation.class);
+		Root<ReviewersImplementation> reviewerRoot = reviewerCriteria.from(ReviewersImplementation.class);
+
+		reviewerCriteria.where(builder.and(builder.equal(reviewerRoot.get("emailAddress"), emailAddress.getAddress()),builder.equal(reviewerRoot.get("hashCode"), reviewerCode)));
+	
+		ReviewersImplementation reviewer= session.createQuery(reviewerCriteria).uniqueResult();
+		
 		if (reviewer == null) {
 
-			reviewer = new ReviewersImplementation(emailAddress.getAddress(), hashCode);
+			reviewer = new ReviewersImplementation(emailAddress.getAddress(), reviewerCode);
 			final Transaction transaction = session.beginTransaction();
 			session.save(reviewer);
 			transaction.commit();
@@ -695,7 +773,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 							EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.REJECT),
 							reference.getRequestedPrincipal(), emailAddress, reviewerType,
 							EdalHttpServer.generateReviewerURL(
-									this.createLandingPageURL((PublicReferenceImplementation) reference), hashCode),
+									this.createLandingPageURL((PublicReferenceImplementation) reference), reviewerCode),
 							reference.getIdentifierType());
 
 			this.sendEmail(stringWriter.toString(),
@@ -797,8 +875,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 			final Transaction transaction = session.beginTransaction();
 
-			final TicketImplementation ticketImplementation = (TicketImplementation) session
-					.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+			final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+			CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+			Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+			ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+			final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 			final PublicReferenceImplementation publicReference = ticketImplementation.getReference();
 
@@ -869,8 +953,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 			final Transaction transaction = session.beginTransaction();
 
-			final TicketImplementation ticketImplementation = (TicketImplementation) session
-					.createCriteria(TicketImplementation.class).add(Restrictions.eq("ticket", ticket)).uniqueResult();
+			final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+			CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+			Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+			ticketCriteria.where(builder.equal(ticketRoot.get("ticket"), ticket));
+
+			final TicketImplementation ticketImplementation = session.createQuery(ticketCriteria).uniqueResult();
 
 			final PublicReferenceImplementation publicReference = ticketImplementation.getReference();
 
@@ -909,9 +999,9 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 			String newId = "";
 			try {
-				
+
 				Calendar releaseDate = Calendar.getInstance();
-				
+
 				newId = publicRef.getReferencable().acceptApprovalRequest(publicRef);
 				publicRef.setAssignedID(newId);
 				publicRef.setPublic(true);
@@ -1032,8 +1122,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final TicketImplementation ticket = (TicketImplementation) session.createCriteria(TicketImplementation.class)
-				.add(Restrictions.eq("reference", publicReference)).uniqueResult();
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<TicketImplementation> ticketCriteria = builder.createQuery(TicketImplementation.class);
+		Root<TicketImplementation> ticketRoot = ticketCriteria.from(TicketImplementation.class);
+
+		ticketCriteria.where(builder.equal(ticketRoot.get("reference"), publicReference));
+
+		final TicketImplementation ticket = session.createQuery(ticketCriteria).uniqueResult();
 
 		session.close();
 

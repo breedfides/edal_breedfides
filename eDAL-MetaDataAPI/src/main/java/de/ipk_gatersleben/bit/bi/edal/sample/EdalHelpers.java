@@ -32,7 +32,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.hibernate.stat.SecondLevelCacheStatistics;
+import org.hibernate.stat.CacheRegionStatistics;
 import org.hibernate.stat.Statistics;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -645,9 +645,9 @@ public class EdalHelpers {
 			}
 			System.out.println("\n******** Search-Statistic ********");
 
-			SecondLevelCacheStatistics metaDataStatistics = null;
+			CacheRegionStatistics metaDataStatistics = null;
 			try {
-				metaDataStatistics = statistics.getSecondLevelCacheStatistics("search.metadata");
+				metaDataStatistics = statistics.getDomainDataRegionStatistics("search.metadata");
 
 				final long metaDataHit = metaDataStatistics.getHitCount();
 
@@ -663,10 +663,10 @@ public class EdalHelpers {
 				System.out.println("didnt use search.metadata-Cache");
 			}
 
-			SecondLevelCacheStatistics versionStatistics = null;
+			CacheRegionStatistics versionStatistics = null;
 
 			try {
-				versionStatistics = statistics.getSecondLevelCacheStatistics("search.version");
+				versionStatistics = statistics.getDomainDataRegionStatistics("search.version");
 
 				final long versionHit = versionStatistics.getHitCount();
 
@@ -682,10 +682,10 @@ public class EdalHelpers {
 				System.out.println("didnt use search.version-Cache");
 			}
 
-			SecondLevelCacheStatistics entityStatistics = null;
+			CacheRegionStatistics entityStatistics = null;
 
 			try {
-				entityStatistics = statistics.getSecondLevelCacheStatistics("search.entity");
+				entityStatistics = statistics.getDomainDataRegionStatistics("search.entity");
 				final long entityHit = entityStatistics.getHitCount();
 
 				final long entityMiss = entityStatistics.getMissCount();
@@ -720,10 +720,10 @@ public class EdalHelpers {
 			}
 			System.out.println("\n******** Permission-Statistic ********");
 
-			SecondLevelCacheStatistics rootStatistics = null;
+			CacheRegionStatistics rootStatistics = null;
 
 			try {
-				rootStatistics = statistics.getSecondLevelCacheStatistics("query.root");
+				rootStatistics = statistics.getDomainDataRegionStatistics("query.root");
 				final long rootHit = rootStatistics.getHitCount();
 
 				final long rootMiss = rootStatistics.getMissCount();
@@ -739,10 +739,10 @@ public class EdalHelpers {
 				System.out.println("didnt use query.root-Cache");
 			}
 
-			SecondLevelCacheStatistics permissionStatistics = null;
+			CacheRegionStatistics permissionStatistics = null;
 
 			try {
-				permissionStatistics = statistics.getSecondLevelCacheStatistics("query.permission");
+				permissionStatistics = statistics.getDomainDataRegionStatistics("query.permission");
 				final long permissionHit = permissionStatistics.getHitCount();
 
 				final long permissionMiss = permissionStatistics.getMissCount();
@@ -758,10 +758,10 @@ public class EdalHelpers {
 				System.out.println("didnt use query.permission-Cache");
 			}
 
-			SecondLevelCacheStatistics principalStatistics = null;
+			CacheRegionStatistics principalStatistics = null;
 
 			try {
-				principalStatistics = statistics.getSecondLevelCacheStatistics("query.principal");
+				principalStatistics = statistics.getDomainDataRegionStatistics("query.principal");
 				final long principalHit = principalStatistics.getHitCount();
 				final long principalMiss = principalStatistics.getMissCount();
 
@@ -777,10 +777,10 @@ public class EdalHelpers {
 				System.out.println("didnt use query.principal-Cache");
 			}
 
-			SecondLevelCacheStatistics listStatistics = null;
+			CacheRegionStatistics listStatistics = null;
 
 			try {
-				listStatistics = statistics.getSecondLevelCacheStatistics("query.list");
+				listStatistics = statistics.getDomainDataRegionStatistics("query.list");
 				final long listHit = listStatistics.getHitCount();
 
 				final long listMiss = listStatistics.getMissCount();
