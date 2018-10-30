@@ -11,7 +11,6 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 
 import org.json.simple.JSONArray;

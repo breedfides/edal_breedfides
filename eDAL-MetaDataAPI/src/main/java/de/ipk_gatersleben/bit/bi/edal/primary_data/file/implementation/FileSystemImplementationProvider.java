@@ -558,10 +558,6 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		final Session session = this.getSessionFactory().openSession();
 
-//		final Criteria checkRoot = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-//				.add(Restrictions.eq("class", PrimaryDataDirectoryImplementation.class))
-//				.add(Restrictions.isNull("parentDirectory"));
-
 		CriteriaBuilder builder = session.getCriteriaBuilder();
 		
 		CriteriaQuery<PrimaryDataDirectoryImplementation> rootDirectoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);

@@ -60,6 +60,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "EdalVersion")
 public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVersion implements Serializable {
 
+	private static final String STRING_ID = "ID";
 	private static final long serialVersionUID = 1L;
 	private int id;
 	private String primaryEntityId;
@@ -109,7 +110,7 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
 		fileCriteria.where(builder.and(builder.equal(fileRoot.type(),  PrimaryDataFileImplementation.class),
-				builder.equal(fileRoot.get("id"), this.getPrimaryEntityId())));
+				builder.equal(fileRoot.get(STRING_ID), this.getPrimaryEntityId())));
 
 		final PrimaryDataFile pdf = session.createQuery(fileCriteria).uniqueResult();
 	
@@ -119,7 +120,7 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
 
 			directoryCriteria.where(builder.and(builder.equal(directoryRoot.type(),  PrimaryDataDirectoryImplementation.class),
-					builder.equal(directoryRoot.get("id"), this.getPrimaryEntityId())));
+					builder.equal(directoryRoot.get(STRING_ID), this.getPrimaryEntityId())));
 
 			final PrimaryDataDirectory pdd = session.createQuery(directoryCriteria).uniqueResult();
 			

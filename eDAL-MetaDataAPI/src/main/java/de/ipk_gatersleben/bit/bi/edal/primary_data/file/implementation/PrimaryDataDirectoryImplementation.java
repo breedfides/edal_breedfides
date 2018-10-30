@@ -35,20 +35,18 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Root;
 
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.hibernate.Criteria;
-import org.hibernate.Query;
-import org.hibernate.SQLQuery;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.SortNatural;
 import org.hibernate.criterion.CriteriaSpecification;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.NativeQuery;
+import org.hibernate.query.Query;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.query.dsl.QueryBuilder;
@@ -106,11 +104,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	private static final String CACHE_REGION_SEARCH_ENTITY = "search.entity";
 
-	private static final String STRING_ID = "id";
+	private static final String STRING_ID = "ID";
 
 	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
-
-	private static final String STRING_CLASS = "class";
 
 	private static final String SUPPRESS_UNCHECKED_WARNING = "unchecked";
 
@@ -317,11 +313,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					Root<EdalPermissionImplementation> tmpRoot = tmpCriteria.from(EdalPermissionImplementation.class);
 
 					tmpCriteria.where(builder.and(
-							builder.and(
-									builder.equal(tmpRoot.get("internId"), this.getID()),
+							builder.and(builder.equal(tmpRoot.get("internId"), this.getID()),
 									builder.equal(tmpRoot.get("internVersion"),
 											this.getCurrentVersion().getRevision())),
-									builder.equal(tmpRoot.get("principal"), p.getPrincipal())));
+							builder.equal(tmpRoot.get("principal"), p.getPrincipal())));
 
 					final List<EdalPermissionImplementation> userPerms = session.createQuery(tmpCriteria).list();
 					final List<EdalPermission> publicPerms = new ArrayList<EdalPermission>(privatePerms.size());
@@ -424,8 +419,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
 		}
 
-		final Query hibernateQuery = ftSession.createFullTextQuery(query, MyDataFormat.class);
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyDataFormat> hibernateQuery = ftSession.createFullTextQuery(query, MyDataFormat.class);
 		final List<MyDataFormat> result = hibernateQuery.list();
 
 		session.close();
@@ -454,8 +449,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		query = queryBuilder.keyword().onField("string").matching(dataType.getDataType().toString().toLowerCase())
 				.createQuery();
 
-		final Query hibernateQuery = ftSession.createFullTextQuery(query, MyDataType.class);
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyDataType> hibernateQuery = ftSession.createFullTextQuery(query, MyDataType.class);
 		final List<MyDataType> result = hibernateQuery.list();
 
 		session.close();
@@ -489,11 +484,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 				if (edalDate instanceof EdalDateRange) {
 					final List<MyEdalDateRange> list = this.searchByEDALDateRange((EdalDateRange) edalDate);
-					final Query metaDataQuery = session.createSQLQuery(
+					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+					final Query<Integer> metaDataQuery = session.createSQLQuery(
 							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 					metaDataQuery.setParameterList("list", list);
-					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 					final List<Integer> idlist = metaDataQuery.list();
 
 					for (final Integer integer : idlist) {
@@ -504,12 +499,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				else if (edalDate instanceof EdalDate) {
 
 					final List<MyEdalDate> list = this.searchByEDALDate(edalDate);
-
-					final Query metaDataQuery = session.createSQLQuery(
+					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+					final Query<Integer> metaDataQuery = session.createSQLQuery(
 							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 					metaDataQuery.setParameterList("list", list);
-					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 					final List<Integer> idlist = metaDataQuery.list();
 
 					for (final Integer integer : idlist) {
@@ -576,7 +570,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Query versionSQLQuery = session
+		final Query<Integer> versionSQLQuery = session
 				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
 						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
 						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
@@ -595,28 +589,39 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				final PrimaryDataEntityVersionImplementation currentVersion = session
 						.get(PrimaryDataEntityVersionImplementation.class, version);
 
-				final Criteria fileCriteria = session.createCriteria(PrimaryDataFileImplementation.class)
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-								PrimaryDataFileImplementation.class))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-								currentVersion.getPrimaryEntityId()))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
+				final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+				CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+						.createQuery(PrimaryDataFileImplementation.class);
+
+				Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+
+				fileCriteria.where(builder.and(
+						builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+										currentVersion.getPrimaryEntityId())),
+						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY), this)));
+
+				final PrimaryDataFileImplementation primaryDataFile = session.createQuery(fileCriteria)
 						.setCacheable(false)
-						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
-				final Criteria directoryCriteria = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-								PrimaryDataDirectoryImplementation.class))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-								currentVersion.getPrimaryEntityId()))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
+				CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+						.createQuery(PrimaryDataDirectoryImplementation.class);
+
+				Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+						.from(PrimaryDataDirectoryImplementation.class);
+
+				directoryCriteria.where(builder.and(
+						builder.and(builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+								builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+										currentVersion.getPrimaryEntityId())),
+						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+								this)));
+
+				final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
 						.setCacheable(false)
-						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
-
-				final PrimaryDataFile primaryDataFile = (PrimaryDataFile) fileCriteria.uniqueResult();
-
-				final PrimaryDataDirectory primaryDataDirectory = (PrimaryDataDirectory) directoryCriteria
-						.uniqueResult();
+						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
 				if (primaryDataFile != null) {
 					try {
@@ -653,16 +658,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					if (!currentVersion.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString()
 							.equals(MetaData.DIRECTORY.toString())) {
 
-						final Criteria fileQuery = session.createCriteria(PrimaryDataFileImplementation.class)
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-										currentVersion.getPrimaryEntityId()))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-										PrimaryDataFileImplementation.class))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
-								.setCacheable(false)
-								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+						final CriteriaBuilder builder = session.getCriteriaBuilder();
 
-						final PrimaryDataFile pdf = (PrimaryDataFile) fileQuery.uniqueResult();
+						CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+								.createQuery(PrimaryDataFileImplementation.class);
+
+						Root<PrimaryDataFileImplementation> fileRoot = fileCriteria
+								.from(PrimaryDataFileImplementation.class);
+
+						fileCriteria.where(builder.and(
+								builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+										builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+												currentVersion.getPrimaryEntityId())),
+								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+										this)));
+
+						final PrimaryDataFileImplementation pdf = session.createQuery(fileCriteria).setCacheable(false)
+								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
+								.uniqueResult();
 
 						if (pdf != null) {
 							try {
@@ -677,16 +690,28 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 							maybeInSubDirectoriesList.add(currentVersion);
 						}
 					} else {
-						final Criteria directoryQuery = session.createCriteria(PrimaryDataDirectoryImplementation.class)
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-										currentVersion.getPrimaryEntityId()))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-										PrimaryDataDirectoryImplementation.class))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
-								.setCacheable(false)
-								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+						final CriteriaBuilder builder = session.getCriteriaBuilder();
 
-						final PrimaryDataDirectory pdd = (PrimaryDataDirectory) directoryQuery.uniqueResult();
+						CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+								.createQuery(PrimaryDataDirectoryImplementation.class);
+
+						Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+								.from(PrimaryDataDirectoryImplementation.class);
+
+						directoryCriteria.where(builder.and(
+								builder.and(
+										builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+										builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+												currentVersion.getPrimaryEntityId())),
+								builder.equal(
+										directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+										this)));
+
+						final PrimaryDataDirectoryImplementation pdd = session.createQuery(directoryCriteria)
+								.setCacheable(false)
+								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
+								.uniqueResult();
+
 						if (pdd != null) {
 							try {
 								if (!pdd.getCurrentVersion().isDeleted()) {
@@ -748,7 +773,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Criteria myEDALDateCriteria = session.createCriteria(MyEdalDate.class);
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<MyEdalDate> dataCriteria = builder.createQuery(MyEdalDate.class);
+		Root<MyEdalDate> rootDate = dataCriteria.from(MyEdalDate.class);
 
 		final int precission = edalDate.getStartPrecision().ordinal();
 		final Calendar date = edalDate.getStartDate();
@@ -761,32 +789,58 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		} else if (precission >= EdalDatePrecision.DECADE.ordinal()) {
 
 			/** note: use DECADE(date) if the database-SQL support */
-			myEDALDateCriteria.add(Restrictions.sqlRestriction(
-					"SUBSTR(YEAR(startDate),1,3)=" + Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
+
+			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startData"));
+
+			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+					Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
 
 			if (precission >= EdalDatePrecision.YEAR.ordinal()) {
-				myEDALDateCriteria.add(Restrictions.sqlRestriction("YEAR(startDate)=" + date.get(Calendar.YEAR)));
+
+				dataCriteria.where(builder.equal(yearExpression, date.get(Calendar.YEAR)));
 
 				if (precission >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
-					myEDALDateCriteria
-							.add(Restrictions.sqlRestriction("MONTH(startDate)=" + (date.get(Calendar.MONTH) + 1)));
+					Expression<String> monthExpression = builder.function("MONTH", String.class,
+							rootDate.get("startData"));
+
+					dataCriteria.where(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
 
 					if (precission >= EdalDatePrecision.DAY.ordinal()) {
-						myEDALDateCriteria
-								.add(Restrictions.sqlRestriction("DAY(startDate)=" + date.get(Calendar.DAY_OF_MONTH)));
+
+						Expression<String> dayExpression = builder.function("DAY", String.class,
+								rootDate.get("startData"));
+
+						dataCriteria.where(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
+
 						if (precission >= EdalDatePrecision.HOUR.ordinal()) {
-							myEDALDateCriteria.add(
-									Restrictions.sqlRestriction("HOUR(startDate)=" + date.get(Calendar.HOUR_OF_DAY)));
+
+							Expression<String> hourExpression = builder.function("HOUR", String.class,
+									rootDate.get("startData"));
+
+							dataCriteria.where(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
+
 							if (precission >= EdalDatePrecision.MINUTE.ordinal()) {
-								myEDALDateCriteria.add(
-										Restrictions.sqlRestriction("MINUTE(startDate)=" + date.get(Calendar.MINUTE)));
+
+								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+										rootDate.get("startData"));
+
+								dataCriteria.where(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
+
 								if (precission >= EdalDatePrecision.SECOND.ordinal()) {
-									myEDALDateCriteria.add(Restrictions
-											.sqlRestriction("SECOND(startDate)=" + date.get(Calendar.SECOND)));
+
+									Expression<String> secondExpression = builder.function("SECOND", String.class,
+											rootDate.get("startData"));
+
+									dataCriteria.where(builder.equal(secondExpression, date.get(Calendar.SECOND)));
+
 									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
-										myEDALDateCriteria.add(Restrictions.sqlRestriction(
-												"MILLISECOND(startDate)=" + date.get(Calendar.MILLISECOND)));
+
+										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+												String.class, rootDate.get("startData"));
+
+										dataCriteria.where(
+												builder.equal(millisecondExpression, date.get(Calendar.MILLISECOND)));
 									}
 								}
 							}
@@ -796,8 +850,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 		}
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final List<MyEdalDate> result = myEDALDateCriteria.list();
+		final List<MyEdalDate> result = session.createQuery(dataCriteria).list();
 		session.close();
 
 		return result;
@@ -814,7 +867,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Criteria myEDALDateCriteria = session.createCriteria(MyEdalDateRange.class);
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<MyEdalDateRange> dataCriteria = builder.createQuery(MyEdalDateRange.class);
+		Root<MyEdalDateRange> rootDate = dataCriteria.from(MyEdalDateRange.class);
 
 		final int precissionStart = edalDateRange.getStartPrecision().ordinal();
 		final Calendar dateStart = edalDateRange.getStartDate();
@@ -833,32 +889,58 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		if (precissionStart >= EdalDatePrecision.DECADE.ordinal()) {
 
 			/** note: use DECADE(date) if the database-SQL support */
-			myEDALDateCriteria.add(Restrictions.sqlRestriction(
-					"SUBSTR(YEAR(startDate),1,3)=" + Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
+
+			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startData"));
+
+			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
 
 			if (precissionStart >= EdalDatePrecision.YEAR.ordinal()) {
-				myEDALDateCriteria.add(Restrictions.sqlRestriction("YEAR(startDate)=" + dateStart.get(Calendar.YEAR)));
+
+				dataCriteria.where(builder.equal(yearExpression, dateStart.get(Calendar.YEAR)));
 
 				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
-					myEDALDateCriteria.add(
-							Restrictions.sqlRestriction("MONTH(startDate)=" + (dateStart.get(Calendar.MONTH) + 1)));
+					Expression<String> monthExpression = builder.function("MONTH", String.class,
+							rootDate.get("startData"));
+
+					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
 
 					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
-						myEDALDateCriteria.add(
-								Restrictions.sqlRestriction("DAY(startDate)=" + dateStart.get(Calendar.DAY_OF_MONTH)));
+
+						Expression<String> dayExpression = builder.function("DAY", String.class,
+								rootDate.get("startData"));
+
+						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
+
 						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
-							myEDALDateCriteria.add(Restrictions
-									.sqlRestriction("HOUR(startDate)=" + dateStart.get(Calendar.HOUR_OF_DAY)));
+
+							Expression<String> hourExpression = builder.function("HOUR", String.class,
+									rootDate.get("startData"));
+
+							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
+
 							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
-								myEDALDateCriteria.add(Restrictions
-										.sqlRestriction("MINUTE(startDate)=" + dateStart.get(Calendar.MINUTE)));
+
+								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+										rootDate.get("startData"));
+
+								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
+
 								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
-									myEDALDateCriteria.add(Restrictions
-											.sqlRestriction("SECOND(startDate)=" + dateStart.get(Calendar.SECOND)));
+
+									Expression<String> secondExpression = builder.function("SECOND", String.class,
+											rootDate.get("startData"));
+
+									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
+
 									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
-										myEDALDateCriteria.add(Restrictions.sqlRestriction(
-												"MILLISECOND(startDate)=" + dateStart.get(Calendar.MILLISECOND)));
+
+										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+												String.class, rootDate.get("startData"));
+
+										dataCriteria.where(builder.equal(millisecondExpression,
+												dateStart.get(Calendar.MILLISECOND)));
 									}
 								}
 							}
@@ -869,33 +951,60 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 
 		if (precissionEnd >= EdalDatePrecision.DECADE.ordinal()) {
-			/** note: use DECADE(endDate) if the database-SQL support */
-			myEDALDateCriteria.add(Restrictions.sqlRestriction(
-					"SUBSTR(YEAR(endDate),1,3)=" + Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
+
+			/** note: use DECADE(date) if the database-SQL support */
+
+			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("endDate"));
+
+			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+					Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
 
 			if (precissionEnd >= EdalDatePrecision.YEAR.ordinal()) {
-				myEDALDateCriteria.add(Restrictions.sqlRestriction("YEAR(endDate)=" + dateEnd.get(Calendar.YEAR)));
+
+				dataCriteria.where(builder.equal(yearExpression, dateEnd.get(Calendar.YEAR)));
 
 				if (precissionEnd >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
-					myEDALDateCriteria
-							.add(Restrictions.sqlRestriction("MONTH(endDate)=" + (dateEnd.get(Calendar.MONTH) + 1)));
+					Expression<String> monthExpression = builder.function("MONTH", String.class,
+							rootDate.get("endDate"));
+
+					dataCriteria.where(builder.equal(monthExpression, (dateEnd.get(Calendar.MONTH) + 1)));
 
 					if (precissionEnd >= EdalDatePrecision.DAY.ordinal()) {
-						myEDALDateCriteria
-								.add(Restrictions.sqlRestriction("DAY(endDate)=" + dateEnd.get(Calendar.DAY_OF_MONTH)));
+
+						Expression<String> dayExpression = builder.function("DAY", String.class,
+								rootDate.get("endDate"));
+
+						dataCriteria.where(builder.equal(dayExpression, dateEnd.get(Calendar.DAY_OF_MONTH)));
+
 						if (precissionEnd >= EdalDatePrecision.HOUR.ordinal()) {
-							myEDALDateCriteria.add(
-									Restrictions.sqlRestriction("HOUR(endDate)=" + dateEnd.get(Calendar.HOUR_OF_DAY)));
+
+							Expression<String> hourExpression = builder.function("HOUR", String.class,
+									rootDate.get("endDate"));
+
+							dataCriteria.where(builder.equal(hourExpression, dateEnd.get(Calendar.HOUR_OF_DAY)));
+
 							if (precissionEnd >= EdalDatePrecision.MINUTE.ordinal()) {
-								myEDALDateCriteria.add(
-										Restrictions.sqlRestriction("MINUTE(endDate)=" + dateEnd.get(Calendar.MINUTE)));
+
+								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+										rootDate.get("endDate"));
+
+								dataCriteria.where(builder.equal(minuteExpression, dateEnd.get(Calendar.MINUTE)));
+
 								if (precissionEnd >= EdalDatePrecision.SECOND.ordinal()) {
-									myEDALDateCriteria.add(Restrictions
-											.sqlRestriction("SECOND(endDate)=" + dateEnd.get(Calendar.SECOND)));
+
+									Expression<String> secondExpression = builder.function("SECOND", String.class,
+											rootDate.get("endDate"));
+
+									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
+
 									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
-										myEDALDateCriteria.add(Restrictions.sqlRestriction(
-												"MILLISECOND(endDate)=" + dateEnd.get(Calendar.MILLISECOND)));
+
+										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+												String.class, rootDate.get("endDate"));
+
+										dataCriteria.where(builder.equal(millisecondExpression,
+												dateEnd.get(Calendar.MILLISECOND)));
 									}
 								}
 							}
@@ -904,8 +1013,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				}
 			}
 		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final List<MyEdalDateRange> result = myEDALDateCriteria.list();
+
+		final List<MyEdalDateRange> result = session.createQuery(dataCriteria).list();
 
 		session.close();
 
@@ -939,8 +1048,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			query = queryBuilder.keyword().onField("identifier").matching(identifier.getID()).createQuery();
 		}
 
-		final Query hibernateQuery = ftSession.createFullTextQuery(query, MyIdentifier.class);
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyIdentifier> hibernateQuery = ftSession.createFullTextQuery(query, MyIdentifier.class);
 		final List<MyIdentifier> result = hibernateQuery.list();
 
 		session.close();
@@ -980,12 +1089,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			final List<MyIdentifier> myIdentifierList = this.searchByIdentifier(id, fuzzy);
 
 			if (!myIdentifierList.isEmpty()) {
-				final Query metaDataQuery = session
+				@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+				final Query<Integer> metaDataQuery = session
 						.createQuery("select D.id from MyIdentifierRelation D join D.relations V where V in (:list)");
 
 				metaDataQuery.setParameterList("list", myIdentifierList);
 
-				@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 				final List<Integer> idlist = metaDataQuery.list();
 
 				for (final Integer integer : idlist) {
@@ -1028,10 +1137,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
 					"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
 		}
-
-		final Query hibernateQuery = ftSession.createFullTextQuery(query, UntypedData.class);
-
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, UntypedData.class);
+
 		final List<MyUntypedData> datatypeList = hibernateQuery.list();
 
 		session.close();
@@ -1052,13 +1160,13 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final Query versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
 				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
 				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
 
 		versionSQLQuery.setParameterList("list", datatypeIDList);
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 		final List<Integer> versionIDList = versionSQLQuery.list();
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
@@ -1070,28 +1178,39 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				final PrimaryDataEntityVersionImplementation currentVersion = session2
 						.get(PrimaryDataEntityVersionImplementation.class, version);
 
-				final Criteria fileCriteria = session2.createCriteria(PrimaryDataFileImplementation.class)
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-								PrimaryDataFileImplementation.class))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-								currentVersion.getPrimaryEntityId()))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
+				final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+				CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+						.createQuery(PrimaryDataFileImplementation.class);
+
+				Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+
+				fileCriteria.where(builder.and(
+						builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+										currentVersion.getPrimaryEntityId())),
+						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY), this)));
+
+				final PrimaryDataFileImplementation primaryDataFile = session.createQuery(fileCriteria)
 						.setCacheable(false)
-						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
-				final Criteria directoryCriteria = session2.createCriteria(PrimaryDataDirectoryImplementation.class)
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-								PrimaryDataDirectoryImplementation.class))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-								currentVersion.getPrimaryEntityId()))
-						.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
+				CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+						.createQuery(PrimaryDataDirectoryImplementation.class);
+
+				Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+						.from(PrimaryDataDirectoryImplementation.class);
+
+				directoryCriteria.where(builder.and(
+						builder.and(builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+								builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+										currentVersion.getPrimaryEntityId())),
+						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+								this)));
+
+				final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
 						.setCacheable(false)
-						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
-
-				final PrimaryDataFile primaryDataFile = (PrimaryDataFile) fileCriteria.uniqueResult();
-
-				final PrimaryDataDirectory primaryDataDirectory = (PrimaryDataDirectory) directoryCriteria
-						.uniqueResult();
+						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
 				if (primaryDataFile != null) {
 					try {
@@ -1128,16 +1247,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					if (!currentVersion.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString()
 							.equals(MetaData.DIRECTORY.toString())) {
 
-						final Criteria fileQuery = session2.createCriteria(PrimaryDataFileImplementation.class)
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-										currentVersion.getPrimaryEntityId()))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-										PrimaryDataFileImplementation.class))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
-								.setCacheable(false)
-								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
+						final CriteriaBuilder builder = session.getCriteriaBuilder();
 
-						final PrimaryDataFile pdf = (PrimaryDataFile) fileQuery.uniqueResult();
+						CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+								.createQuery(PrimaryDataFileImplementation.class);
+
+						Root<PrimaryDataFileImplementation> fileRoot = fileCriteria
+								.from(PrimaryDataFileImplementation.class);
+
+						fileCriteria.where(builder.and(
+								builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+										builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+												currentVersion.getPrimaryEntityId())),
+								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+										this)));
+
+						final PrimaryDataFileImplementation pdf = session.createQuery(fileCriteria).setCacheable(false)
+								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
+								.uniqueResult();
 
 						if (pdf != null) {
 							try {
@@ -1152,17 +1279,29 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 							maybeInSubDirectoriesList.add(currentVersion);
 						}
 					} else {
-						final Criteria directoryQuery = session2
-								.createCriteria(PrimaryDataDirectoryImplementation.class)
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_ID,
-										currentVersion.getPrimaryEntityId()))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_CLASS,
-										PrimaryDataDirectoryImplementation.class))
-								.add(Restrictions.eq(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY, this))
-								.setCacheable(false)
-								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY);
 
-						final PrimaryDataDirectory pdd = (PrimaryDataDirectory) directoryQuery.uniqueResult();
+						final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+						CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+								.createQuery(PrimaryDataDirectoryImplementation.class);
+
+						Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+								.from(PrimaryDataDirectoryImplementation.class);
+
+						directoryCriteria.where(builder.and(
+								builder.and(
+										builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+										builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+												currentVersion.getPrimaryEntityId())),
+								builder.equal(
+										directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
+										this)));
+
+						final PrimaryDataDirectoryImplementation pdd = session.createQuery(directoryCriteria)
+								.setCacheable(false)
+								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
+								.uniqueResult();
+
 						if (pdd != null) {
 							try {
 								if (!pdd.getCurrentVersion().isDeleted()) {
@@ -1258,9 +1397,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					.createQuery();
 		}
 
-		final Query hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
-
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
+
 		final List<MyLegalPerson> result = hibernateQuery.list();
 
 		session.close();
@@ -1341,9 +1480,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					.should(queryE).createQuery();
 		}
 
-		final Query hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyNaturalPerson.class);
-
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
+				MyNaturalPerson.class);
+
 		final List<MyNaturalPerson> result = hibernateQuery.list();
 
 		session.close();
@@ -1362,10 +1502,15 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final List<PrimaryDataEntityVersionImplementation> maybeResults = new ArrayList<>();
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final List<PublicReferenceImplementation> notRequestedList = session
-				.createCriteria(PublicReferenceImplementation.class)
-				.add(Restrictions.eq("publicationStatus", publicationStatus))
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder
+				.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+
+		referenceCriteria.where(builder.equal(referenceRoot.get("publicationStatus"), publicationStatus));
+
+		final List<PublicReferenceImplementation> notRequestedList = session.createQuery(referenceCriteria)
 				.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY).list();
 
 		for (final PublicReferenceImplementation publicReferenceImplementation : notRequestedList) {
@@ -1423,9 +1568,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		} else {
 			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
 		}
-
-		final Query hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
+
 		final List<MyUntypedData> result = hibernateQuery.list();
 
 		session.close();
@@ -1448,15 +1593,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		CriteriaBuilder builder = session.getCriteriaBuilder();
 
-		CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
-		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+		CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+				.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+				.from(PrimaryDataDirectoryImplementation.class);
 
-		directoryCriteria.where(builder.and(		
-						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),version.getPrimaryEntityId())),
-						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_CLASS), PrimaryDataDirectoryImplementation.class));
-		
-		final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();	
-	
+		directoryCriteria.where(
+				builder.and(builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+						version.getPrimaryEntityId())),
+				builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class));
+
+		final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();
+
 		if (directory != null && this.checkIfParentEntity(entity, directory)) {
 			try {
 				/**
@@ -1471,16 +1619,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			session.close();
 			return directory;
 		}
-		
-		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+				.createQuery(PrimaryDataFileImplementation.class);
 		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
-		fileCriteria.where(builder.and(		
-						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),version.getPrimaryEntityId())),
-						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_CLASS), PrimaryDataFileImplementation.class));
-		
-		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();	
-		
+		fileCriteria.where(
+				builder.and(builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
+						version.getPrimaryEntityId())),
+				builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class));
+
+		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();
+
 		if (file != null && this.checkIfParentEntity(entity, file)) {
 			try {
 				/**
@@ -1582,12 +1732,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			CriteriaQuery<PrincipalImplementation> criteria = builder.createQuery(PrincipalImplementation.class);
 			Root<PrincipalImplementation> root = criteria.from(PrincipalImplementation.class);
 
-			criteria.where(builder.and(		
-							builder.equal(root.get("name"),principal.getName())),
-							builder.equal(root.get("type"), principal.getClass().getSimpleName()));
-			
+			criteria.where(builder.and(builder.equal(root.get("name"), principal.getName())),
+					builder.equal(root.get("type"), principal.getClass().getSimpleName()));
+
 			PrincipalImplementation existingPrincipal = session.createQuery(criteria).uniqueResult();
-			
+
 			if (existingPrincipal != null) {
 				privateVersion.setOwner(existingPrincipal);
 			} else {
