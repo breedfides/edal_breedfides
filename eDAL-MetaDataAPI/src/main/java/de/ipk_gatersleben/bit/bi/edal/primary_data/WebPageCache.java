@@ -12,6 +12,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 import java.io.ByteArrayOutputStream;
 
 import org.ehcache.Cache;
+import org.ehcache.Cache.Entry;
 import org.ehcache.CacheManager;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
@@ -20,9 +21,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
  * A class for caching webpages.
  * 
  * @author arendd
+ * @param <V>
  */
 
-public class WebPageCache {
+public class WebPageCache<V> {
 	
 	private static Cache<String, ByteArrayOutputStream> cache;
 	private static CacheManager cacheManager;
@@ -52,6 +54,10 @@ public class WebPageCache {
 	}
 
 	public void clean() {
+		while (cache.iterator().hasNext()) {
+			Entry<String, ByteArrayOutputStream> entry= cache.iterator().next();
+			cache.remove(entry.getKey());	
+		}
 		cache.clear();
 	}
 
