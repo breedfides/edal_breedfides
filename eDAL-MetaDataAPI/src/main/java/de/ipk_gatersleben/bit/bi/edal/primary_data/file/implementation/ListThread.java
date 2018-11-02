@@ -28,7 +28,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 
 public class ListThread extends Thread {
 
-	private static final String QUERY_LIST_CACHE = "query.list";
 	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
 
 	private AsynchronList<PrimaryDataEntity> asynList = null;
@@ -69,11 +68,8 @@ public class ListThread extends Thread {
 					builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class)),
 					builder.equal(directoryRoot.get(STRING_PARENT_DIRECTORY), this.parentDirectory));
 			
-			Query<PrimaryDataDirectoryImplementation> directoryQuery = session.createQuery(directoryCriteria).setCacheable(true).
-					setCacheRegion(QUERY_LIST_CACHE).setFirstResult(firstPage).setMaxResults(pagesSteps);
+			Query<PrimaryDataDirectoryImplementation> directoryQuery = session.createQuery(directoryCriteria).setFirstResult(firstPage).setMaxResults(pagesSteps);
 
-			
-			
 			List<PrimaryDataDirectoryImplementation> directories = null;
 
 			while ((directories = directoryQuery.list()).size() > 0) {
@@ -139,8 +135,7 @@ public class ListThread extends Thread {
 					builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class)),
 					builder.equal(fileRoot.get(STRING_PARENT_DIRECTORY), this.parentDirectory));
 			
-			Query<PrimaryDataFileImplementation> fileQuery = session.createQuery(fileCriteria).setCacheable(true).
-					setCacheRegion(QUERY_LIST_CACHE).setFirstResult(firstPage).setMaxResults(pagesSteps);
+			Query<PrimaryDataFileImplementation> fileQuery = session.createQuery(fileCriteria).setFirstResult(firstPage).setMaxResults(pagesSteps);
 						
 			List<PrimaryDataFileImplementation> files = null;
 

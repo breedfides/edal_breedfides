@@ -129,8 +129,8 @@ public class IndexWriterThread extends Thread {
 	}
 
 	private void executeIndexing() {
-		if (!this.sessionFactory.isClosed()) {
 
+		if (!this.sessionFactory.isClosed()) {
 			final Session session = this.sessionFactory.openSession();
 
 			session.setDefaultReadOnly(true);
@@ -138,15 +138,11 @@ public class IndexWriterThread extends Thread {
 			final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
 			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = 10000;
+			final int fetchSize = (int) Math.pow(10, 4);
 
 			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 			fullTextSession.setCacheMode(CacheMode.NORMAL);
 			final Transaction transaction = fullTextSession.beginTransaction();
-
-			/**
-			 * ScrollableResults will avoid loading too many objects in memory
-			 */
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -157,7 +153,10 @@ public class IndexWriterThread extends Thread {
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
 					.orderBy(criteriaBuilder.asc(root.get("id")));
 
-			final ScrollableResults results = session.createQuery(criteria).setFetchSize(fetchSize)
+			/**
+			 * ScrollableResults will avoid loading too many objects in memory
+			 */
+			final ScrollableResults results = session.createQuery(criteria).setMaxResults(fetchSize)
 					.scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;

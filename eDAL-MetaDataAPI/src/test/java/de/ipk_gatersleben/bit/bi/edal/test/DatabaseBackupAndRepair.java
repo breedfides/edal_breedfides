@@ -22,13 +22,19 @@ public class DatabaseBackupAndRepair {
 	public static void main(String[] args) throws Exception {
 
 		/** Export the whole database into a SQL Script File **/
+//
+//		Script.execute("jdbc:h2:split:30:C:/Users/arendd/edal/edaldb;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE", "sa", "",
+//				new FileOutputStream(Paths.get(System.getProperty("user.home"), "backup.sql").toFile()));
 
-		Script.execute("jdbc:h2:split:30:C:/Users/arendd/edal_working/edaldb;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE", "sa", "",
-				new FileOutputStream(Paths.get(System.getProperty("user.home"), "backup.sql").toFile()));
-
+		
+		
+//		Script.process("jdbc:h2:split:30:C:/Users/arendd/edal/edaldb;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE", "sa", "", 
+//				Paths.get(System.getProperty("user.home"), "backup.sql").toString(),
+//						"", "");
+		
 		/** Rebuild the database file from a previously created SQL Script **/
 		//
-		 RunScript.execute(DriverManager.getConnection("jdbc:h2:split:30:C:/Users/arendd/edal_new_version/edaldb;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE"),
+		 RunScript.execute(DriverManager.getConnection("jdbc:h2:split:30:F:/database/edal_new_version/edaldb"),
 		 new FileReader(Paths.get(System.getProperty("user.home"),
 		 "backup.sql").toFile()));
 

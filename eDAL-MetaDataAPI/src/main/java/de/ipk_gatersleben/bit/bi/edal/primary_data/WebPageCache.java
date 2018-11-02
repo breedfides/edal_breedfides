@@ -11,9 +11,10 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.ByteArrayOutputStream;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 
 /**
  * A class for caching webpages.
@@ -22,45 +23,36 @@ import net.sf.ehcache.Element;
  */
 
 public class WebPageCache {
-	private static Cache cache = null;
-	private static CacheManager manager = null;
-	public static int cache_depth = 0;
+	
+	private static Cache<String, ByteArrayOutputStream> cache;
+	private static CacheManager cacheManager;
 	public String cacheName;
 
 	public WebPageCache(String cacheName) {
 		this.cacheName = cacheName;
 	}
 
-	public static void release() {
-		if (manager != null) {
-			manager.shutdown();
-		}
-	}
-
 	public void init() {
-		manager = CacheManager.getInstance();
-		cache = manager.getCache(this.cacheName);
+		cacheManager = ((FileSystemImplementationProvider) DataManager.getImplProv()).getCacheManager();
+		cache = cacheManager.getCache(this.cacheName, String.class, ByteArrayOutputStream.class);
 	}
 
-	public void put(String key, ByteArrayOutputStream fileSystemHandler) {
+	public void put(String key, ByteArrayOutputStream value) {
 		if (key != null) {
-			cache.put(new Element(key, fileSystemHandler));
+			cache.put(key, value);
 		}
 	}
 
 	public ByteArrayOutputStream get(String key) {
-		if (cache.isKeyInCache(key)) {
-			if ((cache.get(key)) == null) {
-				return null;
-			}
-			return (ByteArrayOutputStream) cache.get(key).getObjectValue();
-		} else {
+		if (cache.get(key) == null) {
 			return null;
+		} else {
+			return cache.get(key);
 		}
 	}
 
 	public void clean() {
-		cache.removeAll();
+		cache.clear();
 	}
 
 }

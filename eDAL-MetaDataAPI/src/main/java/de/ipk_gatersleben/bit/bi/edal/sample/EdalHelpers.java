@@ -385,7 +385,6 @@ public class EdalHelpers {
 	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
 	 *             successful.
 	 */
-	@SuppressWarnings("restriction")
 	public static Subject authenticateSubjectWithKerberos(final String kerberosRealm, final String kerberosKDC,
 			String user) throws EdalAuthenticateException {
 
@@ -735,7 +734,7 @@ public class EdalHelpers {
 				System.out.println("Hits : " + rootHit);
 				System.out.println("Miss : " + rootMiss);
 
-			} catch (final NullPointerException e) {
+			} catch (final IllegalArgumentException e) {
 				System.out.println("didnt use query.root-Cache");
 			}
 
@@ -754,7 +753,7 @@ public class EdalHelpers {
 				System.out.println("Hits : " + permissionHit);
 				System.out.println("Miss : " + permissionMiss);
 
-			} catch (final NullPointerException e) {
+			} catch (final IllegalArgumentException e) {
 				System.out.println("didnt use query.permission-Cache");
 			}
 
@@ -773,28 +772,8 @@ public class EdalHelpers {
 				System.out.println("Miss : " + principalMiss);
 				System.out.println("\n**************************************");
 
-			} catch (final NullPointerException e) {
+			} catch (final IllegalArgumentException e) {
 				System.out.println("didnt use query.principal-Cache");
-			}
-
-			CacheRegionStatistics listStatistics = null;
-
-			try {
-				listStatistics = statistics.getDomainDataRegionStatistics("query.list");
-				final long listHit = listStatistics.getHitCount();
-
-				final long listMiss = listStatistics.getMissCount();
-
-				final double listRatio = (double) listHit / (double) (listHit + listMiss);
-
-				System.out.println("\nquery.list-Cache:");
-				System.out.println("Hit-Ratio : " + listRatio);
-				System.out.println("Hits : " + listHit);
-				System.out.println("Miss : " + listMiss);
-				System.out.println("\n**************************************");
-
-			} catch (final NullPointerException e) {
-				System.out.println("didnt use query.list-Cache");
 			}
 		} catch (final NullPointerException e) {
 			System.out.println("couldnt found statistic");

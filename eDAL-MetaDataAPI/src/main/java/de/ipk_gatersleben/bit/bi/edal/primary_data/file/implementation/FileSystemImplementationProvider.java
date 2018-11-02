@@ -18,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -25,9 +26,11 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
-import net.sf.ehcache.CacheManager;
-
 import org.apache.logging.log4j.Logger;
+import org.ehcache.CacheManager;
+import org.ehcache.Status;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.xml.XmlConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -104,6 +107,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private IndexWriterThread indexThread = null;
 	private SessionFactory sessionFactory = null;
 	private Path indexDirectory = null;
+	private CacheManager cacheManager = null;
 
 	public FileSystemImplementationProvider(EdalConfiguration configuration) {
 
@@ -125,7 +129,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			try {
 				Class.forName("org.h2.Driver");
 				this.setConnection(DriverManager.getConnection(
-						"jdbc:h2:split:30:" + this.getMountPath() + ";IFEXISTS=TRUE;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE",
+						"jdbc:h2:split:30:" + this.getMountPath() + ";IFEXISTS=TRUE;DB_CLOSE_ON_EXIT=FALSE",
 						this.getDatabaseUsername(), this.getDatabasePassword()));
 
 				this.getLogger().info("Database connection established");
@@ -144,7 +148,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getLogger().info("No database found -> creating new database...");
 				try {
 					this.setConnection(DriverManager.getConnection(
-							"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE",
+							"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE",
 							this.getDatabaseUsername(), this.getDatabasePassword()));
 
 				} catch (final SQLException e) {
@@ -160,8 +164,16 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		config.configure(FileSystemImplementationProvider.class.getResource("hibernate.cfg.xml"));
 
+		XmlConfiguration xmlconfig = new XmlConfiguration(getClass().getResource("ehcache.cfg.xml"));
+
+		CacheManager ehcacheManager = CacheManagerBuilder.newCacheManager(xmlconfig);
+
+		ehcacheManager.init();
+
+		this.setCacheManager(ehcacheManager);
+
 		config.setProperty("hibernate.connection.url",
-				"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE");
+				"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE");
 		config.setProperty("hibernate.connection.username", this.getDatabaseUsername());
 		config.setProperty("hibernate.connection.password", this.getDatabasePassword());
 		config.setProperty("hibernate.search.default.exclusive_index_use", "false");
@@ -182,8 +194,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		} catch (final SQLException e) {
 			exists = false;
 		}
-		
-		CacheManager.create(FileSystemImplementationProvider.class.getResourceAsStream("ehcache.xml"));
+
+		List<Class<?>> annotatedHibernateClasses = Arrays.asList(RootImplementation.class,
+				PrincipalImplementation.class, PrimaryDataDirectoryImplementation.class,
+				PrimaryDataFileImplementation.class, PrimaryDataEntityVersionImplementation.class,
+				MetaDataImplementation.class, EdalPermissionImplementation.class, SupportedPrincipals.class,
+				PublicReferenceImplementation.class, TicketImplementation.class, ReviewersImplementation.class,
+				ReviewStatusImplementation.class, UrlImplementation.class, DoiImplementation.class, MyDataFormat.class,
+				MyDataSize.class, MyDataType.class, MyDirectoryMetaData.class, MyEmptyMetaData.class,
+				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
+				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
+				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
+				MyDateEvents.class, MyORCID.class);
 
 		if (!exists) {
 
@@ -192,41 +214,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 			MetadataSources metadata = new MetadataSources(standardRegistry);
 
-			metadata.addAnnotatedClass(RootImplementation.class);
-			metadata.addAnnotatedClass(PrincipalImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataDirectoryImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataFileImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataEntityVersionImplementation.class);
-			metadata.addAnnotatedClass(MetaDataImplementation.class);
-			metadata.addAnnotatedClass(EdalPermissionImplementation.class);
-			metadata.addAnnotatedClass(SupportedPrincipals.class);
-			metadata.addAnnotatedClass(PublicReferenceImplementation.class);
-			metadata.addAnnotatedClass(TicketImplementation.class);
-			metadata.addAnnotatedClass(ReviewersImplementation.class);
-			metadata.addAnnotatedClass(ReviewStatusImplementation.class);
-			metadata.addAnnotatedClass(UrlImplementation.class);
-			metadata.addAnnotatedClass(DoiImplementation.class);
-			metadata.addAnnotatedClass(MyDataFormat.class);
-			metadata.addAnnotatedClass(MyDataSize.class);
-			metadata.addAnnotatedClass(MyDataType.class);
-			metadata.addAnnotatedClass(MyDirectoryMetaData.class);
-			metadata.addAnnotatedClass(MyEmptyMetaData.class);
-			metadata.addAnnotatedClass(MyIdentifier.class);
-			metadata.addAnnotatedClass(MyIdentifierRelation.class);
-			metadata.addAnnotatedClass(MyPersons.class);
-			metadata.addAnnotatedClass(MyPerson.class);
-			metadata.addAnnotatedClass(MyNaturalPerson.class);
-			metadata.addAnnotatedClass(MyLegalPerson.class);
-			metadata.addAnnotatedClass(MyUnknownMetaData.class);
-			metadata.addAnnotatedClass(MyUntypedData.class);
-			metadata.addAnnotatedClass(MySubjects.class);
-			metadata.addAnnotatedClass(MyCheckSumType.class);
-			metadata.addAnnotatedClass(MyCheckSum.class);
-			metadata.addAnnotatedClass(MyEdalLanguage.class);
-			metadata.addAnnotatedClass(MyEdalDate.class);
-			metadata.addAnnotatedClass(MyEdalDateRange.class);
-			metadata.addAnnotatedClass(MyDateEvents.class);
-			metadata.addAnnotatedClass(MyORCID.class);
+			for (Class<?> annotatedClass : annotatedHibernateClasses) {
+				metadata.addAnnotatedClass(annotatedClass);
+			}
 
 			SchemaExport export = new SchemaExport();
 			export.setDelimiter(";");
@@ -236,11 +226,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			export.createOnly(targetTypes, metadata.buildMetadata());
 
 			try {
-
 				Metadata meta = metadata.buildMetadata();
-
 				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
-
 			} catch (HibernateException e) {
 				e.printStackTrace();
 				logger.error("Lucene Index damaged", e);
@@ -268,48 +255,13 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 			MetadataSources metadata = new MetadataSources(standardRegistry);
 
-			metadata.addAnnotatedClass(RootImplementation.class);
-			metadata.addAnnotatedClass(PrincipalImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataDirectoryImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataFileImplementation.class);
-			metadata.addAnnotatedClass(PrimaryDataEntityVersionImplementation.class);
-			metadata.addAnnotatedClass(MetaDataImplementation.class);
-			metadata.addAnnotatedClass(EdalPermissionImplementation.class);
-			metadata.addAnnotatedClass(SupportedPrincipals.class);
-			metadata.addAnnotatedClass(PublicReferenceImplementation.class);
-			metadata.addAnnotatedClass(TicketImplementation.class);
-			metadata.addAnnotatedClass(ReviewersImplementation.class);
-			metadata.addAnnotatedClass(ReviewStatusImplementation.class);
-			metadata.addAnnotatedClass(UrlImplementation.class);
-			metadata.addAnnotatedClass(DoiImplementation.class);
-			metadata.addAnnotatedClass(MyDataFormat.class);
-			metadata.addAnnotatedClass(MyDataSize.class);
-			metadata.addAnnotatedClass(MyDataType.class);
-			metadata.addAnnotatedClass(MyDirectoryMetaData.class);
-			metadata.addAnnotatedClass(MyEmptyMetaData.class);
-			metadata.addAnnotatedClass(MyIdentifier.class);
-			metadata.addAnnotatedClass(MyIdentifierRelation.class);
-			metadata.addAnnotatedClass(MyPersons.class);
-			metadata.addAnnotatedClass(MyPerson.class);
-			metadata.addAnnotatedClass(MyNaturalPerson.class);
-			metadata.addAnnotatedClass(MyLegalPerson.class);
-			metadata.addAnnotatedClass(MyUnknownMetaData.class);
-			metadata.addAnnotatedClass(MyUntypedData.class);
-			metadata.addAnnotatedClass(MySubjects.class);
-			metadata.addAnnotatedClass(MyCheckSumType.class);
-			metadata.addAnnotatedClass(MyCheckSum.class);
-			metadata.addAnnotatedClass(MyEdalLanguage.class);
-			metadata.addAnnotatedClass(MyEdalDate.class);
-			metadata.addAnnotatedClass(MyEdalDateRange.class);
-			metadata.addAnnotatedClass(MyDateEvents.class);
-			metadata.addAnnotatedClass(MyORCID.class);
+			for (Class<?> annotatedClass : annotatedHibernateClasses) {
+				metadata.addAnnotatedClass(annotatedClass);
+			}
 
 			try {
-
 				Metadata meta = metadata.getMetadataBuilder().build();
-
 				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
-
 			} catch (HibernateException e) {
 				e.printStackTrace();
 				logger.error("Lucene Index damaged", e);
@@ -448,21 +400,27 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		final Session session = this.getSessionFactory().openSession();
 
 		CriteriaBuilder builder = session.getCriteriaBuilder();
-		
-		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder.createQuery(PrimaryDataFileImplementation.class);
+
+		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+				.createQuery(PrimaryDataFileImplementation.class);
 		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
 
-		fileCriteria.where(builder.and(builder.equal(fileRoot.type(),PrimaryDataFileImplementation.class),builder.equal(fileRoot.get("ID"), uuid)));
+		fileCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+				builder.equal(fileRoot.get("ID"), uuid)));
 
 		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();
 
 		if (file == null) {
 
-			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
-			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria.from(PrimaryDataDirectoryImplementation.class);
-			
-			directoryCriteria.where(builder.and(builder.equal(directoryRoot.type(),PrimaryDataDirectoryImplementation.class),builder.equal(directoryRoot.get("ID"), uuid)));
-			
+			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+					.createQuery(PrimaryDataDirectoryImplementation.class);
+			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+					.from(PrimaryDataDirectoryImplementation.class);
+
+			directoryCriteria
+					.where(builder.and(builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
+							builder.equal(directoryRoot.get("ID"), uuid)));
+
 			final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();
 
 			if (directory == null) {
@@ -559,9 +517,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		final Session session = this.getSessionFactory().openSession();
 
 		CriteriaBuilder builder = session.getCriteriaBuilder();
-		
-		CriteriaQuery<PrimaryDataDirectoryImplementation> rootDirectoryCriteria = builder.createQuery(PrimaryDataDirectoryImplementation.class);
-		Root<PrimaryDataDirectoryImplementation> rootDirectoryRoot = rootDirectoryCriteria.from(PrimaryDataDirectoryImplementation.class);
+
+		CriteriaQuery<PrimaryDataDirectoryImplementation> rootDirectoryCriteria = builder
+				.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> rootDirectoryRoot = rootDirectoryCriteria
+				.from(PrimaryDataDirectoryImplementation.class);
 
 		rootDirectoryCriteria
 				.where(builder.and(builder.equal(rootDirectoryRoot.type(), PrimaryDataDirectoryImplementation.class),
@@ -597,10 +557,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 
 		else {
-			
+
 			CriteriaQuery<SupportedPrincipals> principalCriteria = builder.createQuery(SupportedPrincipals.class);
 			Root<SupportedPrincipals> principalRoot = principalCriteria.from(SupportedPrincipals.class);
-			
+
 			principalCriteria.select(principalRoot);
 
 			final List<SupportedPrincipals> privatePrincipals = session.createQuery(principalCriteria).list();
@@ -622,7 +582,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 			DataManager.getImplProv().getLogger().info("Getting existing RootDirectory...");
 
-			final PrimaryDataDirectoryImplementation existingRootDirectory = session.createQuery(rootDirectoryCriteria).uniqueResult();
+			final PrimaryDataDirectoryImplementation existingRootDirectory = session.createQuery(rootDirectoryCriteria)
+					.uniqueResult();
 
 			session.close();
 
@@ -691,22 +652,15 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public void shutdown() {
 
-		// try {
-		// System.out.println("Opened Sessions : " +
-		// this.getSessionFactory().getStatistics().getSessionOpenCount());
-		// System.out.println("Closed Sessions : " +
-		// this.getSessionFactory().getStatistics().getSessionCloseCount());
-		//
-		// } catch (Exception e) {
-		// // do nothing
-		// }
-
 		if (!this.isAutoIndexing()) {
 			this.getIndexThread().waitForFinish();
 		}
 		try {
 			this.getConnection().close();
 			this.getSessionFactory().close();
+			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
+				this.getCacheManager().close();
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -721,5 +675,13 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public Class<? extends HttpServiceProvider> getHttpServiceProvider() {
 		return HttpServiceProviderImplementation.class;
+	}
+
+	public CacheManager getCacheManager() {
+		return cacheManager;
+	}
+
+	private void setCacheManager(CacheManager cacheManager) {
+		this.cacheManager = cacheManager;
 	}
 }
