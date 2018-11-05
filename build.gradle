@@ -35,8 +35,8 @@ allprojects {
         maven {url "https://plugins.gradle.org/m2/"}
 	}
 	
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+	sourceCompatibility = 1.9
+	targetCompatibility = 1.9
 	tasks.withType(JavaCompile) {
 		options.encoding = 'UTF-8'
 	}
@@ -256,6 +256,10 @@ project(':eDAL-MetaDataAPI') {
      	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version:'2.27'	 
      	compile group: 'org.glassfish.jersey.security', name: 'oauth2-client', version:'2.27'	 
 
+		compile group: 'javax.xml.bind', name: 'jaxb-api', version:'2.3.1'	 
+     	compile group: 'com.sun.xml.bind', name: 'jaxb-core', version:'2.3.0.1'	 
+     	compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version:'2.3.1'	 
+     	compile group: 'javax.activation', name: 'activation', version:'1.1.1'	
 	}
 }
 

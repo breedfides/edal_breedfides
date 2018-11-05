@@ -70,7 +70,7 @@ public class ChecksumDialog extends MetaDataEditDialog {
 	@SuppressWarnings("unchecked")
 	public CheckSum getCheckSum() {
 		CheckSum checkSum = new CheckSum();
-		Vector<Vector<String>> vector = dm.getDataVector();
+		Vector<Vector> vector = dm.getDataVector();
 		if (vector != null) {
 			for (int i = 0; i < vector.size(); i++) {
 				Vector<String> v = vector.get(i);

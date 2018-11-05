@@ -56,7 +56,6 @@ import javafx.application.Platform;
  * @author arendd
  */
 
-@SuppressWarnings("restriction")
 public class EdalHelpers {
 
 	static {
@@ -415,26 +414,9 @@ public class EdalHelpers {
 					Thread.currentThread().setContextClassLoader(currentClassLoader);
 					return null;
 				} else {
-
+					
 					int result = 0;
-					if (e.getCause() instanceof sun.security.krb5.KrbException) {
-						sun.security.krb5.KrbException kbr = (sun.security.krb5.KrbException) e.getCause();
-
-						switch (kbr.getError().getErrorCode()) {
-						case 24:
-							result = (Integer) JOptionPane.showConfirmDialog(null,
-									"Your login attempt was not successful, try again? \nReason: Invalid login or password",
-									"Login to IPK-Domain (LDAP)", JOptionPane.YES_NO_OPTION);
-							break;
-						case 37:
-							result = (Integer) JOptionPane.showConfirmDialog(null,
-									"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
-									"Login to IPK-Domain (LDAP)", JOptionPane.YES_NO_OPTION);
-							break;
-						default:
-							break;
-						}
-					}
+				
 					if (e.getCause() instanceof UnknownHostException) {
 						result = (Integer) JOptionPane.showConfirmDialog(null,
 								"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",

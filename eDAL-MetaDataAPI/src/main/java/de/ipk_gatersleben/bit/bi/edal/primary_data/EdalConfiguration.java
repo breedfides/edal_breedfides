@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -24,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
@@ -95,7 +93,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  * 
  * @author arendd
  */
-@SuppressWarnings("restriction")
 public final class EdalConfiguration {
 
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";
@@ -105,7 +102,8 @@ public final class EdalConfiguration {
 	private static Logger logger = null;
 
 	static {
-		/* trick to set encoding programmatically */
+		/*
+		// trick to set encoding programmatically 
 		try {
 			System.setProperty("file.encoding", "UTF-8");
 			Field charset = Charset.class.getDeclaredField("defaultCharset");
@@ -114,6 +112,7 @@ public final class EdalConfiguration {
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
+		*/
 
 		EdalConfiguration.logger = LogManager.getLogger("eDAL-API");
 	}
