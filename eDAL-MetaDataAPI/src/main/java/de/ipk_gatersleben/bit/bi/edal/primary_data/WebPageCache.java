@@ -21,10 +21,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
  * A class for caching webpages.
  * 
  * @author arendd
- * @param <V>
  */
 
-public class WebPageCache<V> {
+public class WebPageCache {
 	
 	private static Cache<String, ByteArrayOutputStream> cache;
 	private static CacheManager cacheManager;
