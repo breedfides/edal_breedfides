@@ -50,15 +50,15 @@ public class CheckReviewStatusThread extends Thread {
 	}
 
 	/**
-	 * Finish the {@link CheckReviewStatusThread} an shutdown the
-	 * {@link Scheduler}.
+	 * Finish the {@link CheckReviewStatusThread} an shutdown the {@link Scheduler}.
 	 */
 	public void done() {
 		try {
-			this.getScheduler().shutdown(true);
+			if (this.getScheduler() != null) {
+				this.getScheduler().shutdown(true);
+			}
 		} catch (SchedulerException e) {
-			DataManager.getImplProv().getLogger()
-					.info("unable to stop CheckReviewScheduler", e);
+			DataManager.getImplProv().getLogger().info("unable to stop CheckReviewScheduler", e);
 		}
 	}
 
@@ -72,25 +72,21 @@ public class CheckReviewStatusThread extends Thread {
 	}
 
 	/**
-	 * Start the {@link CheckReviewStatusThread} by starting the
-	 * {@link Scheduler} and run the {@link CheckReviewStatusJob}.
+	 * Start the {@link CheckReviewStatusThread} by starting the {@link Scheduler}
+	 * and run the {@link CheckReviewStatusJob}.
 	 */
 	public void run() {
 
-		DataManager.getImplProv().getLogger()
-				.info("Starting CheckReviewStatusThread");
+		DataManager.getImplProv().getLogger().info("Starting CheckReviewStatusThread");
 
-		Scheduler defaultQuartzScheduler = SchedulerRepository.getInstance()
-				.lookup("DefaultQuartzScheduler");
+		Scheduler defaultQuartzScheduler = SchedulerRepository.getInstance().lookup("DefaultQuartzScheduler");
 
 		if (defaultQuartzScheduler == null) {
 
 			try {
-				Scheduler std = new StdSchedulerFactory().getScheduler();
-				CheckReviewStatusThread.setScheduler(std);
+				CheckReviewStatusThread.setScheduler(new StdSchedulerFactory().getScheduler());
 			} catch (SchedulerException e) {
-				DataManager.getImplProv().getLogger()
-						.warn("unable to create new CheckReviewScheduler", e);
+				DataManager.getImplProv().getLogger().warn("unable to create new CheckReviewScheduler", e);
 			}
 		}
 
@@ -100,23 +96,14 @@ public class CheckReviewStatusThread extends Thread {
 		try {
 			this.getScheduler().start();
 
-			JobDetail job = JobBuilder.newJob(CheckReviewStatusJob.class)
-					.build();
+			JobDetail job = JobBuilder.newJob(CheckReviewStatusJob.class).build();
 
-			Trigger trigger = TriggerBuilder
-					.newTrigger()
-					.startNow()
-					.withSchedule(
-							SimpleScheduleBuilder
-									.simpleSchedule()
-									.withIntervalInSeconds(
-											INTERVAL_TO_REPEAT_JOB)
-									.repeatForever()).build();
+			Trigger trigger = TriggerBuilder.newTrigger().startNow().withSchedule(SimpleScheduleBuilder.simpleSchedule()
+					.withIntervalInSeconds(INTERVAL_TO_REPEAT_JOB).repeatForever()).build();
 
 			this.getScheduler().scheduleJob(job, trigger);
 		} catch (SchedulerException e) {
-			DataManager.getImplProv().getLogger()
-					.warn("unable to start CheckReviewScheduler", e);
+			DataManager.getImplProv().getLogger().warn("unable to start CheckReviewScheduler", e);
 
 		}
 	}

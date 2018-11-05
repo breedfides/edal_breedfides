@@ -827,10 +827,10 @@ public class DataManager {
 
 		implementationprovider.getLogger().info("Trying to shutdown EDALClient...");
 
-		if (DataManager.checkReviewStatusThread.isAlive()) {
+		if (!DataManager.checkReviewStatusThread.getState().equals(Thread.State.TERMINATED)) {
 			DataManager.checkReviewStatusThread.done();
 		}
-		if (DataManager.calculateThread.isAlive()) {
+		if (!DataManager.calculateThread.getState().equals(Thread.State.TERMINATED)) {
 			DataManager.calculateThread.done();
 		}
 

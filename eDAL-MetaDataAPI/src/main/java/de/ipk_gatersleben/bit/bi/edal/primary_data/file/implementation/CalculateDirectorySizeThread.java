@@ -47,7 +47,6 @@ public class CalculateDirectorySizeThread extends Thread {
 	public static long totalVolumeDataStock = 0;
 	public static Map<String, String> referenceContent = null;
 
-
 	public CalculateDirectorySizeThread() {
 
 	}
@@ -58,7 +57,9 @@ public class CalculateDirectorySizeThread extends Thread {
 	 */
 	public void done() {
 		try {
-			this.getScheduler().shutdown(true);
+			if (this.getScheduler() != null) {
+				this.getScheduler().shutdown(true);
+			}
 		} catch (SchedulerException e) {
 			DataManager.getImplProv().getLogger().info("unable to stop CalculateDirectorySizeThreadScheduler", e);
 		}
@@ -99,7 +100,7 @@ public class CalculateDirectorySizeThread extends Thread {
 		} else {
 			directorySizes = new HashMap<String, Long>();
 		}
-		
+
 		path = ServiceProviderImplementation.PATH_FOR_DIRECTORY_FILE_MAP;
 
 		if (Files.exists(path)) {
@@ -119,7 +120,7 @@ public class CalculateDirectorySizeThread extends Thread {
 		} else {
 			directoryFiles = new HashMap<String, String>();
 		}
-		
+
 		path = ServiceProviderImplementation.PATH_FOR_REFERENCE_CONTENT;
 
 		if (Files.exists(path)) {
@@ -187,8 +188,7 @@ public class CalculateDirectorySizeThread extends Thread {
 		if (defaultQuartzScheduler == null) {
 
 			try {
-				Scheduler std = new StdSchedulerFactory().getScheduler();
-				CalculateDirectorySizeThread.setScheduler(std);
+				CalculateDirectorySizeThread.setScheduler(new StdSchedulerFactory().getScheduler());
 			} catch (SchedulerException e) {
 				DataManager.getImplProv().getLogger().warn("unable to create new CalculateDirectorySizeThreadScheduler",
 						e);
@@ -203,8 +203,9 @@ public class CalculateDirectorySizeThread extends Thread {
 
 			JobDetail job = JobBuilder.newJob(CalculateDirectorySizeJob.class).build();
 
-			Trigger trigger = TriggerBuilder.newTrigger().startNow().withSchedule(SimpleScheduleBuilder.simpleSchedule()
-					.withIntervalInHours(INTERVAL_TO_REPEAT_JOB).repeatForever()).build();
+			Trigger trigger = TriggerBuilder.newTrigger().startNow().withSchedule(
+					SimpleScheduleBuilder.simpleSchedule().withIntervalInHours(INTERVAL_TO_REPEAT_JOB).repeatForever())
+					.build();
 
 			this.getScheduler().scheduleJob(job, trigger);
 		} catch (SchedulerException e) {

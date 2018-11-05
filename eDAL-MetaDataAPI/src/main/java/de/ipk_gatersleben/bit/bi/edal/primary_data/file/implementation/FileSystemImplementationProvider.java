@@ -479,7 +479,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * @return new Session
 	 */
 	public Session getSession() {
-		return this.getSessionFactory().openSession();
+			return this.getSessionFactory().openSession();
 	}
 
 	/**
@@ -651,7 +651,6 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	/** {@inheritDoc} */
 	@Override
 	public void shutdown() {
-
 		if (!this.isAutoIndexing()) {
 			this.getIndexThread().waitForFinish();
 		}
@@ -664,7 +663,6 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override

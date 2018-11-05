@@ -65,32 +65,31 @@ import de.ipk_gatersleben.bit.bi.edal.sample.*;
 
 @SuppressWarnings("unused")
 public class TestClass {
-	// static {
-	//
-	// // System.setProperty("prism.order", "sw");
-	//
-	// for (Entry<Object, Object> element : System.getProperties().entrySet()) {
-	// System.out.println(element.getKey() + " = " + element.getValue());
-	// }
-	//
-	// System.setProperty("prism.verbose", "true");
-	//
-	//// System.out.println(System.getProperty("prism.order"));
-	//
-	// }
 
 	public static void main(final String[] args) throws Exception {
 
 		// System.out.println(EdalHelpers.authenticateGoogleUser("proxy1.ipk-gatersleben.de",3128));
 		// System.out.println(EdalHelpers.authenticateORCIDUser("proxy1.ipk-gatersleben.de",3128));
 
-		InetSocketAddress address = EdalConfiguration.guessProxySettings();
-
-		if (address != null) {
-			System.out.println(EdalHelpers.authenticateElixirUser(address.getHostName(), address.getPort()));
-		} else {
-			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
-		}
+//		InetSocketAddress address = EdalConfiguration.guessProxySettings();
+//
+//		if (address != null) {
+//			System.out.println(EdalHelpers.authenticateElixirUser(address.getHostName(), address.getPort()));
+//		} else {
+//			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
+//		}
+		
+		
+		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+		
+		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
+		
+		Thread.sleep(3000);
+		
+		DataManager.shutdown();
+		
 
 	}
 
