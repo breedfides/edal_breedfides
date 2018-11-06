@@ -685,38 +685,6 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		}
 	}
 
-	// /**
-	// * Send an eMail to the user that his request was rejected.
-	// *
-	// * @param emailAddress
-	// * the eMail address of the user.
-	// * @throws EdalApprovalException
-	// * if unable to generate the eMail.
-	// */
-	// private void sendRejectedMail(final String emailAddress, final
-	// PublicReference reference)
-	// throws EdalApprovalException {
-	//
-	// System.out.println("send reject");
-	//
-	// String message;
-	// try {
-	// message =
-	// ApprovalServiceProviderImplementation.velocityGenerator.generateRejectedEmail(reference)
-	// .toString();
-	// } catch (final VelocityException e) {
-	// throw new
-	// EdalApprovalException(ApprovalServiceProviderImplementation.UNABLE_TO_GENERATE_E_MAIL,
-	// e);
-	// }
-	//
-	// this.sendEmail(message,
-	// "[e!DAL] - data publication rejected: " +
-	// reference.getVersion().getMetaData().toString(),
-	// emailAddress);
-	//
-	// }
-
 	/**
 	 * Send an eMail to the user that his request was rejected.
 	 * 

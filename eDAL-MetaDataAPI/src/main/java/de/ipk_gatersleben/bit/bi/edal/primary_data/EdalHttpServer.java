@@ -90,7 +90,7 @@ public class EdalHttpServer {
 
 		this.useSSL = configuration.isUseSSLForHttpListener();
 
-		this.eDALServer = new Server(new ExecutorThreadPool(DataManager.getJettyThreadPool()));
+		this.eDALServer = new Server(new ExecutorThreadPool());
 
 		if (!Files.exists(
 				Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "jetty_log"))) {
