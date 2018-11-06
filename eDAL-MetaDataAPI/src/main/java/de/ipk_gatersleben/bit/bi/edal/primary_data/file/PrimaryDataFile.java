@@ -44,7 +44,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 public abstract class PrimaryDataFile extends PrimaryDataEntity {
 
-	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 3;
+	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 4;
 	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 60;
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
 	private static ThreadPoolExecutor executor;
@@ -294,8 +294,6 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 			throw new PrimaryDataFileException("exception while multiplexing input stream: " + e.getMessage(), e);
 		}
 
-		pipedInputOutputThread.start();
-
 		if (executor.isShutdown()) {
 			if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 				executor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
@@ -306,7 +304,7 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 						new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
 			}
 		}
-
+		executor.execute(pipedInputOutputThread);
 		executor.execute(storeFileThread);
 		executor.execute(calculateCheckSumThread);
 		executor.execute(guessMimeTypeThread);
