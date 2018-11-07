@@ -981,7 +981,9 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		if (contentPageCache.get(cacheKey) == null) {
 
-			DataManager.getImplProv().getLogger().debug("Regenerate Webpage : " + cacheKey);
+			long start = System.currentTimeMillis();
+
+			DataManager.getImplProv().getLogger().debug("Load new Contentpage : " + cacheKey);
 
 			try {
 
@@ -1032,10 +1034,17 @@ public class EdalHttpHandler extends AbstractHandler {
 			} catch (IOException e) {
 				throw new EdalException(e);
 			}
+
+			DataManager.getImplProv().getLogger()
+					.debug("Load new Contentpage (" + cacheKey + ") in " + (System.currentTimeMillis() - start) + " ms");
+
 		}
 
 		else {
-			DataManager.getImplProv().getLogger().debug("Reload Webpage from Cache : " + cacheKey);
+
+			long start = System.currentTimeMillis();
+
+			DataManager.getImplProv().getLogger().debug("Reload Contentpage from Cache : " + cacheKey);
 
 			response.setContentType("text/html");
 			response.setStatus(HttpStatus.Code.OK.getCode());
@@ -1058,6 +1067,10 @@ public class EdalHttpHandler extends AbstractHandler {
 			} catch (IOException e) {
 				throw new EdalException(e);
 			}
+
+			DataManager.getImplProv().getLogger()
+					.debug("Reload Contentpage (" + cacheKey + ")  in " + (System.currentTimeMillis() - start) + " ms");
+
 		}
 	}
 
@@ -1163,8 +1176,8 @@ public class EdalHttpHandler extends AbstractHandler {
 
 	private final String generateCacheKey(final PersistentIdentifier identifierType, final String internalId,
 			final PrimaryDataEntity entity, final long versionNumber, final int reviewerCode) {
-		return new String(identifierType.toString() + internalId + entity.getID() + String.valueOf(versionNumber)
-				+ String.valueOf(reviewerCode));
+		return new String(identifierType.toString() + "-" + internalId + "-" + entity.getID() + "-"
+				+ String.valueOf(versionNumber) + "-" + String.valueOf(reviewerCode));
 	}
 
 	/**
@@ -1283,6 +1296,11 @@ public class EdalHttpHandler extends AbstractHandler {
 		String cacheKey = "ReportCache";
 
 		if (reportPageCache.get(cacheKey) == null) {
+
+			long start = System.currentTimeMillis();
+
+			DataManager.getImplProv().getLogger().debug("Load new Reportpage : " + cacheKey);
+
 			try {
 
 				response.setStatus(responseCode.getCode());
@@ -1325,8 +1343,15 @@ public class EdalHttpHandler extends AbstractHandler {
 				DataManager.getImplProv().getLogger()
 						.warn("Unable to send " + responseCode + "-message : " + e.getClass());
 			}
+
+			DataManager.getImplProv().getLogger()
+					.info("Load new Reportpage in " + (System.currentTimeMillis() - start) + " ms");
+
 		} else {
-			DataManager.getImplProv().getLogger().debug("Reload Webpage from Cache : " + cacheKey);
+
+			long start = System.currentTimeMillis();
+
+			DataManager.getImplProv().getLogger().debug("Reload Reportpage from Cache : " + cacheKey);
 
 			response.setContentType("text/html");
 			response.setStatus(HttpStatus.Code.OK.getCode());
@@ -1351,6 +1376,9 @@ public class EdalHttpHandler extends AbstractHandler {
 				reportPageCache.clean();
 				throw new EdalException(e);
 			}
+			DataManager.getImplProv().getLogger()
+					.info("Reload Reportpage from Cache in " + (System.currentTimeMillis() - start) + " ms");
+
 		}
 	}
 
