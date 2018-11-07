@@ -1345,7 +1345,7 @@ public class EdalHttpHandler extends AbstractHandler {
 			}
 
 			DataManager.getImplProv().getLogger()
-					.info("Load new Reportpage in " + (System.currentTimeMillis() - start) + " ms");
+					.debug("Load new Reportpage in " + (System.currentTimeMillis() - start) + " ms");
 
 		} else {
 
@@ -1377,7 +1377,7 @@ public class EdalHttpHandler extends AbstractHandler {
 				throw new EdalException(e);
 			}
 			DataManager.getImplProv().getLogger()
-					.info("Reload Reportpage from Cache in " + (System.currentTimeMillis() - start) + " ms");
+					.debug("Reload Reportpage from Cache in " + (System.currentTimeMillis() - start) + " ms");
 
 		}
 	}
