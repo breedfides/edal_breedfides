@@ -20,13 +20,14 @@ import org.hibernate.Session;
 import org.hibernate.query.Query;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 
-public class ListThread extends Thread {
+public class ListThread extends EdalThread {
 
 	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
 
@@ -36,6 +37,7 @@ public class ListThread extends Thread {
 	private Calendar nextVersionDate = null;
 
 	public ListThread(PrimaryDataDirectory parentDirectory, Calendar currentVersionDate, Calendar nextVersionDate) {
+		super();
 		this.asynList = new AsynchronList<PrimaryDataEntity>();
 		this.parentDirectory = parentDirectory;
 		this.currentVersionDate = currentVersionDate;

@@ -22,7 +22,7 @@ import javax.persistence.Embedded;
  * 
  * @author arendd
  */
-public class PipedReadEmbeddedFileThread extends Thread {
+public class PipedReadEmbeddedFileThread extends EdalThread {
 
 	private InputStream inputStream = null;
 	private PipedOutputStream pipedOut = null;
@@ -32,15 +32,14 @@ public class PipedReadEmbeddedFileThread extends Thread {
 	 * Create a new Thread and set the corresponding {@link InputStream} and the
 	 * {@link PipedOutputStream} to transfer the embedded file.
 	 * 
-	 * @param fileName
-	 *            the name of the embedded file
-	 * @param inputStream
-	 *            the {@link InputStream} of the embedded file
-	 * @param pipedOut
-	 *            the {@link PipedOutputStream} to send the {@link Embedded} file
+	 * @param fileName    the name of the embedded file
+	 * @param inputStream the {@link InputStream} of the embedded file
+	 * @param pipedOut    the {@link PipedOutputStream} to send the {@link Embedded}
+	 *                    file
 	 */
 	public PipedReadEmbeddedFileThread(final String fileName, final InputStream inputStream,
 			final PipedOutputStream pipedOut) {
+		super();
 		this.inputStream = inputStream;
 		this.pipedOut = pipedOut;
 		this.fileName = fileName;

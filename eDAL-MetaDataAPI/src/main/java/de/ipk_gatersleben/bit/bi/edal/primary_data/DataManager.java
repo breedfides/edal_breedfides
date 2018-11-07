@@ -69,7 +69,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
 public class DataManager {
 
 	public static final String TEST_DATA_STRING = "eDAL";
-	public static final int NUMBER_OF_THREAD_FOR_HTTP_SERVER_CONNECTION_POOL = 100;
 
 	/**
 	 * Private class to provide a intercepter that control a graceful shutdown of
@@ -157,17 +156,16 @@ public class DataManager {
 	 */
 	private static InheritableThreadLocal<Subject> threadlocalsubject;
 
-	private static ExecutorService jettyThreadPool = null;
-	private static ExecutorService listThreadPool = null;
+	private static ExecutorService jettyExecutorService = null;
+	private static ExecutorService listExecutorService = null;
+	private static ExecutorService velocityExecutorService = null;
 
 	static {
 
-		DataManager.jettyThreadPool = Executors.newCachedThreadPool();
-		// DataManager.jettyThreadPool =
-		// Executors.newFixedThreadPool(NUMBER_OF_THREAD_FOR_HTTP_SERVER_CONNECTION_POOL);
-
-		DataManager.listThreadPool = Executors.newCachedThreadPool();
-
+		DataManager.jettyExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("jettyThread"));
+		DataManager.listExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("listThread"));
+		DataManager.velocityExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("velocityThread"));
+		
 		DataManager.threadlocalsubject = new InheritableThreadLocal<>();
 		DataManager.implementationprovider = null;
 		DataManager.threadlocaldefaultpermissions = new InheritableThreadLocal<>();
@@ -841,8 +839,9 @@ public class DataManager {
 		}
 		DataManager.isConfigurationValid = false;
 
-		DataManager.getJettyThreadPool().shutdown();
-		DataManager.getListThreadPool().shutdown();
+		DataManager.getJettyExecutorService().shutdown();
+		DataManager.getListExecutorService().shutdown();
+		DataManager.getVelocityExecutorService().shutdown();
 
 		DataManager.stopLatch.countDown();
 
@@ -871,15 +870,27 @@ public class DataManager {
 	 * 
 	 * @return ExecutorService
 	 */
-	public static ExecutorService getJettyThreadPool() {
+	public static ExecutorService getJettyExecutorService() {
 
-		if (jettyThreadPool.isShutdown() || jettyThreadPool.isTerminated()) {
-			jettyThreadPool = Executors.newCachedThreadPool();
-			// jettyThreadPool =
-			// Executors.newFixedThreadPool(NUMBER_OF_THREAD_FOR_HTTP_SERVER_CONNECTION_POOL);
+		if (jettyExecutorService.isShutdown() || jettyExecutorService.isTerminated()) {
+			jettyExecutorService = Executors.newCachedThreadPool();
 		}
 
-		return jettyThreadPool;
+		return jettyExecutorService;
+	}
+	
+	/**
+	 * Getter for the {@link ThreadPool} for {@link EdalHttpServer}.
+	 * 
+	 * @return ExecutorService
+	 */
+	public static ExecutorService getVelocityExecutorService() {
+
+		if (velocityExecutorService.isShutdown() || velocityExecutorService.isTerminated()) {
+			velocityExecutorService = Executors.newCachedThreadPool();
+		}
+
+		return velocityExecutorService;
 	}
 
 	/**
@@ -887,13 +898,13 @@ public class DataManager {
 	 * 
 	 * @return ExecutorService
 	 */
-	public static ExecutorService getListThreadPool() {
+	public static ExecutorService getListExecutorService() {
 
-		if (listThreadPool.isShutdown() || listThreadPool.isTerminated()) {
-			listThreadPool = Executors.newCachedThreadPool();
+		if (listExecutorService.isShutdown() || listExecutorService.isTerminated()) {
+			listExecutorService = Executors.newCachedThreadPool();
 		}
 
-		return listThreadPool;
+		return listExecutorService;
 	}
 
 	/**

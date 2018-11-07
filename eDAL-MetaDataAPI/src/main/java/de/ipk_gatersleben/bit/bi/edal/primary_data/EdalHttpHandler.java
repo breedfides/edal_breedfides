@@ -28,7 +28,6 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipOutputStream;
@@ -68,7 +67,6 @@ public class EdalHttpHandler extends AbstractHandler {
 	private static HashMap<Integer, List<String>> userHashMap = new HashMap<Integer, List<String>>();
 	private static HashMap<String, Long> requestTimeoutMap = new HashMap<String, Long>();
 
-	private static ExecutorService executor;
 	private static ThreadPoolExecutor zipExecutor;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
@@ -77,6 +75,7 @@ public class EdalHttpHandler extends AbstractHandler {
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 1 / 2);
 
 	private static final Long LIMIT_INLINE_FILE_SIZE = new Long(10 * 1024 * 1024);
+	private static final String EXECUTOR_NAME = "ZipExecutor";
 
 	public static WebPageCache contentPageCache = new WebPageCache("contentpage");
 	public static WebPageCache reportPageCache = new WebPageCache("reportpage");
@@ -84,16 +83,16 @@ public class EdalHttpHandler extends AbstractHandler {
 	static VeloCityHtmlGenerator velocityHtmlGenerator;
 
 	static {
-		executor = DataManager.getJettyThreadPool();
 
 		if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 			zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+					EXECUTOR_NAME);
 		} else {
 
 			zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
 		}
 
 		contentPageCache.init();
@@ -816,12 +815,14 @@ public class EdalHttpHandler extends AbstractHandler {
 						if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 							zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES,
 									EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+									EXECUTOR_NAME);
 						} else {
 
 							zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL,
 									MIN_NUMBER_OF_THREADS_IN_POOL, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+									EXECUTOR_NAME);
 						}
 					}
 
@@ -880,8 +881,8 @@ public class EdalHttpHandler extends AbstractHandler {
 			final PipedReadEmbeddedFileThread pipedReadThread = new PipedReadEmbeddedFileThread(fileName, file,
 					pipedOut);
 
-			executor.execute(pipedReadThread);
-			executor.execute(pipedWriteThread);
+			DataManager.getJettyExecutorService().execute(pipedReadThread);
+			DataManager.getJettyExecutorService().execute(pipedWriteThread);
 
 			try {
 				countDownLatch.await();
@@ -903,12 +904,9 @@ public class EdalHttpHandler extends AbstractHandler {
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData} of the
 	 * given {@link PrimaryDataEntity} and send the output over HTTP.
 	 *
-	 * @param response
-	 *            the corresponding HTTP exchange.
-	 * @param entity
-	 *            the the corresponding {@link PrimaryDataEntity}.
-	 * @throws EdalException
-	 *             if unable to send metadata
+	 * @param response the corresponding HTTP exchange.
+	 * @param entity   the the corresponding {@link PrimaryDataEntity}.
+	 * @throws EdalException if unable to send metadata
 	 */
 	private void sendEntityMetaData(final HttpServletResponse response, final PrimaryDataEntity entity)
 			throws EdalException {
@@ -938,8 +936,8 @@ public class EdalHttpHandler extends AbstractHandler {
 			final PipedReadEmbeddedFileThread pipedReadThread = new PipedReadEmbeddedFileThread(entity.getName(), bis,
 					pipedOut);
 
-			executor.execute(pipedThread);
-			executor.execute(pipedReadThread);
+			DataManager.getJettyExecutorService().execute(pipedThread);
+			DataManager.getJettyExecutorService().execute(pipedReadThread);
 
 			try {
 				countDownLatch.await();
@@ -968,18 +966,12 @@ public class EdalHttpHandler extends AbstractHandler {
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData} of the
 	 * given {@link PrimaryDataEntity} and send the output over HTTP.
 	 * 
-	 * @param response
-	 *            the corresponding HTTP exchange.
-	 * @param entity
-	 *            the the corresponding {@link PrimaryDataEntity}.
-	 * @param versionNumber
-	 *            the version number of this {@link PrimaryDataEntity}
-	 * @param internalId
-	 *            the id of the {@link PublicReference}
-	 * @param identifierType
-	 *            the type of the {@link PublicReference}
-	 * @throws EdalException
-	 *             if unable to send {@link MetaData}
+	 * @param response       the corresponding HTTP exchange.
+	 * @param entity         the the corresponding {@link PrimaryDataEntity}.
+	 * @param versionNumber  the version number of this {@link PrimaryDataEntity}
+	 * @param internalId     the id of the {@link PublicReference}
+	 * @param identifierType the type of the {@link PublicReference}
+	 * @throws EdalException if unable to send {@link MetaData}
 	 */
 	private void sendEntityMetaDataForPersistentIdentifier(final HttpServletResponse response,
 			final PrimaryDataEntity entity, final long versionNumber, final PersistentIdentifier identifierType,
@@ -1021,7 +1013,7 @@ public class EdalHttpHandler extends AbstractHandler {
 					teeOutputStream.flush();
 					teeOutputStream.close();
 
-					 contentPageCache.put(cacheKey, cacheFileOutputStream);
+					contentPageCache.put(cacheKey, cacheFileOutputStream);
 				} catch (EofException eof) {
 
 					DataManager.getImplProv().getLogger()
@@ -1077,20 +1069,13 @@ public class EdalHttpHandler extends AbstractHandler {
 	 * approve the requested
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}.
 	 * 
-	 * @param response
-	 *            the corresponding HTTP exchange.
-	 * @param entity
-	 *            the the corresponding {@link PrimaryDataEntity}.
-	 * @param reviewerCode
-	 *            the reviewerCode to identify a reviewer
-	 * @param versionNumber
-	 *            the version number of this {@link PrimaryDataEntity}
-	 * @param internalId
-	 *            the id of the {@link PublicReference}
-	 * @param identifierType
-	 *            the type of the {@link PublicReference}
-	 * @throws EdalException
-	 *             if unable to send {@link MetaData}
+	 * @param response       the corresponding HTTP exchange.
+	 * @param entity         the the corresponding {@link PrimaryDataEntity}.
+	 * @param reviewerCode   the reviewerCode to identify a reviewer
+	 * @param versionNumber  the version number of this {@link PrimaryDataEntity}
+	 * @param internalId     the id of the {@link PublicReference}
+	 * @param identifierType the type of the {@link PublicReference}
+	 * @throws EdalException if unable to send {@link MetaData}
 	 */
 	private void sendEntityMetaDataForReviewer(final HttpServletResponse response, final PrimaryDataEntity entity,
 			final long versionNumber, final String internalId, final PersistentIdentifier identifierType,
@@ -1186,11 +1171,9 @@ public class EdalHttpHandler extends AbstractHandler {
 	 * Send the data of the corresponding {@link PrimaryDataFile} to the HTTP
 	 * {@link OutputStream}.
 	 * 
-	 * @param file
-	 *            the corresponding {@link PrimaryDataFile} to send.
+	 * @param file     the corresponding {@link PrimaryDataFile} to send.
 	 * @param response
-	 * @throws EdalException
-	 *             if unable to send {@link PrimaryDataFile}
+	 * @throws EdalException if unable to send {@link PrimaryDataFile}
 	 */
 	private void sendFile(final PrimaryDataFile file, final long versionNumber, final HttpServletResponse response)
 			throws EdalException {
@@ -1236,8 +1219,8 @@ public class EdalHttpHandler extends AbstractHandler {
 			final PipedWriteThread pipedWriteThread = new PipedWriteThread(httpIn, responseBody, countDownLatch, size);
 			final PipedReadEdalFileThread pipedReadThread = new PipedReadEdalFileThread(currentFile, pipedOut);
 
-			executor.execute(pipedWriteThread);
-			executor.execute(pipedReadThread);
+			DataManager.getJettyExecutorService().execute(pipedWriteThread);
+			DataManager.getJettyExecutorService().execute(pipedReadThread);
 			// currentFile.read(pipedOut);
 			try {
 				countDownLatch.await();
@@ -1261,12 +1244,9 @@ public class EdalHttpHandler extends AbstractHandler {
 	/**
 	 * Send a response with the given message and responseCode.
 	 * 
-	 * @param response
-	 *            the corresponding HTTP exchange.
-	 * @param responseCode
-	 *            the response code for this message (e.g. 200,404...).
-	 * @param message
-	 *            the message to send.
+	 * @param response     the corresponding HTTP exchange.
+	 * @param responseCode the response code for this message (e.g. 200,404...).
+	 * @param message      the message to send.
 	 */
 	private void sendMessage(final HttpServletResponse response, final HttpStatus.Code responseCode,
 			final String message) {
@@ -1293,10 +1273,8 @@ public class EdalHttpHandler extends AbstractHandler {
 	/**
 	 * Send a response with the given message and responseCode.
 	 * 
-	 * @param response
-	 *            the corresponding HTTP exchange.
-	 * @param responseCode
-	 *            the response code for this message (e.g. 200,404...).
+	 * @param response     the corresponding HTTP exchange.
+	 * @param responseCode the response code for this message (e.g. 200,404...).
 	 * @throws EdalException
 	 */
 	private void sendReport(final HttpServletResponse response, final HttpStatus.Code responseCode)

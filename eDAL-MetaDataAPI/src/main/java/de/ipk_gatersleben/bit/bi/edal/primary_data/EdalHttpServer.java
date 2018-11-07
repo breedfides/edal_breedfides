@@ -163,10 +163,8 @@ public class EdalHttpServer {
 			contextFactory.setKeyStorePassword(configuration.getKeystorePasswordForHttpListener());
 
 			ServerConnector sslConnector = new ServerConnector(this.eDALServer, contextFactory);
-			sslConnector.setIdleTimeout(600000);
 
 			ServerConnector connector = new ServerConnector(this.eDALServer);
-			connector.setIdleTimeout(600000);
 
 			try {
 				connector.setPort(configuration.getHttpPort());

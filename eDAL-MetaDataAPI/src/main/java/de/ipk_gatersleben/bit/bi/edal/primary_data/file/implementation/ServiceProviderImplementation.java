@@ -85,6 +85,8 @@ public class ServiceProviderImplementation implements ServiceProvider {
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
 	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 30;
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
+
+	private static final String EXECUTOR_NAME = "ServiceProviderExecutor";
 	private static ThreadPoolExecutor executor;
 
 	static {
@@ -92,11 +94,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		if ((Runtime.getRuntime().availableProcessors() / 2) > MIN_NUMBER_OF_THREADS_IN_POOL) {
 			executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 					Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
 		} else {
 			executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
 		}
 
 	}
@@ -267,11 +269,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 					executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 							Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
 							TimeUnit.SECONDS,
-							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
 				} else {
 					executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 							EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
 				}
 			}
 

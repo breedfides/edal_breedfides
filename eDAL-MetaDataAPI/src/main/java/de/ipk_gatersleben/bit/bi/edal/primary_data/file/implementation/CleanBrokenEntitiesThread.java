@@ -20,6 +20,7 @@ import org.quartz.impl.SchedulerRepository;
 import org.quartz.impl.StdSchedulerFactory;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.CheckReviewStatusJob;
 
@@ -29,10 +30,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.CheckReviewStatusJo
  * 
  * @author arendd
  */
-public class CleanBrokenEntitiesThread extends Thread {
+public class CleanBrokenEntitiesThread extends EdalThread {
 
 	/**
-	 * Interval to rerun the {@link CleanBrokenEntitiesJob} in seconds
+	 * Interval to re-run the {@link CleanBrokenEntitiesJob} in seconds
 	 */
 	private static final int INTERVAL_TO_REPEAT_JOB = 24;
 
@@ -45,10 +46,10 @@ public class CleanBrokenEntitiesThread extends Thread {
 	/**
 	 * Default constructor.
 	 * 
-	 * @param root
-	 *            the directory to start clean process
+	 * @param root the directory to start clean process
 	 */
 	public CleanBrokenEntitiesThread(PrimaryDataEntity root) {
+		super();
 		this.root = root;
 	}
 
@@ -123,8 +124,7 @@ public class CleanBrokenEntitiesThread extends Thread {
 	/**
 	 * Setter for the {@link Scheduler}
 	 * 
-	 * @param scheduler
-	 *            the scheduler to set
+	 * @param scheduler the scheduler to set
 	 */
 	private static void setScheduler(Scheduler scheduler) {
 		CleanBrokenEntitiesThread.scheduler = scheduler;

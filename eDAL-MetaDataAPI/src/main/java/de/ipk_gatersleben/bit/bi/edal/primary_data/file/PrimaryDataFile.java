@@ -48,18 +48,21 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 60;
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
 	private static ThreadPoolExecutor executor;
+	private static final String EXECUTOR_NAME = "PrimaryDataFileExecutor";
+
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 3 / 4);
 
 	static {
 
 		if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 			executor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+					EXECUTOR_NAME);
 		} else {
 
 			executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
 		}
 	}
 
@@ -75,19 +78,17 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 * Construct a {@link PrimaryDataFile} and set the file version to the latest
 	 * one
 	 * 
-	 * @param path
-	 *            the directory of the file
-	 * @param name
-	 *            the file name
-	 * @throws PrimaryDataFileException
-	 *             if unable to set data type.
-	 * @throws PrimaryDataEntityVersionException
-	 *             if unable to store initial version.
-	 * @throws PrimaryDataDirectoryException
-	 *             if no parent {@link PrimaryDataDirectory} is found.
-	 * @throws MetaDataException
-	 *             if the {@link MetaData} object of the parent
-	 *             {@link PrimaryDataDirectory} is not clone-able.
+	 * @param path the directory of the file
+	 * @param name the file name
+	 * @throws PrimaryDataFileException          if unable to set data type.
+	 * @throws PrimaryDataEntityVersionException if unable to store initial version.
+	 * @throws PrimaryDataDirectoryException     if no parent
+	 *                                           {@link PrimaryDataDirectory} is
+	 *                                           found.
+	 * @throws MetaDataException                 if the {@link MetaData} object of
+	 *                                           the parent
+	 *                                           {@link PrimaryDataDirectory} is not
+	 *                                           clone-able.
 	 */
 	public PrimaryDataFile(final PrimaryDataDirectory path, final String name) throws PrimaryDataFileException,
 			PrimaryDataEntityVersionException, PrimaryDataDirectoryException, MetaDataException {
@@ -117,10 +118,8 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 * Load the data of the latest {@link PrimaryDataEntityVersion} of this
 	 * {@link PrimaryDataFile} as stream.
 	 * 
-	 * @param dataOutputStream
-	 *            the loaded data.
-	 * @throws PrimaryDataFileException
-	 *             if no data is stored.
+	 * @param dataOutputStream the loaded data.
+	 * @throws PrimaryDataFileException if no data is stored.
 	 */
 	public void read(final OutputStream dataOutputStream) throws PrimaryDataFileException {
 
@@ -173,10 +172,8 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 * Abstract function for implementation the
 	 * {@link PrimaryDataFile#read(OutputStream)} function.
 	 * 
-	 * @param dataOutputStream
-	 *            the loaded data.
-	 * @throws PrimaryDataFileException
-	 *             if no data is stored.
+	 * @param dataOutputStream the loaded data.
+	 * @throws PrimaryDataFileException if no data is stored.
 	 */
 	protected abstract void readImpl(final OutputStream dataOutputStream) throws PrimaryDataFileException;
 
@@ -246,12 +243,11 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 * Store data and generate a new {@link PrimaryDataEntityVersion} for this
 	 * {@link PrimaryDataFile}.
 	 * 
-	 * @param dataInputStream
-	 *            the date to store in this {@link PrimaryDataEntityVersion}.
-	 * @throws PrimaryDataFileException
-	 *             if storing of data fails.
-	 * @throws PrimaryDataEntityVersionException
-	 *             if provided version conflicts with existing versions.
+	 * @param dataInputStream the date to store in this
+	 *                        {@link PrimaryDataEntityVersion}.
+	 * @throws PrimaryDataFileException          if storing of data fails.
+	 * @throws PrimaryDataEntityVersionException if provided version conflicts with
+	 *                                           existing versions.
 	 */
 	public void store(final InputStream dataInputStream)
 			throws PrimaryDataFileException, PrimaryDataEntityVersionException {
@@ -297,11 +293,12 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 		if (executor.isShutdown()) {
 			if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 				executor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-						TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+						TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+						EXECUTOR_NAME);
 			} else {
 				executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 						EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-						new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE));
+						new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
 			}
 		}
 		executor.execute(pipedInputOutputThread);
@@ -346,12 +343,10 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 * Abstract function for implementation the
 	 * {@link PrimaryDataFile#store(InputStream)} function.
 	 * 
-	 * @param dataInputStream
-	 *            the data to store in this {@link PrimaryDataEntityVersion}
-	 * @param newFileVersion
-	 *            the new {@link PrimaryDataEntityVersion} to store
-	 * @throws PrimaryDataFileException
-	 *             if storing of data fails
+	 * @param dataInputStream the data to store in this
+	 *                        {@link PrimaryDataEntityVersion}
+	 * @param newFileVersion  the new {@link PrimaryDataEntityVersion} to store
+	 * @throws PrimaryDataFileException if storing of data fails
 	 */
 	protected abstract void storeImpl(InputStream dataInputStream, PrimaryDataEntityVersion newFileVersion)
 			throws PrimaryDataFileException;
