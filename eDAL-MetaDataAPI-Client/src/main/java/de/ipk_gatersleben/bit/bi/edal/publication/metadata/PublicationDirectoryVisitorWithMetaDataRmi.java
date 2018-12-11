@@ -48,7 +48,7 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 	private boolean updateEdalObject = false;
 	private boolean createSeparateFolder = false;
 	private CountDownLatch latch;
-	private boolean skipedRootFolder = false;
+	private boolean alreadyVisitedRootFolder = false;
 
 	public ClientPrimaryDataDirectory getRootDirectoryToPublish() {
 		return directoryToPublish;
@@ -104,10 +104,7 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 	@Override
 	public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 
-		if (!this.createSeparateFolder && !this.skipedRootFolder) {
-			this.skipedRootFolder = true;
-			return FileVisitResult.CONTINUE;
-		} else {
+		if (this.alreadyVisitedRootFolder) {
 
 			try {
 				ClientPrimaryDataDirectory newCurrentDirectory = null;
@@ -127,7 +124,13 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 			}
 
 			return FileVisitResult.CONTINUE;
+		} else {
+			// ignore rootFolder of selected directory
+			this.alreadyVisitedRootFolder = true;
+
+			return FileVisitResult.CONTINUE;
 		}
+
 	}
 
 	@Override
@@ -137,7 +140,7 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 			ClientPrimaryDataFile clientPrimaryDataFile = null;
 
 			if (FORBIDDEN_FILES.contains(file.getFileName().toString())) {
-				//skip temporary file system cache files
+				// skip temporary file system cache files
 				this.overallProgressBar.setValue(this.overallProgressBar.getValue() + 1);
 				this.latch.countDown();
 				return FileVisitResult.CONTINUE;
