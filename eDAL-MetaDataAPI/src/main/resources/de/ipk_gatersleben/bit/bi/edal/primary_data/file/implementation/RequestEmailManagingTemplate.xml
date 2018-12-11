@@ -21,18 +21,20 @@
 		<br />
 		we recently recieved a data publication request by $principal.
 		<br />
-		Please check the submission carefully and state if it can be
-		published
-		as $id data publication.
+		Please check the submission carefully and state if it can be published as $id data publication.
 		<br />
 		<br /><b>
 		preview:
 		<a href="$landingpage">$infos_string</a></b>
 		<br />
 		<br />
-		As e!DAL managing reviewer you have the final decision to accepted
-		or
-		rejected.
+		As e!DAL managing reviewer you have the final decision to accepted or rejected.
+		#if($embargo)
+		<br />
+		<br />
+			<strong>NOTE:</strong> An embargo date was set to $embargo !
+				#else
+				#end
 		<br />
 		<br />
 		<b>

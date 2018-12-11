@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URL;
 import java.security.Principal;
+import java.util.Calendar;
 
 import javax.mail.internet.InternetAddress;
 
@@ -65,7 +66,7 @@ class VeloCityEmailGenerator {
 	 * @throws VelocityException
 	 *             if unable to create the output text.
 	 */
-	protected StringWriter generateRequestEmail(PrimaryDataEntityVersion entityVersion, URL acceptURL, URL rejectURL, Principal principal, InternetAddress mailAdress, ReviewerType reviewerType, URL reviewerURL, PersistentIdentifier idType) throws VelocityException {
+	protected StringWriter generateRequestEmail(PrimaryDataEntityVersion entityVersion, URL acceptURL, URL rejectURL, Principal principal, InternetAddress mailAdress, ReviewerType reviewerType, URL reviewerURL, PersistentIdentifier idType, Calendar releaseDate) throws VelocityException {
 
 		VelocityContext context = new VelocityContext();
 
@@ -93,7 +94,11 @@ class VeloCityEmailGenerator {
 		context.put("allElements", MetaData.ELEMENT_TYPE_MAP.keySet());
 		/* set link to the landing page */
 		context.put("landingpage", reviewerURL.toString());
-
+		/* set link to the landing page */
+		if (releaseDate != null) {
+			context.put("embargo", releaseDate.getTime());
+		}
+		
 		StringWriter output = new StringWriter();
 
 		try {

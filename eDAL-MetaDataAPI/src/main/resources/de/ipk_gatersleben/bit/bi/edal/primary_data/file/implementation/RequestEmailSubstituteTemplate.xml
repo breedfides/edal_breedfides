@@ -21,9 +21,7 @@
 		<br />
 		we recently recieved a data publication request by $principal.
 		<br />
-		Please check the submission carefully and state if it can be
-		published
-		as $id data publication.
+		Please check the submission carefully and state if it can be published as $id data publication.
 		<br />
 		<br /><b>
 		preview:
@@ -34,9 +32,13 @@
 		duty. In that case, you may decide to accept or reject this request.
 		<br />
 		<br />
-		Please note, this decision may be undo by veto of the
-		e!DAL
-		managing reviewer.
+		Please note, this decision may be undo by veto of the e!DAL	managing reviewer.
+		#if($embargo)
+		<br />
+		<br />
+			<strong>NOTE:</strong> An embargo date was set to $embargo !
+				#else
+				#end
 		<br />
 		<br />
 		<b>
