@@ -40,10 +40,15 @@ public class EdalZipFileVisitor implements FileVisitor<Path> {
 
 		if (!dir.toString().equals("/")) {
 
-//			System.out.println(dir.getFileName().toString().substring(0, dir.getFileName().toString().length() - 1));
+			String directoryName = dir.getFileName().toString();
 
+			if (directoryName.contains("/")) {
+				directoryName = directoryName.substring(0, directoryName.indexOf("/"));
+			}
+
+//			System.out.println(directoryName);
 			try {
-				PrimaryDataDirectory newDirectory = currentDirectory.createPrimaryDataDirectory(dir.getFileName().toString().substring(0, dir.getFileName().toString().length() - 1));
+				PrimaryDataDirectory newDirectory = currentDirectory.createPrimaryDataDirectory(directoryName);
 				this.currentDirectory = newDirectory;
 			} catch (PrimaryDataDirectoryException e) {
 				throw new IOException(e);
@@ -52,10 +57,23 @@ public class EdalZipFileVisitor implements FileVisitor<Path> {
 			StringBuffer tmpBuffer = new StringBuffer("/");
 
 			for (int i = 0; i < dir.getNameCount(); i++) {
-				tmpBuffer.append(dir.getName(i) + "/");
+//				System.out.println(dir.getName(i));
+				if (dir.getName(i).endsWith("/")) {
+				} else {
+					tmpBuffer.append(dir.getName(i) + "/");
+				}
 			}
-			/* cut last "/"-symbol */
-			pathSet.add("/" + tmpBuffer.toString().substring(0, tmpBuffer.toString().length() - 2));
+			/* cut last "/" or "//" -symbols */
+			String add;
+
+			if (tmpBuffer.toString().endsWith("//")) {
+				add = "/" + tmpBuffer.substring(0, tmpBuffer.lastIndexOf("//"));
+			} else if (tmpBuffer.toString().endsWith("/")) {
+				add = "/" + tmpBuffer.substring(0, tmpBuffer.lastIndexOf("/"));
+			} else {
+				add = "/" + tmpBuffer;
+			}
+			pathSet.add(add);
 		}
 
 		return FileVisitResult.CONTINUE;
@@ -79,7 +97,7 @@ public class EdalZipFileVisitor implements FileVisitor<Path> {
 		}
 
 		/* cut last "/"-symbol */
-		pathSet.add("/"+tmpBuffer.toString().substring(0, tmpBuffer.toString().length() - 1));
+		pathSet.add("/" + tmpBuffer.toString().substring(0, tmpBuffer.toString().length() - 1));
 
 		return FileVisitResult.CONTINUE;
 	}
