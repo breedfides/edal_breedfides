@@ -28,15 +28,15 @@ public class DatabaseBackupAndRepair {
 
 		
 		
-//		Script.process("jdbc:h2:split:30:C:/Users/arendd/edal/edaldb;DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE", "sa", "", 
-//				Paths.get(System.getProperty("user.home"), "backup.sql").toString(),
-//						"", "");
+		Script.process("jdbc:h2:split:30:C:/Users/arendd/edal/edaldb;DB_CLOSE_ON_EXIT=FALSE", "sa", "", 
+				Paths.get(System.getProperty("user.home"), "backup.sql").toString(),
+						"", "");
 		
-		/** Rebuild the database file from a previously created SQL Script **/
-		//
-		 RunScript.execute(DriverManager.getConnection("jdbc:h2:split:30:F:/database/edal_new_version/edaldb"),
-		 new FileReader(Paths.get(System.getProperty("user.home"),
-		 "backup.sql").toFile()));
+//		/** Rebuild the database file from a previously created SQL Script **/
+//		
+//		 RunScript.execute(DriverManager.getConnection("jdbc:h2:split:30:F:/database/edal_new_version_mv_2/edaldb"),
+//		 new FileReader(Paths.get(System.getProperty("user.home"),
+//		 "backup2.sql").toFile()));
 
 	}
 

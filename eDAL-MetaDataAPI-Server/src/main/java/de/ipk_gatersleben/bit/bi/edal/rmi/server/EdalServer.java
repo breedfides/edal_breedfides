@@ -250,11 +250,14 @@ public class EdalServer {
 				"Deactivate the default clean function for Entities, which were broken during upload process. Deactivate only if you use the system also as storgae backend");
 
 		Option instanceNameLongOption = new Option("inl", "instanceNameLong", true,
-				"Set the name of the runnign e!DAL instance (long version)");
+				"Set the name of the running e!DAL instance (long version)");
 
 		Option instanceNameShortOption = new Option("ins", "instanceNameShort", true,
-				"Set the name of the runnign e!DAL instance (short version)");
-
+				"Set the name of the running e!DAL instance (short version)");
+		
+		Option publisherOption = new Option("pu", "publisher", true,
+				"Set the string for the PUBLISHER field of the running e!DAL instance");
+		
 		options.addOption(helpOption);
 		options.addOption(registryPortOption);
 		options.addOption(mountPathOption);
@@ -302,7 +305,7 @@ public class EdalServer {
 
 		options.addOption(instanceNameLongOption);
 		options.addOption(instanceNameShortOption);
-
+		options.addOption(publisherOption);
 		/**
 		 * First check all mandatory parameter to create an EdalConfiguration object
 		 */
@@ -601,6 +604,10 @@ public class EdalServer {
 		if (cmd.hasOption(instanceNameShortOption.getOpt())) {
 			configuration.setInstanceNameShort(cmd.getOptionValue(instanceNameShortOption.getOpt()));
 		}
+		if (cmd.hasOption(publisherOption.getOpt())) {
+			configuration.setPublisherString(cmd.getOptionValue(publisherOption.getOpt()));
+		}
+		
 
 		EdalServer.startServer(configuration, EdalServer.registryPort, EdalServer.dataPort, EdalServer.cleanDatabase,
 				EdalServer.serverLog);
