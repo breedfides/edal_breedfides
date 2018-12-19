@@ -33,14 +33,14 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 /**
  * {@link Thread} for generating a ZIP file that contains all object within a
  * {@link PrimaryDataDirectory}. All file types in the
- * {@link ZipThread.FILE_TYPES_WITH_COMPRESSION_SUPPORT} list will be compressed with
- * compression level 1. All other file types will just stored (compression level
- * 0) in the ZIP file.
+ * {@link ZipThread.FILE_TYPES_WITH_COMPRESSION_SUPPORT} list will be compressed
+ * with compression level 1. All other file types will just stored (compression
+ * level 0) in the ZIP file.
  * 
  * @author arendd
  *
  */
-public class ZipThread extends Thread {
+public class ZipThread extends EdalThread {
 
 	/**
 	 * List of all mime file type groups that are supported to get compressed to
@@ -66,6 +66,7 @@ public class ZipThread extends Thread {
 	private List<PrimaryDataEntity> list = null;
 
 	public ZipThread(CountDownLatch countDownLatch, ZipOutputStream zout, PrimaryDataDirectory directory) {
+		super();
 		this.countDownLatch = countDownLatch;
 		this.zout = zout;
 		this.directory = directory;
@@ -77,7 +78,7 @@ public class ZipThread extends Thread {
 			readPrimaryDataDirectoryIntoZipOutputStream(this.zout, this.directory, true);
 		} catch (PrimaryDataFileException | PrimaryDataDirectoryException | MetaDataException | IOException e) {
 			DataManager.getImplProv().getLogger()
-					.warn("Generating Zip File for '" + this.directory.getName() + "' failed: "+ e.getMessage());
+					.warn("Generating Zip File for '" + this.directory.getName() + "' failed: " + e.getMessage());
 		} finally {
 			this.countDownLatch.countDown();
 		}
@@ -85,12 +86,12 @@ public class ZipThread extends Thread {
 
 	private void readPrimaryDataDirectoryIntoZipOutputStream(ZipOutputStream zipOutputStream,
 			PrimaryDataDirectory entity, boolean log)
-					throws PrimaryDataDirectoryException, PrimaryDataFileException, MetaDataException, IOException {
+			throws PrimaryDataDirectoryException, PrimaryDataFileException, MetaDataException, IOException {
 
 		if (log) {
 			DataManager.getImplProv().getLogger().info("Preparing Zip File for '" + entity.getName() + "'");
 		}
-		
+
 		list = entity.listPrimaryDataEntities();
 
 		DataManager.getImplProv().getLogger().debug("Adding directory " + entity.getPath());

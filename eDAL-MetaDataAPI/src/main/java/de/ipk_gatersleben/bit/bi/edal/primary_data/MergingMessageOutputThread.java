@@ -16,38 +16,35 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.VelocityException;
 
-public class MergingMessageOutputThread extends Thread {
+public class MergingMessageOutputThread extends EdalThread {
 
-    private String template = "";
-    private String coding = "";
-    private Context context = null;
-    private OutputStreamWriter output = null;
-    private CountDownLatch latch = null;
+	private String template = "";
+	private String coding = "";
+	private Context context = null;
+	private OutputStreamWriter output = null;
+	private CountDownLatch latch = null;
 
-    public MergingMessageOutputThread(final String template,
-	    final String coding, final Context context,
-	    final OutputStreamWriter output, final CountDownLatch latch) {
-	this.template = template;
-	this.coding = coding;
-	this.context = context;
-	this.output = output;
-	this.latch = latch;
-
-    }
-
-    @Override
-    public void run() {
-	try {
-	    Velocity.mergeTemplate(this.template, this.coding, this.context,
-		    this.output);
-	} catch (final VelocityException e) {
-	    e.printStackTrace();
-	    DataManager.getImplProv().getLogger()
-		    .warn("Parsing Template stopped !");
-	    DataManager.getImplProv().getLogger()
-		    .debug("Parsing Template stopped: " + e.getMessage());
+	public MergingMessageOutputThread(final String template, final String coding, final Context context,
+			final OutputStreamWriter output, final CountDownLatch latch) {
+		super();
+		this.template = template;
+		this.coding = coding;
+		this.context = context;
+		this.output = output;
+		this.latch = latch;
 
 	}
-	this.latch.countDown();
-    }
+
+	@Override
+	public void run() {
+		try {
+			Velocity.mergeTemplate(this.template, this.coding, this.context, this.output);
+		} catch (final VelocityException e) {
+			e.printStackTrace();
+			DataManager.getImplProv().getLogger().warn("Parsing Template stopped !");
+			DataManager.getImplProv().getLogger().debug("Parsing Template stopped: " + e.getMessage());
+
+		}
+		this.latch.countDown();
+	}
 }

@@ -14,9 +14,10 @@ import java.io.PipedInputStream;
 import java.util.concurrent.CountDownLatch;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
 
-class GuessMimeTypeThread extends Thread {
+class GuessMimeTypeThread extends EdalThread {
 
 	private PipedInputStream pipedInputStream;
 
@@ -26,6 +27,7 @@ class GuessMimeTypeThread extends Thread {
 
 	GuessMimeTypeThread(PipedInputStream pipedInputStream,
 			CountDownLatch stopLatch) {
+		super();
 		this.pipedInputStream = pipedInputStream;
 		this.stopLatch = stopLatch;
 

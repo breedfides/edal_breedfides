@@ -39,6 +39,7 @@ public class EdalThreadPoolExcecutor extends ThreadPoolExecutor {
 	 *            the queue to use for holding tasks before they are executed.
 	 *            This queue will hold only the {@code Runnable} tasks submitted
 	 *            by the {@code execute} method.
+	 *            @param name of the threadpool
 	 * @throws IllegalArgumentException
 	 *             if one of the following holds:<br>
 	 *             {@code corePoolSize < 0}<br>
@@ -49,10 +50,12 @@ public class EdalThreadPoolExcecutor extends ThreadPoolExecutor {
 	 *             if {@code workQueue} is null
 	 */
 	public EdalThreadPoolExcecutor(int corePoolSize, int maximumPoolSize,
-			long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+			long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, String name) {
 
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-
+		
+		this.setThreadFactory(new EdalThreadFactory(name));
+		
 		new MonitorThread(this).start();
 	}
 
@@ -62,11 +65,12 @@ public class EdalThreadPoolExcecutor extends ThreadPoolExecutor {
 	 * 
 	 * @author arendd
 	 */
-	class MonitorThread extends Thread {
+	class MonitorThread extends EdalThread {
 
 		private ThreadPoolExecutor executor;
 
 		public MonitorThread(ThreadPoolExecutor executor) {
+			super();
 			this.executor = executor;
 		}
 

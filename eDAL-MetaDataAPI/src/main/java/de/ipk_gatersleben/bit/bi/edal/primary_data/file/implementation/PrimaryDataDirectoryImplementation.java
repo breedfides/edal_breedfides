@@ -373,7 +373,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final ListThread thread = new ListThread(this, currentVersionDate, nextVersionDate);
 
-		DataManager.getListThreadPool().execute(thread);
+		DataManager.getListExecutorService().execute(thread);
 
 		return thread.getAsynchronList();
 

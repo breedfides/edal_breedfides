@@ -102,7 +102,7 @@ a.edal-detail-quote-btn {
     font-size: 1.2rem;
 }
 
-@media (max-width: 970px) {
+@media (max-width: 1050px) {
     #edal-detail-title-long {
         display:none;
     }
@@ -111,7 +111,7 @@ a.edal-detail-quote-btn {
     }
 }
 
-@media (min-width: 971px) {
+@media (min-width: 1051px) {
     #edal-detail-title-long {
         display:block;
     }

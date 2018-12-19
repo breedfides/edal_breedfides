@@ -24,9 +24,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
  */
 
 public class WebPageCache {
-	
-	private static Cache<String, ByteArrayOutputStream> cache;
-	private static CacheManager cacheManager;
+
+	private Cache<String, ByteArrayOutputStream> cache;
+	private CacheManager cacheManager;
 	public String cacheName;
 
 	public WebPageCache(String cacheName) {
@@ -34,30 +34,30 @@ public class WebPageCache {
 	}
 
 	public void init() {
-		cacheManager = ((FileSystemImplementationProvider) DataManager.getImplProv()).getCacheManager();
-		cache = cacheManager.getCache(this.cacheName, String.class, ByteArrayOutputStream.class);
+		this.cacheManager = ((FileSystemImplementationProvider) DataManager.getImplProv()).getCacheManager();
+		this.cache = this.cacheManager.getCache(this.cacheName, String.class, ByteArrayOutputStream.class);
 	}
 
 	public void put(String key, ByteArrayOutputStream value) {
 		if (key != null) {
-			cache.put(key, value);
+			this.cache.put(key, value);
 		}
 	}
 
 	public ByteArrayOutputStream get(String key) {
-		if (cache.get(key) == null) {
+		if (this.cache.get(key) == null) {
 			return null;
 		} else {
-			return cache.get(key);
+			return this.cache.get(key);
 		}
 	}
 
 	public void clean() {
-		while (cache.iterator().hasNext()) {
-			Entry<String, ByteArrayOutputStream> entry= cache.iterator().next();
-			cache.remove(entry.getKey());	
+		while (this.cache.iterator().hasNext()) {
+			Entry<String, ByteArrayOutputStream> entry = this.cache.iterator().next();
+			this.cache.remove(entry.getKey());
 		}
-		cache.clear();
+		this.cache.clear();
 	}
 
 }

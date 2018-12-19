@@ -19,12 +19,13 @@ import java.util.Vector;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 
 /**
  * @author lange
  * @author arendd
  */
-final class PipedInputOutputThread extends Thread {
+final class PipedInputOutputThread extends EdalThread {
 
 	private InputStream pipedSource;
 
@@ -32,6 +33,7 @@ final class PipedInputOutputThread extends Thread {
 	private long StreamSize;
 
 	private PipedInputOutputThread() {
+		super();
 		this.StreamSize = 0;
 
 	}

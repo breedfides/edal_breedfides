@@ -20,13 +20,14 @@ import org.quartz.impl.SchedulerRepository;
 import org.quartz.impl.StdSchedulerFactory;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 
 /**
  * Thread to to rebuild the Lucene index after running a clean up.
  * 
  * @author arendd
  */
-public class RebuildIndexThread extends Thread {
+public class RebuildIndexThread extends EdalThread {
 
 	/**
 	 * Interval to rerun the {@link RebuildIndexJob} in seconds
@@ -42,6 +43,7 @@ public class RebuildIndexThread extends Thread {
 	 * Default constructor.
 	 */
 	public RebuildIndexThread() {
+		super();
 	}
 
 	/**

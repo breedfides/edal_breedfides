@@ -26,6 +26,7 @@ import org.quartz.impl.SchedulerRepository;
 import org.quartz.impl.StdSchedulerFactory;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 
 /**
@@ -33,7 +34,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
  * 
  * @author arendd
  */
-public class CalculateDirectorySizeThread extends Thread {
+public class CalculateDirectorySizeThread extends EdalThread {
 
 	/**
 	 * Interval to re-run the {@link CalculateDirectorySizeThread} in hours
@@ -48,7 +49,7 @@ public class CalculateDirectorySizeThread extends Thread {
 	public static Map<String, String> referenceContent = null;
 
 	public CalculateDirectorySizeThread() {
-
+		super();
 	}
 
 	/**
@@ -217,8 +218,7 @@ public class CalculateDirectorySizeThread extends Thread {
 	/**
 	 * Setter for the {@link Scheduler}
 	 * 
-	 * @param scheduler
-	 *            the scheduler to set
+	 * @param scheduler the scheduler to set
 	 */
 	private static void setScheduler(Scheduler scheduler) {
 		CalculateDirectorySizeThread.scheduler = scheduler;

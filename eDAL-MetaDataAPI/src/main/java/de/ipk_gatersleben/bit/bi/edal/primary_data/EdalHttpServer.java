@@ -31,7 +31,6 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 
@@ -90,7 +89,7 @@ public class EdalHttpServer {
 
 		this.useSSL = configuration.isUseSSLForHttpListener();
 
-		this.eDALServer = new Server(new ExecutorThreadPool(DataManager.getJettyThreadPool()));
+		this.eDALServer = new Server();
 
 		if (!Files.exists(
 				Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(), "jetty_log"))) {
@@ -163,10 +162,8 @@ public class EdalHttpServer {
 			contextFactory.setKeyStorePassword(configuration.getKeystorePasswordForHttpListener());
 
 			ServerConnector sslConnector = new ServerConnector(this.eDALServer, contextFactory);
-			sslConnector.setIdleTimeout(600000);
 
 			ServerConnector connector = new ServerConnector(this.eDALServer);
-			connector.setIdleTimeout(600000);
 
 			try {
 				connector.setPort(configuration.getHttpPort());

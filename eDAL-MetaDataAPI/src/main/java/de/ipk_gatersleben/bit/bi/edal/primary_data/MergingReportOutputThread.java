@@ -17,7 +17,7 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.VelocityException;
 
-public class MergingReportOutputThread extends Thread {
+public class MergingReportOutputThread extends EdalThread {
 
 	private String template = "";
 	private String coding = "";
@@ -27,6 +27,7 @@ public class MergingReportOutputThread extends Thread {
 
 	public MergingReportOutputThread(final String template, final String coding, final Context context,
 			final OutputStreamWriter output, final CountDownLatch latch) {
+		super();
 		this.template = template;
 		this.coding = coding;
 		this.context = context;

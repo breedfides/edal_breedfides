@@ -18,10 +18,11 @@ import java.util.concurrent.CountDownLatch;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 
-class CalculateCheckSumThread extends Thread {
+class CalculateCheckSumThread extends EdalThread {
 
 	private PipedInputStream pipedInputStream;
 
@@ -31,6 +32,7 @@ class CalculateCheckSumThread extends Thread {
 
 	CalculateCheckSumThread(PipedInputStream pipedInputStream,
 			CountDownLatch stopLatch) {
+		super();
 		this.pipedInputStream = pipedInputStream;
 		this.stopLatch = stopLatch;
 

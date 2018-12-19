@@ -55,7 +55,7 @@ a.edal-report-year-filter {
     font-size:1.2rem;
 }
 
-@media (max-width: 970px) {
+@media (max-width: 1050px) {
     #edal-report-title-long {
         display:none;
     }
@@ -64,7 +64,7 @@ a.edal-report-year-filter {
     }
 }
 
-@media (min-width: 971px) {
+@media (min-width: 1051px) {
     #edal-report-title-long {
         display:block;
     }

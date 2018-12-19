@@ -24,7 +24,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException
  * 
  * @author arendd
  */
-public class PipedReadEdalFileThread extends Thread {
+public class PipedReadEdalFileThread extends EdalThread {
 
 	private PrimaryDataFile currentFile = null;
 	private PipedOutputStream pipedOut = null;
@@ -33,12 +33,11 @@ public class PipedReadEdalFileThread extends Thread {
 	 * Create the thread and set the {@link PrimaryDataFile} to send and the
 	 * {@link PipedOutputStream} to write the file.
 	 * 
-	 * @param currentFile
-	 *            the {@link PrimaryDataFile} to transfer
-	 * @param pipedOut
-	 *            the {@link PipedOutputStream} to write the file
+	 * @param currentFile the {@link PrimaryDataFile} to transfer
+	 * @param pipedOut    the {@link PipedOutputStream} to write the file
 	 */
 	public PipedReadEdalFileThread(final PrimaryDataFile currentFile, final PipedOutputStream pipedOut) {
+		super();
 		this.currentFile = currentFile;
 		this.pipedOut = pipedOut;
 	}

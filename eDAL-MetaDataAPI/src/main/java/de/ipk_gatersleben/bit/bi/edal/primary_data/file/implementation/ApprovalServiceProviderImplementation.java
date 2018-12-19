@@ -226,14 +226,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Change the {@link ReviewStatus} of a {@link PublicReference} given by the
 	 * ticket number.
 	 * 
-	 * @param ticket
-	 *            to identify the {@link PublicReference}
-	 * @param reviewerCode
-	 *            to identify the reviewer.
-	 * @param status
-	 *            the new {@link ReviewStatus}.
-	 * @throws EdalApprovalException
-	 *             if unable to find reviewer or ticket.
+	 * @param ticket       to identify the {@link PublicReference}
+	 * @param reviewerCode to identify the reviewer.
+	 * @param status       the new {@link ReviewStatus}.
+	 * @throws EdalApprovalException if unable to find reviewer or ticket.
 	 */
 	private void changeReviewStatus(final String ticket, final int reviewerCode, final ReviewStatusType status)
 			throws EdalApprovalException {
@@ -321,8 +317,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Create the landing page string without the server part (host and port) for a
 	 * given {@link PublicReference}.
 	 * 
-	 * @param reference
-	 *            the {@link PublicReference} for this landing page.
+	 * @param reference the {@link PublicReference} for this landing page.
 	 * @return the landing page {@link String}
 	 */
 	private String createLandingPageString(final PublicReference reference) {
@@ -338,11 +333,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Create the complete landing page {@link URL} including server part to send it
 	 * to the requested author.
 	 * 
-	 * @param reference
-	 *            the {@link PublicReference} corresponding to this {@link URL}.
+	 * @param reference the {@link PublicReference} corresponding to this
+	 *                  {@link URL}.
 	 * @return the complete {@link URL}
-	 * @throws EdalApprovalException
-	 *             if unable to create the {@link URL}.
+	 * @throws EdalApprovalException if unable to create the {@link URL}.
 	 */
 	private URL createLandingPageURL(final PublicReferenceImplementation reference) throws EdalApprovalException {
 		try {
@@ -361,9 +355,8 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Delete all existing {@link ReviewStatusImplementation} after a
 	 * {@link PublicReference} was accepted or rejected.
 	 * 
-	 * @param reference
-	 *            the {@link PublicReference} to delete all
-	 *            {@link ReviewStatusImplementation}.
+	 * @param reference the {@link PublicReference} to delete all
+	 *                  {@link ReviewStatusImplementation}.
 	 */
 	private void deleteReviewStatus(final PublicReferenceImplementation reference) {
 
@@ -393,8 +386,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Delete the {@link TicketImplementation} in the database, after it was
 	 * accepted or rejected.
 	 * 
-	 * @param ticket
-	 *            the {@link TicketImplementation} to delete.
+	 * @param ticket the {@link TicketImplementation} to delete.
 	 */
 	private void deleteTicket(final String ticket) {
 
@@ -533,13 +525,14 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		final CriteriaBuilder builder = session.getCriteriaBuilder();
 
-		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder.createQuery(PublicReferenceImplementation.class);
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder
+				.createQuery(PublicReferenceImplementation.class);
 		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
 
-		referenceCriteria.where(builder.equal(referenceRoot.get("internalID"),internalId));
-		
+		referenceCriteria.where(builder.equal(referenceRoot.get("internalID"), internalId));
+
 		final PublicReferenceImplementation publicReference = session.createQuery(referenceCriteria).uniqueResult();
-		
+
 		session.close();
 
 		if (publicReference != null) {
@@ -586,14 +579,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Send an eMail to the user that his request was accepted.
 	 * 
-	 * @param newId
-	 *            the new assigned ID
-	 * @param emailAddress
-	 *            the eMail address of the user.
-	 * @param landingPage
-	 *            the link to the eDAL landingPage.
-	 * @throws EdalApprovalException
-	 *             if unable to generate the eMail.
+	 * @param newId        the new assigned ID
+	 * @param emailAddress the eMail address of the user.
+	 * @param landingPage  the link to the eDAL landingPage.
+	 * @throws EdalApprovalException if unable to generate the eMail.
 	 */
 	private void sendAcceptedMail(final String newId, final String emailAddress, final URL landingPage,
 			final PublicReference reference) throws EdalApprovalException {
@@ -615,8 +604,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Function to send an eMail to the given recipient.
 	 * 
-	 * @param emailAddress
-	 *            the eMail address of the recipient.
+	 * @param emailAddress the eMail address of the recipient.
 	 */
 	private void sendEmail(final String message, final String subject, final String emailAddress) {
 
@@ -685,45 +673,11 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		}
 	}
 
-	// /**
-	// * Send an eMail to the user that his request was rejected.
-	// *
-	// * @param emailAddress
-	// * the eMail address of the user.
-	// * @throws EdalApprovalException
-	// * if unable to generate the eMail.
-	// */
-	// private void sendRejectedMail(final String emailAddress, final
-	// PublicReference reference)
-	// throws EdalApprovalException {
-	//
-	// System.out.println("send reject");
-	//
-	// String message;
-	// try {
-	// message =
-	// ApprovalServiceProviderImplementation.velocityGenerator.generateRejectedEmail(reference)
-	// .toString();
-	// } catch (final VelocityException e) {
-	// throw new
-	// EdalApprovalException(ApprovalServiceProviderImplementation.UNABLE_TO_GENERATE_E_MAIL,
-	// e);
-	// }
-	//
-	// this.sendEmail(message,
-	// "[e!DAL] - data publication rejected: " +
-	// reference.getVersion().getMetaData().toString(),
-	// emailAddress);
-	//
-	// }
-
 	/**
 	 * Send an eMail to the user that his request was rejected.
 	 * 
-	 * @param emailAddress
-	 *            the eMail address of the user.
-	 * @throws EdalApprovalException
-	 *             if unable to generate the eMail.
+	 * @param emailAddress the eMail address of the user.
+	 * @throws EdalApprovalException if unable to generate the eMail.
 	 */
 	private void sendRejectedMail(final String message, final String emailAddress, final String title)
 			throws EdalApprovalException {
@@ -735,8 +689,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Send all reviewers a Request-eMail.
 	 * 
-	 * @throws EdalApprovalException
-	 *             if unable to generate the eMails
+	 * @throws EdalApprovalException if unable to generate the eMails
 	 */
 	private void sendRequestApprovalMail(final String ticket, final PublicReference reference,
 			final InternetAddress emailAddress, final ReviewerType reviewerType) throws EdalApprovalException {
@@ -752,10 +705,11 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		CriteriaQuery<ReviewersImplementation> reviewerCriteria = builder.createQuery(ReviewersImplementation.class);
 		Root<ReviewersImplementation> reviewerRoot = reviewerCriteria.from(ReviewersImplementation.class);
 
-		reviewerCriteria.where(builder.and(builder.equal(reviewerRoot.get("emailAddress"), emailAddress.getAddress()),builder.equal(reviewerRoot.get("hashCode"), reviewerCode)));
-	
-		ReviewersImplementation reviewer= session.createQuery(reviewerCriteria).uniqueResult();
-		
+		reviewerCriteria.where(builder.and(builder.equal(reviewerRoot.get("emailAddress"), emailAddress.getAddress()),
+				builder.equal(reviewerRoot.get("hashCode"), reviewerCode)));
+
+		ReviewersImplementation reviewer = session.createQuery(reviewerCriteria).uniqueResult();
+
 		if (reviewer == null) {
 
 			reviewer = new ReviewersImplementation(emailAddress.getAddress(), reviewerCode);
@@ -767,14 +721,27 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 		session.close();
 
 		try {
-			final StringWriter stringWriter = ApprovalServiceProviderImplementation.velocityGenerator
-					.generateRequestEmail(reference.getVersion(),
-							EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.ACCEPT),
-							EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.REJECT),
-							reference.getRequestedPrincipal(), emailAddress, reviewerType,
-							EdalHttpServer.generateReviewerURL(
-									this.createLandingPageURL((PublicReferenceImplementation) reference), reviewerCode),
-							reference.getIdentifierType());
+			StringWriter stringWriter;
+			if (reference.getReleaseDate() != null) {
+
+				stringWriter = ApprovalServiceProviderImplementation.velocityGenerator.generateRequestEmail(
+						reference.getVersion(),
+						EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.ACCEPT),
+						EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.REJECT),
+						reference.getRequestedPrincipal(), emailAddress, reviewerType,
+						EdalHttpServer.generateReviewerURL(
+								this.createLandingPageURL((PublicReferenceImplementation) reference), reviewerCode),
+						reference.getIdentifierType(), reference.getReleaseDate());
+			} else {
+				stringWriter = ApprovalServiceProviderImplementation.velocityGenerator.generateRequestEmail(
+						reference.getVersion(),
+						EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.ACCEPT),
+						EdalHttpServer.generateMethodURL(ticket, emailAddress.hashCode(), EdalHttpFunctions.REJECT),
+						reference.getRequestedPrincipal(), emailAddress, reviewerType,
+						EdalHttpServer.generateReviewerURL(
+								this.createLandingPageURL((PublicReferenceImplementation) reference), reviewerCode),
+						reference.getIdentifierType(), null);
+			}
 
 			this.sendEmail(stringWriter.toString(),
 					"[e!DAL] review request: " + reference.getVersion().getMetaData().toString(),
@@ -788,14 +755,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Send an eMail to the user that his review was successful.
 	 * 
-	 * @param ticket
-	 *            the ticket for this {@link PublicReference}.
-	 * @param reference
-	 *            the {@link PublicReference} object which was accepted
-	 * @param reminder
-	 *            true if it is a reminder email
-	 * @throws EdalApprovalException
-	 *             if unable to generate the eMail.
+	 * @param ticket    the ticket for this {@link PublicReference}.
+	 * @param reference the {@link PublicReference} object which was accepted
+	 * @param reminder  true if it is a reminder email
+	 * @throws EdalApprovalException if unable to generate the eMail.
 	 */
 	private void sendReviewSuccessfulMail(final TicketImplementation ticket, final PublicReference reference,
 			boolean reminder) throws EdalApprovalException {
@@ -832,13 +795,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Send a status eMail to a requesting person.
 	 * 
-	 * @param emailAddress
-	 *            the eMail address of the person who requested the
-	 *            {@link PublicReference} to send the eMail.
-	 * @param publicReference
-	 *            the {@link PublicReference}
-	 * @throws EdalApprovalException
-	 *             if unable to generate the eMail.
+	 * @param emailAddress    the eMail address of the person who requested the
+	 *                        {@link PublicReference} to send the eMail.
+	 * @param publicReference the {@link PublicReference}
+	 * @throws EdalApprovalException if unable to generate the eMail.
 	 */
 	private void sendStatusMailToRequestedPerson(final InternetAddress emailAddress, final PublicReference reference)
 			throws EdalApprovalException {
@@ -859,11 +819,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Update the isPublic flag of the {@link PublicReferenceImplementation} to the
 	 * given ticket to false;
 	 * 
-	 * @param ticket
-	 *            the ticket for the corresponding
-	 *            {@link PublicReferenceImplementation}.
-	 * @throws EdalApprovalException
-	 *             if unable to set the {@link PublicReference} to false.
+	 * @param ticket the ticket for the corresponding
+	 *               {@link PublicReferenceImplementation}.
+	 * @throws EdalApprovalException if unable to set the {@link PublicReference} to
+	 *                               false.
 	 */
 	private void setPublicReferenceToFalse(final String ticket) throws EdalApprovalException {
 		final PublicReferenceImplementation publicRef = ApprovalServiceProviderImplementation.synchronizedMap
@@ -936,12 +895,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	 * Update the isPublic flag of the {@link PublicReferenceImplementation} to the
 	 * given ticket to true; Store the new ID to the database;
 	 * 
-	 * @param ticket
-	 *            the ticket for the corresponding
-	 *            {@link PublicReferenceImplementation}.
+	 * @param ticket the ticket for the corresponding
+	 *               {@link PublicReferenceImplementation}.
 	 * @return the new registered ID.
-	 * @throws EdalApprovalException
-	 *             if unable to get a new ID.
+	 * @throws EdalApprovalException if unable to get a new ID.
 	 */
 	private String setPublicReferenceToTrue(final String ticket) throws EdalApprovalException {
 
@@ -1081,12 +1038,9 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Store an new {@link TicketImplementation} into the database.
 	 * 
-	 * @param ticket
-	 *            the ticket to store into the database.
-	 * @param reference
-	 *            the corresponding {@link PublicReference}
-	 * @param emailNotificationAddress
-	 *            the eMail address of the requesting user
+	 * @param ticket                   the ticket to store into the database.
+	 * @param reference                the corresponding {@link PublicReference}
+	 * @param emailNotificationAddress the eMail address of the requesting user
 	 */
 	private void storeNewTicket(final String ticket, final PublicReference reference,
 			final InternetAddress emailNotificationAddress) {
@@ -1336,8 +1290,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 	/**
 	 * Update the ticket into database.
 	 * 
-	 * @param ticket
-	 *            the ticket to update
+	 * @param ticket the ticket to update
 	 */
 	private void updateTicket(final TicketImplementation ticket) {
 

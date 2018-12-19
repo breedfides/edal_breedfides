@@ -37,9 +37,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -55,23 +52,15 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.http.HttpHost;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.appender.SmtpAppender;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.github.markusbernhardt.proxy.ProxySearch;
 import com.github.markusbernhardt.proxy.ProxySearch.Strategy;
@@ -419,16 +408,15 @@ public final class EdalConfiguration {
 	 */
 	private List<String> aliasDomainNames = null;
 
-	private String instanceNameLong = "Plant Genomics & Phenomics Research Data Repository";
-	private String instanceNameShort = "PGP-Repository";
+	private String instanceNameLong = "e!DAL - Plant Genomics & Phenomics Research Data Repository";
+	private String instanceNameShort = "e!DAL - PGP Repository";
+	private String publisherString = "e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP), IPK Gatersleben";
 
-	
 	/**
 	 * default constructor set default values for parameter that has not specified
 	 * explicitly by user <br>
 	 * 
-	 * @throws EdalConfigurationException
-	 *             if unable to load reviewer rule files.
+	 * @throws EdalConfigurationException if unable to load reviewer rule files.
 	 */
 	private EdalConfiguration() throws EdalConfigurationException {
 
@@ -509,8 +497,7 @@ public final class EdalConfiguration {
 	/**
 	 * Add a supported Principal to the list of principals.
 	 * 
-	 * @param principal
-	 *            the principal to add.
+	 * @param principal the principal to add.
 	 */
 	public void addSupportedPrincipal(final Class<? extends Principal> principal) {
 		this.supportedPrincipals.add(principal);
@@ -531,8 +518,7 @@ public final class EdalConfiguration {
 	 * Getter for the database password.
 	 * 
 	 * @return the database password
-	 * @throws EdalConfigurationException
-	 *             if no database password is defined
+	 * @throws EdalConfigurationException if no database password is defined
 	 */
 	public String getDatabasePassword() throws EdalConfigurationException {
 		if (this.databasePassword == null) {
@@ -545,8 +531,7 @@ public final class EdalConfiguration {
 	 * Getter for the database user name.
 	 * 
 	 * @return the database user name.
-	 * @throws EdalConfigurationException
-	 *             if no database user name is defined
+	 * @throws EdalConfigurationException if no database user name is defined
 	 */
 	public String getDatabaseUsername() throws EdalConfigurationException {
 
@@ -560,8 +545,7 @@ public final class EdalConfiguration {
 	 * Getter for the DataCite password.
 	 * 
 	 * @return the DataCite password.
-	 * @throws EdalConfigurationException
-	 *             if no DataCite password is defined
+	 * @throws EdalConfigurationException if no DataCite password is defined
 	 */
 	public String getDataCitePassword() throws EdalConfigurationException {
 		if (this.dataCitePassword == null || this.dataCitePassword.isEmpty()) {
@@ -574,8 +558,7 @@ public final class EdalConfiguration {
 	 * Getter for the DataCite prefix
 	 * 
 	 * @return the DataCite prefix
-	 * @throws EdalConfigurationException
-	 *             if no prefix is defined
+	 * @throws EdalConfigurationException if no prefix is defined
 	 */
 	public String getDataCitePrefix() throws EdalConfigurationException {
 		if (this.dataCitePrefix == null || this.dataCitePrefix.isEmpty()) {
@@ -588,8 +571,7 @@ public final class EdalConfiguration {
 	 * Getter for the DataCite user name.
 	 * 
 	 * @return the DataCite user name.
-	 * @throws EdalConfigurationException
-	 *             if no DataCite user name is defined
+	 * @throws EdalConfigurationException if no DataCite user name is defined
 	 */
 	public String getDataCiteUser() throws EdalConfigurationException {
 		if (this.dataCiteUser == null || this.dataCiteUser.isEmpty()) {
@@ -630,8 +612,7 @@ public final class EdalConfiguration {
 	 * Getter for the eMail address to send error messages.
 	 * 
 	 * @return the errorEmailAddress
-	 * @throws EdalConfigurationException
-	 *             if no email address is set
+	 * @throws EdalConfigurationException if no email address is set
 	 */
 	protected InternetAddress getErrorEmailAddress() throws EdalConfigurationException {
 		if (this.errorEmailAddress == null) {
@@ -651,8 +632,7 @@ public final class EdalConfiguration {
 	 * Getter for the port of the HTTP server/listener.
 	 * 
 	 * @return the HTTP port.
-	 * @throws EdalConfigurationException
-	 *             if no HTTP port is set.
+	 * @throws EdalConfigurationException if no HTTP port is set.
 	 */
 	public int getHttpPort() throws EdalConfigurationException {
 		if (this.httpPort == 0) {
@@ -665,8 +645,7 @@ public final class EdalConfiguration {
 	 * Getter for the HTTP proxy host.
 	 * 
 	 * @return the HTTP proxy host.
-	 * @throws EdalConfigurationException
-	 *             if no HTTP proxy host is defined
+	 * @throws EdalConfigurationException if no HTTP proxy host is defined
 	 */
 	public String getHttpProxyHost() throws EdalConfigurationException {
 		if (this.httpProxyHost == null || this.httpProxyHost.isEmpty()) {
@@ -679,8 +658,7 @@ public final class EdalConfiguration {
 	 * Getter for the HTTP proxy port.
 	 * 
 	 * @return the HTTP proxy port.
-	 * @throws EdalConfigurationException
-	 *             if no HTTP proxy port is defined
+	 * @throws EdalConfigurationException if no HTTP proxy port is defined
 	 */
 	public int getHttpProxyPort() throws EdalConfigurationException {
 		if (this.httpProxyPort == 0) {
@@ -693,8 +671,7 @@ public final class EdalConfiguration {
 	 * Getter for the port of the HTTPS server/listener.
 	 * 
 	 * @return the HTTPS port.
-	 * @throws EdalConfigurationException
-	 *             if no HTTPS port is set.
+	 * @throws EdalConfigurationException if no HTTPS port is set.
 	 */
 	public int getHttpsPort() throws EdalConfigurationException {
 		if (this.httpsPort == 0) {
@@ -707,8 +684,7 @@ public final class EdalConfiguration {
 	 * Getter for the HTTPS proxy host.
 	 * 
 	 * @return the HTTPS proxy host.
-	 * @throws EdalConfigurationException
-	 *             if no HTTPS proxy host is defined
+	 * @throws EdalConfigurationException if no HTTPS proxy host is defined
 	 */
 	public String getHttpsProxyHost() throws EdalConfigurationException {
 		if (this.httpsProxyHost == null || this.httpsProxyHost.isEmpty()) {
@@ -721,8 +697,7 @@ public final class EdalConfiguration {
 	 * Getter for the HTTPS proxy port.
 	 * 
 	 * @return the HTTPS proxy port.
-	 * @throws EdalConfigurationException
-	 *             if no HTTPS proxy port is defined
+	 * @throws EdalConfigurationException if no HTTPS proxy port is defined
 	 */
 	public int getHttpsProxyPort() throws EdalConfigurationException {
 		if (this.httpsProxyPort == 0) {
@@ -785,8 +760,8 @@ public final class EdalConfiguration {
 	 * Getter for the eMail address of the managing reviewer.
 	 * 
 	 * @return the REVIEWER_MANAGING
-	 * @throws EdalConfigurationException
-	 *             if no emailAddress is defined or if it is invalid.
+	 * @throws EdalConfigurationException if no emailAddress is defined or if it is
+	 *                                    invalid.
 	 */
 	public InternetAddress getReviewerManaging() throws EdalConfigurationException {
 		if (this.reviewerManaging == null) {
@@ -804,8 +779,8 @@ public final class EdalConfiguration {
 	 * Getter for the eMail address of the scientific reviewer.
 	 * 
 	 * @return the reviewerScientific
-	 * @throws EdalConfigurationException
-	 *             if no emailAddress is defined or if it is invalid.
+	 * @throws EdalConfigurationException if no emailAddress is defined or if it is
+	 *                                    invalid.
 	 */
 	public InternetAddress getReviewerScientific() throws EdalConfigurationException {
 		if (this.reviewerScientific == null) {
@@ -823,8 +798,8 @@ public final class EdalConfiguration {
 	 * Getter for the eMail address of the substitute reviewer.
 	 * 
 	 * @return the reviewerSubstitute
-	 * @throws EdalConfigurationException
-	 *             if no emailAddress is defined or if it is invalid.
+	 * @throws EdalConfigurationException if no emailAddress is defined or if it is
+	 *                                    invalid.
 	 */
 	public InternetAddress getReviewerSubstitute() throws EdalConfigurationException {
 		if (this.reviewerSubstitute == null) {
@@ -842,8 +817,8 @@ public final class EdalConfiguration {
 	 * Getter for the eMail address for the root user.
 	 * 
 	 * @return the rootUser
-	 * @throws EdalConfigurationException
-	 *             if no emailAddress is defined or if it is invalid.
+	 * @throws EdalConfigurationException if no emailAddress is defined or if it is
+	 *                                    invalid.
 	 */
 	public InternetAddress getRootUser() throws EdalConfigurationException {
 
@@ -870,8 +845,7 @@ public final class EdalConfiguration {
 	 * Getter for the List of supported {@link Principal}s.
 	 * 
 	 * @return the List of supported {@link Principal}s
-	 * @throws EdalConfigurationException
-	 *             if no supported principals are defined !
+	 * @throws EdalConfigurationException if no supported principals are defined !
 	 */
 	public List<Class<? extends Principal>> getSupportedPrincipals() throws EdalConfigurationException {
 		if (this.supportedPrincipals.isEmpty()) {
@@ -916,67 +890,37 @@ public final class EdalConfiguration {
 
 	private List<String> requestRegisteredDataCiteDomainName() throws EdalConfigurationException {
 
+		JerseyClient client = JerseyClientBuilder.createClient();
+
+		WebTarget webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix);
+
+		final Response response = webResource.request(MediaType.APPLICATION_JSON).get();
+
+		JSONObject json = null;
 		try {
-
-			CloseableHttpClient httpclient = null;
-			if (System.getProperty("https.proxyHost") != null && System.getProperty("https.proxyPort") != null) {
-
-				httpclient = HttpClientBuilder.create()
-						.setProxy(new HttpHost(System.getProperty("https.proxyHost"),
-								Integer.valueOf(System.getProperty("https.proxyPort"))))
-						.setDefaultCookieStore(new BasicCookieStore()).setRedirectStrategy(new LaxRedirectStrategy())
-						.build();
-			} else {
-				httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
-						.setRedirectStrategy(new LaxRedirectStrategy()).build();
-			}
-
-			final HttpGet httpGet = new HttpGet("https://mds.datacite.org/login");
-
-			httpclient.execute(httpGet);
-
-			final HttpPost httpPost = new HttpPost("https://mds.datacite.org/login/resources/j_spring_security_check");
-
-			final List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-			nvps.add(new BasicNameValuePair("j_username", this.getDataCiteUser()));
-			nvps.add(new BasicNameValuePair("j_password", this.getDataCitePassword()));
-			httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-
-			final CloseableHttpResponse response2 = httpclient.execute(httpPost);
-
-			EntityUtils.toString(response2.getEntity());
-
-			final HttpGet getUserInfoRequest = new HttpGet("https://mds.datacite.org/userinfo");
-
-			final CloseableHttpResponse response3 = httpclient.execute(getUserInfoRequest);
-
-			final Pattern p = Pattern.compile(
-					"<div id=\"_s_org_datacite_mds_domain_Datacentre_domains_domains_id\" class=\"box\">(.+?)</div>");
-
-			final Matcher m = p.matcher(EntityUtils.toString(response3.getEntity()));
-
-			String registeredDomainsString = "";
-
-			if (m.find()) {
-				registeredDomainsString = m.group(1);
-			} else {
-				throw new EdalConfigurationException("DataCite Domain Check failed: found no registered domain");
-			}
-
-			if (registeredDomainsString.contains(",")) {
-
-				final String[] registeredDomains = registeredDomainsString.split(",");
-
-				return Arrays.asList(registeredDomains);
-			} else {
-				return new ArrayList<String>(Arrays.asList(registeredDomainsString));
-
-			}
-
-		} catch (final IOException e) {
-			throw new EdalConfigurationException("DataCite Domain Check failed: " + e.getMessage());
+			json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
+			client.close();
+		} catch (ParseException e) {
+			e.printStackTrace();
 		}
+		JSONArray included = (JSONArray) json.get("included");
 
+		JSONObject eins = (JSONObject) included.get(0);
+
+		JSONObject attributes = (JSONObject) eins.get("attributes");
+
+		String domains = (String) attributes.get("domains");
+
+		if (domains.contains(",")) {
+
+			final String[] registeredDomains = domains.split(",");
+
+			return Arrays.asList(registeredDomains);
+		} else {
+			return new ArrayList<String>(Arrays.asList(domains));
+
+		}
+	
 	}
 
 	private void setAliasDomainNames(final List<String> aliasDomainNames) {
@@ -984,8 +928,8 @@ public final class EdalConfiguration {
 	}
 
 	/**
-	 * @param certificatePathForHttpListener
-	 *            the certificatePathForHttpListener to set
+	 * @param certificatePathForHttpListener the certificatePathForHttpListener to
+	 *                                       set
 	 */
 	protected void setCertificatePathForHttpListener(final URL certificatePathForHttpListener) {
 		this.certificatePathForHttpListener = certificatePathForHttpListener;
@@ -994,8 +938,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the database password.
 	 * 
-	 * @param databasePassword
-	 *            the database password to set
+	 * @param databasePassword the database password to set
 	 */
 	public void setDatabasePassword(final String databasePassword) {
 		this.databasePassword = databasePassword;
@@ -1004,8 +947,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the database user name.
 	 * 
-	 * @param databaseUsername
-	 *            the database user name to set
+	 * @param databaseUsername the database user name to set
 	 */
 	public void setDatabaseUsername(final String databaseUsername) {
 		this.databaseUsername = databaseUsername;
@@ -1041,8 +983,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the data path.
 	 * 
-	 * @param dataPath
-	 *            the dataPath to set
+	 * @param dataPath the dataPath to set
 	 */
 	public void setDataPath(final Path dataPath) {
 		this.dataPath = dataPath;
@@ -1056,8 +997,7 @@ public final class EdalConfiguration {
 	}
 
 	/**
-	 * @param errorEmailAddress
-	 *            the errorEmail to set
+	 * @param errorEmailAddress the errorEmail to set
 	 */
 	protected void setErrorEmailAddress(final InternetAddress errorEmailAddress) {
 		this.errorEmailAddress = errorEmailAddress;
@@ -1066,8 +1006,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the error email logger.
 	 * 
-	 * @param errorLogger
-	 *            the logger to set
+	 * @param errorLogger the logger to set
 	 */
 	private void setErrorLogger(final Logger errorLogger) {
 		this.errorLogger = errorLogger;
@@ -1076,8 +1015,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the port of the HTTP server/listener.
 	 * 
-	 * @param httpPort
-	 *            the HTTP port to set.
+	 * @param httpPort the HTTP port to set.
 	 */
 	public void setHttpPort(final int httpPort) {
 		this.httpPort = httpPort;
@@ -1086,8 +1024,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the HTTP proxy host.
 	 * 
-	 * @param httpProxyHost
-	 *            the HTTP proxy host.
+	 * @param httpProxyHost the HTTP proxy host.
 	 */
 	public void setHttpProxyHost(final String httpProxyHost) {
 		this.httpProxyHost = httpProxyHost;
@@ -1096,8 +1033,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the HTTP proxy port.
 	 * 
-	 * @param httpProxyPort
-	 *            the HTTP proxy port.
+	 * @param httpProxyPort the HTTP proxy port.
 	 */
 	public void setHttpProxyPort(final int httpProxyPort) {
 		this.httpProxyPort = httpProxyPort;
@@ -1106,8 +1042,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the port of the HTTPS server/listener.
 	 * 
-	 * @param httpsPort
-	 *            the HTTPS port to set.
+	 * @param httpsPort the HTTPS port to set.
 	 */
 	public void setHttpsPort(final int httpsPort) {
 		this.httpsPort = httpsPort;
@@ -1116,8 +1051,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the HTTPS proxy host.
 	 * 
-	 * @param httpsProxyHost
-	 *            the HTTP proxy host to set.
+	 * @param httpsProxyHost the HTTP proxy host to set.
 	 */
 	public void setHttpsProxyHost(final String httpsProxyHost) {
 		this.httpsProxyHost = httpsProxyHost;
@@ -1126,24 +1060,22 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the HTTPS proxy port.
 	 * 
-	 * @param httpsProxyPort
-	 *            the HTTP proxy port to set.
+	 * @param httpsProxyPort the HTTP proxy port to set.
 	 */
 	public void setHttpsProxyPort(final int httpsProxyPort) {
 		this.httpsProxyPort = httpsProxyPort;
 	}
 
 	/**
-	 * @param inTestMode
-	 *            the iN_TEST_MODE to set
+	 * @param inTestMode the iN_TEST_MODE to set
 	 */
 	private void setInTestMode(final boolean inTestMode) {
 		this.inTestMode = inTestMode;
 	}
 
 	/**
-	 * @param keystorePasswordForHttpListener
-	 *            the keystorePasswordForHttpListener to set
+	 * @param keystorePasswordForHttpListener the keystorePasswordForHttpListener to
+	 *                                        set
 	 */
 	protected void setKeystorePasswordForHttpListener(final String keystorePasswordForHttpListener) {
 		this.keystorePasswordForHttpListener = keystorePasswordForHttpListener;
@@ -1152,8 +1084,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the mail SMTP host.
 	 * 
-	 * @param mailSmtpHost
-	 *            the mail SMTP host to set.
+	 * @param mailSmtpHost the mail SMTP host to set.
 	 */
 	public void setMailSmtpHost(final String mailSmtpHost) {
 		this.mailSmtpHost = mailSmtpHost;
@@ -1162,8 +1093,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the mail SMTP login.
 	 * 
-	 * @param mailSmtpLogin
-	 *            the mail SMTP login to set.
+	 * @param mailSmtpLogin the mail SMTP login to set.
 	 */
 	public void setMailSmtpLogin(final String mailSmtpLogin) {
 		this.mailSmtpLogin = mailSmtpLogin;
@@ -1172,8 +1102,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the SMTP password.
 	 * 
-	 * @param mailSmtpPassword
-	 *            the password for the SMTP user
+	 * @param mailSmtpPassword the password for the SMTP user
 	 */
 	public void setMailSmtpPassword(final String mailSmtpPassword) {
 		this.mailSmtpPassword = mailSmtpPassword;
@@ -1182,8 +1111,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the mount path.
 	 * 
-	 * @param mountPath
-	 *            the mount path to set
+	 * @param mountPath the mount path to set
 	 */
 	public void setMountPath(final Path mountPath) {
 		this.mountPath = mountPath;
@@ -1196,8 +1124,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the eMail address of the managing reviewer.
 	 * 
-	 * @param reviewerManaging
-	 *            the eMail address of the managing reviewer to set
+	 * @param reviewerManaging the eMail address of the managing reviewer to set
 	 */
 	private void setReviewerManaging(final InternetAddress reviewerManaging) {
 		this.reviewerManaging = reviewerManaging;
@@ -1206,8 +1133,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the eMail address of the scientific reviewer.
 	 * 
-	 * @param reviewerScientific
-	 *            the eMail address of the scientific reviewer to set
+	 * @param reviewerScientific the eMail address of the scientific reviewer to set
 	 */
 	private void setReviewerScientific(final InternetAddress reviewerScientific) {
 		this.reviewerScientific = reviewerScientific;
@@ -1216,8 +1142,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the eMail address of the substitute reviewer.
 	 * 
-	 * @param reviewerSubstitute
-	 *            the eMail address of the substitute reviewer to set
+	 * @param reviewerSubstitute the eMail address of the substitute reviewer to set
 	 */
 	private void setReviewerSubstitute(final InternetAddress reviewerSubstitute) {
 		this.reviewerSubstitute = reviewerSubstitute;
@@ -1226,8 +1151,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the eMail address of the root user.
 	 * 
-	 * @param rootUser
-	 *            the rootUser to set
+	 * @param rootUser the rootUser to set
 	 */
 	private void setRootUser(final InternetAddress rootUser) {
 		this.rootUser = rootUser;
@@ -1244,28 +1168,23 @@ public final class EdalConfiguration {
 	/**
 	 * Setter for the supported {@link Principal}s.
 	 * 
-	 * @param supportedPrincipals
-	 *            the supported {@link Principal}s to set.
+	 * @param supportedPrincipals the supported {@link Principal}s to set.
 	 */
 	public void setSupportedPrincipals(final List<Class<? extends Principal>> supportedPrincipals) {
 		this.supportedPrincipals = supportedPrincipals;
 	}
 
 	/**
-	 * @param useSSL
-	 *            the useSSL to set
+	 * @param useSSL the useSSL to set
 	 */
 	public void setUseSSL(final boolean useSSL) {
 		this.useSSL = useSSL;
 	}
 
 	/**
-	 * @param useSSLForHttpListener
-	 *            the useSSLForHttpListener to set
-	 * @param pathToKeyStore
-	 *            the {@link Path} to the keystore file
-	 * @param keystorePassword
-	 *            the password for the keystore
+	 * @param useSSLForHttpListener the useSSLForHttpListener to set
+	 * @param pathToKeyStore        the {@link Path} to the keystore file
+	 * @param keystorePassword      the password for the keystore
 	 */
 	public void setUseSSLForHttpListener(final boolean useSSLForHttpListener, final URL pathToKeyStore,
 			final String keystorePassword) {
@@ -1279,8 +1198,7 @@ public final class EdalConfiguration {
 	/**
 	 * Setter to activate the usage of proxies.
 	 * 
-	 * @param useSystemProxies
-	 *            true if proxy should be used
+	 * @param useSystemProxies true if proxy should be used
 	 */
 	public void setUseSystemProxies(final boolean useSystemProxies) {
 		this.useSystemProxies = useSystemProxies;
@@ -1290,8 +1208,7 @@ public final class EdalConfiguration {
 	 * Validate the {@link EdalConfiguration} object.
 	 * 
 	 * @return true if validation was successful.
-	 * @throws EdalConfigurationException
-	 *             if validation failed.
+	 * @throws EdalConfigurationException if validation failed.
 	 */
 	private boolean validate() throws EdalConfigurationException {
 
@@ -1329,8 +1246,7 @@ public final class EdalConfiguration {
 	 * Validate the given DataCite user name and password.
 	 * 
 	 * @return true if the validation was successful, otherwise false.
-	 * @throws EdalConfigurationException
-	 *             if unable to validate the parameter.
+	 * @throws EdalConfigurationException if unable to validate the parameter.
 	 */
 	private boolean validateDataCiteAuthentication() throws EdalConfigurationException {
 
@@ -1442,8 +1358,7 @@ public final class EdalConfiguration {
 	 * 
 	 * @return true if the validation was successful, otherwise false.
 	 * 
-	 * @throws EdalConfigurationException
-	 *             if unable to validate the parameter.
+	 * @throws EdalConfigurationException if unable to validate the parameter.
 	 */
 	private boolean validateDataCiteConnection() throws EdalConfigurationException {
 
@@ -1475,8 +1390,7 @@ public final class EdalConfiguration {
 	/**
 	 * Validate if the REST DataCite server is available.
 	 * 
-	 * @throws EdalConfigurationException
-	 *             if unable to connect to REST server.
+	 * @throws EdalConfigurationException if unable to connect to REST server.
 	 */
 	private boolean validateDateCiteRestAPI() throws EdalConfigurationException {
 
@@ -1504,8 +1418,7 @@ public final class EdalConfiguration {
 	 * 
 	 * 
 	 * @return true if the validation was successful, otherwise false.
-	 * @throws EdalConfigurationException
-	 *             if unable to validate the parameter.
+	 * @throws EdalConfigurationException if unable to validate the parameter.
 	 */
 	private boolean validateProxies() throws EdalConfigurationException {
 
@@ -1656,8 +1569,7 @@ public final class EdalConfiguration {
 	 * the function try to find out the parameter from the system.
 	 * 
 	 * @return true if the validation was successful, otherwise false.
-	 * @throws EdalConfigurationException
-	 *             if unable to validate the parameter.
+	 * @throws EdalConfigurationException if unable to validate the parameter.
 	 */
 	private boolean validateSmtpSettings() throws EdalConfigurationException {
 
@@ -1824,5 +1736,13 @@ public final class EdalConfiguration {
 
 	public void setInstanceNameShort(String instanceNameShort) {
 		this.instanceNameShort = instanceNameShort;
+	}
+
+	public String getPublisherString() {
+		return publisherString;
+	}
+
+	public void setPublisherString(String publisherString) {
+		this.publisherString = publisherString;
 	}
 }

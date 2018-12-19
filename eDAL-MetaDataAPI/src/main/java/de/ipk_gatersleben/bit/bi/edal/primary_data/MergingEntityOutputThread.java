@@ -21,7 +21,7 @@ import org.apache.velocity.exception.VelocityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.AsynchronList;
 
-public class MergingEntityOutputThread extends Thread {
+public class MergingEntityOutputThread extends EdalThread {
 
 	private String template = "";
 	private String coding = "";
@@ -32,6 +32,7 @@ public class MergingEntityOutputThread extends Thread {
 
 	public MergingEntityOutputThread(final String template, final String coding, final Context context,
 			final OutputStreamWriter output, final CountDownLatch latch, final List<PrimaryDataEntity> list) {
+		super();
 		this.template = template;
 		this.coding = coding;
 		this.context = context;

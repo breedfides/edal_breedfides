@@ -85,7 +85,7 @@ class VeloCityHtmlGenerator {
 	private static final String STRING_SERVER_URL = "serverURL";
 	private static final String STRING_CITATION_ENTITY = "citation_entity";
 	private static final String DOWNLOAD_SERVER_URL = "downloadURL";
-
+	
 	/**
 	 * Default constructor to load all VeloCity properties.
 	 */
@@ -213,8 +213,8 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/HtmlMessageTemplate.xml",
 				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch);
 
-		thread.start();
-
+		DataManager.getVelocityExecutorService().execute(thread);
+		
 		return output;
 	}
 
@@ -410,7 +410,7 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/DirectoryTemplateForReviewer.xml",
 				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch, list);
 
-		thread.start();
+		DataManager.getVelocityExecutorService().execute(thread);
 
 		return output;
 	}
@@ -660,7 +660,7 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/DirectoryTemplateForSnapshot.xml",
 				VeloCityHtmlGenerator.CODING_UTF_8, context, outputStreamWriter, latch, list);
 
-		thread.start();
+		DataManager.getVelocityExecutorService().execute(thread);
 
 		return outputStreamWriter;
 
@@ -852,7 +852,7 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/FileTemplateForReviewer.xml",
 				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch, null);
 
-		thread.start();
+		DataManager.getVelocityExecutorService().execute(thread);
 
 		return output;
 	}
@@ -1054,7 +1054,7 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/FileTemplateForSnapshot.xml",
 				VeloCityHtmlGenerator.CODING_UTF_8, context, outputStreamWriter, latch, null);
 
-		thread.start();
+		DataManager.getVelocityExecutorService().execute(thread);
 
 		return outputStreamWriter;
 	}
@@ -1260,7 +1260,7 @@ class VeloCityHtmlGenerator {
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml", VeloCityHtmlGenerator.CODING_UTF_8,
 				context, output, latch);
 
-		thread.start();
+		DataManager.getVelocityExecutorService().execute(thread);
 
 		// String s = finalArray.toString().replace("\\/", "/");
 		//

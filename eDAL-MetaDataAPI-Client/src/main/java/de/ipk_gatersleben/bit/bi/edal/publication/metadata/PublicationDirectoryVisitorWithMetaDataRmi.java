@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.rmi.RemoteException;
 import java.security.AccessControlException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JProgressBar;
@@ -37,6 +39,7 @@ import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientPrimaryDataFile;
  */
 public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<Path> {
 
+	private static final List<String> FORBIDDEN_FILES = Arrays.asList("thumbs.db", ".DS_Store", "desktop.ini");
 	private ClientPrimaryDataDirectory currentDirectory = null;
 	private MetaData metaData;
 	private ClientPrimaryDataDirectory directoryToPublish = null;
@@ -45,13 +48,15 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 	private boolean updateEdalObject = false;
 	private boolean createSeparateFolder = false;
 	private CountDownLatch latch;
-	private boolean skipedRootFolder = false;
+	private boolean alreadyVisitedRootFolder = false;
 
 	public ClientPrimaryDataDirectory getRootDirectoryToPublish() {
 		return directoryToPublish;
 	}
 
-	public PublicationDirectoryVisitorWithMetaDataRmi(JProgressBar overallProgressBar, JProgressBar fileProgressBar, ClientPrimaryDataDirectory currentDirectory, Path path, MetaData metaData, boolean updateEdalObject, boolean createSeparateFolder, CountDownLatch latch) {
+	public PublicationDirectoryVisitorWithMetaDataRmi(JProgressBar overallProgressBar, JProgressBar fileProgressBar,
+			ClientPrimaryDataDirectory currentDirectory, Path path, MetaData metaData, boolean updateEdalObject,
+			boolean createSeparateFolder, CountDownLatch latch) {
 
 		this.currentDirectory = currentDirectory;
 		this.metaData = metaData;
@@ -65,9 +70,11 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 
 			ClientPrimaryDataDirectory newCurrentDirectory = null;
 
-			if (updateEdalObject && this.currentDirectory.exist(this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString())) {
+			if (updateEdalObject && this.currentDirectory
+					.exist(this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString())) {
 
-				newCurrentDirectory = (ClientPrimaryDataDirectory) this.currentDirectory.getPrimaryDataEntity(this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString());
+				newCurrentDirectory = (ClientPrimaryDataDirectory) this.currentDirectory
+						.getPrimaryDataEntity(this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString());
 
 				setMetaData(newCurrentDirectory);
 			}
@@ -75,10 +82,12 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 			else {
 
 				if (this.createSeparateFolder) {
-					newCurrentDirectory = this.currentDirectory.createPrimaryDataDirectory(this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString());
+					newCurrentDirectory = this.currentDirectory.createPrimaryDataDirectory(
+							this.metaData.getElementValue(EnumDublinCoreElements.TITLE).toString());
 					setMetaData(newCurrentDirectory);
 				} else {
-					newCurrentDirectory = this.currentDirectory.createPrimaryDataDirectory(path.getFileName().toString());
+					newCurrentDirectory = this.currentDirectory
+							.createPrimaryDataDirectory(path.getFileName().toString());
 					setMetaData(newCurrentDirectory);
 				}
 			}
@@ -95,18 +104,17 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 	@Override
 	public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 
-		if (!this.createSeparateFolder && !this.skipedRootFolder) {
-			this.skipedRootFolder = true;
-			return FileVisitResult.CONTINUE;
-		} else {
+		if (this.alreadyVisitedRootFolder) {
 
 			try {
 				ClientPrimaryDataDirectory newCurrentDirectory = null;
 
 				if (updateEdalObject && this.currentDirectory.exist(dir.getFileName().toString())) {
-					newCurrentDirectory = (ClientPrimaryDataDirectory) this.currentDirectory.getPrimaryDataEntity(dir.getFileName().toString());
+					newCurrentDirectory = (ClientPrimaryDataDirectory) this.currentDirectory
+							.getPrimaryDataEntity(dir.getFileName().toString());
 				} else {
-					newCurrentDirectory = this.currentDirectory.createPrimaryDataDirectory(dir.getFileName().toString());
+					newCurrentDirectory = this.currentDirectory
+							.createPrimaryDataDirectory(dir.getFileName().toString());
 				}
 
 				this.currentDirectory = newCurrentDirectory;
@@ -116,7 +124,13 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 			}
 
 			return FileVisitResult.CONTINUE;
+		} else {
+			// ignore rootFolder of selected directory
+			this.alreadyVisitedRootFolder = true;
+
+			return FileVisitResult.CONTINUE;
 		}
+
 	}
 
 	@Override
@@ -125,17 +139,28 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 		try {
 			ClientPrimaryDataFile clientPrimaryDataFile = null;
 
-			if (updateEdalObject && this.currentDirectory.exist(file.getFileName().toString())) {
-
-				clientPrimaryDataFile = (ClientPrimaryDataFile) this.currentDirectory.getPrimaryDataEntity(file.getFileName().toString());
-
+			if (FORBIDDEN_FILES.contains(file.getFileName().toString())) {
+				// skip temporary file system cache files
+				this.overallProgressBar.setValue(this.overallProgressBar.getValue() + 1);
+				this.latch.countDown();
+				return FileVisitResult.CONTINUE;
 			} else {
-				clientPrimaryDataFile = this.currentDirectory.createPrimaryDataFile((file.getFileName().toString()));
+
+				if (updateEdalObject && this.currentDirectory.exist(file.getFileName().toString())) {
+
+					clientPrimaryDataFile = (ClientPrimaryDataFile) this.currentDirectory
+							.getPrimaryDataEntity(file.getFileName().toString());
+
+				} else {
+					clientPrimaryDataFile = this.currentDirectory
+							.createPrimaryDataFile((file.getFileName().toString()));
+				}
+
+				FileStoreSwingWorker worker = new FileStoreSwingWorker(this.fileProgressBar, this.overallProgressBar,
+						file, clientPrimaryDataFile, this.latch);
+
+				worker.execute();
 			}
-
-			FileStoreSwingWorker worker = new FileStoreSwingWorker(this.fileProgressBar, this.overallProgressBar, file, clientPrimaryDataFile, latch);
-
-			worker.execute();
 
 		} catch (AccessControlException | PrimaryDataDirectoryException e) {
 			e.printStackTrace();
@@ -170,19 +195,29 @@ public class PublicationDirectoryVisitorWithMetaDataRmi implements FileVisitor<P
 		try {
 			MetaData m = entity.getMetaData().clone();
 
-			m.setElementValue(EnumDublinCoreElements.CREATOR, this.metaData.getElementValue(EnumDublinCoreElements.CREATOR));
-			m.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, this.metaData.getElementValue(EnumDublinCoreElements.CONTRIBUTOR));
-			m.setElementValue(EnumDublinCoreElements.COVERAGE, this.metaData.getElementValue(EnumDublinCoreElements.COVERAGE));
-			m.setElementValue(EnumDublinCoreElements.SUBJECT, this.metaData.getElementValue(EnumDublinCoreElements.SUBJECT));
-			m.setElementValue(EnumDublinCoreElements.LANGUAGE, this.metaData.getElementValue(EnumDublinCoreElements.LANGUAGE));
-			m.setElementValue(EnumDublinCoreElements.DESCRIPTION, this.metaData.getElementValue(EnumDublinCoreElements.DESCRIPTION));
-			m.setElementValue(EnumDublinCoreElements.PUBLISHER, this.metaData.getElementValue(EnumDublinCoreElements.PUBLISHER));
-			m.setElementValue(EnumDublinCoreElements.RIGHTS, this.metaData.getElementValue(EnumDublinCoreElements.RIGHTS));
-			m.setElementValue(EnumDublinCoreElements.SOURCE, this.metaData.getElementValue(EnumDublinCoreElements.SOURCE));
+			m.setElementValue(EnumDublinCoreElements.CREATOR,
+					this.metaData.getElementValue(EnumDublinCoreElements.CREATOR));
+			m.setElementValue(EnumDublinCoreElements.CONTRIBUTOR,
+					this.metaData.getElementValue(EnumDublinCoreElements.CONTRIBUTOR));
+			m.setElementValue(EnumDublinCoreElements.COVERAGE,
+					this.metaData.getElementValue(EnumDublinCoreElements.COVERAGE));
+			m.setElementValue(EnumDublinCoreElements.SUBJECT,
+					this.metaData.getElementValue(EnumDublinCoreElements.SUBJECT));
+			m.setElementValue(EnumDublinCoreElements.LANGUAGE,
+					this.metaData.getElementValue(EnumDublinCoreElements.LANGUAGE));
+			m.setElementValue(EnumDublinCoreElements.DESCRIPTION,
+					this.metaData.getElementValue(EnumDublinCoreElements.DESCRIPTION));
+			m.setElementValue(EnumDublinCoreElements.PUBLISHER,
+					this.metaData.getElementValue(EnumDublinCoreElements.PUBLISHER));
+			m.setElementValue(EnumDublinCoreElements.RIGHTS,
+					this.metaData.getElementValue(EnumDublinCoreElements.RIGHTS));
+			m.setElementValue(EnumDublinCoreElements.SOURCE,
+					this.metaData.getElementValue(EnumDublinCoreElements.SOURCE));
 
 			entity.setMetaData(m);
 
-		} catch (RemoteException | CloneNotSupportedException | MetaDataException | PrimaryDataEntityVersionException e) {
+		} catch (RemoteException | CloneNotSupportedException | MetaDataException
+				| PrimaryDataEntityVersionException e) {
 			e.printStackTrace();
 		}
 

@@ -43,6 +43,7 @@ import org.hibernate.search.SearchFactory;
 
 import org.hibernate.search.indexes.IndexReaderAccessor;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 
@@ -51,7 +52,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  * 
  * @author arendd
  */
-public class IndexWriterThread extends Thread {
+public class IndexWriterThread extends EdalThread {
 
 	private static final int SLEEP_RUNTIME_FACTOR = 2;
 	private static final long MIN_THREAD_SLEEP_MILLISECONDS = 500;
@@ -88,6 +89,7 @@ public class IndexWriterThread extends Thread {
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 
+		super();
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
 
