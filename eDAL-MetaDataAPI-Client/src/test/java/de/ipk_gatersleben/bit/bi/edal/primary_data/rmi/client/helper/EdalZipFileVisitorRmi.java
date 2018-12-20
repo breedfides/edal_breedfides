@@ -32,7 +32,6 @@ public class EdalZipFileVisitorRmi implements FileVisitor<Path> {
 	private ClientPrimaryDataDirectory currentDirectory = null;
 	private SortedSet<String> pathSet = new TreeSet<>();
 	private StringBuffer pathString = new StringBuffer("");
-	private String indent = "";
 
 	public EdalZipFileVisitorRmi(ClientPrimaryDataDirectory currentDirectory) {
 		this.currentDirectory = currentDirectory;
@@ -41,22 +40,41 @@ public class EdalZipFileVisitorRmi implements FileVisitor<Path> {
 	@Override
 	public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 		if (!dir.toString().equals("/")) {
-			pathString.append(indent + dir.getFileName() + "\n");
-			indent += "  ";
+
+			String directoryName = dir.getFileName().toString();
+
+			if (directoryName.contains("/")) {
+				directoryName = directoryName.substring(0, directoryName.indexOf("/"));
+			}
+
+//			System.out.println(directoryName);
 			try {
-				ClientPrimaryDataDirectory newDir = currentDirectory.createPrimaryDataDirectory(dir.getFileName().toString().substring(0, dir.getFileName().toString().length() - 1));
-				this.currentDirectory = newDir;
-			} catch (AccessControlException | PrimaryDataDirectoryException e) {
-				e.printStackTrace();
+				ClientPrimaryDataDirectory newDirectory = currentDirectory.createPrimaryDataDirectory(directoryName);
+				this.currentDirectory = newDirectory;
+			} catch (PrimaryDataDirectoryException e) {
+				throw new IOException(e);
 			}
 
 			StringBuffer tmpBuffer = new StringBuffer("/");
 
 			for (int i = 0; i < dir.getNameCount(); i++) {
-				tmpBuffer.append(dir.getName(i) + "/");
+//				System.out.println(dir.getName(i));
+				if (dir.getName(i).endsWith("/")) {
+				} else {
+					tmpBuffer.append(dir.getName(i) + "/");
+				}
 			}
-			/* cut last "/"-symbol */
-			pathSet.add("/" + tmpBuffer.toString().substring(0, tmpBuffer.toString().length() - 2));
+			/* cut last "/" or "//" -symbols */
+			String add;
+
+			if (tmpBuffer.toString().endsWith("//")) {
+				add = "/" + tmpBuffer.substring(0, tmpBuffer.lastIndexOf("//"));
+			} else if (tmpBuffer.toString().endsWith("/")) {
+				add = "/" + tmpBuffer.substring(0, tmpBuffer.lastIndexOf("/"));
+			} else {
+				add = "/" + tmpBuffer;
+			}
+			pathSet.add(add);
 		}
 
 		return FileVisitResult.CONTINUE;
@@ -64,7 +82,6 @@ public class EdalZipFileVisitorRmi implements FileVisitor<Path> {
 
 	@Override
 	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-		pathString.append(indent + file.getFileName() + "\n");
 
 		try {
 			currentDirectory.createPrimaryDataFile(file.getFileName().toString());
@@ -98,7 +115,6 @@ public class EdalZipFileVisitorRmi implements FileVisitor<Path> {
 				e.printStackTrace();
 			}
 
-			indent = indent.substring(2);
 		}
 		return FileVisitResult.CONTINUE;
 	}
