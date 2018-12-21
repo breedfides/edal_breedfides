@@ -12,7 +12,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta charset="$charset"/>
 		<title>Your public reference was rejected</title>
 	</head>
 	<body marginwidth="80" marginheight="10">

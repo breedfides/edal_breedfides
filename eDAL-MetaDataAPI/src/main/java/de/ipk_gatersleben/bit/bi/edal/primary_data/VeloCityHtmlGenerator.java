@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
@@ -81,7 +82,7 @@ class VeloCityHtmlGenerator {
 	private static final String STRING_ENTITY = "entity";
 	private static final String STRING_ALL_ELEMENTS = "allElements";
 	private static final String STRING_UNABLE_TO_WRITE_HTML_OUTPUT = "unable to write HTML output";
-	private static final String CODING_UTF_8 = "UTF-8";
+	private static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
 	private static final String STRING_SERVER_URL = "serverURL";
 	private static final String STRING_CITATION_ENTITY = "citation_entity";
 	private static final String DOWNLOAD_SERVER_URL = "downloadURL";
@@ -92,11 +93,10 @@ class VeloCityHtmlGenerator {
 	VeloCityHtmlGenerator() {
 
 		Velocity.setProperty("resource.loader", "class");
-		Velocity.setProperty("class.resource.loader.class",
-				"org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
+		Velocity.setProperty("class.resource.loader.class",	"org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
 		Velocity.setProperty("runtime.log.logsystem.class", "org.apache.velocity.runtime.log.NullLogSystem");
-		Velocity.setProperty("input.encoding", "UTF-8");
-		Velocity.setProperty("output.encoding", "UTF-8");
+		Velocity.setProperty("input.encoding", DEFAULT_CHARSET);
+		Velocity.setProperty("output.encoding", DEFAULT_CHARSET);
 		Velocity.init();
 	}
 
@@ -116,6 +116,9 @@ class VeloCityHtmlGenerator {
 
 		final VelocityContext context = new VelocityContext();
 
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		
 		/* set the address of the new root user */
 		context.put("newRoot", newAddress);
 
@@ -128,7 +131,7 @@ class VeloCityHtmlGenerator {
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/ChangedRootUserEmailTemplate.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
 			output.flush();
@@ -154,7 +157,10 @@ class VeloCityHtmlGenerator {
 			throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
-
+		
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		
 		/** create the URL to confirm the eMail address */
 
 		final String url = EdalHttpServer.getServerURL().toString() + EdalHttpServer.EDAL_PATH_SEPARATOR
@@ -168,7 +174,7 @@ class VeloCityHtmlGenerator {
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/DoubleOptInEmailTemplate.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
 			output.flush();
@@ -197,7 +203,8 @@ class VeloCityHtmlGenerator {
 			throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set responseCode */
 		context.put("responseCode", responseCode.getCode());
 		/* set title */
@@ -211,7 +218,7 @@ class VeloCityHtmlGenerator {
 
 		final MergingMessageOutputThread thread = new MergingMessageOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/HtmlMessageTemplate.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output, latch);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 		
@@ -232,6 +239,8 @@ class VeloCityHtmlGenerator {
 	protected StringWriter generateHtmlForDirectory(final PrimaryDataDirectory directory) throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set entity */
 		context.put(VeloCityHtmlGenerator.STRING_ENTITY, directory);
 		/* set version */
@@ -337,9 +346,10 @@ class VeloCityHtmlGenerator {
 		}
 
 		final VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		
 		/** set entity for citation */
-
 		context.put(STRING_CITATION_ENTITY, directory);
 
 		/** set identifierType of the PublicReference */
@@ -408,7 +418,7 @@ class VeloCityHtmlGenerator {
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/DirectoryTemplateForReviewer.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch, list);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output, latch, list);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
@@ -569,7 +579,9 @@ class VeloCityHtmlGenerator {
 		}
 
 		final VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		
 		/** set entity for citation */
 		if (entityWithPersitentIdentifierForCitation != null) {
 			context.put(STRING_CITATION_ENTITY, entityWithPersitentIdentifierForCitation);
@@ -658,7 +670,7 @@ class VeloCityHtmlGenerator {
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/DirectoryTemplateForSnapshot.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, outputStreamWriter, latch, list);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, outputStreamWriter, latch, list);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
@@ -681,7 +693,8 @@ class VeloCityHtmlGenerator {
 			throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set responseCode */
 		context.put("responseCode", responseCode.getCode());
 		/* set title */
@@ -699,7 +712,7 @@ class VeloCityHtmlGenerator {
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HtmlMessageTemplate.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
 			output.flush();
@@ -723,6 +736,8 @@ class VeloCityHtmlGenerator {
 	protected StringWriter generateHtmlForFile(final PrimaryDataFile file) throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set entity name */
 		context.put(VeloCityHtmlGenerator.STRING_ENTITY, file);
 		/* set version */
@@ -746,7 +761,7 @@ class VeloCityHtmlGenerator {
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/FileTemplate.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
 			output.flush();
@@ -808,6 +823,8 @@ class VeloCityHtmlGenerator {
 		}
 
 		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 
 		context.put(STRING_CITATION_ENTITY, file);
 
@@ -850,7 +867,7 @@ class VeloCityHtmlGenerator {
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/FileTemplateForReviewer.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, output, latch, null);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output, latch, null);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
@@ -992,6 +1009,8 @@ class VeloCityHtmlGenerator {
 		}
 
 		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 
 		/** set entity for citation */
 		if (entityWithPersitentIdentifierForCitation != null) {
@@ -1052,7 +1071,7 @@ class VeloCityHtmlGenerator {
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
 				"de/ipk_gatersleben/bit/bi/edal/primary_data/FileTemplateForSnapshot.xml",
-				VeloCityHtmlGenerator.CODING_UTF_8, context, outputStreamWriter, latch, null);
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, outputStreamWriter, latch, null);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
@@ -1215,7 +1234,8 @@ class VeloCityHtmlGenerator {
 				.format(totalDownloadVolume);
 
 		final VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set responseCode */
 		context.put("responseCode", responseCode.getCode());
 		/* set title */
@@ -1257,7 +1277,7 @@ class VeloCityHtmlGenerator {
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 
 		final MergingReportOutputThread thread = new MergingReportOutputThread(
-				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml", VeloCityHtmlGenerator.CODING_UTF_8,
+				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml", VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(),
 				context, output, latch);
 
 		DataManager.getVelocityExecutorService().execute(thread);

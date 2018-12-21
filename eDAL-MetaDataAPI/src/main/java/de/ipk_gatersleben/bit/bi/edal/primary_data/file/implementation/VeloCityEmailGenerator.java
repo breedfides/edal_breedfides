@@ -12,6 +12,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Calendar;
 
@@ -34,8 +35,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus
  */
 class VeloCityEmailGenerator {
 
-	private static final String CODING_UTF_8 = "UTF-8";
-
+	private static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
+	
 	/**
 	 * Default constructor to load all VeloCity properties.
 	 */
@@ -43,8 +44,8 @@ class VeloCityEmailGenerator {
 		Velocity.setProperty("resource.loader", "class");
 		Velocity.setProperty("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
 		Velocity.setProperty("runtime.log.logsystem.class", "org.apache.velocity.runtime.log.NullLogSystem");
-		Velocity.setProperty("input.encoding", "UTF-8");
-		Velocity.setProperty("output.encoding", "UTF-8");
+		Velocity.setProperty("input.encoding", DEFAULT_CHARSET);
+		Velocity.setProperty("output.encoding", DEFAULT_CHARSET);
 		Velocity.init();
 	}
 
@@ -69,7 +70,8 @@ class VeloCityEmailGenerator {
 	protected StringWriter generateRequestEmail(PrimaryDataEntityVersion entityVersion, URL acceptURL, URL rejectURL, Principal principal, InternetAddress mailAdress, ReviewerType reviewerType, URL reviewerURL, PersistentIdentifier idType, Calendar releaseDate) throws VelocityException {
 
 		VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set ID type */
 		context.put("id", idType.toString());
 		/* set reviewer type */
@@ -104,13 +106,13 @@ class VeloCityEmailGenerator {
 		try {
 			switch (reviewerType.name()) {
 			case "MANAGING":
-				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailManagingTemplate.xml", CODING_UTF_8, context, output);
+				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailManagingTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 				break;
 			case "SCIENTIFIC":
-				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailScientificTemplate.xml", CODING_UTF_8, context, output);
+				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailScientificTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 				break;
 			case "SUBSTITUTE":
-				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailSubstituteTemplate.xml", CODING_UTF_8, context, output);
+				Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RequestEmailSubstituteTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 				break;
 			}
 
@@ -139,7 +141,8 @@ class VeloCityEmailGenerator {
 	protected StringWriter generateAcceptedEmail(String newId, URL landingPage, PublicReference publicReference) throws VelocityException {
 
 		VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set the new id for the accepted object */
 		context.put("newId", newId);
 		/* set the link to the landing page of the accepted object */
@@ -149,7 +152,7 @@ class VeloCityEmailGenerator {
 		StringWriter output = new StringWriter();
 
 		try {
-			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/AcceptedEmailTemplate.xml", CODING_UTF_8, context, output);
+			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/AcceptedEmailTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 
 			output.flush();
 			output.close();
@@ -173,14 +176,15 @@ class VeloCityEmailGenerator {
 	protected StringWriter generateRejectedEmail(PublicReference publicReference) throws VelocityException {
 
 		VelocityContext context = new VelocityContext();
-
-		/* meta data infos */
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		/* metadata infos */
 		context.put("infos", publicReference.getVersion().getMetaData().toString());
 
 		StringWriter output = new StringWriter();
 
 		try {
-			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RejectedEmailTemplate.xml", CODING_UTF_8, context, output);
+			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/RejectedEmailTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 
 			output.flush();
 			output.close();
@@ -204,7 +208,8 @@ class VeloCityEmailGenerator {
 	protected StringWriter generateStatusEmail(PublicReference reference) throws VelocityException {
 
 		VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set id type */
 		context.put("id", reference.getIdentifierType().toString());
 		/* set reviewers name */
@@ -221,7 +226,7 @@ class VeloCityEmailGenerator {
 		StringWriter output = new StringWriter();
 
 		try {
-			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/StatusEmailTemplate.xml", CODING_UTF_8, context, output);
+			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/StatusEmailTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 
 			output.flush();
 			output.close();
@@ -234,7 +239,8 @@ class VeloCityEmailGenerator {
 	protected StringWriter generateReviewSuccessfulMail(URL acceptUrl, URL rejectUrl, URL landingPage, PublicReference reference, int reviewerCode, int remainderCycle) {
 
 		VelocityContext context = new VelocityContext();
-
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
 		/* set the acceptURL of the object */
 		context.put("acceptURL", acceptUrl);
 		/* set the acceptURL of the object */
@@ -251,7 +257,7 @@ class VeloCityEmailGenerator {
 		StringWriter output = new StringWriter();
 
 		try {
-			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/ReviewSuccessfulEmailTemplate.xml", CODING_UTF_8, context, output);
+			Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/file/implementation/ReviewSuccessfulEmailTemplate.xml", DEFAULT_CHARSET.toString(), context, output);
 
 			output.flush();
 			output.close();

@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -24,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
@@ -94,16 +92,6 @@ public final class EdalConfiguration {
 	private static Logger logger = null;
 
 	static {
-		/* trick to set encoding programmatically */
-		try {
-			System.setProperty("file.encoding", "UTF-8");
-			Field charset = Charset.class.getDeclaredField("defaultCharset");
-			charset.setAccessible(true);
-			charset.set(null, null);
-		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-
 		EdalConfiguration.logger = LogManager.getLogger("eDAL-API");
 	}
 
