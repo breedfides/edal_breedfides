@@ -786,7 +786,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 			this.sendEmail(message, "[e!DAL] data publication approved successfully: "
 					+ reference.getVersion().getMetaData().toString(), ticket.getEmailNotificationAddress());
 		} else {
-			this.sendEmail(message, "[e!DAL] reminder to publish your already approved data publication :"
+			this.sendEmail(message, "[e!DAL] reminder to publish your already approved data publication: "
 					+ reference.getVersion().getMetaData().toString(), ticket.getEmailNotificationAddress());
 		}
 

@@ -305,7 +305,7 @@ class VeloCityHtmlGenerator {
 
 		Calendar date = null;
 
-		Long publicReferenceDirectorySize = new Long(0);
+		Long publicReferenceDirectorySize = Long.valueOf(0);
 		
 		String publicReferenceFileDirectoryNumber = new String();
 
@@ -488,7 +488,7 @@ class VeloCityHtmlGenerator {
 
 		PrimaryDataEntityVersion primaryDataEntityVersion = null;
 
-		Long publicReferenceDirectorySize = new Long(0);
+		Long publicReferenceDirectorySize = Long.valueOf(0);
 
 		String publicReferenceFileDirectoryNumber = new String();
 
@@ -1170,7 +1170,7 @@ class VeloCityHtmlGenerator {
 				if (uniqueAccessNumbers.containsKey(publicReferenceID)) {
 					uniqueAccessNumbers.put(publicReferenceID, uniqueAccessNumbers.get(publicReferenceID) + 1);
 				} else {
-					uniqueAccessNumbers.put(publicReferenceID, new Long(1));
+					uniqueAccessNumbers.put(publicReferenceID, Long.valueOf(1));
 				}
 			}
 		}
@@ -1218,7 +1218,7 @@ class VeloCityHtmlGenerator {
 		for (final Entry<String, String[]> entry : accessStatistic.entrySet()) {
 
 			final String size = entry.getValue()[2] != null
-					? DataSize.StorageUnit.of(new Long(entry.getValue()[2])).format(new Long(entry.getValue()[2]))
+					? DataSize.StorageUnit.of(Long.valueOf(entry.getValue()[2])).format(Long.valueOf(entry.getValue()[2]))
 					: "0";
 
 			statisticList.add(entry.getKey() + "\t" + entry.getValue()[0] + "\t" + entry.getValue()[1] + "\t" + size
@@ -1230,7 +1230,7 @@ class VeloCityHtmlGenerator {
 
 		}
 
-		final String totalDownloadVolumeString = DataSize.StorageUnit.of(new Long(totalDownloadVolume))
+		final String totalDownloadVolumeString = DataSize.StorageUnit.of(Long.valueOf(totalDownloadVolume))
 				.format(totalDownloadVolume);
 
 		final VelocityContext context = new VelocityContext();

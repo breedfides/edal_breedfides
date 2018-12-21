@@ -154,9 +154,9 @@ public class CompareableTest {
 	@Test
 	public void testDataSizeCompareTo() {
 
-		DataSize myDataSize = new DataSize(new Long(100));
+		DataSize myDataSize = new DataSize(Long.valueOf(100));
 
-		DataSize yourDataSize = new DataSize(new Long(1000));
+		DataSize yourDataSize = new DataSize(Long.valueOf(1000));
 
 		Assert.assertTrue(FAIL, myDataSize.compareTo(yourDataSize) < 0);
 

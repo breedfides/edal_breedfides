@@ -195,7 +195,7 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		final DataSize dataSizeBefore = metaData1.getElementValue(EnumDublinCoreElements.SIZE);
 
-		metaData1.setElementValue(EnumDublinCoreElements.SIZE, new DataSize(new Long(100)));
+		metaData1.setElementValue(EnumDublinCoreElements.SIZE, new DataSize(Long.valueOf(100)));
 
 		try {
 			file1.setMetaData(metaData1);

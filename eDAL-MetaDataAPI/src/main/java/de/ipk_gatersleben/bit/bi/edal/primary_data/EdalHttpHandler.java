@@ -74,7 +74,7 @@ public class EdalHttpHandler extends AbstractHandler {
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 1 / 2);
 
-	private static final Long LIMIT_INLINE_FILE_SIZE = new Long(10 * 1024 * 1024);
+	private static final Long LIMIT_INLINE_FILE_SIZE = Long.valueOf(10 * 1024 * 1024);
 	private static final String EXECUTOR_NAME = "ZipExecutor";
 
 	public static WebPageCache contentPageCache = new WebPageCache("contentpage");
