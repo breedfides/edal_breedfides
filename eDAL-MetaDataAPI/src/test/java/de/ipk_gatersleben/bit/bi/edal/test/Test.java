@@ -141,7 +141,7 @@ public class Test {
 					Long number = accessNumbers.get(string) + 1;
 					accessNumbers.put(string, number);
 				} else {
-					accessNumbers.put(string, new Long(1));
+					accessNumbers.put(string, Long.valueOf(1));
 				}
 			}
 		}

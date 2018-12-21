@@ -433,9 +433,9 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		}
 
 		final List<PrimaryDataEntity> list = currentDirectory.listPrimaryDataEntities();
-		Long volumeOfCurrentDirectory = new Long(0);
-		Long numberOfFilesInCurrentDirectory = new Long(0);
-		Long numberOfDirectoriesInCurrentDirectory = new Long(0);
+		Long volumeOfCurrentDirectory = Long.valueOf(0);
+		Long numberOfFilesInCurrentDirectory = Long.valueOf(0);
+		Long numberOfDirectoriesInCurrentDirectory = Long.valueOf(0);
 		if (list != null) {
 
 			for (final PrimaryDataEntity primaryDataEntity : list) {
@@ -537,9 +537,9 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		for (PublicReferenceImplementation reference : references) {
 
-			numberOfReferenceFiles = new Long(0);
-			numberOfReferenceDirectories = new Long(0);
-			volumeOfReference = new Long(0);
+			numberOfReferenceFiles = Long.valueOf(0);
+			numberOfReferenceDirectories = Long.valueOf(0);
+			volumeOfReference = Long.valueOf(0);
 
 			if (!CalculateDirectorySizeThread.directorySizes
 					.containsKey(reference.getInternalID() + "/" + reference.getVersion().getEntity().getID())) {

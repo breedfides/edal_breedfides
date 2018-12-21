@@ -145,7 +145,7 @@ public class CalculateDirectorySizeThread extends EdalThread {
 		path = ServiceProviderImplementation.PATH_FOR_TOTAL_FILE_NUMBER;
 
 		if (Files.exists(path)) {
-			ServiceProviderImplementation.totalNumberOfFiles = new Long(0);
+			ServiceProviderImplementation.totalNumberOfFiles = Long.valueOf(0);
 
 			try {
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()));
@@ -159,13 +159,13 @@ public class CalculateDirectorySizeThread extends EdalThread {
 			}
 
 		} else {
-			ServiceProviderImplementation.totalNumberOfFiles = new Long(0);
+			ServiceProviderImplementation.totalNumberOfFiles = Long.valueOf(0);
 		}
 
 		path = ServiceProviderImplementation.PATH_FOR_TOTAL_VOLUME;
 
 		if (Files.exists(path)) {
-			CalculateDirectorySizeThread.totalVolumeDataStock = new Long(0);
+			CalculateDirectorySizeThread.totalVolumeDataStock = Long.valueOf(0);
 
 			try {
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()));
@@ -179,7 +179,7 @@ public class CalculateDirectorySizeThread extends EdalThread {
 			}
 
 		} else {
-			CalculateDirectorySizeThread.totalVolumeDataStock = new Long(0);
+			CalculateDirectorySizeThread.totalVolumeDataStock = Long.valueOf(0);
 		}
 
 		DataManager.getImplProv().getLogger().info("Starting CalculateDirectorySizeThread");
