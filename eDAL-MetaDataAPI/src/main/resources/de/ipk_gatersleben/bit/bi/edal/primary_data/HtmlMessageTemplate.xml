@@ -8,6 +8,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta charset="$charset"/>
 		<title>$repositoryNameShort - $responseCode $title</title>
 		#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 		

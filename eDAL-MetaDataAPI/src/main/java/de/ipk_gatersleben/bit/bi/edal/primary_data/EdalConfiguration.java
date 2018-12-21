@@ -82,6 +82,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  * 
  * @author arendd
  */
+@SuppressWarnings("restriction")
 public final class EdalConfiguration {
 
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";
@@ -91,18 +92,6 @@ public final class EdalConfiguration {
 	private static Logger logger = null;
 
 	static {
-		/*
-		// trick to set encoding programmatically 
-		try {
-			System.setProperty("file.encoding", "UTF-8");
-			Field charset = Charset.class.getDeclaredField("defaultCharset");
-			charset.setAccessible(true);
-			charset.set(null, null);
-		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-		*/
-
 		EdalConfiguration.logger = LogManager.getLogger("eDAL-API");
 	}
 
