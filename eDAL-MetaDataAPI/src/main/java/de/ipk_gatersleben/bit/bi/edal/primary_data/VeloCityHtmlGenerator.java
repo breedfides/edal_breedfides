@@ -310,9 +310,9 @@ class VeloCityHtmlGenerator {
 		String publicReferenceFileDirectoryNumber = new String();
 
 		try {
-			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+			date = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 					.getPublicReferenceByInternalId(internalId).getCreationDate();
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException(
 					VeloCityHtmlGenerator.STRING_UNABLE_TO_INITIALIZE_APPROVAL_SERVICE_PROVIDER + e.getMessage(), e);
 		} catch (final EdalException e) {
@@ -460,9 +460,9 @@ class VeloCityHtmlGenerator {
 		Calendar date = null;
 
 		try {
-			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+			date = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 					.getPublicReferenceByInternalId(internalId).getCreationDate();
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException(
 					VeloCityHtmlGenerator.STRING_UNABLE_TO_INITIALIZE_APPROVAL_SERVICE_PROVIDER + e.getMessage(), e);
 		}
@@ -798,9 +798,9 @@ class VeloCityHtmlGenerator {
 		Calendar date = null;
 
 		try {
-			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+			date = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 					.getPublicReferenceByInternalId(internalId).getCreationDate();
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException(
 					VeloCityHtmlGenerator.STRING_UNABLE_TO_INITIALIZE_APPROVAL_SERVICE_PROVIDER + e.getMessage(), e);
 		} catch (final EdalException e) {
@@ -908,9 +908,9 @@ class VeloCityHtmlGenerator {
 		Calendar date = null;
 
 		try {
-			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+			date = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 					.getPublicReferenceByInternalId(internalId).getCreationDate();
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException(
 					VeloCityHtmlGenerator.STRING_UNABLE_TO_INITIALIZE_APPROVAL_SERVICE_PROVIDER + e.getMessage(), e);
 		}
@@ -1181,10 +1181,10 @@ class VeloCityHtmlGenerator {
 
 			try {
 				final ApprovalServiceProvider appService = DataManager.getImplProv().getApprovalServiceProvider()
-						.newInstance();
+						.getDeclaredConstructor().newInstance();
 				reference = appService.getPublicReferenceByInternalId(entry.getKey());
 
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | EdalException e) {
+			} catch (ReflectiveOperationException | EdalException e) {
 				// e.printStackTrace();
 			}
 
@@ -1269,7 +1269,7 @@ class VeloCityHtmlGenerator {
 		context.put("filenumber", numberFormat.format(ServiceProviderImplementation.totalNumberOfFiles));
 
 		/* value for total number of users */
-		context.put("users", DataManager.getImplProv().getServiceProvider().newInstance().getNumberOfUsers());
+		context.put("users", DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance().getNumberOfUsers());
 		
 		/* all IP map */
 		context.put("jsonall", GenerateLocations.getAllIPsList());

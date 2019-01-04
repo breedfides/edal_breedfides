@@ -9,7 +9,6 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file;
 
-import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
@@ -569,12 +568,10 @@ public abstract class PrimaryDataEntity implements
 			try {
 				permProv.getMethod("grantPermission", String.class,
 						String.class, PrimaryDataEntity.class).invoke(
-						permProv.newInstance(),
+						permProv.getDeclaredConstructor().newInstance(),
 						principal.getClass().getSimpleName(),
 						principal.getName(), this);
-			} catch (IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException
-					| SecurityException | InstantiationException e) {
+			} catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
 				throw new PrimaryDataEntityException(
 						"Unable to call grantPermission() function", e);
 			}
@@ -593,12 +590,10 @@ public abstract class PrimaryDataEntity implements
 
 				permProv.getMethod("grantPermission", String.class,
 						String.class, EdalPermission.class).invoke(
-						permProv.newInstance(),
+						permProv.getDeclaredConstructor().newInstance(),
 						principal.getClass().getSimpleName(),
 						principal.getName(), edalPermission);
-			} catch (IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException
-					| SecurityException | InstantiationException e) {
+			} catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
 				throw new PrimaryDataEntityException(
 						"Unable to call grantPermission() function", e);
 			}
@@ -752,7 +747,7 @@ public abstract class PrimaryDataEntity implements
 			try {
 				permProv.getMethod("revokePermission", String.class,
 						String.class, PrimaryDataEntity.class).invoke(
-						permProv.newInstance(),
+						permProv.getDeclaredConstructor().newInstance(),
 						principal.getClass().getSimpleName(),
 						principal.getName(), this);
 			} catch (final Exception e) {

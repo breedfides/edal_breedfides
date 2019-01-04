@@ -32,9 +32,9 @@ public class ContentNegotiator {
 		Calendar date = null;
 
 		try {
-			date = DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+			date = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 					.getPublicReferenceByInternalId(internalId).getCreationDate();
-		} catch (InstantiationException | IllegalAccessException | EdalException e) {
+		} catch (EdalException | RuntimeException | ReflectiveOperationException e) {
 			throw new EdalException("unable to initialize ApprovalServiceProvider: " + e.getMessage(), e);
 		}
 

@@ -165,7 +165,7 @@ public class DataManager {
 		DataManager.jettyExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("jettyThread"));
 		DataManager.listExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("listThread"));
 		DataManager.velocityExecutorService = Executors.newCachedThreadPool(new EdalThreadFactory("velocityThread"));
-		
+
 		DataManager.threadlocalsubject = new InheritableThreadLocal<>();
 		DataManager.implementationprovider = null;
 		DataManager.threadlocaldefaultpermissions = new InheritableThreadLocal<>();
@@ -205,16 +205,16 @@ public class DataManager {
 	 * Getter for the available space in the mount path of eDAL.
 	 * 
 	 * @return available space
-	 * @throws EdalException
-	 *             if no path is specified.
+	 * @throws EdalException if no path is specified.
 	 */
 	public static Long getAvailableStorageSpace() throws EdalException {
 		if (DataManager.getImplProv() == null) {
 			throw new EdalException("No ImplementationProvider set --> run getRootDirectory()");
 		}
 		try {
-			return DataManager.getImplProv().getServiceProvider().newInstance().getAvailableStorageSpace();
-		} catch (InstantiationException | IllegalAccessException e) {
+			return DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance()
+					.getAvailableStorageSpace();
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate ServiceProvider");
 		}
 	}
@@ -248,15 +248,12 @@ public class DataManager {
 	 * Get a specified {@link PrimaryDataEntity} for the request of a HTTPServer,
 	 * but only if a PublicReference is defined.
 	 * 
-	 * @param uuid
-	 *            the {@link UUID} of the {@link PrimaryDataEntity}.
-	 * @param versionNumber
-	 *            the version number of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion}
-	 *            .
-	 * @throws EdalException
-	 *             if there is no {@link PrimaryDataEntity} with the specified
-	 *             values or the eDAL system is not started.
+	 * @param uuid          the {@link UUID} of the {@link PrimaryDataEntity}.
+	 * @param versionNumber the version number of the
+	 *                      {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion}
+	 *                      .
+	 * @throws EdalException if there is no {@link PrimaryDataEntity} with the
+	 *                       specified values or the eDAL system is not started.
 	 * @return the specified {@link PrimaryDataEntity}
 	 */
 	static PrimaryDataEntity getPrimaryDataEntityByID(String uuid, long versionNumber) throws EdalException {
@@ -265,9 +262,9 @@ public class DataManager {
 			throw new EdalException("Unable to load entity : start eDAL system first");
 		}
 		try {
-			return DataManager.getImplProv().getHttpServiceProvider().newInstance().getPrimaryDataEntityByID(uuid,
+			return DataManager.getImplProv().getHttpServiceProvider().getDeclaredConstructor().newInstance().getPrimaryDataEntityByID(uuid,
 					versionNumber);
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate HttpServiceProvider");
 
 		}
@@ -280,9 +277,9 @@ public class DataManager {
 			throw new EdalException("unable to load entity : start eDAL system first");
 		}
 		try {
-			return DataManager.getImplProv().getHttpServiceProvider().newInstance()
+			return DataManager.getImplProv().getHttpServiceProvider().getDeclaredConstructor().newInstance()
 					.getPrimaryDataEntityForPersistentIdentifier(uuid, versionNumber, persistentIdentifier);
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate HttpServiceProvider");
 		}
 	}
@@ -293,9 +290,9 @@ public class DataManager {
 			throw new EdalException("unable to load entity : start eDAL system first");
 		}
 		try {
-			return DataManager.getImplProv().getHttpServiceProvider().newInstance()
+			return DataManager.getImplProv().getHttpServiceProvider().getDeclaredConstructor().newInstance()
 					.getPrimaryDataEntityRekursiveForPersistenIdentifier(entity, versionNumber, persistentIdentifier);
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate HttpServiceProvider");
 		}
 	}
@@ -304,18 +301,13 @@ public class DataManager {
 	 * Getter for a {@link PrimaryDataEntity} for the review process to present it
 	 * to a reviewer.
 	 * 
-	 * @param uuid
-	 *            the ID of the searched {@link PrimaryDataEntity}.
-	 * @param versionNumber
-	 *            the version number of the {@link PrimaryDataEntity}.
-	 * @param internalId
-	 *            the internal ID of the corresponding
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
-	 * @param reviewerCode
-	 *            the ID to identify the reviewer.
+	 * @param uuid          the ID of the searched {@link PrimaryDataEntity}.
+	 * @param versionNumber the version number of the {@link PrimaryDataEntity}.
+	 * @param internalId    the internal ID of the corresponding
+	 *                      {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param reviewerCode  the ID to identify the reviewer.
 	 * @return the {@link PrimaryDataEntity}
-	 * @throws EdalException
-	 *             if unable to load the {@link PrimaryDataEntity}.
+	 * @throws EdalException if unable to load the {@link PrimaryDataEntity}.
 	 */
 	static PrimaryDataEntity getPrimaryDataEntityForReviewer(String uuid, long versionNumber, String internalId,
 			int reviewerCode) throws EdalException {
@@ -324,9 +316,9 @@ public class DataManager {
 		}
 
 		try {
-			return DataManager.getImplProv().getHttpServiceProvider().newInstance()
+			return DataManager.getImplProv().getHttpServiceProvider().getDeclaredConstructor().newInstance()
 					.getPrimaryDataEntityForReviewer(uuid, versionNumber, internalId, reviewerCode);
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate HttpServiceProvider");
 		}
 	}
@@ -335,26 +327,25 @@ public class DataManager {
 	 * Static function to get the root {@link PrimaryDataDirectory} of the
 	 * eDAL-System.
 	 * 
-	 * @param implementationProvider
-	 *            must provide the implementing classes the implementation, which
-	 *            will be used. The call pass the current logged in JAAS subject.For
-	 *            example
+	 * @param implementationProvider must provide the implementing classes the
+	 *                               implementation, which will be used. The call
+	 *                               pass the current logged in JAAS subject.For
+	 *                               example
 	 * 
-	 *            <pre>
+	 *                               <pre>
 	 * ImplementationProvider myImpl = new MyEDALImplementation();
 	 * LoginContext CTX = new LoginContext(...);
 	 *        CTX();
 	 *        Subject mySubject = CTX.getSubject();
 	 * PrimaryDataDirectory root_dir = DataManager.getRootDirectory(myImpl, mySubject);
-	 *            </pre>
+	 *                               </pre>
 	 * 
-	 * @param subject
-	 *            the authenticated subject
+	 * @param subject                the authenticated subject
 	 * @return the root {@link PrimaryDataDirectory} for the passed implementation
-	 * @throws PrimaryDataDirectoryException
-	 *             if unable to create
-	 *             {@link de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData}
-	 *             instance or if unable to initialize security system.
+	 * @throws PrimaryDataDirectoryException if unable to create
+	 *                                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData}
+	 *                                       instance or if unable to initialize
+	 *                                       security system.
 	 */
 	public static PrimaryDataDirectory getRootDirectory(final ImplementationProvider implementationProvider,
 			final Subject subject) throws PrimaryDataDirectoryException {
@@ -482,16 +473,15 @@ public class DataManager {
 	 * Getter all supported {@link Principal}s of the current eDAL system.
 	 * 
 	 * @return the list of supported {@link Principal}s
-	 * @throws EdalException
-	 *             if unable to load {@link Principal}s.
+	 * @throws EdalException if unable to load {@link Principal}s.
 	 */
 	public static List<Class<? extends Principal>> getSupportedPrincipals() throws EdalException {
 		if (DataManager.getImplProv() == null) {
 			throw new EdalException("No ImplementationProvider set -> run getRootDirectory()");
 		}
 		try {
-			return DataManager.getImplProv().getPermissionProvider().newInstance().getSupportedPrincipals();
-		} catch (InstantiationException | IllegalAccessException e) {
+			return DataManager.getImplProv().getPermissionProvider().getDeclaredConstructor().newInstance().getSupportedPrincipals();
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate PermissionProvider");
 
 		}
@@ -501,16 +491,15 @@ public class DataManager {
 	 * Getter for the used space in the mount path of eDAL.
 	 * 
 	 * @return used space
-	 * @throws EdalException
-	 *             if no path is specified.
+	 * @throws EdalException if no path is specified.
 	 */
 	public static Long getUsedStorageSpace() throws EdalException {
 		if (DataManager.getImplProv() == null) {
 			throw new EdalException("No ImplementationProvider set -> run getRootDirectory()");
 		}
 		try {
-			return DataManager.getImplProv().getServiceProvider().newInstance().getUsedStorageSpace();
-		} catch (InstantiationException | IllegalAccessException e) {
+			return DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance().getUsedStorageSpace();
+		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate ServiceProvider");
 		}
 	}
@@ -518,8 +507,7 @@ public class DataManager {
 	/**
 	 * Start the HTTP-Service to make eDAL object available over a HTTP/HTTPS.
 	 * 
-	 * @throws EdalException
-	 *             if unable to initialize the HTTP server.
+	 * @throws EdalException if unable to initialize the HTTP server.
 	 */
 	private static void initHTTPService() throws EdalException {
 
@@ -541,8 +529,8 @@ public class DataManager {
 
 			PermissionProvider permissionProvider = null;
 			try {
-				permissionProvider = DataManager.getImplProv().getPermissionProvider().newInstance();
-			} catch (InstantiationException | IllegalAccessException e) {
+				permissionProvider = DataManager.getImplProv().getPermissionProvider().getDeclaredConstructor().newInstance();
+			} catch (ReflectiveOperationException e) {
 				DataManager.getImplProv().getLogger().warn("Unable to initiate PermissionProvider: " + e.getMessage());
 				System.exit(0);
 			}
@@ -665,13 +653,12 @@ public class DataManager {
 	/**
 	 * Initialize the security system of eDAL.
 	 * 
-	 * @param implementationProvider
-	 *            an {@link ImplementationProvider} that provide all implementation
-	 *            classes.
-	 * @throws SecurityException
-	 *             if unable to find policy file or unable to create a new
-	 *             {@link de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider}
-	 *             instance.
+	 * @param implementationProvider an {@link ImplementationProvider} that provide
+	 *                               all implementation classes.
+	 * @throws SecurityException if unable to find policy file or unable to create a
+	 *                           new
+	 *                           {@link de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider}
+	 *                           instance.
 	 */
 	private static void initSecuritySystem(final ImplementationProvider implementationProvider)
 			throws SecurityException {
@@ -690,7 +677,7 @@ public class DataManager {
 
 			EdalPolicy edalPolicy = null;
 			try {
-				edalPolicy = new EdalPolicy(implementationProvider.getPermissionProvider().newInstance());
+				edalPolicy = new EdalPolicy(implementationProvider.getPermissionProvider().getDeclaredConstructor().newInstance());
 			} catch (final Exception e) {
 				throw new SecurityException("unable to create new PermissionProvider", e);
 			}
@@ -715,12 +702,9 @@ public class DataManager {
 	/**
 	 * Function to send an eMail to the given recipient.
 	 * 
-	 * @param message
-	 *            the message to send
-	 * @param subject
-	 *            the subject of the eMail
-	 * @param emailAddress
-	 *            the eMail address of the recipient.
+	 * @param message      the message to send
+	 * @param subject      the subject of the eMail
+	 * @param emailAddress the eMail address of the recipient.
 	 */
 	public static void sendEmail(final String message, final String subject, final String emailAddress) {
 
@@ -750,14 +734,10 @@ public class DataManager {
 	/**
 	 * Function to send an eMail with attachment to the given recipient.
 	 * 
-	 * @param message
-	 *            the message to send
-	 * @param subject
-	 *            the subject of the eMail
-	 * @param emailAddress
-	 *            the eMail address of the recipient.
-	 * @param attachment
-	 *            the attached {@link File}
+	 * @param message      the message to send
+	 * @param subject      the subject of the eMail
+	 * @param emailAddress the eMail address of the recipient.
+	 * @param attachment   the attached {@link File}
 	 */
 	public static void sendEmail(final String message, final String subject, final String emailAddress,
 			final URL attachment) {
@@ -801,8 +781,8 @@ public class DataManager {
 	 * Overrides the current default permissions of the current user with the new
 	 * permissions.
 	 * 
-	 * @param newUserPermissions
-	 *            the user permissions to set to the default permissions.
+	 * @param newUserPermissions the user permissions to set to the default
+	 *                           permissions.
 	 */
 	public static void setDefaultPermissions(final Map<Principal, List<Methods>> newUserPermissions) {
 		DataManager.threadlocaldefaultpermissions.set(newUserPermissions);
@@ -811,8 +791,7 @@ public class DataManager {
 	/**
 	 * Setter for the current {@link Subject}.
 	 * 
-	 * @param subject
-	 *            a {@link Subject} object.
+	 * @param subject a {@link Subject} object.
 	 */
 	public static void setSubject(final Subject subject) {
 		DataManager.threadlocalsubject.set(subject);
@@ -878,7 +857,7 @@ public class DataManager {
 
 		return jettyExecutorService;
 	}
-	
+
 	/**
 	 * Getter for the {@link ThreadPool} for {@link EdalHttpServer}.
 	 * 
@@ -911,10 +890,8 @@ public class DataManager {
 	 * Send an {@link OutputStream} containing a short {@link String} to test server
 	 * connectivity
 	 * 
-	 * @param outputStream
-	 *            the {@link OutputStream} to fill in the {@link String}
-	 * @throws IOException
-	 *             if unable to send
+	 * @param outputStream the {@link OutputStream} to fill in the {@link String}
+	 * @throws IOException if unable to send
 	 */
 	public static void receiveTestData(OutputStream outputStream) throws IOException {
 		outputStream.write(TEST_DATA_STRING.getBytes());
