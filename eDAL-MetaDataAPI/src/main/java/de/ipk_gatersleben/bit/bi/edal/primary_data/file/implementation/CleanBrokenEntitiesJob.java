@@ -52,8 +52,8 @@ public class CleanBrokenEntitiesJob implements Job {
 		ServiceProvider service = null;
 
 		try {
-			service = DataManager.getImplProv().getServiceProvider().newInstance();
-		} catch (InstantiationException | IllegalAccessException e) {
+			service = DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance();
+		} catch (ReflectiveOperationException e) {
 			DataManager.getImplProv().getLogger().error(e);
 			throw new JobExecutionException("Unable to load ApprovalServiceProvider: " + e.getMessage(), e.getCause());
 		}

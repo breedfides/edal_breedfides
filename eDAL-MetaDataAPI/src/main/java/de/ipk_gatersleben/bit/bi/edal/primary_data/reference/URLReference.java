@@ -20,8 +20,8 @@ public class URLReference implements Referenceable {
 
 		String url = null;
 		try {
-			url = DataManager.getImplProv().getApprovalServiceProvider().newInstance().getNewURL(publicReference);
-		} catch (InstantiationException | IllegalAccessException | EdalApprovalException e) {
+			url = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance().getNewURL(publicReference);
+		} catch (ReflectiveOperationException | EdalApprovalException e) {
 			throw new ReferenceableException("unable to get a new URL for the PublicReference");
 		}
 		return url;

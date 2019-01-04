@@ -44,8 +44,8 @@ public class CheckReviewStatusJob implements Job {
 		ApprovalServiceProvider app = null;
 
 		try {
-			app = DataManager.getImplProv().getApprovalServiceProvider().newInstance();
-		} catch (InstantiationException | IllegalAccessException e) {
+			app = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance();
+		} catch (ReflectiveOperationException e) {
 			DataManager.getImplProv().getLogger().error(e);
 			throw new JobExecutionException("Unable to load ApprovalServiceProvider: " + e.getMessage(), e.getCause());
 		}

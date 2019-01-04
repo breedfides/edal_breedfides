@@ -165,7 +165,7 @@ public final class PublicReferenceImplementation extends PublicReference
 	@Transient
 	public Referenceable getReferencable() throws EdalException {
 		try {
-			return this.identifierType.getImplClass().newInstance();
+			return this.identifierType.getImplClass().getDeclaredConstructor().newInstance();
 		} catch (final Exception e) {
 			throw new EdalException(
 					"unable to load the class for the identifierType '"

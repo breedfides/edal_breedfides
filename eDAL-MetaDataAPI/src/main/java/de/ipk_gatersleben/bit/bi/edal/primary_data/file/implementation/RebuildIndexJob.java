@@ -37,7 +37,7 @@ public class RebuildIndexJob implements Job {
 
 		try {
 			ServiceProvider s = ((FileSystemImplementationProvider) DataManager.getImplProv()).getServiceProvider()
-					.newInstance();
+					.getDeclaredConstructor().newInstance();
 
 			if (s.isCleaned()) {
 
@@ -45,7 +45,7 @@ public class RebuildIndexJob implements Job {
 
 				s.setCleaned(false);
 			}
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			e.printStackTrace();
 		}
 

@@ -1177,8 +1177,8 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 							ServiceProvider service = null;
 
 							try {
-								service = DataManager.getImplProv().getServiceProvider().newInstance();
-							} catch (InstantiationException | IllegalAccessException e) {
+								service = DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance();
+							} catch (ReflectiveOperationException e) {
 								DataManager.getImplProv().getLogger().error(e);
 								throw new EdalApprovalException(
 										"Unable to load ApprovalServiceProvider: " + e.getMessage(), e.getCause());
@@ -1231,8 +1231,8 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				ServiceProvider service = null;
 
 				try {
-					service = DataManager.getImplProv().getServiceProvider().newInstance();
-				} catch (InstantiationException | IllegalAccessException e) {
+					service = DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance();
+				} catch (ReflectiveOperationException e) {
 					DataManager.getImplProv().getLogger().error(e);
 					throw new EdalApprovalException("Unable to load ApprovalServiceProvider: " + e.getMessage(),
 							e.getCause());

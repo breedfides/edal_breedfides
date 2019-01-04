@@ -107,9 +107,9 @@ public class DataCiteReference implements Referenceable {
 					}
 
 					try {
-						DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+						DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 								.storePersistentID(publicReference, doi, year);
-					} catch (InstantiationException | IllegalAccessException e) {
+					} catch (ReflectiveOperationException e) {
 						throw new EdalApprovalException("unable to store a new DOI for the PublicReference");
 					}
 
@@ -134,9 +134,9 @@ public class DataCiteReference implements Referenceable {
 					System.out.println(dataCiteXml);
 
 					try {
-						DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+						DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 								.storePersistentID(publicReference, testDoi, year);
-					} catch (InstantiationException | IllegalAccessException e) {
+					} catch (ReflectiveOperationException e) {
 						throw new ReferenceableException("unable to store a new DOI for the PublicReference");
 					}
 
