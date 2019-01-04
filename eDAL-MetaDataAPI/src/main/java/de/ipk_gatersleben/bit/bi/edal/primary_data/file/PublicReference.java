@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
  * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
@@ -10,7 +10,6 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.Calendar;
@@ -83,10 +82,9 @@ public class PublicReference implements Serializable {
 			Method validateMethod = identifierType.getImplClass().getMethod("validateMetaData",
 					PrimaryDataEntityVersion.class);
 
-			validateMethod.invoke(identifierType.getImplClass().newInstance(), entityVersion);
+			validateMethod.invoke(identifierType.getImplClass().getDeclaredConstructor().newInstance(), entityVersion);
 
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | InstantiationException e) {
+		} catch (ReflectiveOperationException | SecurityException |  IllegalArgumentException e) {
 			throw new EdalException("unable to validate metadata: " + e.getCause().getMessage(), e);
 		}
 		this.setIdentifierType(identifierType);
@@ -198,7 +196,7 @@ public class PublicReference implements Serializable {
 	 */
 	public Referenceable getReferencable() throws EdalException {
 		try {
-			return this.identifierType.getImplClass().newInstance();
+			return this.identifierType.getImplClass().getDeclaredConstructor().newInstance();
 		} catch (final Exception e) {
 			throw new EdalException("unable to load the class for the identifierType '" + this.identifierType + "' : "
 					+ e.getMessage());
@@ -342,12 +340,11 @@ public class PublicReference implements Serializable {
 		}
 
 		try {
-			final ApprovalServiceProvider appService = DataManager.getImplProv().getApprovalServiceProvider()
-					.newInstance();
+			final ApprovalServiceProvider appService = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance();
 
 			appService.approve(this, emailNotificationAddress);
 
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | EdalException e) {
+		} catch (ReflectiveOperationException | IllegalArgumentException | EdalException e) {
 			throw new PublicReferenceException("unable to request approval", e);
 		}
 	}

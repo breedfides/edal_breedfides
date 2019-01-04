@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
  * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
@@ -318,7 +318,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForReviewerAlreadyClicked(reviewerHashCode, ticketAccept)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 												.accept(ticketAccept, reviewerHashCode);
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
@@ -326,8 +326,7 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already accepted");
 									}
-								} catch (EdalApprovalException | InstantiationException | NumberFormatException
-										| IllegalAccessException e) {
+								} catch (EdalApprovalException | NumberFormatException | ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromReviewerHashMap(ticketAccept);
 									this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
@@ -351,7 +350,7 @@ public class EdalHttpHandler extends AbstractHandler {
 									final int reviewerHashCode = Integer.parseInt(tokenizer.nextToken());
 
 									if (!ticketForReviewerAlreadyClicked(reviewerHashCode, ticketReject)) {
-										DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 												.reject(ticketReject, reviewerHashCode);
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 									} else {
@@ -359,8 +358,7 @@ public class EdalHttpHandler extends AbstractHandler {
 												"Ticket already rejected");
 									}
 
-								} catch (EdalApprovalException | InstantiationException | NumberFormatException
-										| IllegalAccessException e) {
+								} catch (EdalApprovalException | NumberFormatException | ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromReviewerHashMap(ticketReject);
 									this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
@@ -380,9 +378,9 @@ public class EdalHttpHandler extends AbstractHandler {
 
 							Boolean successful = false;
 							try {
-								successful = DataManager.getImplProv().getPermissionProvider().newInstance()
+								successful = DataManager.getImplProv().getPermissionProvider().getDeclaredConstructor().newInstance()
 										.validateRootUser(new InternetAddress(emailAddress), UUID.fromString(uuid));
-							} catch (final AddressException | InstantiationException | IllegalAccessException e) {
+							} catch (final AddressException | ReflectiveOperationException e) {
 								this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
 										"eDAL-Server Admin confirmation failed");
 							}
@@ -445,7 +443,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForUserAlreadyClicked(reviewerHashCode, userAcceptTicket)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 												.acceptTicketByUser(userAcceptTicket, reviewerHashCode);
 
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
@@ -454,8 +452,7 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already accepted");
 									}
-								} catch (NumberFormatException | InstantiationException | IllegalAccessException
-										| EdalApprovalException e) {
+								} catch (NumberFormatException | EdalApprovalException | ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromUserHashMap(userAcceptTicket);
 
@@ -480,7 +477,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForUserAlreadyClicked(reviewerHashCode, userRejectTicket)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().newInstance()
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
 												.rejectTicketByUser(userRejectTicket, reviewerHashCode);
 
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
@@ -489,8 +486,7 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already rejected");
 									}
-								} catch (NumberFormatException | InstantiationException | IllegalAccessException
-										| EdalApprovalException e) {
+								} catch (NumberFormatException | ReflectiveOperationException | EdalApprovalException e) {
 
 									EdalHttpHandler.deleteTicketFromUserHashMap(userRejectTicket);
 

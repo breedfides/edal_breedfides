@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
  * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
@@ -165,7 +165,7 @@ public final class PublicReferenceImplementation extends PublicReference
 	@Transient
 	public Referenceable getReferencable() throws EdalException {
 		try {
-			return this.identifierType.getImplClass().newInstance();
+			return this.identifierType.getImplClass().getDeclaredConstructor().newInstance();
 		} catch (final Exception e) {
 			throw new EdalException(
 					"unable to load the class for the identifierType '"

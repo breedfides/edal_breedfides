@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
  * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
@@ -20,8 +20,8 @@ public class URLReference implements Referenceable {
 
 		String url = null;
 		try {
-			url = DataManager.getImplProv().getApprovalServiceProvider().newInstance().getNewURL(publicReference);
-		} catch (InstantiationException | IllegalAccessException | EdalApprovalException e) {
+			url = DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance().getNewURL(publicReference);
+		} catch (ReflectiveOperationException | EdalApprovalException e) {
 			throw new ReferenceableException("unable to get a new URL for the PublicReference");
 		}
 		return url;
