@@ -24,9 +24,17 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.List;
 
+import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http2.HTTP2Cipher;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
@@ -48,9 +56,8 @@ public class EdalHttpServer {
 	private String domainNameToUse = null;
 
 	private EdalConfiguration configuration = null;
-	
-	private HandlerCollection handlerCollection = new HandlerCollection(true);
 
+	private HandlerCollection handlerCollection = new HandlerCollection(true);
 
 	protected EdalHttpServer(final EdalConfiguration configuration) {
 
@@ -122,7 +129,7 @@ public class EdalHttpServer {
 
 		ContextHandler edalContextHandler = new ContextHandler("/");
 		edalContextHandler.setHandler(new EdalHttpHandler());
-		
+
 //		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 //		restHandler.setContextPath("/rest");	
 //		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
@@ -132,43 +139,67 @@ public class EdalHttpServer {
 //		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
 //		contextHandlerCollection.addHandler(edalContextHandler);
 //		contextHandlerCollection.addHandler(restHandler);
-		
-		
-	
+
 //		collection.addHandler(restHandler);
 
 		handlerCollection.addHandler(edalContextHandler);
-		
+
 //		collection.addHandler(contextHandlerCollection);
-		
+
 		handlerCollection.addHandler(requestLogHandler);
-		
 
 		if (this.useSSL) {
 
-			SslContextFactory contextFactory = new SslContextFactory();
-
-			KeyStore keystore = null;
 			try {
-				keystore = KeyStore.getInstance("JKS");
-				keystore.load(new FileInputStream(configuration.getCertificatePathForHttpListener().getPath()),
-						configuration.getKeystorePasswordForHttpListener().toCharArray());
-			} catch (GeneralSecurityException | IOException e) {
-				DataManager.getImplProv().getLogger().error("Unable to load/open keystore : " + e.getMessage());
-			}
 
-			contextFactory.setKeyStore(keystore);
+				SslContextFactory sslContextFactory = new SslContextFactory();
 
-			contextFactory.setKeyStorePassword(configuration.getKeystorePasswordForHttpListener());
+				KeyStore keystore = null;
+				try {
+					keystore = KeyStore.getInstance("JKS");
+					keystore.load(new FileInputStream(configuration.getCertificatePathForHttpListener().getPath()),
+							configuration.getKeystorePasswordForHttpListener().toCharArray());
+				} catch (GeneralSecurityException | IOException e) {
+					DataManager.getImplProv().getLogger().error("Unable to load/open keystore : " + e.getMessage());
+				}
 
-			ServerConnector sslConnector = new ServerConnector(this.eDALServer, contextFactory);
+				sslContextFactory.setKeyStore(keystore);
+				sslContextFactory.setKeyStorePassword(configuration.getKeystorePasswordForHttpListener());
+				sslContextFactory.setCipherComparator(HTTP2Cipher.COMPARATOR);
 
-			ServerConnector connector = new ServerConnector(this.eDALServer);
+				// HTTP Configuration
+				HttpConfiguration httpConfig = new HttpConfiguration();
+				httpConfig.setSecureScheme("https");
+				httpConfig.setSecurePort(configuration.getHttpsPort());
+				httpConfig.setSendXPoweredBy(true);
+				httpConfig.setSendServerVersion(true);
 
-			try {
-				connector.setPort(configuration.getHttpPort());
-				sslConnector.setPort(configuration.getHttpsPort());
-				this.eDALServer.setConnectors(new Connector[] { sslConnector, connector });
+				// HTTP Connector
+				ServerConnector httpConnector = new ServerConnector(this.eDALServer,
+						new HttpConnectionFactory(httpConfig), new HTTP2CServerConnectionFactory(httpConfig));
+				httpConnector.setPort(configuration.getHttpPort());
+				this.eDALServer.addConnector(httpConnector);
+
+				// HTTPS Configuration
+				HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+				httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
+				// HTTP2 Connection Factory
+				HTTP2ServerConnectionFactory http2ConnectionFactory = new HTTP2ServerConnectionFactory(httpsConfig);
+
+				ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
+				alpn.setDefaultProtocol(httpConnector.getDefaultProtocol());
+
+				// SSL Connection Factory
+				SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory,
+						alpn.getProtocol());
+
+				// HTTP2 Connector
+				ServerConnector http2Connector = new ServerConnector(this.eDALServer, sslConnectionFactory, alpn,
+						http2ConnectionFactory, new HttpConnectionFactory(httpsConfig));
+				http2Connector.setPort(configuration.getHttpsPort());
+				this.eDALServer.addConnector(http2Connector);
+
 				this.eDALServer.setHandler(handlerCollection);
 
 				if (configuration.getStaticServerAdress() != null) {
@@ -378,8 +409,7 @@ public class EdalHttpServer {
 	/**
 	 * internal setter for the {@link URL} of the HTTP server.
 	 * 
-	 * @param url
-	 *            the {@link URL} to set.
+	 * @param url the {@link URL} to set.
 	 */
 	private void setURL(URL url) {
 		EdalHttpServer.url = url;
@@ -388,8 +418,7 @@ public class EdalHttpServer {
 	/**
 	 * internal setter for the {@link URL} of the HTTP downloads.
 	 * 
-	 * @param url
-	 *            the {@link URL} to set.
+	 * @param url the {@link URL} to set.
 	 */
 	private void setHttpDownloadURL(URL url) {
 		EdalHttpServer.httpDownloadUrl = url;
@@ -399,8 +428,7 @@ public class EdalHttpServer {
 	 * Get the {@link URL} of the HTTP server.
 	 * 
 	 * @return the {@link URL} of the HTTP server.
-	 * @throws EdalException
-	 *             if no HTTP server was started.
+	 * @throws EdalException if no HTTP server was started.
 	 */
 	public static URL getServerURL() throws EdalException {
 		if (EdalHttpServer.url != null) {
@@ -414,8 +442,7 @@ public class EdalHttpServer {
 	 * Get the {@link URL} for the HTTP downloads.
 	 * 
 	 * @return the {@link URL} of the HTTP server.
-	 * @throws EdalException
-	 *             if no HTTP server was started.
+	 * @throws EdalException if no HTTP server was started.
 	 */
 	public static URL getHttpDownloadURL() throws EdalException {
 		if (EdalHttpServer.httpDownloadUrl != null) {
@@ -428,17 +455,13 @@ public class EdalHttpServer {
 	/**
 	 * Generate an {@link URL} to a ticket for the given method.
 	 * 
-	 * @param ticket
-	 *            the ticket to the method.
-	 * @param reviewerCode
-	 *            the code to identify the reviewer.
-	 * @param method
-	 *            the method for this {@link URL}.
+	 * @param ticket       the ticket to the method.
+	 * @param reviewerCode the code to identify the reviewer.
+	 * @param method       the method for this {@link URL}.
 	 * @return the URL to accept the
 	 *         {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 *         .
-	 * @throws EdalException
-	 *             if unable to generate an URL.
+	 * @throws EdalException if unable to generate an URL.
 	 */
 	public static URL generateMethodURL(String ticket, int reviewerCode, EdalHttpFunctions method)
 			throws EdalException {
@@ -461,15 +484,12 @@ public class EdalHttpServer {
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity} as
 	 * reviewer over a temporal landing page.
 	 * 
-	 * @param entityURL
-	 *            the normal {@link URL} to this
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
-	 *            .
-	 * @param reviewersCode
-	 *            the code to identify the reviewer
+	 * @param entityURL     the normal {@link URL} to this
+	 *                      {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity}
+	 *                      .
+	 * @param reviewersCode the code to identify the reviewer
 	 * @return the {@link URL} to access the landing page for the reviewer.
-	 * @throws EdalException
-	 *             if unable to generate reviewer {@link URL}
+	 * @throws EdalException if unable to generate reviewer {@link URL}
 	 */
 	public static URL generateReviewerURL(URL entityURL, int reviewersCode) throws EdalException {
 
@@ -480,7 +500,7 @@ public class EdalHttpServer {
 			throw new EdalException("unable to generate ReviewerURL", e);
 		}
 	}
-	
+
 	public HandlerCollection getHandlers() {
 		return this.handlerCollection;
 	}
