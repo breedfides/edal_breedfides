@@ -41,6 +41,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -195,11 +196,15 @@ public class ElixirCallBackHandler implements CallbackHandler {
 
 					String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
 							.get("access_token").toString();
-
-					String resultOfUserinformationRequest = JerseyClientBuilder.createClient()
+					
+					JerseyClient client = JerseyClientBuilder.createClient();
+					
+					String resultOfUserinformationRequest = client
 							.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
 							.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
-
+					
+					client.close();
+					
 					JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);
 
 					String fullname = jsonobj.get("name").toString();

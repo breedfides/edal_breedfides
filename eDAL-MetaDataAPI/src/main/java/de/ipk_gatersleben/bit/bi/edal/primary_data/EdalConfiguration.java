@@ -888,8 +888,8 @@ public final class EdalConfiguration {
 		JSONObject json = null;
 		try {
 			json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
-			client.close();
 		} catch (ParseException e) {
+			client.close();
 			e.printStackTrace();
 		}
 		JSONArray included = (JSONArray) json.get("included");
@@ -901,15 +901,12 @@ public final class EdalConfiguration {
 		String domains = (String) attributes.get("domains");
 
 		if (domains.contains(",")) {
-
 			final String[] registeredDomains = domains.split(",");
 
 			return Arrays.asList(registeredDomains);
 		} else {
 			return new ArrayList<String>(Arrays.asList(domains));
-
 		}
-	
 	}
 
 	private void setAliasDomainNames(final List<String> aliasDomainNames) {
@@ -1390,10 +1387,11 @@ public final class EdalConfiguration {
 		final Response response = webResource.request(MediaType.APPLICATION_JSON).get();
 
 		if (response.getStatus() == 200) {
+			client.close();
 			EdalConfiguration.logger.info("DataCite RestAPI Test : successful");
 			return true;
 		} else {
-
+			client.close();
 			EdalConfiguration.logger.error("DataCite RestAPI Test failed");
 			throw new EdalConfigurationException(
 					"unable to connect to DataCite RestAPI: " + response.readEntity(String.class));
