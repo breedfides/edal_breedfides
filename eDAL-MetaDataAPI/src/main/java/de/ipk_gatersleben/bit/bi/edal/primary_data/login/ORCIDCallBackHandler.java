@@ -241,6 +241,7 @@ public class ORCIDCallBackHandler implements CallbackHandler {
 					}
 
 				} else {
+					client.close();
 					throw new Exception("request failed");
 				}
 			} catch (Exception e) {
@@ -274,6 +275,7 @@ public class ORCIDCallBackHandler implements CallbackHandler {
 					accessToken = (String) jsonObject.get("access_token");
 				}
 			} else {
+				client.close();
 				throw new IOException("Request for access token failed");
 			}
 		}

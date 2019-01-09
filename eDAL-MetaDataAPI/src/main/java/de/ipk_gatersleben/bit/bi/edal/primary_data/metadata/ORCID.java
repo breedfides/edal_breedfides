@@ -236,6 +236,7 @@ public class ORCID implements Serializable {
 					}
 				}
 			} else {
+				client.close();
 				throw new ORCIDException("Request for authentication token failed");
 			}
 			return null;
@@ -287,7 +288,6 @@ public class ORCID implements Serializable {
 			final Response response = resource.request("application/orcid+xml")
 					.header("Authorization", "Bearer " + this.accessToken).get();
 			try {
-
 				if (response.getStatus() == 200) {
 
 					String result = response.readEntity(String.class);
@@ -317,7 +317,9 @@ public class ORCID implements Serializable {
 						return new ArrayList<ORCID>(0);
 					}
 				}
-
+				else {
+					client.close();
+				}
 			} catch (ParserConfigurationException | SAXException | IOException e) {
 				throw new ORCIDException("Unable ro request ORCID API");
 			}
@@ -350,13 +352,16 @@ public class ORCID implements Serializable {
 					Document document = builder.parse(new InputSource(new StringReader(result)));
 					NodeList list = document.getElementsByTagName("orcid-search-results");
 					if (list.item(0).getAttributes().getNamedItem("num-found").getNodeValue().equals("1")) {
-						// ** okay**/
+						/* okay */
 					} else {
 						throw new ORCIDException("no orcid registered");
 					}
 				} catch (Exception e) {
 					throw new ORCIDException("no orcid registered", e);
 				}
+			}
+			else {
+				client.close();
 			}
 		}
 
@@ -396,6 +401,8 @@ public class ORCID implements Serializable {
 				} catch (Exception e) {
 					throw new ORCIDException("no orcid registered", e);
 				}
+			}else {
+				client.close();
 			}
 			return null;
 		}
