@@ -153,6 +153,7 @@ public class ORCIDConnector {
 				}
 			}
 		} else {
+			client.close();
 			throw new Exception("Request for authentication token failed");
 		}
 		return null;
@@ -217,6 +218,9 @@ public class ORCIDConnector {
 				throw new Exception("no orcid registered", e);
 			}
 		}
+		else {
+			client.close();
+		}
 	}
 
 	private void getCurrentAffiliationByOrcid(String orcid) throws Exception {
@@ -256,6 +260,9 @@ public class ORCIDConnector {
 				throw new Exception("no orcid registered", e);
 			}
 		}
+		else {
+			client.close();
+		}
 	}
 
 	private void searchForName(String givenName, String familyName) throws Exception {
@@ -286,7 +293,9 @@ public class ORCIDConnector {
 			} else {
 				throw new Exception("no orcid registered");
 			}
-
+		}
+		else {
+			client.close();
 		}
 	}
 
@@ -350,6 +359,9 @@ public class ORCIDConnector {
 				throw new Exception("no orcid registered");
 			}
 
+		}
+		else {
+			client.close();
 		}
 	}
 
