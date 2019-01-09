@@ -114,7 +114,7 @@ public class OrcidSearchForIdDialog extends JDialog implements ActionListener, H
 		c.ipady = 0;
 		c.ipadx = 0;
 
-		if (this.list.size() < 5 && this.list.size() != 0) {
+		if (this.list.size() < 10 && this.list.size() != 0) {
 
 			this.setMinimumSize(new Dimension(750, 60 * this.list.size()));
 
