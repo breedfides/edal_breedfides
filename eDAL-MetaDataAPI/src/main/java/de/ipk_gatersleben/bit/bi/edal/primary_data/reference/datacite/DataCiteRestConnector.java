@@ -101,6 +101,7 @@ public class DataCiteRestConnector {
 			}
 
 		} else {
+			this.restClient.close();
 			throw new DataCiteException("unable to query the data centre ID");
 		}
 
@@ -187,6 +188,7 @@ public class DataCiteRestConnector {
 			}
 
 		} else {
+			this.restClient.close();
 			throw new DataCiteException("unable to query the number of stored DOIs");
 		}
 	}
@@ -217,6 +219,7 @@ public class DataCiteRestConnector {
 				return false;
 			}
 		} else {
+			this.restClient.close();
 			return false;
 		}
 		return false;
