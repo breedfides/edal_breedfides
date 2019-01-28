@@ -228,10 +228,10 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
-	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.3.7.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.1.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
-	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.3.7.Final'
-	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.3.7.Final'
+	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.1.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.1.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'
 	
 	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'
