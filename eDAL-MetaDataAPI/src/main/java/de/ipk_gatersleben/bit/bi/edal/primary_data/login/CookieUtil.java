@@ -12,6 +12,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.login;
 import java.lang.reflect.Field;
 import java.net.HttpCookie;
 
+@Deprecated
 public class CookieUtil {
 	public static String toString(HttpCookie cookie) {
 		try {

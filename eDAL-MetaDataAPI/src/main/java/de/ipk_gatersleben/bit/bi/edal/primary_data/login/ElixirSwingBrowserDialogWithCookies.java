@@ -131,35 +131,35 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 
 				WebView view = new WebView();
 
-				CookieManager manager = new CookieManager(new CustomCookieStore(), CookiePolicy.ACCEPT_ALL);
-
-				if (!Files.exists(CookieStore)) {
-					try {
-						Files.createDirectories(CookieStore.getParent());
-						Files.createFile(CookieStore);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-
-				try {
-					for (String line : Files.readAllLines(CookieStore)) {
-						String[] values = line.split("~");
-
-						for (String header : values) {
-							HttpCookie cookie = CookieUtil.fromString(header);
-
-							if (cookie == null || cookie.hasExpired())
-								continue;
-
-							manager.getCookieStore().add(new URI(header.split("|")[0]), cookie);
-						}
-					}
-				} catch (IOException | URISyntaxException e) {
-					e.printStackTrace();
-				}
-
-				CookieHandler.setDefault(manager);
+//				CookieManager manager = new CookieManager(new CustomCookieStore(), CookiePolicy.ACCEPT_ALL);
+//
+//				if (!Files.exists(CookieStore)) {
+//					try {
+//						Files.createDirectories(CookieStore.getParent());
+//						Files.createFile(CookieStore);
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//
+//				try {
+//					for (String line : Files.readAllLines(CookieStore)) {
+//						String[] values = line.split("~");
+//
+//						for (String header : values) {
+//							HttpCookie cookie = CookieUtil.fromString(header);
+//
+//							if (cookie == null || cookie.hasExpired())
+//								continue;
+//
+//							manager.getCookieStore().add(new URI(header.split("|")[0]), cookie);
+//						}
+//					}
+//				} catch (IOException | URISyntaxException e) {
+//					e.printStackTrace();
+//				}
+//
+//				CookieHandler.setDefault(manager);
 
 				engine = view.getEngine();
 
@@ -249,37 +249,39 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				//
-				// /** new version for Cookie-Store maybe for later use **/
-				// // manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-				// // CookieHandler.setDefault(manager);
-
-				CookieManager man = (CookieManager) CookieHandler.getDefault();
-				CookieStore store = man.getCookieStore();
-				try {
-
-					if (!Files.exists(CookieStore)) {
-						Files.createDirectories(CookieStore.getParent());
-						Files.createFile(CookieStore);
-					}
-
-					Files.write(CookieStore, ("").getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
-
-					for (URI uri : store.getURIs()) {
-						for (HttpCookie cookie : store.get(uri)) {
-							if (cookie.hasExpired())
-								continue;
-
-							Files.write(CookieStore,
-									(uri.toString() + "|" + CookieUtil.toString(cookie) + "~").getBytes(),
-									StandardOpenOption.APPEND);
-						}
-					}
-
-					Files.write(CookieStore, "\n".getBytes(), StandardOpenOption.APPEND);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				
+				 /** new version for Cookie-Store maybe for later use **/
+				CookieManager manager = new CookieManager();
+				manager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+				CookieHandler.setDefault(manager);
+				
+//				/** old version JDK8  **/
+//				CookieManager man = (CookieManager) CookieHandler.getDefault();
+//				CookieStore store = man.getCookieStore();
+//				try {
+//
+//					if (!Files.exists(CookieStore)) {
+//						Files.createDirectories(CookieStore.getParent());
+//						Files.createFile(CookieStore);
+//					}
+//
+//					Files.write(CookieStore, ("").getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+//
+//					for (URI uri : store.getURIs()) {
+//						for (HttpCookie cookie : store.get(uri)) {
+//							if (cookie.hasExpired())
+//								continue;
+//
+//							Files.write(CookieStore,
+//									(uri.toString() + "|" + CookieUtil.toString(cookie) + "~").getBytes(),
+//									StandardOpenOption.APPEND);
+//						}
+//					}
+//
+//					Files.write(CookieStore, "\n".getBytes(), StandardOpenOption.APPEND);
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
 
 				engine.load(tmp);
 			}
