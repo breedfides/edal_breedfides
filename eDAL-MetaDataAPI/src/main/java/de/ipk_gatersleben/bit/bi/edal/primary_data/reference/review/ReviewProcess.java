@@ -33,7 +33,7 @@ public class ReviewProcess {
 	/**
 	 * the default timeout for the review process half years in days
 	 */
-	static final int DEFAULT_TIMEOUT = 182;
+	public static final int DEFAULT_TIMEOUT = 182;
 
 	protected static ReviewStatusEvaluation evaluationForGroups;
 	protected static ReviewStatusEvaluation evaluationForDataManager;

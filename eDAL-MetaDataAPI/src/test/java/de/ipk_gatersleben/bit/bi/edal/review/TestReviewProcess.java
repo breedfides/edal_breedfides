@@ -7,7 +7,7 @@
  * Contributors:
  *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review;
+package de.ipk_gatersleben.bit.bi.edal.review;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -21,6 +21,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewProcess;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewResult;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewStatusType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewerType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;

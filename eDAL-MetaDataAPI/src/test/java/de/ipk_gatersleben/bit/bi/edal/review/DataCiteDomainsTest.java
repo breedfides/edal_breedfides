@@ -7,7 +7,7 @@
  * Contributors:
  *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review;
+package de.ipk_gatersleben.bit.bi.edal.review;
 
 import java.net.InetAddress;
 

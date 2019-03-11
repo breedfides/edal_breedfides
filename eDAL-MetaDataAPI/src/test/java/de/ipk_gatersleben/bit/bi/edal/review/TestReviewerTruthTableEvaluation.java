@@ -10,7 +10,7 @@
 /**
  * 
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review;
+package de.ipk_gatersleben.bit.bi.edal.review;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewStatusType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatusEvaluation;
 
 /**
  * @author lange

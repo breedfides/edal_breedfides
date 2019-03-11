@@ -40,8 +40,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus
 public class ReviewStatusEvaluation {
 
     private static final String TRUTH_TABLE_FILE_VALUE_DELIMITER = ",";
-    static final String PROPERTY_FILE_GROUP_TRUTH_TABLE = "group_truth_table.prop";
-    static final String PROPERTY_FILE_DATAMANAGER_TRUTH_TABLE = "datamanager_truth_table.prop";
+    public static final String PROPERTY_FILE_GROUP_TRUTH_TABLE = "group_truth_table.prop";
+    public static final String PROPERTY_FILE_DATAMANAGER_TRUTH_TABLE = "datamanager_truth_table.prop";
 
     /**
      * create truth table for final data manager decision
@@ -52,7 +52,7 @@ public class ReviewStatusEvaluation {
      *         leader, group leader assistant)
      * @throws IOException
      */
-    static ReviewStatusEvaluation createReviewStatusEvaluationForDatamanager()
+    public static ReviewStatusEvaluation createReviewStatusEvaluationForDatamanager()
 	    throws IOException {
 
 	return new ReviewStatusEvaluation(
@@ -69,7 +69,7 @@ public class ReviewStatusEvaluation {
      *         leader, group leader assistant)
      * @throws IOException
      */
-    static ReviewStatusEvaluation createReviewStatusEvaluationForGroups()
+    public static ReviewStatusEvaluation createReviewStatusEvaluationForGroups()
 	    throws IOException {
 
 	return new ReviewStatusEvaluation(
@@ -86,7 +86,7 @@ public class ReviewStatusEvaluation {
      *         leader, group leader assistant)
      * @throws IOException
      */
-    static Collection<Triple<ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType>> loadTruthTable(
+    public static Collection<Triple<ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType>> loadTruthTable(
 	    final String truth_file) throws IOException {
 	final Properties properties_group_truth_table = new Properties();
 

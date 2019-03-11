@@ -7,7 +7,7 @@
  * Contributors:
  *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data;
+package de.ipk_gatersleben.bit.bi.edal.data;
 
 import java.security.Principal;
 
@@ -16,6 +16,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrincipalImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SamplePrincipal;

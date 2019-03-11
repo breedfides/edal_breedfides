@@ -7,10 +7,11 @@
  * Contributors:
  *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data;
+package de.ipk_gatersleben.bit.bi.edal.data;
 
 import org.junit.Test;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalTestCaseWithoutShutdown;
