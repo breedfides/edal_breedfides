@@ -1,18 +1,20 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "com.github.johnrengelman.shadow" version "4.0.2"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
   id 'io.codearte.nexus-staging' version '0.12.0'
+  id 'org.openjfx.javafxplugin' version '0.0.7'
 }
 
 project.ext {
-    aspectjVersion = '1.9.2'
+    aspectjVersion = '1.9.3.RC1'
     jerseyVersion = '2.27'
     jettyVersion = '9.4.14.v20181114'
+    junitVersion = '5.4.0'
 }
 
 apply plugin: 'net.researchgate.release'
-apply plugin: "io.codearte.nexus-staging"
+apply plugin: 'io.codearte.nexus-staging'
 
 allprojects {
 
@@ -22,11 +24,13 @@ allprojects {
 		ant.fail('ERROR: Please use an Oracle Java Runtime for the e!DAL-MetaDataAPI')
 	}
 
-	apply plugin: 'java'
-	apply plugin: 'maven'
-	apply plugin: 'signing'
-	apply plugin: 'com.github.johnrengelman.shadow'
-	apply plugin: 'com.github.hierynomus.license'
+	apply plugin:'java'
+	apply plugin:'maven'
+	apply plugin:'signing'
+	apply plugin:'com.github.johnrengelman.shadow'
+	apply plugin:'com.github.hierynomus.license'
+	apply plugin:'application'
+	apply plugin:'org.openjfx.javafxplugin'
 	
 	repositories {
 	    mavenCentral()
@@ -37,8 +41,14 @@ allprojects {
         maven {url "https://plugins.gradle.org/m2/"}
 	}
 	
-	sourceCompatibility = 1.9
-	targetCompatibility = 1.9
+	sourceCompatibility = 11
+	targetCompatibility = 11
+	
+	javafx {
+	    modules = ['javafx.base','javafx.controls','javafx.web','javafx.swing']
+	}
+	mainClassName= 'org.openjfx.MainApp'
+	
 	tasks.withType(JavaCompile) {
 		options.encoding = 'UTF-8'
 	}
@@ -94,6 +104,8 @@ allprojects {
 	}
 	
 	shadowJar {
+		shadowDistZip.classifier = 'shadow'
+		shadowDistTar.classifier = 'shadow'
    		classifier = 'jar-with-dependencies'
 	}
 	
@@ -227,7 +239,7 @@ project(':eDAL-MetaDataAPI') {
 	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
-	    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+	    compile group: 'com.h2database', name: 'h2', version:'1.4.198'
 	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.1.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
 	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.1.Final'
@@ -254,8 +266,8 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
 	    compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
 	   
-	    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version:'5.3.1'
-	   	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version:'5.3.1'
+	    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+	   	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
 	    	   	
 	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: jerseyVersion
 	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: jerseyVersion

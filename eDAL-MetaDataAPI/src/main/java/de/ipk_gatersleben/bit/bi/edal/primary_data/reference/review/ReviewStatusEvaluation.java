@@ -50,7 +50,7 @@ public class ReviewStatusEvaluation {
      *         {@link org.apache.commons.lang3.tuple.Triple}: comprise a three
      *         columns formated truth table (research group decision,group
      *         leader, group leader assistant)
-     * @throws IOException
+     * @throws IOException if failed
      */
     public static ReviewStatusEvaluation createReviewStatusEvaluationForDatamanager()
 	    throws IOException {
@@ -67,7 +67,7 @@ public class ReviewStatusEvaluation {
      *         {@link org.apache.commons.lang3.tuple.Triple}: comprise a three
      *         columns formated truth table (research group decision,group
      *         leader, group leader assistant)
-     * @throws IOException
+     * @throws IOException if failed
      */
     public static ReviewStatusEvaluation createReviewStatusEvaluationForGroups()
 	    throws IOException {
@@ -80,11 +80,13 @@ public class ReviewStatusEvaluation {
     /**
      * load truth table from {@link java.util.Properties} file
      * 
+     * 
+     * @param truth_file the table to load
      * @return {@link java.util.Collection} of
      *         {@link org.apache.commons.lang3.tuple.Triple}: comprise a three
      *         columns formated truth table (research group decision,group
      *         leader, group leader assistant)
-     * @throws IOException
+     * @throws IOException if failed
      */
     public static Collection<Triple<ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType, ReviewStatus.ReviewStatusType>> loadTruthTable(
 	    final String truth_file) throws IOException {
