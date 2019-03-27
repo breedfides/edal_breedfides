@@ -247,7 +247,7 @@ footer {
     display:inline-block;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1050px) {
     #edal-report-search-container {
         padding-top:10px;
         float:none;

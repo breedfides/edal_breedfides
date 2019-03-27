@@ -27,7 +27,7 @@ let EdalReport = new function() {
                 var viewportBottom = viewportTop + scrollBody.height();
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
-            self.renderYearButtons();
+            self.renderYearSelectOptions();
             self.renderDatatable();
             self.addObservers();
         });
@@ -42,10 +42,10 @@ let EdalReport = new function() {
         });
     };
 
-    this.renderYearButtons = function() {
-        let btnContainer = $('#edal-report-year-filters');
+    this.renderYearSelectOptions = function() {
+        let selectElem = $('#edal-report-year-filter');
         _.forEach(this.allYears, function(year) {
-            btnContainer.append('<a class="btn btn-outline-light btn-sm edal-report-year-filter" href="#" role="button">'+year+'</a>&nbsp;');
+            selectElem.append('<option value="'+year+'">'+year+'</a>&nbsp;');
         });
     }
 
@@ -154,10 +154,10 @@ let EdalReport = new function() {
             self.toogleGoogleMapVisibility(elem);
         });
 
-        $(document).on('click', 'a.edal-report-year-filter', function(event) {
+        $(document).on('change', '#edal-report-year-filter', function(event) {
             event.preventDefault();
             let elem = $(this);
-            let year = parseInt(elem.text());
+            let year = parseInt(elem.val());
             if (self.searchFilter === null) {
                 if (isNaN(year)) {
                     self.datatable.search('').columns().search('').draw();
@@ -175,10 +175,6 @@ let EdalReport = new function() {
                     self.yearFilter = year;
                 }
             }
-
-            $('a.edal-report-year-filter').removeClass('btn-light').addClass('btn-outline-light');
-            elem.removeClass('btn-outline-light');
-            elem.addClass('btn-light');
         });
         
         
@@ -321,7 +317,7 @@ let EdalReport = new function() {
     };
 
     this.niceBytes = function(x) {
-        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         let l = 0, n = parseInt(x, 10) || 0;
         while(n >= 1024 && ++l)
             n = n/1024;

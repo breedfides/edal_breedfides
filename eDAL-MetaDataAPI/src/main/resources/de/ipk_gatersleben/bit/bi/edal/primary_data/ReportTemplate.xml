@@ -23,10 +23,11 @@
             <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
                 <div class="mr-5" style="display:inline-block;color:white;">
 
-                    <div id="edal-report-filter-container">
+                    <div id="edal-report-filter-container" class="mr-3">
                         <span class="mr-2">Filter:</span>
-                        <a class="btn btn-light btn-sm edal-report-year-filter" href="#" role="button">All</a>
-                        <span id="edal-report-year-filters"></span>
+                        <select id="edal-report-year-filter">
+                            <option value="All">All</option>
+                        </select>
                     </div>
 
                     <div id="edal-report-export-container">
