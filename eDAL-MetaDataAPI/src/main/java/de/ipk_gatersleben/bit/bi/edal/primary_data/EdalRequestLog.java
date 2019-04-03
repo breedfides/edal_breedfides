@@ -12,7 +12,6 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.TimeZone;
 
 import org.eclipse.jetty.server.RequestLog;
@@ -27,7 +26,7 @@ public class EdalRequestLog extends EdalAbstractRequestLog implements RequestLog
 	private String _filenameDateFormat = null;
 	private transient OutputStream _out;
 	private transient OutputStream _fileOut;
-	private transient Writer _writer;
+	private transient OutputStreamWriter _writer;
 
 	/* ------------------------------------------------------------ */
 	/**

@@ -9,7 +9,7 @@ plugins {
 project.ext {
     aspectjVersion = '1.9.3.RC1'
     jerseyVersion = '2.27'
-    jettyVersion = '9.4.14.v20181114'
+    jettyVersion = '9.4.15.v20190215'
     junitVersion = '5.4.0'
 }
 
@@ -303,7 +303,7 @@ task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shad
 	mergeServiceFiles()
 	 
 	manifest {
-        attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer'
+        attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer', 'Multi-Release':'true'
     }
 	from(project.convention.getPlugin(JavaPluginConvention).sourceSets.main.output)
 	configurations = [project.configurations.runtime]
