@@ -7,7 +7,7 @@
  * Contributors:
  *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
  */
-package de.ipk_gatersleben.bit.bi.edal.helper;
+package de.ipk_gatersleben.bit.bi.edal.data_manager;
 
 import junit.framework.Assert;
 

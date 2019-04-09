@@ -1,4 +1,13 @@
-package de.ipk_gatersleben.de.bit.bi.edal.rmi.test;
+/**
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+ * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+ *
+ * Contributors:
+ *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - RMI Server/Wrapper
+ */
+package de.ipk_gatersleben.bit.bi.edal.rmi.test;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;

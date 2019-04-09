@@ -7,7 +7,7 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.9.3.RC1'
+    aspectjVersion = '1.9.3'
     jerseyVersion = '2.27'
     jettyVersion = '9.4.15.v20190215'
     junitVersion = '5.4.0'
@@ -41,8 +41,8 @@ allprojects {
         maven {url "https://plugins.gradle.org/m2/"}
 	}
 	
-	sourceCompatibility = 11
-	targetCompatibility = 11
+	sourceCompatibility = 12
+	targetCompatibility = 12
 	
 	javafx {
 	    modules = ['javafx.base','javafx.controls','javafx.web','javafx.swing']
@@ -52,6 +52,10 @@ allprojects {
 	tasks.withType(JavaCompile) {
 		options.encoding = 'UTF-8'
 	}
+	
+	distZip.enabled = false
+	distTar.enabled = false
+	startScripts.enabled=false
 	
 	javadoc {
     	options.addBooleanOption('html5', true)
@@ -76,6 +80,15 @@ allprojects {
 	
 	    testLogging.showStandardStreams = true
 	    testLogging.exceptionFormat = 'full'
+		
+		exclude 'de/ipk_gatersleben/bit/bi/edal/test/**'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/helper/**'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/primary_data/rmi/client/helper/**'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/rmi/test/**'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/primary_data/rmi/client/test/ClientServerTest*'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/primary_data/rmi/client/test/parallel/RmiUploadDownloadOne*'
+		exclude 'de/ipk_gatersleben/bit/bi/edal/primary_data/rmi/client/test/parallel/RmiUploadDownloadTwo*'
+		
 	}
 	
 	license {
@@ -84,7 +97,7 @@ allprojects {
  	ext.year = Calendar.getInstance().get(Calendar.YEAR)
 	include "**/*.java"
 	exclude "**/*package-info.java"
-}
+	}
 	
 	sourceSets {
         main {
@@ -106,6 +119,9 @@ allprojects {
 	shadowJar {
 		shadowDistZip.classifier = 'shadow'
 		shadowDistTar.classifier = 'shadow'
+		shadowDistZip.enabled=false
+		shadowDistTar.enabled=false
+		startShadowScripts.enabled=false
    		classifier = 'jar-with-dependencies'
 	}
 	
@@ -118,7 +134,8 @@ allprojects {
 	}
 	else{
 		signing {
-		    sign configurations.archives
+		    //sign configurations.archives
+			sign shadowJar
 		}
 	}
 
@@ -240,10 +257,10 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.198'
-	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.1.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.2.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
-	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.1.Final'
-	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.1.Final'
+	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.2.Final'
+	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.2.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'
 	
 	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'
