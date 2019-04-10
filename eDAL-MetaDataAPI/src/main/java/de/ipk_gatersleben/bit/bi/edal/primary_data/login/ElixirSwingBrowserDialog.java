@@ -36,7 +36,6 @@ import java.util.List;
 
 import static javafx.concurrent.Worker.State.FAILED;
 
-@SuppressWarnings("restriction")
 public class ElixirSwingBrowserDialog extends JDialog {
 
 	static {

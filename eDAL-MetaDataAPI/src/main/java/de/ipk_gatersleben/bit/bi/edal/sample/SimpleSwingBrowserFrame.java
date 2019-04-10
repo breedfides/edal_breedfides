@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import static javafx.concurrent.Worker.State.*;
 import static javafx.concurrent.Worker.*;
 
-@SuppressWarnings("restriction")
 public class SimpleSwingBrowserFrame extends JFrame {
 
 

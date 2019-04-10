@@ -34,7 +34,6 @@ import java.util.List;
 
 import static javafx.concurrent.Worker.State.FAILED;
 
-@SuppressWarnings("restriction")
 public class SwingBrowserDialog extends JDialog {
 
 	static {

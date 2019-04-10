@@ -29,7 +29,6 @@ allprojects {
 	apply plugin:'signing'
 	apply plugin:'com.github.johnrengelman.shadow'
 	apply plugin:'com.github.hierynomus.license'
-	apply plugin:'application'
 	apply plugin:'org.openjfx.javafxplugin'
 	
 	repositories {
@@ -47,15 +46,10 @@ allprojects {
 	javafx {
 	    modules = ['javafx.base','javafx.controls','javafx.web','javafx.swing']
 	}
-	mainClassName= 'org.openjfx.MainApp'
 	
 	tasks.withType(JavaCompile) {
 		options.encoding = 'UTF-8'
 	}
-	
-	distZip.enabled = false
-	distTar.enabled = false
-	startScripts.enabled=false
 	
 	javadoc {
     	options.addBooleanOption('html5', true)
@@ -117,11 +111,6 @@ allprojects {
 	}
 	
 	shadowJar {
-		shadowDistZip.classifier = 'shadow'
-		shadowDistTar.classifier = 'shadow'
-		shadowDistZip.enabled=false
-		shadowDistTar.enabled=false
-		startShadowScripts.enabled=false
    		classifier = 'jar-with-dependencies'
 	}
 	
@@ -134,8 +123,7 @@ allprojects {
 	}
 	else{
 		signing {
-		    //sign configurations.archives
-			sign shadowJar
+		    sign configurations.archives
 		}
 	}
 

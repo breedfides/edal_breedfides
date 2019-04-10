@@ -17,6 +17,7 @@ import java.sql.DriverManager;
 import org.h2.tools.RunScript;
 import org.h2.tools.Script;
 
+@SuppressWarnings("unused")
 public class DatabaseBackupAndRepair {
 
 	public static void main(String[] args) throws Exception {

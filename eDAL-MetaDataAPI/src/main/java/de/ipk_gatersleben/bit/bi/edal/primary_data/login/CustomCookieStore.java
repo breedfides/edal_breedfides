@@ -108,6 +108,7 @@ public class CustomCookieStore implements CookieStore {
 	/**
 	 * Get all cookies in cookie store, except those have expired
 	 */
+	@SuppressWarnings("unused")
 	public List<HttpCookie> getCookies() {
 		List<HttpCookie> rt;
 

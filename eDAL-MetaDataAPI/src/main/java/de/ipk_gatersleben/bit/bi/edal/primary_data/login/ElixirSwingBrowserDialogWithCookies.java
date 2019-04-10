@@ -46,7 +46,7 @@ import java.util.List;
 
 import static javafx.concurrent.Worker.State.FAILED;
 
-@SuppressWarnings("restriction")
+@SuppressWarnings("unused")
 public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 
 	static {
@@ -74,7 +74,7 @@ public class ElixirSwingBrowserDialogWithCookies extends JDialog {
 	private final JTextField txtURL = new JTextField();
 	private final JProgressBar progressBar = new JProgressBar();
 
-	private final Path CookieStore = Paths.get(System.getProperty("user.home"), ".eDAL", "cookie.txt");
+	//private final Path CookieStore = Paths.get(System.getProperty("user.home"), ".eDAL", "cookie.txt");
 
 	public ElixirSwingBrowserDialogWithCookies(Frame parent, String url) {
 		super(parent, true);
