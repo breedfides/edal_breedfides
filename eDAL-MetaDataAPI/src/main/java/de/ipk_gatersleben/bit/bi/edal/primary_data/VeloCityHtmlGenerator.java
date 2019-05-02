@@ -656,6 +656,13 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
+			try {
+				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
@@ -1048,6 +1055,13 @@ class VeloCityHtmlGenerator {
 		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
 			try {
 				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
+			try {
+				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

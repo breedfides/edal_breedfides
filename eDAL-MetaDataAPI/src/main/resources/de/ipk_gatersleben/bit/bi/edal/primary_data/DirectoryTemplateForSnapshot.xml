@@ -89,6 +89,11 @@
                             <p class="my-0 mt-2">
                                 <span style="font-weight:500;">Content: </span>$referenceDirectoryContent Directories $referenceFileContent Files ($referenceDataVolume)
                             </p>
+                            #if( $StatementTemplate)
+							<p class="my-0 mt-2" style=" font-size: normal">
+                                <span style="font-weight:500;">Identifier Persistence: </span>$StatementTemplate
+                            </p>
+							#end
 
                         </div>
                     </div>
@@ -141,7 +146,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <footer class="footer">
