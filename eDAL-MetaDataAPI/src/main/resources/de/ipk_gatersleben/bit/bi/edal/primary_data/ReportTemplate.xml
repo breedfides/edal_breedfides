@@ -8,7 +8,9 @@
     
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
     	
-    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MatamoTemplate.xml")
+	#if( $MatomoTemplate)
+		$MatomoTemplate
+	#end    
     
   </head>
 

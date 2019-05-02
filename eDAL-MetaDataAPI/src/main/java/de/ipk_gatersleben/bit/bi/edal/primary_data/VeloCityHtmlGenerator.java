@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
@@ -36,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
@@ -86,14 +88,15 @@ class VeloCityHtmlGenerator {
 	private static final String STRING_SERVER_URL = "serverURL";
 	private static final String STRING_CITATION_ENTITY = "citation_entity";
 	private static final String DOWNLOAD_SERVER_URL = "downloadURL";
-	
+
 	/**
 	 * Default constructor to load all VeloCity properties.
 	 */
 	VeloCityHtmlGenerator() {
 
 		Velocity.setProperty("resource.loader", "class");
-		Velocity.setProperty("class.resource.loader.class",	"org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
+		Velocity.setProperty("class.resource.loader.class",
+				"org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
 		Velocity.setProperty("runtime.log.logsystem.class", "org.apache.velocity.runtime.log.NullLogSystem");
 		Velocity.setProperty("input.encoding", DEFAULT_CHARSET);
 		Velocity.setProperty("output.encoding", DEFAULT_CHARSET);
@@ -103,13 +106,10 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate the HTML output for an eMail that the root user was changed.
 	 * 
-	 * @param newAddress
-	 *            the address of the new root user.
-	 * @param oldAddress
-	 *            the address of the old root user.
+	 * @param newAddress the address of the new root user.
+	 * @param oldAddress the address of the old root user.
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected StringWriter generateEmailForChangedRootUser(final InternetAddress newAddress,
 			final InternetAddress oldAddress) throws EdalException {
@@ -118,7 +118,7 @@ class VeloCityHtmlGenerator {
 
 		/* set the charset */
 		context.put("charset", DEFAULT_CHARSET.toString());
-		
+
 		/* set the address of the new root user */
 		context.put("newRoot", newAddress);
 
@@ -145,22 +145,19 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate the HTML output for an eMail for the double opt-in of a root user.
 	 * 
-	 * @param address
-	 *            the address of the root user.
-	 * @param the
-	 *            {@link UUID} to identify the root user.
+	 * @param address the address of the root user.
+	 * @param the     {@link UUID} to identify the root user.
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected StringWriter generateEmailForDoubleOptIn(final InternetAddress address, final UUID uuid)
 			throws EdalException {
 
 		final VelocityContext context = new VelocityContext();
-		
+
 		/* set the charset */
 		context.put("charset", DEFAULT_CHARSET.toString());
-		
+
 		/** create the URL to confirm the eMail address */
 
 		final String url = EdalHttpServer.getServerURL().toString() + EdalHttpServer.EDAL_PATH_SEPARATOR
@@ -188,15 +185,12 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate HTML output for an Error message of the HHTP handler.
 	 * 
-	 * @param responseCode
-	 *            the error code of the response, e.g. 404.
-	 * @param message
-	 *            the error message.
+	 * @param responseCode    the error code of the response, e.g. 404.
+	 * @param message         the error message.
 	 * @param teeOutputStream
 	 * @param latch
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected OutputStreamWriter generateEmbeddedHtmlForErrorMessage(final HttpStatus.Code responseCode,
 			final String message, final TeeOutputStream teeOutputStream, final CountDownLatch latch)
@@ -221,7 +215,7 @@ class VeloCityHtmlGenerator {
 				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output, latch);
 
 		DataManager.getVelocityExecutorService().execute(thread);
-		
+
 		return output;
 	}
 
@@ -229,12 +223,11 @@ class VeloCityHtmlGenerator {
 	 * Generate the HTML output of a {@link PrimaryDataDirectory} for the landing
 	 * page of the HTTP handler.
 	 *
-	 * @param directory
-	 *            the {@link PrimaryDataDirectory} to present on the landing page.
+	 * @param directory the {@link PrimaryDataDirectory} to present on the landing
+	 *                  page.
 	 *
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected StringWriter generateHtmlForDirectory(final PrimaryDataDirectory directory) throws EdalException {
 
@@ -284,19 +277,15 @@ class VeloCityHtmlGenerator {
 	 * page of the HTTP handler. Special function for the landing page for the
 	 * reviewer, who should approve this object.
 	 * 
-	 * @param directory
-	 *            the {@link PrimaryDataDirectory} to present on the landing page.
-	 * @param reviewerCode
-	 *            the reviewerCode to identify a reviewer.
-	 * @param internalId
-	 *            the internal ID of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
-	 * @param identifierType
-	 *            the {@link PersistentIdentifier} of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param directory      the {@link PrimaryDataDirectory} to present on the
+	 *                       landing page.
+	 * @param reviewerCode   the reviewerCode to identify a reviewer.
+	 * @param internalId     the internal ID of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param identifierType the {@link PersistentIdentifier} of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected OutputStreamWriter generateHtmlForDirectoryForReviewer(final PrimaryDataDirectory directory,
 			final long versionNumber, final String internalId, final PersistentIdentifier identifierType,
@@ -306,7 +295,7 @@ class VeloCityHtmlGenerator {
 		Calendar date = null;
 
 		Long publicReferenceDirectorySize = Long.valueOf(0);
-		
+
 		String publicReferenceFileDirectoryNumber = new String();
 
 		try {
@@ -338,9 +327,8 @@ class VeloCityHtmlGenerator {
 			publicReferenceDirectorySize = CalculateDirectorySizeThread.directorySizes
 					.get(internalId + "/" + directory.getID());
 		}
-		
-		if (CalculateDirectorySizeThread.directoryFiles
-				.containsKey(internalId + "/" + directory.getID())) {
+
+		if (CalculateDirectorySizeThread.directoryFiles.containsKey(internalId + "/" + directory.getID())) {
 			publicReferenceFileDirectoryNumber = CalculateDirectorySizeThread.directoryFiles
 					.get(internalId + "/" + directory.getID());
 		}
@@ -348,7 +336,7 @@ class VeloCityHtmlGenerator {
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", DEFAULT_CHARSET.toString());
-		
+
 		/** set entity for citation */
 		context.put(STRING_CITATION_ENTITY, directory);
 
@@ -404,8 +392,7 @@ class VeloCityHtmlGenerator {
 
 			context.put("filenumber", publicReferenceFileDirectoryNumber.split(",")[1]);
 		}
-		
-		
+
 		try {
 			list = directory.listPrimaryDataEntities();
 
@@ -431,20 +418,16 @@ class VeloCityHtmlGenerator {
 	 * screenshot of a
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * 
-	 * @param versionNumber
-	 *            the number of the {@link PrimaryDataEntityVersion} of this
-	 *            {@link PrimaryDataDirectory}.
-	 * @param directory
-	 *            the {@link PrimaryDataDirectory} to present on the landing page.
-	 * @param internalId
-	 *            the internal ID of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
-	 * @param identifierType
-	 *            the {@link PersistentIdentifier} of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param versionNumber  the number of the {@link PrimaryDataEntityVersion} of
+	 *                       this {@link PrimaryDataDirectory}.
+	 * @param directory      the {@link PrimaryDataDirectory} to present on the
+	 *                       landing page.
+	 * @param internalId     the internal ID of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param identifierType the {@link PersistentIdentifier} of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create the HTML output.
+	 * @throws EdalException if unable to create the HTML output.
 	 */
 	protected OutputStreamWriter generateHtmlForDirectoryOfSnapshot(final PrimaryDataDirectory directory,
 			final long versionNumber, final String internalId, final PersistentIdentifier identifierType,
@@ -581,7 +564,7 @@ class VeloCityHtmlGenerator {
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", DEFAULT_CHARSET.toString());
-		
+
 		/** set entity for citation */
 		if (entityWithPersitentIdentifierForCitation != null) {
 			context.put(STRING_CITATION_ENTITY, entityWithPersitentIdentifierForCitation);
@@ -666,6 +649,14 @@ class VeloCityHtmlGenerator {
 			throw new EdalException("unable to load entity list of the directory", e);
 		}
 
+		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -681,13 +672,10 @@ class VeloCityHtmlGenerator {
 	/**
 	 * Generate HTML output for an Error message of the HHTP handler.
 	 * 
-	 * @param responseCode
-	 *            the error code of the response, e.g. 404.
-	 * @param message
-	 *            the error message.
+	 * @param responseCode the error code of the response, e.g. 404.
+	 * @param message      the error message.
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected StringWriter generateHtmlErrorMessage(final HttpStatus.Code responseCode, final String message)
 			throws EdalException {
@@ -727,11 +715,9 @@ class VeloCityHtmlGenerator {
 	 * Generate the HTML output of a {@link PrimaryDataFile} for the landing page of
 	 * the HTTP handler.
 	 *
-	 * @param file
-	 *            the {@link PrimaryDataFile} to present on the landing page.
+	 * @param file the {@link PrimaryDataFile} to present on the landing page.
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected StringWriter generateHtmlForFile(final PrimaryDataFile file) throws EdalException {
 
@@ -777,19 +763,15 @@ class VeloCityHtmlGenerator {
 	 * the HTTP handler. Special function for the landing page for the reviewer, who
 	 * should approve this object.
 	 * 
-	 * @param file
-	 *            the {@link PrimaryDataFile} to present on the landing page.
-	 * @param reviewerCode
-	 *            the reviewerCode to identify a reviewer.
-	 * @param internalId
-	 *            the internal ID of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
-	 * @param identifierType
-	 *            the {@link PersistentIdentifier} of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param file           the {@link PrimaryDataFile} to present on the landing
+	 *                       page.
+	 * @param reviewerCode   the reviewerCode to identify a reviewer.
+	 * @param internalId     the internal ID of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param identifierType the {@link PersistentIdentifier} of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create output.
+	 * @throws EdalException if unable to create output.
 	 */
 	protected OutputStreamWriter generateHtmlForFileForReviewer(final PrimaryDataFile file, final long versionNumber,
 			final String internalId, final PersistentIdentifier identifierType, final int reviewerCode,
@@ -879,20 +861,16 @@ class VeloCityHtmlGenerator {
 	 * the HTTP handler. Special function for the landing page for a screenshot of a
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * 
-	 * @param versionNumber
-	 *            the number of the {@link PrimaryDataEntityVersion} of this
-	 *            {@link PrimaryDataFile}.
-	 * @param file
-	 *            the {@link PrimaryDataFile} to present on the landing page.
-	 * @param internalId
-	 *            the internal ID of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
-	 * @param identifierType
-	 *            the {@link PersistentIdentifier} of the
-	 *            {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param versionNumber  the number of the {@link PrimaryDataEntityVersion} of
+	 *                       this {@link PrimaryDataFile}.
+	 * @param file           the {@link PrimaryDataFile} to present on the landing
+	 *                       page.
+	 * @param internalId     the internal ID of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
+	 * @param identifierType the {@link PersistentIdentifier} of the
+	 *                       {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference}
 	 * @return the HTML output in a {@link StringWriter}.
-	 * @throws EdalException
-	 *             if unable to create the HTML output.
+	 * @throws EdalException if unable to create the HTML output.
 	 */
 	protected OutputStreamWriter generateHtmlForFileOfSnapshot(final PrimaryDataFile file, final long versionNumber,
 			final PersistentIdentifier identifierType, final String internalId, final TeeOutputStream teeOutputStream,
@@ -1067,6 +1045,14 @@ class VeloCityHtmlGenerator {
 					.format(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2])));
 		}
 
+		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -1217,9 +1203,8 @@ class VeloCityHtmlGenerator {
 
 		for (final Entry<String, String[]> entry : accessStatistic.entrySet()) {
 
-			final String size = entry.getValue()[2] != null
-					? DataSize.StorageUnit.of(Long.valueOf(entry.getValue()[2])).format(Long.valueOf(entry.getValue()[2]))
-					: "0";
+			final String size = entry.getValue()[2] != null ? DataSize.StorageUnit.of(Long.valueOf(entry.getValue()[2]))
+					.format(Long.valueOf(entry.getValue()[2])) : "0";
 
 			statisticList.add(entry.getKey() + "\t" + entry.getValue()[0] + "\t" + entry.getValue()[1] + "\t" + size
 					+ "\t" + entry.getValue()[3]);
@@ -1269,16 +1254,25 @@ class VeloCityHtmlGenerator {
 		context.put("filenumber", numberFormat.format(ServiceProviderImplementation.totalNumberOfFiles));
 
 		/* value for total number of users */
-		context.put("users", DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance().getNumberOfUsers());
-		
+		context.put("users", DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance()
+				.getNumberOfUsers());
+
 		/* all IP map */
 		context.put("jsonall", GenerateLocations.getAllIPsList());
+
+		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 
 		final MergingReportOutputThread thread = new MergingReportOutputThread(
-				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml", VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(),
-				context, output, latch);
+				"de/ipk_gatersleben/bit/bi/edal/primary_data/ReportTemplate.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output, latch);
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
