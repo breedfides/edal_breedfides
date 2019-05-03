@@ -25,17 +25,8 @@
 
     <div id="controls" class="pt-2 pb-2">
         <div class="px-3 clearfix" id="edal-detail-quote-wrapper">
-            <div id="edal-detail-quote-container">
-                <span class="mr-2">Please always quote when using data:</span>
-                <span id="edal-detail-quote-bar">
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/BIBTEX" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">BibTeX</a>
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RIS" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">RIS</a>
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RDFXML" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">RDF/XML</a>
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RDFTURTLE" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">RDF/Turtle</a>
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/TEXT" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">Text</a>
-                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/SCHEMA" class="btn btn-outline-light btn-sm edal-detail-quote-btn" role="button">JSON-LD</a>
-                </span>
-            </div>
+           <div id="edal-detail-quote-container">
+            </div> 
         </div>
     </div> 
 
@@ -53,8 +44,7 @@
             <div class="row">
                 <div class="col">
                     <div class="card">
-                        <div class="card-body p-3 pb-1">
-
+                        <div class="card-body p-3">
                             <p class="my-0">
                                 <span style="font-weight:500;">Citation:</span>
                                 #if($link=="true")
@@ -69,7 +59,14 @@
 									$citation_entity.getVersionByDate($date).getMetaData().toString()
 									#end
                             </p>
-                            
+                             <div class="my-0 mt-2">
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/BIBTEX" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  BibTeX</a>
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RIS" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  RIS</a>
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RDFXML" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  RDF/XML</a>
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/RDFTURTLE" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  RDF/Turtle</a>
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/TEXT" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  Text</a>
+			                    <a href="$serverURL/$identifierType/$internalId/$citation_entity.getID()/$citation_entity.getVersionByDate($date).getRevision()/SCHEMA" class="btn btn-outline-primary btn-sm" role="button"><span class="oi oi-data-transfer-download"></span>  JSON-LD</a>               	
+            				</div>
                             <p class="my-0 mt-2">
                                 <span style="font-weight:500;">Abstract: </span>$citation_entity.getVersionByDate($date).getMetaData().getElementValue($description)
                             </p>
@@ -89,12 +86,6 @@
                             <p class="my-0 mt-2">
                                 <span style="font-weight:500;">Content: </span>$referenceDirectoryContent Directories $referenceFileContent Files ($referenceDataVolume)
                             </p>
-                            #if( $StatementTemplate)
-							<p class="my-0 mt-2" style=" font-size: normal">
-                                <span style="font-weight:500;">Identifier Persistence: </span>$StatementTemplate
-                            </p>
-							#end
-
                         </div>
                     </div>
 
@@ -115,14 +106,13 @@
 							</div>
 							#end
                             
-                            
                             <div id="edal-detail-directory-table-wrapper" class="edal-detail-directory-table-wrapper">
                                 <table id="edal-detail-directory-table">
                                     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForSnapshot.xml")
                                 </table>
                             </div>
 
-                            <a href="$downloadURL/$identifierType/$internalId/$entity.getID()/$entity.getVersionByDate($date).getRevision()/ZIP" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span> Download as ZIP</a>
+                            <a href="$downloadURL/$identifierType/$internalId/$entity.getID()/$entity.getVersionByDate($date).getRevision()/ZIP" role="button" class="mt-2 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download"></span> Download as ZIP</a>
                             
                         </div>
                     </div>
@@ -145,12 +135,23 @@
                     </div>
                 </div>
             </div>
+             <div class="row mt-2">
+                <div class="col">
+                    <div class="card p-1">
+                        <div class="container-fluid p-0" style=" text-align:center;">
+                             Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()                           
+                        </div>  
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
     <footer class="footer">
-        <div class="container">
-            <span class="text-muted">Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()</span>
+        <div>
+            <span class="text-muted">
+             #if( $StatementTemplate)
+					$StatementTemplate			
+            #end</span>
         </div>
     </footer>
 </div>

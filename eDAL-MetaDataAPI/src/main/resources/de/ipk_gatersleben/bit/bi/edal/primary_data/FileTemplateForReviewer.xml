@@ -105,10 +105,8 @@
             </div>
             <div class="row mt-2" id="edal-metadata-details">
                 <div class="col">
-
                     <div class="card p-3">
                         <h6>Metadata</h6>
-
                         <div class="container-fluid p-0">
                             <div class="row">
                                 <div class="col-lg">
@@ -118,21 +116,30 @@
                                     <table class="table table-bordered table-sm">#parse("de/ipk_gatersleben/bit/bi/edal/primary_data/MetadataFileTemplatePart2.xml")</table>
                                 </div>
                             </div>
-                        </div>
-                            
+                        </div> 
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col">
+                    <div class="card p-1">
+                        <div class="container-fluid p-0" style=" text-align:center;">
+                             Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()                           
+                        </div>  
                     </div>
                 </div>
             </div>
         </div>
 
     </div>
-
-    <footer class="footer">
-        <div class="container">
-            <span class="text-muted">Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()</span>
+ 	<footer class="footer">
+        <div>
+            <span class="text-muted">
+             #if( $StatementTemplate)
+					$StatementTemplate			
+            #end</span>
         </div>
-    </footer>
-</div>
+    </footer></div>
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 

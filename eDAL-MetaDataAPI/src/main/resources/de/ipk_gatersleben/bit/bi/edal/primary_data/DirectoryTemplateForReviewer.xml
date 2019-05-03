@@ -116,17 +116,27 @@
                                 </div>
                             </div>
                         </div>
-                            
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col">
+                    <div class="card p-1">
+                        <div class="container-fluid p-0" style=" text-align:center;">
+                             Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()                           
+                        </div>  
                     </div>
                 </div>
             </div>
         </div>
 
     </div>
-
     <footer class="footer">
-        <div class="container">
-            <span class="text-muted">Revision: $entity.getVersionByDate($date).getRevision() - CreationDate: $entity.getVersionByDate($date).getCreationDate().getTime() - RevisionDate: $entity.getVersionByDate($date).getRevisionDate().getTime()</span>
+        <div>
+            <span class="text-muted">
+             #if( $StatementTemplate)
+					$StatementTemplate			
+            #end</span>
         </div>
     </footer>
 </div>
