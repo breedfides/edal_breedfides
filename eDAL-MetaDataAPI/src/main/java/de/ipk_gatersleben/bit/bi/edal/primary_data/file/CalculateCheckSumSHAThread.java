@@ -22,7 +22,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 
-class CalculateCheckSumThreadNew extends EdalThread {
+class CalculateCheckSumSHAThread extends EdalThread {
 
 	private PipedInputStream pipedInputStream;
 
@@ -30,7 +30,7 @@ class CalculateCheckSumThreadNew extends EdalThread {
 
 	private CountDownLatch stopLatch;
 
-	CalculateCheckSumThreadNew(PipedInputStream pipedInputStream,
+	CalculateCheckSumSHAThread(PipedInputStream pipedInputStream,
 			CountDownLatch stopLatch) {
 		super();
 		this.pipedInputStream = pipedInputStream;

@@ -244,7 +244,7 @@ project(':eDAL-MetaDataAPI') {
 	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
-	    compile group: 'com.h2database', name: 'h2', version:'1.4.198'
+	    compile group: 'com.h2database', name: 'h2', version:'1.4.199'
 	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.2.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
 	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.2.Final'

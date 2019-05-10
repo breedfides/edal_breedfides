@@ -278,7 +278,7 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 		StoreFileThread storeFileThread = new StoreFileThread(this, pipedInputStreams.get(0), newFileVersion,
 				countDownLatch);
 
-		CalculateCheckSumThread calculateCheckSumThread = new CalculateCheckSumThread(pipedInputStreams.get(1),
+		CalculateCheckSumSHAThread calculateCheckSumThread = new CalculateCheckSumSHAThread(pipedInputStreams.get(1),
 				countDownLatch);
 
 		GuessMimeTypeThread guessMimeTypeThread = new GuessMimeTypeThread(pipedInputStreams.get(2), countDownLatch);

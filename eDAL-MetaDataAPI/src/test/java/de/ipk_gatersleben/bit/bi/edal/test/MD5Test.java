@@ -19,6 +19,7 @@ import javax.mail.internet.InternetAddress;
 
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.query.NativeQuery;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -39,9 +40,13 @@ public class MD5Test {
 
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
-				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is not null and CHECKSUM is not 'd41d8cd98f0b24e980998ecf8427e'");
+//		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
+//				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is not null and CHECKSUM is not 'd41d8cd98f0b24e980998ecf8427e'");
 
+		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
+				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is 'MD5'");
+
+		
 		CHECKSUM_IDs = getAllCheckSumIDs.getResultList();
 
 		session.close();
@@ -128,8 +133,7 @@ public class MD5Test {
 
 			if (getPrimaryDataIDs.uniqueResult() != null) {
 				PRIMARYIDATAID_TO_CHECKSUM_ID.put((String) getPrimaryDataIDs.uniqueResult(), i);
-			}
-			else {
+			} else {
 				System.out.println(getPrimaryDataIDs.list());
 			}
 
@@ -221,18 +225,53 @@ public class MD5Test {
 
 	static void updateChecksum() {
 
-		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		try {
 
-		for (Entry<Integer, String> entry : newMap.entrySet()) {
-			NativeQuery sqlQuery = session.createSQLQuery("UPDATE UNTYPEDDATA SET = ? WHERE ID =?");
-			sqlQuery.setInteger(2, entry.getKey());
-			sqlQuery.setString(1, entry.getValue());
-			sqlQuery.executeUpdate();
+			Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+			int i = 0;
+
+			for (Entry<Integer, String> entry : newMap.entrySet()) {
+				System.out.println(i);
+				System.out.println("Execute Update");
+				i++;
+				Transaction trans = session.beginTransaction();
+
+				NativeQuery sqlQuery = session
+						.createSQLQuery("UPDATE UNTYPEDDATA SET CHECKSUM=?, ALGORITHM='SHA-256' WHERE ID=?");
+				sqlQuery.setInteger(2, entry.getKey());
+				sqlQuery.setString(1, entry.getValue());
+				sqlQuery.executeUpdate();
+				trans.commit();
+
+			}
+			session.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-	
 
-		session.close();
+	}
+
+	static void updateChecksumForEmptyFiles() {
+
+		try {
+
+			Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+			Transaction trans = session.beginTransaction();
+
+			NativeQuery sqlQuery = session.createSQLQuery(
+					"UPDATE UNTYPEDDATA SET CHECKSUM='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',ALGORITHM='SHA-256' WHERE CHECKSUM='d41d8cd98f0b24e980998ecf8427e' AND ALGORITHM='MD5'");
+
+			sqlQuery.executeUpdate();
+			trans.commit();
+
+			session.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 	}
 
@@ -246,21 +285,27 @@ public class MD5Test {
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
 
-//		writeCheckSumIds();
+//		Thread.sleep(Integer.MAX_VALUE);
+		
+		writeCheckSumIds();
 
-		readCheckSumIds();
+//		readCheckSumIds();
 
-//		writeIDsToCheckSumMap();
+		writeIDsToCheckSumMap();
 
-		readIDsToCheckSumMap();
+//		readIDsToCheckSumMap();
 
 		writePrimaryDataIdToCheckSumId();
 
 //		readPrimaryDataIdToCheckSumId();
 
-//		writeNewMap();
+		writeNewMap();
 //		readNewMap();
 
+		updateChecksum();
+
+//		updateChecksumForEmptyFiles();
+		
 		DataManager.shutdown();
 
 	}
