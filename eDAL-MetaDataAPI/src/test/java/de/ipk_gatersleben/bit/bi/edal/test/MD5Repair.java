@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
+ * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
+ *
+ * Contributors:
+ *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - initial API and implementation
+ */
 package de.ipk_gatersleben.bit.bi.edal.test;
 
 import java.io.BufferedReader;
@@ -17,7 +26,6 @@ import java.util.Properties;
 
 import javax.mail.internet.InternetAddress;
 
-import org.hibernate.SQLQuery;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.NativeQuery;
@@ -29,7 +37,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 @SuppressWarnings({ "rawtypes", "unchecked", "deprecation" })
-public class MD5Test {
+public class MD5Repair {
 
 	static List<Integer> CHECKSUM_IDs = new ArrayList<>();
 	static HashMap<Integer, String> ID_TO_CHECKSUM_MAP = new HashMap<>();
@@ -40,11 +48,11 @@ public class MD5Test {
 
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-//		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
-//				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is not null and CHECKSUM is not 'd41d8cd98f0b24e980998ecf8427e'");
-
 		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
-				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is 'MD5'");
+				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is not null and CHECKSUM is not 'd41d8cd98f0b24e980998ecf8427e'");
+
+//		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
+//				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is 'MD5'");
 
 		
 		CHECKSUM_IDs = getAllCheckSumIDs.getResultList();
