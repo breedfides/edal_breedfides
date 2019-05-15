@@ -1,5 +1,5 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "4.0.4"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
   id 'io.codearte.nexus-staging' version '0.12.0'
@@ -115,7 +115,7 @@ allprojects {
 	}
 	
 	artifacts {
-   		archives javadocJar, sourcesJar, shadowJar
+   		archives javadocJar, sourcesJar
 	}
 
 	if(!project.hasProperty('signing.keyId') || !project.hasProperty('signing.password')|| !project.hasProperty('signing.secretKeyRingFile')){   
@@ -244,7 +244,7 @@ project(':eDAL-MetaDataAPI') {
 	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
-	    compile group: 'com.h2database', name: 'h2', version:'1.4.199'
+	    compile group: 'com.h2database', name: 'h2', version:'1.4.198'
 	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.2.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
 	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.2.Final'
@@ -288,6 +288,10 @@ project(':eDAL-MetaDataAPI') {
      	compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version:'2.3.1'	 
      	compile group: 'javax.activation', name: 'activation', version:'1.1.1'	
 	}
+	
+	artifacts{
+		archives shadowJar
+	}
 }
 
 //Server Project specific stuff
@@ -297,7 +301,6 @@ project(':eDAL-MetaDataAPI-Server') {
 	    compile group: 'commons-cli', name: 'commons-cli', version:'1.4'
 	   	compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.2'
 	}
-	apply plugin: 'com.github.johnrengelman.shadow'
 
 task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 	group = "shadow"
@@ -327,4 +330,8 @@ project(':eDAL-MetaDataAPI-Client') {
     	compile group: 'com.miglayout', name: 'miglayout-core', version:'4.2'
     	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
     }
+	
+	artifacts{
+		archives shadowJar
+	}
 }
