@@ -656,12 +656,18 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		else {
+			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
+		}
 		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
 			try {
 				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+		else {
+			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
@@ -1059,12 +1065,18 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		else {
+			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
+		}
 		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
 			try {
 				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+		else {
+			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 		
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
@@ -1280,6 +1292,9 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+		else {
+			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
 		}
 		
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
