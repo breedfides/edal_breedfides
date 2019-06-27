@@ -7,7 +7,7 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.9.3'
+    aspectjVersion = '1.9.4'
     jerseyVersion = '2.27'
     jettyVersion = '9.4.15.v20190215'
     junitVersion = '5.4.0'
@@ -18,11 +18,12 @@ apply plugin: 'io.codearte.nexus-staging'
 
 allprojects {
 
-	def currentJvm = org.gradle.internal.jvm.Jvm.current().toString()
-		
-	if(!currentJvm.contains("Oracle")){
-		ant.fail('ERROR: Please use an Oracle Java Runtime for the e!DAL-MetaDataAPI')
-	}
+//  deprecated function to chekc if the user use an Oracle JDK	
+//
+//  def currentJvm = org.gradle.internal.jvm.Jvm.current().toString()	
+//	if(!currentJvm.contains("Oracle")){
+//		ant.fail('ERROR: Please use an Oracle Java Runtime for the e!DAL-MetaDataAPI')
+//	}
 
 	apply plugin:'java'
 	apply plugin:'maven'

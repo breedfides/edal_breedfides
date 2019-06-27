@@ -54,20 +54,20 @@ public class TestRmiUploadDownload extends ClientServerTest {
 
 	/**
 	 * List recursively all {@link PrimaryDataEntity} object in the current
-	 * {@link PrimaryDataDirectory} an save names in the {@link StringBuffer} 
-	 * 'outputSet'. Save complete structure of the {@link PrimaryDataDirectory}
-	 * into the FileSystem.
+	 * {@link PrimaryDataDirectory} an save names in the {@link StringBuffer}
+	 * 'outputSet'. Save complete structure of the {@link PrimaryDataDirectory} into
+	 * the FileSystem.
 	 * 
-	 * @param currentDirectory
-	 *            the {@link PrimaryDataDirectory} to list and read all
-	 *            containing {@link PrimaryDataEntity}.
+	 * @param currentDirectory the {@link PrimaryDataDirectory} to list and read all
+	 *                         containing {@link PrimaryDataEntity}.
 	 * @throws PrimaryDataDirectoryException
 	 * @throws PrimaryDataFileException
 	 * @throws FileNotFoundException
 	 * @throws RemoteException
 	 * @throws AccessControlException
 	 */
-	private void listDir(final ClientPrimaryDataDirectory currentDirectory) throws PrimaryDataDirectoryException, PrimaryDataFileException, FileNotFoundException, AccessControlException, RemoteException {
+	private void listDir(final ClientPrimaryDataDirectory currentDirectory) throws PrimaryDataDirectoryException,
+			PrimaryDataFileException, FileNotFoundException, AccessControlException, RemoteException {
 
 		this.indent += 1;
 		final List<ClientPrimaryDataEntity> list = currentDirectory.listPrimaryDataEntities();
@@ -113,7 +113,8 @@ public class TestRmiUploadDownload extends ClientServerTest {
 
 		Authentication auth = new Authentication(EdalHelpers.authenticateUser("SampleUser", "password"));
 
-		final ClientDataManager dataManagerClient = new ClientDataManager(ClientServerTest.HOST, ClientServerTest.REGISTRY_PORT, auth);
+		final ClientDataManager dataManagerClient = new ClientDataManager(ClientServerTest.HOST,
+				ClientServerTest.REGISTRY_PORT, auth);
 
 		final ClientPrimaryDataDirectory rootDirectory = dataManagerClient.getRootDirectory();
 
@@ -121,6 +122,9 @@ public class TestRmiUploadDownload extends ClientServerTest {
 			System.out.println("Given path do not exist");
 			System.exit(0);
 		}
+
+		System.out.println(this.INPUT_PATH);
+
 		final EdalDirectoryVisitorRmi edalVisitor = new EdalDirectoryVisitorRmi(rootDirectory, this.INPUT_PATH, true);
 
 		final long zeitVorher1 = System.currentTimeMillis();
@@ -143,18 +147,15 @@ public class TestRmiUploadDownload extends ClientServerTest {
 		Path START_INPUT_PATH = Paths.get(System.getProperty("java.home"), "bin");
 		Path START_OUTPUT_PATH = Paths.get(System.getProperty("user.home"), "TEST_READ", "bin");
 
-		if (Files.size(START_INPUT_PATH) == Files.size(START_OUTPUT_PATH)) {
+		if (FileUtils.sizeOf(START_INPUT_PATH.toFile()) == FileUtils.sizeOf(START_OUTPUT_PATH.toFile())) {
 			System.out.println("true");
 		} else {
 			System.out.println("false");
 		}
-		
-		Assert.assertEquals(Files.size(START_INPUT_PATH),Files.size(START_OUTPUT_PATH));
 
+		Assert.assertEquals(FileUtils.sizeOf(START_INPUT_PATH.toFile()), FileUtils.sizeOf(START_OUTPUT_PATH.toFile()));
 
 		FileUtils.deleteDirectory(START_OUTPUT_PATH.getParent().toFile());
-		
-	
-		
+
 	}
 }
