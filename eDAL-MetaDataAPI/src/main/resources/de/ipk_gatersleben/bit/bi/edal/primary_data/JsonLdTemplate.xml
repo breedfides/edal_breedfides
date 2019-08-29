@@ -4,7 +4,7 @@
 			"@type":"Dataset",
 			#foreach( $element in $citation_entity.getVersionByDate($date).getPublicReferences())
 			#if($element.getAssignedID())
-			"@id":"https://doi.org/$element.getAssignedID()",
+			"@id":"$SchemaOrgID",
 			#end
 			#if($element.getReleaseDate())
 			"datePublished:"$element.getReleaseDate(),

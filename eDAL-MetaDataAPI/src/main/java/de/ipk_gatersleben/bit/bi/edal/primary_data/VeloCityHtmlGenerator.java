@@ -600,7 +600,11 @@ class VeloCityHtmlGenerator {
 
 		/** set server URL */
 		context.put(VeloCityHtmlGenerator.STRING_SERVER_URL, EdalHttpServer.getServerURL().toString());
-
+		
+		/** set the ID for schema.org metadata harvesting */
+		context.put("SchemaOrgID", EdalHttpServer.getServerURL().toString() + "/" + identifierType.toString() + "/"
+				+ internalId + "/" + currentDirectory.getID() + "/" + versionNumber);
+	
 		/** set download URL */
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
@@ -634,7 +638,6 @@ class VeloCityHtmlGenerator {
 					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[0]);
 			context.put("referenceFileContent",
 					CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[1]);
-
 			context.put("referenceDataVolume", DataSize.StorageUnit
 					.of(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2]))
 					.format(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2])));
@@ -1023,7 +1026,10 @@ class VeloCityHtmlGenerator {
 
 		/** set server URL */
 		context.put(VeloCityHtmlGenerator.STRING_SERVER_URL, EdalHttpServer.getServerURL().toString());
-
+		
+		/** set the ID for schema.org metadata harvesting */
+		context.put("SchemaOrgID",EdalHttpServer.getServerURL().toString()+"/"+identifierType.toString()+"/"+internalId+"/"+file.getID()+"/"+versionNumber);
+	
 		/** set download URL */
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
