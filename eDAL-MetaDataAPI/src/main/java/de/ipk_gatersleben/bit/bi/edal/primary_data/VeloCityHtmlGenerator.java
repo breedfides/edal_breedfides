@@ -17,6 +17,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -600,11 +602,11 @@ class VeloCityHtmlGenerator {
 
 		/** set server URL */
 		context.put(VeloCityHtmlGenerator.STRING_SERVER_URL, EdalHttpServer.getServerURL().toString());
-		
+
 		/** set the ID for schema.org metadata harvesting */
 		context.put("SchemaOrgID", EdalHttpServer.getServerURL().toString() + "/" + identifierType.toString() + "/"
 				+ internalId + "/" + currentDirectory.getID() + "/" + versionNumber);
-	
+
 		/** set download URL */
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
@@ -652,24 +654,36 @@ class VeloCityHtmlGenerator {
 			throw new EdalException("unable to load entity list of the directory", e);
 		}
 
-		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+		String currentPath = VeloCityHtmlGenerator.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+		try {
+			currentPath = URLDecoder.decode(currentPath, "UTF-8");
+			currentPath = currentPath.substring(1, currentPath.lastIndexOf("/"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		Path matomoPath = Paths.get(currentPath, "MatomoTemplate.xml");
+
+		if (Files.exists(matomoPath)) {
 			try {
-				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
 		}
-		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
+
+		Path statementPath = Paths.get(currentPath, "StatementTemplate.txt");
+
+		if (Files.exists(statementPath)) {
 			try {
-				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
+				context.put("StatementTemplate", new String(Files.readAllBytes(statementPath)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
@@ -1026,10 +1040,11 @@ class VeloCityHtmlGenerator {
 
 		/** set server URL */
 		context.put(VeloCityHtmlGenerator.STRING_SERVER_URL, EdalHttpServer.getServerURL().toString());
-		
+
 		/** set the ID for schema.org metadata harvesting */
-		context.put("SchemaOrgID",EdalHttpServer.getServerURL().toString()+"/"+identifierType.toString()+"/"+internalId+"/"+file.getID()+"/"+versionNumber);
-	
+		context.put("SchemaOrgID", EdalHttpServer.getServerURL().toString() + "/" + identifierType.toString() + "/"
+				+ internalId + "/" + file.getID() + "/" + versionNumber);
+
 		/** set download URL */
 		context.put(VeloCityHtmlGenerator.DOWNLOAD_SERVER_URL, EdalHttpServer.getHttpDownloadURL().toString());
 
@@ -1064,27 +1079,39 @@ class VeloCityHtmlGenerator {
 					.format(Long.valueOf(CalculateDirectorySizeThread.referenceContent.get(internalId).split(",")[2])));
 		}
 
-		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+		String currentPath = VeloCityHtmlGenerator.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+		try {
+			currentPath = URLDecoder.decode(currentPath, "UTF-8");
+			currentPath = currentPath.substring(1, currentPath.lastIndexOf("/"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		Path matomoPath = Paths.get(currentPath, "MatomoTemplate.xml");
+
+		if (Files.exists(matomoPath)) {
 			try {
-				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
 		}
-		if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
+
+		Path statementPath = Paths.get(currentPath, "StatementTemplate.txt");
+
+		if (Files.exists(statementPath)) {
 			try {
-				context.put("StatementTemplate", FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
+				context.put("StatementTemplate", new String(Files.readAllBytes(statementPath)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
-		
+
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -1294,15 +1321,15 @@ class VeloCityHtmlGenerator {
 
 		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
 			try {
-				context.put("MatomoTemplate", FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+				context.put("MatomoTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
 		}
-		
+
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 
 		final MergingReportOutputThread thread = new MergingReportOutputThread(
