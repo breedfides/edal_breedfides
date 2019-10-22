@@ -129,7 +129,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			try {
 				Class.forName("org.h2.Driver");
 				this.setConnection(DriverManager.getConnection(
-						"jdbc:h2:split:30:" + this.getMountPath() + ";IFEXISTS=TRUE;DB_CLOSE_ON_EXIT=FALSE",
+						"jdbc:h2:split:30:" + this.getMountPath() + "DB_CLOSE_ON_EXIT=FALSE",
 						this.getDatabaseUsername(), this.getDatabasePassword()));
 
 				this.getLogger().info("Database connection established");
