@@ -39,7 +39,6 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
@@ -1319,10 +1318,20 @@ class VeloCityHtmlGenerator {
 		/* all IP map */
 		context.put("jsonall", GenerateLocations.getAllIPsList());
 
-		if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+		String currentPath = VeloCityHtmlGenerator.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+		try {
+			currentPath = URLDecoder.decode(currentPath, "UTF-8");
+			currentPath = currentPath.substring(1, currentPath.lastIndexOf("/"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		Path matomoPath = Paths.get(currentPath, "MatomoTemplate.xml");
+
+		if (Files.exists(matomoPath)) {
 			try {
-				context.put("MatomoTemplate",
-						FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
