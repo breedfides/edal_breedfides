@@ -63,7 +63,7 @@ public class EdalHttpServer {
 
 		this.configuration = configuration;
 
-		if (configuration.getStaticServerAdress() == null) {
+		if (configuration.getStaticServerAddress() == null) {
 			try {
 				if (configuration.isReadOnly()) {
 					domainNameToUse = InetAddress.getLocalHost().getCanonicalHostName();
@@ -82,12 +82,12 @@ public class EdalHttpServer {
 		} else {
 
 			if (configuration.isReadOnly()) {
-				domainNameToUse = configuration.getStaticServerAdress();
+				domainNameToUse = configuration.getStaticServerAddress();
 			} else {
 				if (configuration.isInTestMode()) {
-					domainNameToUse = configuration.getStaticServerAdress();
+					domainNameToUse = configuration.getStaticServerAddress();
 				} else {
-					checkIfStaticServerIsRegisteredByDataCite(configuration.getStaticServerAdress(),
+					checkIfStaticServerIsRegisteredByDataCite(configuration.getStaticServerAddress(),
 							configuration.getAliasDomainNames());
 				}
 			}
@@ -230,7 +230,7 @@ public class EdalHttpServer {
 
 				this.eDALServer.setHandler(handlerCollection);
 
-				if (configuration.getStaticServerAdress() != null) {
+				if (configuration.getStaticServerAddress() != null) {
 
 					URI domainNameTuUseUri = new URI("https://" + domainNameToUse);
 
@@ -258,7 +258,7 @@ public class EdalHttpServer {
 				this.eDALServer.setConnectors(new Connector[] { connector });
 				this.eDALServer.setHandler(handlerCollection);
 
-				if (configuration.getStaticServerAdress() != null) {
+				if (configuration.getStaticServerAddress() != null) {
 
 					URI domainNameTuUseUri = new URI("http://" + domainNameToUse);
 

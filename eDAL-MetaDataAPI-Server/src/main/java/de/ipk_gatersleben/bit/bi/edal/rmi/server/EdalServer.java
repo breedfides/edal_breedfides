@@ -240,7 +240,7 @@ public class EdalServer {
 		Option HTTPSKeyStorePathOption = new Option("kp", "keystorepath", true, "Path to SSL KeyStore");
 		Option HTTPSKeyStorePasswordOption = new Option("kpass", "keystorepassword", true, "Password for SSL KeyStore");
 
-		Option staticServerAdressOption = new Option("ss", "staticserver", true,
+		Option staticServerAddressOption = new Option("ss", "staticserver", true,
 				"Static server address for HTTP Listener\nWARNING:\nIts strongly encouraged to use the dynamic identified server address");
 
 		Option staticServerPortOption = new Option("ssp", "staticport", true,
@@ -297,7 +297,7 @@ public class EdalServer {
 		options.addOption(HTTPSKeyStorePathOption);
 		options.addOption(HTTPSKeyStorePasswordOption);
 
-		options.addOption(staticServerAdressOption);
+		options.addOption(staticServerAddressOption);
 		options.addOption(staticServerPortOption);
 		options.addOption(rmiServerHostNameOption);
 
@@ -564,10 +564,10 @@ public class EdalServer {
 			configuration.setDoiInfix(cmd.getOptionValue(doiInfixOption.getOpt()));
 		}
 
-		if (cmd.hasOption(staticServerAdressOption.getOpt())) {
+		if (cmd.hasOption(staticServerAddressOption.getOpt())) {
 			if (cmd.hasOption(staticServerPortOption.getOpt())) {
-				logger.warn("None static server adress was configured. This could cause unresolveable DOIs");
-				configuration.setStaticServerAdress(cmd.getOptionValue(staticServerAdressOption.getOpt()));
+				logger.warn("None static server address was configured. This could cause unresolveable DOIs");
+				configuration.setStaticServerAddress(cmd.getOptionValue(staticServerAddressOption.getOpt()));
 				configuration
 						.setStaticServerPort(Integer.parseInt(cmd.getOptionValue(staticServerPortOption.getOpt())));
 			} else {
@@ -578,14 +578,14 @@ public class EdalServer {
 		}
 
 		if (cmd.hasOption(staticServerPortOption.getOpt())) {
-			if (cmd.hasOption(staticServerAdressOption.getOpt())) {
-				logger.warn("None static server adress was configured. This could cause unresolveable DOIs");
-				configuration.setStaticServerAdress(cmd.getOptionValue(staticServerAdressOption.getOpt()));
+			if (cmd.hasOption(staticServerAddressOption.getOpt())) {
+				logger.warn("None static server address was configured. This could cause unresolveable DOIs");
+				configuration.setStaticServerAddress(cmd.getOptionValue(staticServerAddressOption.getOpt()));
 				configuration
 						.setStaticServerPort(Integer.parseInt(cmd.getOptionValue(staticServerPortOption.getOpt())));
 			} else {
 				logger.warn("If you set a static server port, then please set also static server address using '-"
-						+ staticServerAdressOption.getOpt() + " <arg>'");
+						+ staticServerAddressOption.getOpt() + " <arg>'");
 				System.exit(0);
 			}
 		}

@@ -321,7 +321,7 @@ public final class EdalConfiguration {
 	private String dataCiteUser;
 
 	private String doiInfix;
-	private String staticServerAdress;
+	private String staticServerAddress;
 	private int staticServerPort;
 	/**
 	 * The mount {@link Path} of the eDAL system.
@@ -822,8 +822,8 @@ public final class EdalConfiguration {
 		return this.rootUser;
 	}
 
-	public String getStaticServerAdress() {
-		return this.staticServerAdress;
+	public String getStaticServerAddress() {
+		return this.staticServerAddress;
 	}
 
 	public int getStaticServerPort() {
@@ -1143,8 +1143,8 @@ public final class EdalConfiguration {
 		this.rootUser = rootUser;
 	}
 
-	public void setStaticServerAdress(final String staticServerAdress) {
-		this.staticServerAdress = staticServerAdress;
+	public void setStaticServerAddress(final String staticServerAddress) {
+		this.staticServerAddress = staticServerAddress;
 	}
 
 	public void setStaticServerPort(final int staticServerPort) {
