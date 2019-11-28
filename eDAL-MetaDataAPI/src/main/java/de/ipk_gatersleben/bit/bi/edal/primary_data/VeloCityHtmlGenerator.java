@@ -58,8 +58,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumCCLicense;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
@@ -569,8 +571,31 @@ class VeloCityHtmlGenerator {
 		/** set entity for citation */
 		if (entityWithPersitentIdentifierForCitation != null) {
 			context.put(STRING_CITATION_ENTITY, entityWithPersitentIdentifierForCitation);
+			/** license URL **/
+			try {
+				for (Entry<EnumCCLicense, String> entry : EnumCCLicense.enummap.entrySet()) {
+					if (entry.getKey().getDescription().equals(entityWithPersitentIdentifierForCitation.getMetaData()
+							.getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
+						context.put("licenseURL", entry.getValue());
+					}
+				}
+
+			} catch (MetaDataException e) {
+				e.printStackTrace();
+			}
 		} else {
 			context.put(STRING_CITATION_ENTITY, currentDirectory);
+			/** license URL **/
+			try {
+				for (Entry<EnumCCLicense, String> entry : EnumCCLicense.enummap.entrySet()) {
+					if (entry.getKey().getDescription().equals(currentDirectory.getMetaData()
+							.getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
+						context.put("licenseURL", entry.getValue());
+					}
+				}
+			} catch (MetaDataException e) {
+				e.printStackTrace();
+			}
 		}
 
 		/** set date of the PublicReference */
@@ -1022,8 +1047,30 @@ class VeloCityHtmlGenerator {
 		/** set entity for citation */
 		if (entityWithPersitentIdentifierForCitation != null) {
 			context.put(STRING_CITATION_ENTITY, entityWithPersitentIdentifierForCitation);
+			/** license URL **/
+			try {
+				for (Entry<EnumCCLicense, String> entry : EnumCCLicense.enummap.entrySet()) {
+					if (entry.getKey().getDescription().equals(entityWithPersitentIdentifierForCitation.getMetaData()
+							.getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
+						context.put("licenseURL", entry.getValue());
+					}
+				}
+			} catch (MetaDataException e) {
+				e.printStackTrace();
+			}
 		} else {
 			context.put(STRING_CITATION_ENTITY, file);
+			/** license URL **/
+			try {
+				for (Entry<EnumCCLicense, String> entry : EnumCCLicense.enummap.entrySet()) {
+					if (entry.getKey().getDescription().equals(file.getMetaData()
+							.getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
+						context.put("licenseURL", entry.getValue());
+					}
+				}
+			} catch (MetaDataException e) {
+				e.printStackTrace();
+			}
 		}
 		/** set identifier type */
 		context.put(VeloCityHtmlGenerator.STRING_IDENTIFIER_TYPE, identifierType.toString());
