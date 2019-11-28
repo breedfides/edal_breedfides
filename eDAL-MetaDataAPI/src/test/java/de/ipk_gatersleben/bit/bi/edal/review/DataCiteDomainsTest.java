@@ -13,6 +13,7 @@ import java.net.InetAddress;
 
 import junit.framework.Assert;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalHttpServer;
@@ -26,31 +27,41 @@ public class DataCiteDomainsTest {
 	private static final String BIT_252 = "bit-252.ipk-gatersleben.de";
 
 	@Test
+	@Ignore
 	public void testIfLocalhostIsInDomain() throws Exception {
 
-		Assert.assertTrue("localhost is the registrated domain", EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_252));
+		Assert.assertTrue("localhost is the registrated domain",
+				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_252));
 
-		Assert.assertFalse("localhost is not the registrated domain", EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_253));
+		Assert.assertFalse("localhost is not the registrated domain",
+				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_253));
 
-		Assert.assertTrue("all host domians are allowed", EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), "*"));
+		Assert.assertTrue("all host domians are allowed",
+				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), "*"));
 
 	}
 
 	@Test
+	@Ignore
 	public void testIfDomainIsAliasForLocalhost() throws Exception {
 
-		Assert.assertTrue("domain is an alias for localhost", EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(BIT_252), DOI_IPK));
+		Assert.assertTrue("domain is an alias for localhost",
+				EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(BIT_252), DOI_IPK));
 
-		Assert.assertTrue("localhost is an alias for domain", EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(DOI_IPK), BIT_252));
+		Assert.assertTrue("localhost is an alias for domain",
+				EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(DOI_IPK), BIT_252));
 
 	}
 
 	@Test
+	@Ignore
 	public void testIfLocalhostHasSubDomain() throws Exception {
 
-		Assert.assertTrue("localhost is in subdomain", EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), IPK));
+		Assert.assertTrue("localhost is in subdomain",
+				EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), IPK));
 
-		Assert.assertFalse("localhost is not in subdomain", EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), EXAMPLE));
+		Assert.assertFalse("localhost is not in subdomain",
+				EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), EXAMPLE));
 
 	}
 
