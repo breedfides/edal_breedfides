@@ -83,8 +83,8 @@ public class ServiceProviderImplementation implements ServiceProvider {
 	public static Long volumeOfReference;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 30;
-	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
+	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
 
 	private static final String EXECUTOR_NAME = "ServiceProviderExecutor";
 	private static ThreadPoolExecutor executor;

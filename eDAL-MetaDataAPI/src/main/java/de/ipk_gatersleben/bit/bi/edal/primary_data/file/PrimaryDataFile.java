@@ -45,8 +45,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 public abstract class PrimaryDataFile extends PrimaryDataEntity {
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 4;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 60;
-	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
+	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
 	private static ThreadPoolExecutor executor;
 	private static final String EXECUTOR_NAME = "PrimaryDataFileExecutor";
 
