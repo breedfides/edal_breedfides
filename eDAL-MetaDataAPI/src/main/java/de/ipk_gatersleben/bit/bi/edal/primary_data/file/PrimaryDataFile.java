@@ -17,8 +17,9 @@ import java.io.PipedInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -45,24 +46,25 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 public abstract class PrimaryDataFile extends PrimaryDataEntity {
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 4;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+//	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
+	private static final ConcurrentLinkedQueue<Runnable> NON_BLOCKING_QUEUE = new ConcurrentLinkedQueue<>();
 	private static ThreadPoolExecutor executor;
 	private static final String EXECUTOR_NAME = "PrimaryDataFileExecutor";
 
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 3 / 4);
 
 	static {
-
+		
 		if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 			executor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+					TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
 					EXECUTOR_NAME);
 		} else {
 
 			executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
+					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 		}
 	}
 
@@ -251,7 +253,7 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 	 */
 	public void store(final InputStream dataInputStream)
 			throws PrimaryDataFileException, PrimaryDataEntityVersionException {
-
+		
 		if (this.getCurrentVersion().isDeleted()) {
 			throw new PrimaryDataEntityVersionException(
 					"file already deleted at: " + this.getCurrentVersion().getRevisionDate());
@@ -293,12 +295,12 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 		if (executor.isShutdown()) {
 			if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 				executor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-						TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+						TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
 						EXECUTOR_NAME);
 			} else {
 				executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 						EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-						new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
+						new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 			}
 		}
 		executor.execute(pipedInputOutputThread);

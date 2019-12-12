@@ -26,8 +26,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipOutputStream;
@@ -70,7 +71,8 @@ public class EdalHttpHandler extends AbstractHandler {
 	private static ThreadPoolExecutor zipExecutor;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+//	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+	private static final ConcurrentLinkedQueue<Runnable> NON_BLOCKING_QUEUE = new ConcurrentLinkedQueue<>();
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 1 / 2);
 
@@ -86,13 +88,13 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 			zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-					TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+					TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
 					EXECUTOR_NAME);
 		} else {
 
 			zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE), EXECUTOR_NAME);
+					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 		}
 
 		contentPageCache.init();
@@ -811,13 +813,13 @@ public class EdalHttpHandler extends AbstractHandler {
 						if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 							zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES,
 									EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
 									EXECUTOR_NAME);
 						} else {
 
 							zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL,
 									MIN_NUMBER_OF_THREADS_IN_POOL, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),
+									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
 									EXECUTOR_NAME);
 						}
 					}

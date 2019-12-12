@@ -23,7 +23,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -83,7 +84,8 @@ public class ServiceProviderImplementation implements ServiceProvider {
 	public static Long volumeOfReference;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+//	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+	private static final ConcurrentLinkedQueue<Runnable> NON_BLOCKING_QUEUE = new ConcurrentLinkedQueue<>();
 	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
 
 	private static final String EXECUTOR_NAME = "ServiceProviderExecutor";
@@ -94,11 +96,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		if ((Runtime.getRuntime().availableProcessors() / 2) > MIN_NUMBER_OF_THREADS_IN_POOL) {
 			executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 					Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
+					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
 		} else {
 			executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
+					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
 		}
 
 	}
@@ -269,11 +271,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 					executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 							Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
 							TimeUnit.SECONDS,
-							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
+							new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
 				} else {
 					executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 							EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-							new ArrayBlockingQueue<Runnable>(MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE),EXECUTOR_NAME);
+							new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
 				}
 			}
 
