@@ -70,8 +70,8 @@ public class EdalHttpHandler extends AbstractHandler {
 	private static ThreadPoolExecutor zipExecutor;
 
 	private static final int MIN_NUMBER_OF_THREADS_IN_POOL = 2;
-	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 60;
-	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 60;
+	private static final int MAX_NUMBER_OF_THREADS_IN_EXECUTOR_QUEUE = 1200;
+	private static final int EXCUTOR_THREAD_KEEP_ALIVE_SECONDS = 120;
 	private static final int USEABLE_CORES = (int) Math.ceil(Runtime.getRuntime().availableProcessors() * 1 / 2);
 
 	private static final Long LIMIT_INLINE_FILE_SIZE = Long.valueOf(10 * 1024 * 1024);
