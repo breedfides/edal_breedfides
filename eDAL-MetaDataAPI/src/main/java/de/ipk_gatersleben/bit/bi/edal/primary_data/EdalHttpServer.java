@@ -180,7 +180,7 @@ public class EdalHttpServer {
 
 			try {
 
-				SslContextFactory sslContextFactory = new SslContextFactory();
+				SslContextFactory sslContextFactory = new SslContextFactory.Server();
 
 				KeyStore keystore = null;
 				try {
