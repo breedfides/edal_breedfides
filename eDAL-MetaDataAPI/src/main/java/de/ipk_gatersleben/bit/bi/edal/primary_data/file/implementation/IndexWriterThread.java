@@ -36,7 +36,6 @@ import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.SearchFactory;
@@ -144,7 +143,6 @@ public class IndexWriterThread extends EdalThread {
 
 			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 			fullTextSession.setCacheMode(CacheMode.NORMAL);
-			final Transaction transaction = fullTextSession.beginTransaction();
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -191,7 +189,6 @@ public class IndexWriterThread extends EdalThread {
 				}
 			}
 			results.close();
-			transaction.commit();
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -245,7 +242,6 @@ public class IndexWriterThread extends EdalThread {
 
 			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 			fullTextSession.setCacheMode(CacheMode.NORMAL);
-			final Transaction transaction = fullTextSession.beginTransaction();
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -285,7 +281,6 @@ public class IndexWriterThread extends EdalThread {
 			}
 
 			results.close();
-			transaction.commit();
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -393,12 +388,8 @@ public class IndexWriterThread extends EdalThread {
 		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 		fullTextSession.setCacheMode(CacheMode.NORMAL);
 
-		Transaction transaction = fullTextSession.beginTransaction();
-
 		fullTextSession.purgeAll(MyUntypedData.class);
 		fullTextSession.flushToIndexes();
-
-		transaction.commit();
 
 		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();
 		final IndexReaderAccessor readerProvider = searchFactory.getIndexReaderAccessor();
