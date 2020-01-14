@@ -9,9 +9,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -40,15 +40,15 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 
 		try {
 			pdf.rename("directory");
-			Assert.fail("able to rename file with existing name");
+			Assertions.fail("able to rename file with existing name");
 		} catch (Exception e) {
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		}
 		try {
 			pdd.rename("file");
-			Assert.fail("able to rename directory with existing name");
+			Assertions.fail("able to rename directory with existing name");
 		} catch (Exception e) {
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		}
 	}
 
@@ -65,9 +65,9 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 
 		try {
 			pdf.rename("file");
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		} catch (Exception e) {
-			Assert.fail("unable to rename file with an old name again");
+			Assertions.fail("unable to rename file with an old name again");
 		}
 	}
 
@@ -86,9 +86,9 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 		try {
 			rootDirectory.createPrimaryDataFile("file");
 			rootDirectory.createPrimaryDataFile("file2");
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		} catch (Exception e) {
-			Assert.fail("unable to create file with an old name of another file");
+			Assertions.fail("unable to create file with an old name of another file");
 		}
 	}
 }

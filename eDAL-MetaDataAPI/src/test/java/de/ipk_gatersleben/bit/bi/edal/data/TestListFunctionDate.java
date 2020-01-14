@@ -9,7 +9,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;

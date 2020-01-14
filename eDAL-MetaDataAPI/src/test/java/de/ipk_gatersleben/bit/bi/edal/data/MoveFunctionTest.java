@@ -11,9 +11,9 @@ package de.ipk_gatersleben.bit.bi.edal.data;
 
 import java.util.List;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -106,7 +106,7 @@ public class MoveFunctionTest extends EdalDefaultTestCase {
 		String listDirectory2 = output.toString();
 
 		/* compare both directories */
-		Assert.assertEquals(listDirectory1, listDirectory2);
+		Assertions.assertEquals(listDirectory1, listDirectory2);
 
 		/* move all files back to directory1 */
 		file.move(directory1);
@@ -118,6 +118,6 @@ public class MoveFunctionTest extends EdalDefaultTestCase {
 		String newListDirectory1 = output.toString();
 
 		/* compare both directories */
-		Assert.assertEquals(listDirectory1, newListDirectory1);
+		Assertions.assertEquals(listDirectory1, newListDirectory1);
 	}
 }

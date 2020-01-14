@@ -10,9 +10,9 @@
 package de.ipk_gatersleben.bit.bi.edal.metadata;
 
 import java.util.GregorianCalendar;
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
@@ -48,40 +48,36 @@ public class CompareableTest {
 
 		UntypedData yourData = new UntypedData("yourData");
 
-		Assert.assertTrue(FAIL, myData.compareTo(yourData) < 0);
+		Assertions.assertTrue(myData.compareTo(yourData) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourData.compareTo(myData) > 0);
+		Assertions.assertTrue(yourData.compareTo(myData) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myData.compareTo(myData) == 0);
+		Assertions.assertTrue(myData.compareTo(myData) == 0, FAIL);
 
 	}
 
 	@Test
 	public void testPersonCompareTo() {
 
-		NaturalPerson myNPerson = new NaturalPerson("max", "muster", "berlin",
-				"01234", "germany");
+		NaturalPerson myNPerson = new NaturalPerson("max", "muster", "berlin", "01234", "germany");
 
-		NaturalPerson yourNPerson = new NaturalPerson("john", "doe", "boston",
-				"43210", "usa");
+		NaturalPerson yourNPerson = new NaturalPerson("john", "doe", "boston", "43210", "usa");
 
-		Assert.assertTrue(FAIL, myNPerson.compareTo(yourNPerson) > 0);
+		Assertions.assertTrue(myNPerson.compareTo(yourNPerson) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourNPerson.compareTo(myNPerson) < 0);
+		Assertions.assertTrue(yourNPerson.compareTo(myNPerson) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, myNPerson.compareTo(myNPerson) == 0);
+		Assertions.assertTrue(myNPerson.compareTo(myNPerson) == 0, FAIL);
 
-		LegalPerson myLPerson = new LegalPerson("IPK", "gatersleben", "06466",
-				"germany");
+		LegalPerson myLPerson = new LegalPerson("IPK", "gatersleben", "06466", "germany");
 
-		LegalPerson yourLPerson = new LegalPerson("MIT", "boston", "43210",
-				"germany");
+		LegalPerson yourLPerson = new LegalPerson("MIT", "boston", "43210", "germany");
 
-		Assert.assertTrue(FAIL, myLPerson.compareTo(yourLPerson) < 0);
+		Assertions.assertTrue(myLPerson.compareTo(yourLPerson) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourLPerson.compareTo(myLPerson) > 0);
+		Assertions.assertTrue(yourLPerson.compareTo(myLPerson) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myLPerson.compareTo(myLPerson) == 0);
+		Assertions.assertTrue(myLPerson.compareTo(myLPerson) == 0, FAIL);
 	}
 
 	@Test
@@ -91,11 +87,11 @@ public class CompareableTest {
 
 		CheckSumType yourCheckSumType = new CheckSumType("SHA", "54321");
 
-		Assert.assertTrue(FAIL, myCheckSumType.compareTo(yourCheckSumType) < 0);
+		Assertions.assertTrue(myCheckSumType.compareTo(yourCheckSumType) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourCheckSumType.compareTo(myCheckSumType) > 0);
+		Assertions.assertTrue(yourCheckSumType.compareTo(myCheckSumType) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myCheckSumType.compareTo(myCheckSumType) == 0);
+		Assertions.assertTrue(myCheckSumType.compareTo(myCheckSumType) == 0, FAIL);
 
 		CheckSum myCheckSum = new CheckSum();
 
@@ -107,13 +103,13 @@ public class CompareableTest {
 		yourCheckSum.add(yourCheckSumType);
 		yourCheckSum.add(myCheckSumType);
 
-		Assert.assertTrue(FAIL, myCheckSum.compareTo(yourCheckSum) == 0);
+		Assertions.assertTrue(myCheckSum.compareTo(yourCheckSum) == 0, FAIL);
 
 		yourCheckSum.remove(yourCheckSumType);
 
-		Assert.assertTrue(FAIL, myCheckSum.compareTo(yourCheckSum) > 0);
+		Assertions.assertTrue(myCheckSum.compareTo(yourCheckSum) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourCheckSum.compareTo(myCheckSum) < 0);
+		Assertions.assertTrue(yourCheckSum.compareTo(myCheckSum) < 0, FAIL);
 
 	}
 
@@ -124,11 +120,11 @@ public class CompareableTest {
 
 		DataType yourDataType = new DataType(EnumDCMIDataType.SOFTWARE);
 
-		Assert.assertTrue(FAIL, myDataType.compareTo(yourDataType) < 0);
+		Assertions.assertTrue(myDataType.compareTo(yourDataType) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourDataType.compareTo(myDataType) > 0);
+		Assertions.assertTrue(yourDataType.compareTo(myDataType) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myDataType.compareTo(myDataType) == 0);
+		Assertions.assertTrue(myDataType.compareTo(myDataType) == 0, FAIL);
 
 	}
 
@@ -139,14 +135,14 @@ public class CompareableTest {
 
 			DataFormat yourDataFormat = new DataFormat("image/gif");
 
-			Assert.assertTrue(FAIL, myDataType.compareTo(yourDataFormat) < 0);
+			Assertions.assertTrue(myDataType.compareTo(yourDataFormat) < 0, FAIL);
 
-			Assert.assertTrue(FAIL, yourDataFormat.compareTo(myDataType) > 0);
+			Assertions.assertTrue(yourDataFormat.compareTo(myDataType) > 0, FAIL);
 
-			Assert.assertTrue(FAIL, myDataType.compareTo(myDataType) == 0);
+			Assertions.assertTrue(myDataType.compareTo(myDataType) == 0, FAIL);
 
 		} catch (DataFormatException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 
 	}
@@ -158,47 +154,38 @@ public class CompareableTest {
 
 		DataSize yourDataSize = new DataSize(Long.valueOf(1000));
 
-		Assert.assertTrue(FAIL, myDataSize.compareTo(yourDataSize) < 0);
+		Assertions.assertTrue(myDataSize.compareTo(yourDataSize) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourDataSize.compareTo(myDataSize) > 0);
+		Assertions.assertTrue(yourDataSize.compareTo(myDataSize) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myDataSize.compareTo(myDataSize) == 0);
+		Assertions.assertTrue(myDataSize.compareTo(myDataSize) == 0, FAIL);
 
 	}
 
 	@Test
 	public void testDataEventsCompareTo() {
 
-		EdalDate myEdalDate = new EdalDate(new GregorianCalendar(2012, 12, 12),
-				EdalDatePrecision.HOUR, "event");
+		EdalDate myEdalDate = new EdalDate(new GregorianCalendar(2012, 12, 12), EdalDatePrecision.HOUR, "event");
 
-		EdalDate yourEdalDate = new EdalDate(
-				new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR,
-				"event");
+		EdalDate yourEdalDate = new EdalDate(new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR, "event");
 
-		Assert.assertTrue(FAIL, myEdalDate.compareTo(yourEdalDate) > 0);
+		Assertions.assertTrue(myEdalDate.compareTo(yourEdalDate) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourEdalDate.compareTo(myEdalDate) < 0);
+		Assertions.assertTrue(yourEdalDate.compareTo(myEdalDate) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, myEdalDate.compareTo(myEdalDate) == 0);
+		Assertions.assertTrue(myEdalDate.compareTo(myEdalDate) == 0, FAIL);
 
-		EdalDateRange myEdalDateRange = new EdalDateRange(
-				new GregorianCalendar(2010, 10, 10), EdalDatePrecision.HOUR,
-				new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR,
-				"event");
+		EdalDateRange myEdalDateRange = new EdalDateRange(new GregorianCalendar(2010, 10, 10), EdalDatePrecision.HOUR,
+				new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR, "event");
 
-		EdalDateRange yourEdalDateRange = new EdalDateRange(
-				new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR,
-				new GregorianCalendar(2012, 12, 12), EdalDatePrecision.HOUR,
-				"event");
+		EdalDateRange yourEdalDateRange = new EdalDateRange(new GregorianCalendar(2011, 11, 11), EdalDatePrecision.HOUR,
+				new GregorianCalendar(2012, 12, 12), EdalDatePrecision.HOUR, "event");
 
-		Assert.assertTrue(FAIL,
-				myEdalDateRange.compareTo(yourEdalDateRange) < 0);
+		Assertions.assertTrue(myEdalDateRange.compareTo(yourEdalDateRange) < 0, FAIL);
 
-		Assert.assertTrue(FAIL,
-				yourEdalDateRange.compareTo(myEdalDateRange) > 0);
+		Assertions.assertTrue(yourEdalDateRange.compareTo(myEdalDateRange) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myEdalDateRange.compareTo(myEdalDateRange) == 0);
+		Assertions.assertTrue(myEdalDateRange.compareTo(myEdalDateRange) == 0, FAIL);
 
 		DateEvents myDateEvents = new DateEvents("myEvents");
 
@@ -210,11 +197,11 @@ public class CompareableTest {
 		yourDateEvents.add(yourEdalDate);
 		yourDateEvents.add(yourEdalDateRange);
 
-		Assert.assertTrue(FAIL, myDateEvents.compareTo(yourDateEvents) != 0);
+		Assertions.assertTrue(myDateEvents.compareTo(yourDateEvents) != 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourDateEvents.compareTo(myDateEvents) != 0);
+		Assertions.assertTrue(yourDateEvents.compareTo(myDateEvents) != 0, FAIL);
 
-		Assert.assertTrue(FAIL, myDateEvents.compareTo(myDateEvents) == 0);
+		Assertions.assertTrue(myDateEvents.compareTo(myDateEvents) == 0, FAIL);
 
 	}
 
@@ -225,29 +212,29 @@ public class CompareableTest {
 		myRelation.add(new Identifier("ID_123"));
 		myRelation.add(new Identifier("ID_123"));
 
-		Assert.assertEquals(1, myRelation.size());
+		Assertions.assertEquals(1, myRelation.size());
 
 		myRelation.add(new Identifier("ID_12345"));
 
-		Assert.assertEquals(2, myRelation.size());
+		Assertions.assertEquals(2, myRelation.size());
 
 		IdentifierRelation yourRelation = new IdentifierRelation();
 		yourRelation.add(new Identifier("ID_321"));
 
-		Assert.assertTrue(FAIL, myRelation.compareTo(yourRelation) != 0);
+		Assertions.assertTrue(myRelation.compareTo(yourRelation) != 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourRelation.compareTo(myRelation) != 0);
+		Assertions.assertTrue(yourRelation.compareTo(myRelation) != 0, FAIL);
 
-		Assert.assertTrue(FAIL, myRelation.compareTo(myRelation) == 0);
+		Assertions.assertTrue(myRelation.compareTo(myRelation) == 0, FAIL);
 
 		Identifier myIdentifier = new Identifier("myID");
 		Identifier yourIdentifier = new Identifier("yourID");
 
-		Assert.assertTrue(FAIL, myIdentifier.compareTo(yourIdentifier) < 0);
+		Assertions.assertTrue(myIdentifier.compareTo(yourIdentifier) < 0, FAIL);
 
-		Assert.assertTrue(FAIL, yourIdentifier.compareTo(myIdentifier) > 0);
+		Assertions.assertTrue(yourIdentifier.compareTo(myIdentifier) > 0, FAIL);
 
-		Assert.assertTrue(FAIL, myIdentifier.compareTo(myIdentifier) == 0);
+		Assertions.assertTrue(myIdentifier.compareTo(myIdentifier) == 0, FAIL);
 	}
 
 }

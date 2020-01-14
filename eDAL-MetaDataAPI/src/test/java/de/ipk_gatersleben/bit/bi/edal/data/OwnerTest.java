@@ -11,9 +11,9 @@ package de.ipk_gatersleben.bit.bi.edal.data;
 
 import java.security.Principal;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -42,9 +42,9 @@ public class OwnerTest extends EdalTestCaseWithoutShutdown {
 		System.out.println(directory.getCurrentVersion().getOwner());
 
 		for (Principal p : DataManager.getSubject().getPrincipals()) {
-			Assert.assertEquals(directory.getCurrentVersion().getOwner()
+			Assertions.assertEquals(directory.getCurrentVersion().getOwner()
 					.getName(), p.getName());
-			Assert.assertEquals(((PrincipalImplementation) directory
+			Assertions.assertEquals(((PrincipalImplementation) directory
 					.getCurrentVersion().getOwner()).getType(), p.getClass()
 					.getSimpleName());
 
@@ -66,9 +66,9 @@ public class OwnerTest extends EdalTestCaseWithoutShutdown {
 		System.out.println(directory.getCurrentVersion().getOwner());
 
 		for (Principal p : DataManager.getSubject().getPrincipals()) {
-			Assert.assertEquals(directory.getCurrentVersion().getOwner()
+			Assertions.assertEquals(directory.getCurrentVersion().getOwner()
 					.getName(), p.getName());
-			Assert.assertEquals(((PrincipalImplementation) directory
+			Assertions.assertEquals(((PrincipalImplementation) directory
 					.getCurrentVersion().getOwner()).getType(), p.getClass()
 					.getSimpleName());
 

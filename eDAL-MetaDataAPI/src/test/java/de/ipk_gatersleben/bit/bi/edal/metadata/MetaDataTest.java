@@ -12,9 +12,9 @@ package de.ipk_gatersleben.bit.bi.edal.metadata;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -57,19 +57,19 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		final PrimaryDataFile file = rootDirectory.createPrimaryDataFile("file");
 
-		Assert.assertEquals(file.getVersions().size(), 1);
+		Assertions.assertEquals(file.getVersions().size(), 1);
 
 		file.rename("newFile");
 
-		Assert.assertEquals(file.getVersions().size(), 2);
+		Assertions.assertEquals(file.getVersions().size(), 2);
 
 		final PrimaryDataDirectory dir = rootDirectory.createPrimaryDataDirectory("dir");
 
-		Assert.assertEquals(dir.getVersions().size(), 1);
+		Assertions.assertEquals(dir.getVersions().size(), 1);
 
 		dir.rename("newDir");
 
-		Assert.assertEquals(dir.getVersions().size(), 2);
+		Assertions.assertEquals(dir.getVersions().size(), 2);
 
 	}
 
@@ -102,13 +102,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData);
-			Assert.fail("it should be not allowed to set a date event with no CREATED AND UPDATED date");
+			Assertions.fail("it should be not allowed to set a date event with no CREATED AND UPDATED date");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue("not allowed to set a date event with no CREATED AND UPDATED date: " + e.getMessage(),
-					true);
+			Assertions.assertTrue(true, "not allowed to set a date event with no CREATED AND UPDATED date: " + e.getMessage());
 		}
 
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				((DateEvents) file.getMetaData().getElementValue(EnumDublinCoreElements.DATE)).getSet().size(), 2);
 
 		/**
@@ -125,12 +124,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData2);
-			Assert.assertTrue("it is allowed to set an other date ", true);
+			Assertions.assertTrue(true, "it is allowed to set an other date ");
 		} catch (final MetaDataException e) {
-			Assert.fail("it should be  allowed to set an other date :" + e.getMessage());
+			Assertions.fail("it should be  allowed to set an other date :" + e.getMessage());
 		}
 
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				((DateEvents) file.getMetaData().getElementValue(EnumDublinCoreElements.DATE)).getSet().size(), 3);
 
 		/** test what happen, when trying to set /change CREATED date */
@@ -144,12 +143,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData3);
-			Assert.fail("it should be not allowed to set the CREATED date");
+			Assertions.fail("it should be not allowed to set the CREATED date");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue("it is not allowed to set the CREATED date", true);
+			Assertions.assertTrue(true, "it is not allowed to set the CREATED date");
 		}
 
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				((DateEvents) file.getMetaData().getElementValue(EnumDublinCoreElements.DATE)).getSet().size(), 3);
 
 		/** test what happen, when trying to set /change UPDATED date */
@@ -163,12 +162,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData4);
-			Assert.fail("it should be not allowed to set the UPDATED date");
+			Assertions.fail("it should be not allowed to set the UPDATED date");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue("it is not allowed to set the UPDATED date", true);
+			Assertions.assertTrue(true, "it is not allowed to set the UPDATED date");
 		}
 
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				((DateEvents) file.getMetaData().getElementValue(EnumDublinCoreElements.DATE)).getSet().size(), 3);
 
 	}
@@ -189,7 +188,7 @@ public class MetaDataTest extends EdalDefaultTestCase {
 		/** test for data size */
 		final PrimaryDataFile file1 = rootDirectory.createPrimaryDataFile("file");
 
-		Assert.assertEquals(file1.getVersions().size(), 1);
+		Assertions.assertEquals(file1.getVersions().size(), 1);
 
 		final MetaData metaData1 = file1.getMetaData();
 
@@ -199,20 +198,20 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file1.setMetaData(metaData1);
-			Assert.fail("not allowed to set DataSize for PrimaryDataFile");
+			Assertions.fail("not allowed to set DataSize for PrimaryDataFile");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 
-		Assert.assertEquals(file1.getVersions().size(), 1);
+		Assertions.assertEquals(file1.getVersions().size(), 1);
 
 		/** the type must be the same as before **/
-		Assert.assertEquals(file1.getMetaData().getElementValue(EnumDublinCoreElements.SIZE), dataSizeBefore);
+		Assertions.assertEquals(file1.getMetaData().getElementValue(EnumDublinCoreElements.SIZE), dataSizeBefore);
 
 		/** test for checksum */
 		final PrimaryDataFile file2 = rootDirectory.createPrimaryDataFile("file2");
 
-		Assert.assertEquals(file2.getVersions().size(), 1);
+		Assertions.assertEquals(file2.getVersions().size(), 1);
 
 		final MetaData metaData2 = file2.getMetaData();
 
@@ -226,13 +225,13 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file2.setMetaData(metaData2);
-			Assert.fail("not allowed to set checksum for PrimaryDataFile");
+			Assertions.fail("not allowed to set checksum for PrimaryDataFile");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
-		Assert.assertEquals(file2.getVersions().size(), 1);
+		Assertions.assertEquals(file2.getVersions().size(), 1);
 
-		Assert.assertEquals(file2.getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM), checkSumBefore);
+		Assertions.assertEquals(file2.getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM), checkSumBefore);
 
 	}
 
@@ -258,12 +257,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			directory.setMetaData(metaData);
-			Assert.fail("not allowed to set other Format for a PrimaryDataDirectory");
+			Assertions.fail("not allowed to set other Format for a PrimaryDataDirectory");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 		/** the type must be the same as before **/
-		Assert.assertEquals(directory.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
+		Assertions.assertEquals(directory.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
 				new EmptyMetaData().toString());
 
 	}
@@ -290,13 +289,13 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData);
-			Assert.fail("not allowed to set DirectoryMetaData for the FORMAT for a PrimaryDataFile");
+			Assertions.fail("not allowed to set DirectoryMetaData for the FORMAT for a PrimaryDataFile");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 
 		/** the type must be the same as before **/
-		Assert.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
+		Assertions.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
 				new DataFormat("application/octet-stream").toString());
 
 		final MetaData metaData2 = file.getMetaData();
@@ -306,13 +305,13 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData2);
-			Assert.fail("not allowed to set EmptyMetaData for the FORMAT of a PrimaryDataFile");
+			Assertions.fail("not allowed to set EmptyMetaData for the FORMAT of a PrimaryDataFile");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 
 		/** the type must be the same as before **/
-		Assert.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
+		Assertions.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.FORMAT).toString(),
 				new DataFormat("application/octet-stream").toString());
 
 	}
@@ -333,7 +332,7 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		final PrimaryDataFile file = rootDirectory.createPrimaryDataFile("file");
 
-		Assert.assertEquals(file.getVersions().size(), 1);
+		Assertions.assertEquals(file.getVersions().size(), 1);
 
 		final MetaData metaData = file.getMetaData();
 
@@ -341,13 +340,13 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData);
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		} catch (final MetaDataException e) {
-			Assert.fail("not allowed to set description for PrimaryDataFile");
+			Assertions.fail("not allowed to set description for PrimaryDataFile");
 
 		}
 
-		Assert.assertEquals(file.getVersions().size(), 2);
+		Assertions.assertEquals(file.getVersions().size(), 2);
 
 	}
 
@@ -373,12 +372,12 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			directory.setMetaData(metaData);
-			Assert.fail("not allowed to set other DataType for a PrimaryDataDirectory");
+			Assertions.fail("not allowed to set other DataType for a PrimaryDataDirectory");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 		/** the type must be the same as before **/
-		Assert.assertEquals(directory.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString(),
+		Assertions.assertEquals(directory.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString(),
 				new DirectoryMetaData().toString());
 
 	}
@@ -405,13 +404,13 @@ public class MetaDataTest extends EdalDefaultTestCase {
 
 		try {
 			file.setMetaData(metaData);
-			Assert.fail("not allowed to set DirectoryMetaData for a PrimaryDataFile");
+			Assertions.fail("not allowed to set DirectoryMetaData for a PrimaryDataFile");
 		} catch (final MetaDataException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true,e.getMessage());
 		}
 
 		/** the type must be the same as before **/
-		Assert.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString(),
+		Assertions.assertEquals(file.getMetaData().getElementValue(EnumDublinCoreElements.TYPE).toString(),
 				new DataType(EnumDCMIDataType.TEXT).toString());
 
 	}
@@ -451,7 +450,7 @@ public class MetaDataTest extends EdalDefaultTestCase {
 		file.setMetaData(meta);
 		// check if citable metadata is longer than minimum expected citation
 		// string
-		Assert.assertTrue(meta.toString().length() > 31);
+		Assertions.assertTrue(meta.toString().length() > 31);
 
 	}
 }

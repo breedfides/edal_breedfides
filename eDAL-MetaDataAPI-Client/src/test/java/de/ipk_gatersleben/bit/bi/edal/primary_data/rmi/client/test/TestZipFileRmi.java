@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import org.apache.logging.log4j.core.util.Loader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.rmi.client.helper.EdalZipFileVisitorRmi;
@@ -104,7 +104,7 @@ public class TestZipFileRmi extends ClientServerTest {
 
 			System.out.println(inputSet.equals(this.outputSet));
 
-			Assert.assertEquals(inputSet, this.outputSet);
+			Assertions.assertEquals(inputSet, this.outputSet);
 		}
 
 	}

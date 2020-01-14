@@ -12,14 +12,15 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.review;
 
+
 import java.io.IOException;
 import java.util.Collection;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewStatusType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatusEvaluation;
@@ -45,7 +46,7 @@ public class TestReviewerTruthTableEvaluation {
 		    triple.getLeft(), triple.getMiddle());
 	    System.out
 		    .println(validate.toString() + ": " + eval.eval(validate));
-	    Assert.assertEquals(eval.eval(validate), triple.getRight());
+	    Assertions.assertEquals(eval.eval(validate), triple.getRight());
 	}
     }
 
@@ -67,7 +68,7 @@ public class TestReviewerTruthTableEvaluation {
 		    ReviewStatusEvaluation.PROPERTY_FILE_DATAMANAGER_TRUTH_TABLE);
 
 	} catch (final IOException e) {
-	    Assert.fail(e.toString() + " :" + e.getMessage());
+	    Assertions.fail(e.toString() + " :" + e.getMessage());
 	}
     }
 

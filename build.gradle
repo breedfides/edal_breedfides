@@ -10,7 +10,7 @@ project.ext {
     aspectjVersion = '1.9.4'
     jerseyVersion = '2.27'
     jettyVersion = '9.4.24.v20191120'
-    junitVersion = '5.4.0'
+    junitVersion = '5.5.0'
 }
 
 apply plugin: 'net.researchgate.release'
@@ -58,8 +58,7 @@ allprojects {
 	}
 	
 	test {
-	    useJUnit()
-      
+        useJUnitPlatform()
       	systemProperties['junit.jupiter.execution.parallel.enabled'] = true
 
   		if(Runtime.runtime.availableProcessors()>=4){
@@ -69,8 +68,8 @@ allprojects {
 	    	maxParallelForks = Runtime.runtime.availableProcessors()
 	    }
 
-	    minHeapSize = "4g"
-	    maxHeapSize = "8g"
+	    minHeapSize = "8g"
+	    maxHeapSize = "16g"
 	
 	    systemProperties = ["java.security.policy": file("./src/main/resources/de/ipk_gatersleben/bit/bi/edal/primary_data/policy.txt").absolutePath ]
 	
@@ -273,9 +272,9 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
 	  	//compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
 	   	compile 'com.github.develar:proxy-vole:72c758b'
-	   
-	    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
-	   	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+	   	   	
+	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
 	    	   	
 	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: jerseyVersion
 	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: jerseyVersion
@@ -332,6 +331,8 @@ project(':eDAL-MetaDataAPI-Client') {
     	compile group: 'org.swinglabs.swingx', name: 'swingx-all', version:'1.6.4'
     	compile group: 'com.miglayout', name: 'miglayout-core', version:'4.2'
     	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
+    	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
     }
 	
 	artifacts{

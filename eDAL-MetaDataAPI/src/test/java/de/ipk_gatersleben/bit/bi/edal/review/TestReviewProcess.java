@@ -13,9 +13,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 
-import junit.framework.Assert;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -90,7 +89,7 @@ public class TestReviewProcess extends EdalDefaultTestCase {
 	// System.out.println(res);
 //	DataManager.shutdown();
 	// TODO test with truth tables
-	Assert.assertEquals(res.getReviewResult(), ReviewStatusType.ACCEPTED);
+	Assertions.assertEquals(res.getReviewResult(), ReviewStatusType.ACCEPTED);
     }
 
 }

@@ -9,9 +9,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -66,7 +66,7 @@ public class PublicReferenceFunctionTest extends EdalDefaultTestCase {
 			try {
 				rootDirectory.addPublicReference(id);
 			} catch (final PrimaryDataEntityException e) {
-				Assert.fail(e.getMessage());
+				Assertions.fail(e.getMessage());
 			}
 		}
 
@@ -75,7 +75,7 @@ public class PublicReferenceFunctionTest extends EdalDefaultTestCase {
 			try {
 				rootDirectory.addPublicReference(id);
 			} catch (final PrimaryDataEntityException e) {
-				Assert.assertTrue(e.getMessage(), true);
+				Assertions.assertTrue(true,e.getMessage());
 			}
 		}
 	}

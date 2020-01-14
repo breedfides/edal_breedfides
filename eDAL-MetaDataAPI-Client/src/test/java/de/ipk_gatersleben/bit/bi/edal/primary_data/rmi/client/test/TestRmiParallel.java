@@ -27,7 +27,7 @@
 //import org.apache.logging.log4j.Level;
 //import org.apache.logging.log4j.core.config.Configurator;
 //import org.apache.logging.log4j.core.util.Loader;
-//import org.junit.Test;
+//import org.junit.jupiter.api.Test;
 //
 //import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 //import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;

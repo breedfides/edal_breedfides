@@ -12,7 +12,7 @@
  */
 //package de.ipk_gatersleben.bit.bi.edal.primary_data.rmi.client.test.parallel;
 //
-//import org.junit.Test;
+//import org.junit.jupiter.api.Test;
 //import org.junit.experimental.ParallelComputer;
 //import org.junit.runner.JUnitCore;
 //

@@ -12,9 +12,9 @@ package de.ipk_gatersleben.bit.bi.edal.data;
 import java.security.AccessControlException;
 import java.util.List;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods;
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
@@ -99,7 +99,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 			meta.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("setMetaData"));
 			((PrimaryDataDirectory) array[8]).setMetaData(meta);
 		} catch (AccessControlException ace) {
-			Assert.fail(ace.getMessage());
+			Assertions.fail(ace.getMessage());
 		}
 
 		/* test for all function the forbidden getMetaData function */
@@ -131,7 +131,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 											((PrimaryDataDirectory) array[8]).getMetaData();
 										} catch (AccessControlException ace8) {
 
-											Assert.assertTrue(true);
+											Assertions.assertTrue(true);
 										}
 									}
 								}
@@ -191,7 +191,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 											DataManager.getImplProv().getLogger().info("try method 9");
 											((PrimaryDataDirectory) array[8]).setMetaData(rootDirectory2.getMetaData().clone());
 										} catch (AccessControlException ace8) {
-											Assert.assertTrue(true);
+											Assertions.assertTrue(true);
 										}
 									}
 								}
@@ -211,7 +211,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 		try {
 			pdf.revokePermission(new SamplePrincipal("SampleUser"), Methods.grantPermission);
 		} catch (PrimaryDataEntityException e) {
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		}
 
 		DataManager.shutdown();

@@ -11,9 +11,9 @@ package de.ipk_gatersleben.bit.bi.edal.data;
 
 import java.security.AccessControlException;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -53,9 +53,9 @@ public class AllPrincipalTest extends EdalTestCaseWithoutShutdown {
 
 		try {
 			rootDirectory.grantPermission(new ALLPrincipal(), Methods.ALL);
-			Assert.fail();
+			Assertions.fail();
 		} catch (AccessControlException e) {
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		}
 
 		DataManager.shutdown();
@@ -81,15 +81,15 @@ public class AllPrincipalTest extends EdalTestCaseWithoutShutdown {
 
 		try {
 			rootDirectory.createPrimaryDataFile("file");
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		} catch (AccessControlException e) {
-			Assert.fail();
+			Assertions.fail();
 		}
 		try {
 			rootDirectory.revokePermission(new ALLPrincipal(), Methods.ALL);
-			Assert.fail();
+			Assertions.fail();
 		} catch (AccessControlException e) {
-			Assert.assertTrue(true);
+			Assertions.assertTrue(true);
 		}
 
 		DataManager.shutdown();

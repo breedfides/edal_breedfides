@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -142,7 +142,7 @@ public class TestRmiUploadDownload extends ClientServerTest {
 
 		System.out.println(inputSet.equals(this.outputSet));
 
-		Assert.assertEquals(inputSet, this.outputSet);
+		Assertions.assertEquals(inputSet, this.outputSet);
 
 		Path START_INPUT_PATH = Paths.get(System.getProperty("java.home"), "bin");
 		Path START_OUTPUT_PATH = Paths.get(System.getProperty("user.home"), "TEST_READ", "bin");
@@ -153,7 +153,7 @@ public class TestRmiUploadDownload extends ClientServerTest {
 			System.out.println("false");
 		}
 
-		Assert.assertEquals(FileUtils.sizeOf(START_INPUT_PATH.toFile()), FileUtils.sizeOf(START_OUTPUT_PATH.toFile()));
+		Assertions.assertEquals(FileUtils.sizeOf(START_INPUT_PATH.toFile()), FileUtils.sizeOf(START_OUTPUT_PATH.toFile()));
 
 		FileUtils.deleteDirectory(START_OUTPUT_PATH.getParent().toFile());
 

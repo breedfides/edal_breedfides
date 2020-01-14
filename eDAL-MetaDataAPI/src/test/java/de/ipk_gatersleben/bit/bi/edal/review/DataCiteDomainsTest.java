@@ -11,10 +11,10 @@ package de.ipk_gatersleben.bit.bi.edal.review;
 
 import java.net.InetAddress;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalHttpServer;
 
@@ -27,41 +27,41 @@ public class DataCiteDomainsTest {
 	private static final String BIT_252 = "bit-252.ipk-gatersleben.de";
 
 	@Test
-	@Ignore
+	@Disabled("Not working any longer for bit-252 due to new DNS configuration")
 	public void testIfLocalhostIsInDomain() throws Exception {
 
-		Assert.assertTrue("localhost is the registrated domain",
-				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_252));
+		Assertions.assertTrue(EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_252),
+				"localhost is the registrated domain");
 
-		Assert.assertFalse("localhost is not the registrated domain",
-				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_253));
+		Assertions.assertFalse(EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), BIT_253),
+				"localhost is not the registrated domain");
 
-		Assert.assertTrue("all host domians are allowed",
-				EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), "*"));
+		Assertions.assertTrue(EdalHttpServer.checkIfLocalhostIsInDomain(InetAddress.getByName(BIT_252), "*"),
+				"all host domians are allowed");
 
 	}
 
 	@Test
-	@Ignore
+	@Disabled("Not working any longer for bit-252 due to new DNS configuration")
 	public void testIfDomainIsAliasForLocalhost() throws Exception {
 
-		Assert.assertTrue("domain is an alias for localhost",
-				EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(BIT_252), DOI_IPK));
+		Assertions.assertTrue(EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(BIT_252), DOI_IPK),
+				"domain is an alias for localhost");
 
-		Assert.assertTrue("localhost is an alias for domain",
-				EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(DOI_IPK), BIT_252));
+		Assertions.assertTrue(EdalHttpServer.checkIfDomainIsAliasForLocalhost(InetAddress.getByName(DOI_IPK), BIT_252),
+				"localhost is an alias for domain");
 
 	}
 
 	@Test
-	@Ignore
+	@Disabled("Not working any longer for bit-252 due to new DNS configuration")
 	public void testIfLocalhostHasSubDomain() throws Exception {
 
-		Assert.assertTrue("localhost is in subdomain",
-				EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), IPK));
+		Assertions.assertTrue(EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), IPK),
+				"localhost is in subdomain");
 
-		Assert.assertFalse("localhost is not in subdomain",
-				EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), EXAMPLE));
+		Assertions.assertFalse(EdalHttpServer.checkIfLocalhostHasSubDomain(InetAddress.getByName(BIT_252), EXAMPLE),
+				"localhost is not in subdomain");
 
 	}
 

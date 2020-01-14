@@ -19,9 +19,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import junit.framework.Assert;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.rmi.client.helper.EdalDirectoryVisitorRmi;
@@ -89,7 +88,7 @@ public class TestFileSystemWithRmi extends ClientServerTest {
 
 		System.out.println(outputSet.equals(inputSet));
 
-		Assert.assertEquals(outputSet, inputSet);
+		Assertions.assertEquals(outputSet, inputSet);
 
 	}
 }

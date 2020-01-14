@@ -27,7 +27,6 @@ import java.util.TreeSet;
 import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;

@@ -9,9 +9,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data_manager;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.AsynchronList;
 
@@ -60,13 +60,13 @@ public class TestAsynchronousList implements Runnable {
 			Thread.sleep(TestAsynchronousList.sleep * 2);
 		} catch (final InterruptedException e) {
 		}
-		Assert.assertEquals(0, this.list.size());
+		Assertions.assertEquals(0, this.list.size());
 	}
 
 	@Test
 	public final void testContains() {
 		this.init();
-		Assert.assertTrue(this.list.contains(""
+		Assertions.assertTrue(this.list.contains(""
 				+ (TestAsynchronousList.SizeTestList - 1)));
 	}
 
@@ -75,8 +75,9 @@ public class TestAsynchronousList implements Runnable {
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.AsynchronList#get(int)}
 	 * .
 	 */
-	@Test(timeout = (int) (TestAsynchronousList.SizeTestList * 2.0)
-			* TestAsynchronousList.sleep / TestAsynchronousList.bucket_size)
+	@Test
+//	@Timeout(value = (int) (TestAsynchronousList.SizeTestList * 2.0)
+//			* TestAsynchronousList.sleep / TestAsynchronousList.bucket_size)
 	public final void testGet() {
 		int i;
 		this.init();
@@ -89,7 +90,7 @@ public class TestAsynchronousList implements Runnable {
 
 			}
 		}
-		Assert.assertEquals(TestAsynchronousList.SizeTestList, i);
+		Assertions.assertEquals(TestAsynchronousList.SizeTestList, i);
 	}
 
 	@Test
@@ -97,14 +98,14 @@ public class TestAsynchronousList implements Runnable {
 		this.init();
 		// System.out.println(this.list.indexOf(""
 		// + (TestAsynchronousList.SizeTestList - 1)));
-		Assert.assertTrue(this.list.indexOf(""
+		Assertions.assertTrue(this.list.indexOf(""
 				+ (TestAsynchronousList.SizeTestList - 1)) >= 0);
 	}
 
 	@Test
 	public final void testIsEmpty() {
 		this.init();
-		Assert.assertFalse(this.list.isEmpty());
+		Assertions.assertFalse(this.list.isEmpty());
 	}
 
 	/**
@@ -129,13 +130,13 @@ public class TestAsynchronousList implements Runnable {
 			}
 
 		}
-		Assert.assertEquals(TestAsynchronousList.SizeTestList, count);
+		Assertions.assertEquals(TestAsynchronousList.SizeTestList, count);
 	}
 
 	@Test
 	public final void testLastIndexOf() {
 		this.init();
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				TestAsynchronousList.SizeTestList - 1,
 				this.list.lastIndexOf(""
 						+ (TestAsynchronousList.SizeTestList - 1)));
@@ -150,20 +151,20 @@ public class TestAsynchronousList implements Runnable {
 	@Test
 	public final void testSize() {
 		this.init();
-		Assert.assertEquals(TestAsynchronousList.SizeTestList, this.list.size());
+		Assertions.assertEquals(TestAsynchronousList.SizeTestList, this.list.size());
 	}
 
 	@Test
 	public final void testSubList() {
 		this.init();
-		Assert.assertEquals(TestAsynchronousList.SizeTestList / 2, this.list
+		Assertions.assertEquals(TestAsynchronousList.SizeTestList / 2, this.list
 				.subList(0, TestAsynchronousList.SizeTestList / 2).size());
 	}
 
 	@Test
 	public final void testToArray() {
 		this.init();
-		Assert.assertEquals(TestAsynchronousList.SizeTestList,
+		Assertions.assertEquals(TestAsynchronousList.SizeTestList,
 				this.list.toArray().length);
 	}
 
@@ -171,7 +172,7 @@ public class TestAsynchronousList implements Runnable {
 	public final void testToArrayCopy() {
 		this.init();
 		final String[] a = new String[TestAsynchronousList.SizeTestList];
-		Assert.assertEquals(
+		Assertions.assertEquals(
 				this.list.get(TestAsynchronousList.SizeTestList - 1),
 				this.list.toArray(a)[TestAsynchronousList.SizeTestList - 1]);
 	}

@@ -24,9 +24,9 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -179,7 +179,7 @@ public class StoreReadFunctionTest extends EdalDefaultTestCase {
 
 		System.out.println(inputSet.equals(outputSet));
 
-		Assert.assertEquals(inputSet, outputSet);
+		Assertions.assertEquals(inputSet, outputSet);
 
 		EdalHelpers.getStatistic(((FileSystemImplementationProvider) DataManager.getImplProv()).getStatistics());
 

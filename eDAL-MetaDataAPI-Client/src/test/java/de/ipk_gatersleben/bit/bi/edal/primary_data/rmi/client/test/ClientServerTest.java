@@ -21,8 +21,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.mail.internet.InternetAddress;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.rmi.server.EdalServer;
@@ -59,7 +59,7 @@ public class ClientServerTest {
 	 * 
 	 * @throws Exception
 	 */
-	@Before
+	@BeforeEach
 	public void startServer() throws Exception {
 
 		int port = ThreadLocalRandom.current().nextInt(MIN_PORT_NUMBER, MAX_PORT_NUMBER);
@@ -102,7 +102,7 @@ public class ClientServerTest {
 	 * 
 	 * @throws Exception
 	 */
-	@After
+	@AfterEach
 	public void stopServer() throws Exception {
 		EdalServer.stopServer(ClientServerTest.HOST, ClientServerTest.REGISTRY_PORT);
 		EdalHelpers.cleanMountPath(mountPath);

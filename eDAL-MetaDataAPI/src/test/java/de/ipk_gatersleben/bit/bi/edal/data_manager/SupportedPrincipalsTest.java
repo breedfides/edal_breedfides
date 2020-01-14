@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+org.junit.jupiter.api.Test * Copyright (c) 2019 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
  * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -54,10 +54,10 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 							configuration1), EdalHelpers
 							.authenticateWinOrUnixOrMacUser());
 
-			Assert.fail("You should not be able to connect because of missing principal");
+			Assertions.fail("You should not be able to connect because of missing principal");
 
 		} catch (PrimaryDataDirectoryException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true,e.getMessage());
 		}
 
 //		DataManager.shutdown();
@@ -94,7 +94,7 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 							.authenticateSampleUser());
 
 		} catch (PrimaryDataDirectoryException e) {
-			Assert.fail("Can not connect to eDAL :" + e.getMessage());
+			Assertions.fail("Can not connect to eDAL :" + e.getMessage());
 		}
 //		DataManager.shutdown();
 	}
@@ -117,9 +117,9 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 					.getFileSystemImplementationProvider(true, configuration1),
 					EdalHelpers.authenticateWinOrUnixOrMacUser());
 
-			Assert.fail("You should not be able to connect with an empty list");
+			Assertions.fail("You should not be able to connect with an empty list");
 		} catch (PrimaryDataDirectoryException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true, e.getMessage());
 		}
 		/* no shutdown necessary */
 		// DataManager.shutdown();
@@ -147,7 +147,7 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 					EdalHelpers.authenticateSampleUser());
 
 		} catch (PrimaryDataDirectoryException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 
 		DataManager.shutdown();
@@ -162,10 +162,10 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 					EdalHelpers.getFileSystemImplementationProvider(false,
 							configuration2), EdalHelpers
 							.authenticateSampleUser());
-			Assert.fail("You should not be able to connect because of missing principals in the new list");
+			Assertions.fail("You should not be able to connect because of missing principals in the new list");
 
 		} catch (PrimaryDataDirectoryException e) {
-			Assert.assertTrue(e.getMessage(), true);
+			Assertions.assertTrue(true,e.getMessage());
 		}
 
 //		DataManager.shutdown();

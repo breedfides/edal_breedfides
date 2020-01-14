@@ -14,9 +14,8 @@ import java.util.Calendar;
 
 import javax.mail.internet.InternetAddress;
 
-import junit.framework.Assert;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.EdalApprovalException;
@@ -68,9 +67,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -109,9 +108,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -151,9 +150,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.ACCEPTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -193,9 +192,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -231,9 +230,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -273,9 +272,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -315,9 +314,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.REJECTED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -353,9 +352,9 @@ public class DefaultRuleFileTest extends EdalDefaultTestCase {
 		try {
 			final ReviewResult result = ReviewProcess.review(Arrays.asList(reviewStatus1, reviewStatus2, reviewStatus3));
 
-			Assert.assertEquals(ReviewStatusType.UNDECIDED, result.getReviewResult());
+			Assertions.assertEquals(ReviewStatusType.UNDECIDED, result.getReviewResult());
 		} catch (final EdalApprovalException e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 }

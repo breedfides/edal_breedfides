@@ -11,9 +11,9 @@ package de.ipk_gatersleben.bit.bi.edal.data;
 
 import java.util.SortedSet;
 
-import junit.framework.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -75,7 +75,7 @@ public class SwitchVersionFunctionTest extends EdalDefaultTestCase {
 
 		/* compare current version revision with last version Revision */
 
-		Assert.assertEquals(subDir.getCurrentVersion(), versionList.last());
+		Assertions.assertEquals(subDir.getCurrentVersion(), versionList.last());
 
 		// System.out.println("\nswitch current version");
 
@@ -89,7 +89,7 @@ public class SwitchVersionFunctionTest extends EdalDefaultTestCase {
 
 		/* compare current version revision with first version revision */
 
-		Assert.assertEquals(subDir.getCurrentVersion(), versionList.first());
+		Assertions.assertEquals(subDir.getCurrentVersion(), versionList.first());
 
 		// System.out.println("\nswitch version back");
 		subDir.switchCurrentVersion(subDir.getVersions().last());
@@ -99,7 +99,7 @@ public class SwitchVersionFunctionTest extends EdalDefaultTestCase {
 
 		/* compare currentVersion revision with last version Revision */
 
-		Assert.assertEquals(subDir.getCurrentVersion(), versionList.last());
+		Assertions.assertEquals(subDir.getCurrentVersion(), versionList.last());
 
 	}
 }
