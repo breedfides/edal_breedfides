@@ -18,13 +18,6 @@ apply plugin: 'io.codearte.nexus-staging'
 
 allprojects {
 
-//  deprecated function to chekc if the user use an Oracle JDK	
-//
-//  def currentJvm = org.gradle.internal.jvm.Jvm.current().toString()	
-//	if(!currentJvm.contains("Oracle")){
-//		ant.fail('ERROR: Please use an Oracle Java Runtime for the e!DAL-MetaDataAPI')
-//	}
-
 	apply plugin:'java'
 	apply plugin:'maven'
 	apply plugin:'signing'
