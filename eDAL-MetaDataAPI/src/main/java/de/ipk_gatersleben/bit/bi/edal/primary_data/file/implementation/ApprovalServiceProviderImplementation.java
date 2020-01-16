@@ -938,8 +938,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				publicReference.setPublic(true);
 				publicReference.setAcceptedDate(releaseDate);
 				publicReference.setPublicationStatus(PublicationStatus.ACCEPTED);
-				publicReference.setReleaseDate(releaseDate);
-				publicReference.changeReleaseDate(releaseDate);
+				if (publicReference.getReleaseDate() == null) {
+					publicReference.setReleaseDate(releaseDate);
+					publicReference.changeReleaseDate(releaseDate);
+				}
 				session2.update(publicReference);
 
 				transaction2.commit();
@@ -964,8 +966,10 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 				publicRef.setPublic(true);
 				publicRef.setAcceptedDate(releaseDate);
 				publicRef.setPublicationStatus(PublicationStatus.ACCEPTED);
-				publicRef.setReleaseDate(releaseDate);
-				publicRef.changeReleaseDate(releaseDate);
+				if (publicRef.getReleaseDate() == null) {
+					publicRef.setReleaseDate(releaseDate);
+					publicRef.changeReleaseDate(releaseDate);
+				}
 
 				final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
@@ -1177,7 +1181,8 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 							ServiceProvider service = null;
 
 							try {
-								service = DataManager.getImplProv().getServiceProvider().getDeclaredConstructor().newInstance();
+								service = DataManager.getImplProv().getServiceProvider().getDeclaredConstructor()
+										.newInstance();
 							} catch (ReflectiveOperationException e) {
 								DataManager.getImplProv().getLogger().error(e);
 								throw new EdalApprovalException(

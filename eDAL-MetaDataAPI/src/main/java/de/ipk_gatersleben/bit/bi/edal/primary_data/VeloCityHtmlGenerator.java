@@ -1287,7 +1287,7 @@ class VeloCityHtmlGenerator {
 								GenerateLocations.generateGpsLocations(ipMap.get(reference.getInternalID())) });
 
 				JSONObject obj = new JSONObject();
-				obj.put("year", reference.getReleaseDate().get(Calendar.YEAR));
+				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 				obj.put("doi", reference.getAssignedID());
 				obj.put("title", reference.getVersion().getMetaData().toString());
 				obj.put("downloads", String.valueOf(downloadedVolume.get(entry.getKey())));
