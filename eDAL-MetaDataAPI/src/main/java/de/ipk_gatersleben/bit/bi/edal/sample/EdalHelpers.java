@@ -21,7 +21,12 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
+import java.util.Hashtable;
 
+import javax.naming.Context;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.Configuration;
@@ -34,6 +39,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.hibernate.stat.CacheRegionStatistics;
 import org.hibernate.stat.Statistics;
+
+import com.sun.security.auth.module.LdapLoginModule;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -436,6 +443,101 @@ public class EdalHelpers {
 		return null;
 
 	}
+	
+	
+	
+	/**
+	 * Authenticate user using the specified LDAP-LoginModule.
+	 * 
+	 * @param providerURL
+	 *            
+	 * @param baseDN
+	 *            
+	 * @param user
+	 *            optional username
+	 * @return the authenticated {@link Subject}
+	 * @throws EdalAuthenticateException
+	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
+	 *             successful.
+	 */
+	public static Subject authenticateSubjectWithLDAP(final String providerURL, final String baseDN,
+			String user) throws EdalAuthenticateException {
+
+		
+		// Set up the environment for creating the initial context
+		HashMap<String, String> parameter = new HashMap<String,String>();
+		
+		
+		
+		parameter.put("userProvider",providerURL);
+		parameter.put("userBaseDn",baseDN);
+		
+//		parameter.put(Context.INITIAL_CONTEXT_FACTORY, 
+//			    "com.sun.jndi.ldap.LdapCtxFactory");
+//		
+//		parameter.put(Context.PROVIDER_URL, "ldap://localhost:389/o=JNDITutorial");
+//
+//		// Authenticate as S. User and password "mysecret"
+//		parameter.put(Context.SECURITY_AUTHENTICATION, "simple");
+//		parameter.put(Context.SECURITY_PRINCIPAL, "cn=S. User, ou=NewHires, o=JNDITutorial");
+//		parameter.put(Context.SECURITY_CREDENTIALS, "mysecret");
+
+
+		
+		
+		
+		
+		Configuration.setConfiguration(new EdalLoginConfiguration(parameter));
+
+
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+
+		LoginContext ctx = null;
+
+		boolean retry = true;
+
+		while (retry) {
+			try {
+				ctx = new LoginContext("LDAP", new LoginCallbackHandler(user));
+				ctx.login();
+
+				Thread.currentThread().setContextClassLoader(currentClassLoader);
+
+				retry = false;
+				return ctx.getSubject();
+			} catch (final Exception e) {
+				if (e.getCause() == null) {
+					Thread.currentThread().setContextClassLoader(currentClassLoader);
+					return null;
+				} else {
+					
+					int result = 0;
+				
+					if (e.getCause() instanceof UnknownHostException) {
+						result = (Integer) JOptionPane.showConfirmDialog(null,
+								"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
+								"Login to LDAP-Provider", JOptionPane.YES_NO_OPTION);
+					}
+
+					if (result == JOptionPane.YES_OPTION) {
+						retry = true;
+					} else if (result == JOptionPane.NO_OPTION) {
+						Thread.currentThread().setContextClassLoader(currentClassLoader);
+						retry = false;
+						return null;
+					}
+				}
+			}
+		}
+		return null;
+
+	}
+	
+	
+	
+	
 
 	/**
 	 * Authenticate user using the Windows- or Unix- or MAC-LoginModule.

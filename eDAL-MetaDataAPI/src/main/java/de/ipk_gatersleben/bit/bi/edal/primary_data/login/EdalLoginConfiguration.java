@@ -18,17 +18,24 @@ import javax.security.auth.login.Configuration;
 
 public class EdalLoginConfiguration extends Configuration {
 
+	private Map<String, String> map = new HashMap<String, String>();
+
+	public EdalLoginConfiguration() {
+	}
+	
+	public EdalLoginConfiguration(HashMap<String, String> parameter) {
+		this.map = parameter;
+	}
+
 	@Override
 	public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-
-		Map<String, String> map = new HashMap<>();
 
 		AppConfigurationEntry[] array = new AppConfigurationEntry[1];
 
 		switch (name) {
 		case "Sample":
 
-			map.put("debug", "false");
+			this.map.put("debug", "false");
 
 			AppConfigurationEntry sampleLoginModule = new AppConfigurationEntry(
 					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.SampleUserLoginModule",
@@ -40,10 +47,10 @@ public class EdalLoginConfiguration extends Configuration {
 
 		case "Windows":
 
-			map.put("debug", "false");
+			this.map.put("debug", "false");
 
 			AppConfigurationEntry windowsLoginModule = new AppConfigurationEntry(
-					"com.sun.security.auth.module.NTLoginModule", LoginModuleControlFlag.REQUIRED, map);
+					"com.sun.security.auth.module.NTLoginModule", LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = windowsLoginModule;
 
@@ -51,10 +58,10 @@ public class EdalLoginConfiguration extends Configuration {
 
 		case "Unix":
 
-			map.put("debug", "false");
+			this.map.put("debug", "false");
 
 			AppConfigurationEntry unixLoginModule = new AppConfigurationEntry(
-					"com.sun.security.auth.module.UnixLoginModule", LoginModuleControlFlag.REQUIRED, map);
+					"com.sun.security.auth.module.UnixLoginModule", LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = unixLoginModule;
 
@@ -62,21 +69,33 @@ public class EdalLoginConfiguration extends Configuration {
 
 		case "Kerberos":
 
-			map.put("debug", "false");
-			map.put("useTicketCache", "false");
-			map.put("storeKey", "true");
+			this.map.put("debug", "false");
+			this.map.put("useTicketCache", "false");
+			this.map.put("storeKey", "true");
 
 			AppConfigurationEntry kerberosLoginModule = new AppConfigurationEntry(
-					"com.sun.security.auth.module.Krb5LoginModule", LoginModuleControlFlag.REQUIRED, map);
+					"com.sun.security.auth.module.Krb5LoginModule", LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = kerberosLoginModule;
+
+			return array;
+		case "LDAP":
+
+//			this.map.put("debug", "false");
+//			this.map.put("useTicketCache", "false");
+//			this.map.put("storeKey", "true");
+
+			AppConfigurationEntry ldapLoginModule = new AppConfigurationEntry(
+					"com.sun.security.auth.module.LdapLoginModule", LoginModuleControlFlag.REQUIRED, this.map);
+
+			array[0] = ldapLoginModule;
 
 			return array;
 		case "User":
 
 			AppConfigurationEntry userLoginModule = new AppConfigurationEntry(
-					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.UserLoginModule", LoginModuleControlFlag.REQUIRED,
-					map);
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.UserLoginModule",
+					LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = userLoginModule;
 
@@ -85,8 +104,8 @@ public class EdalLoginConfiguration extends Configuration {
 		case "Google":
 
 			AppConfigurationEntry newGoogleLoginModule = new AppConfigurationEntry(
-					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.GoogleLoginModule", LoginModuleControlFlag.REQUIRED,
-					map);
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.GoogleLoginModule",
+					LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = newGoogleLoginModule;
 
@@ -94,8 +113,8 @@ public class EdalLoginConfiguration extends Configuration {
 		case "ORCID":
 
 			AppConfigurationEntry orcidLoginModule = new AppConfigurationEntry(
-					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.ORCIDLoginModule", LoginModuleControlFlag.REQUIRED,
-					map);
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.ORCIDLoginModule",
+					LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = orcidLoginModule;
 
@@ -103,8 +122,8 @@ public class EdalLoginConfiguration extends Configuration {
 		case "Elixir":
 
 			AppConfigurationEntry elixirLoginModule = new AppConfigurationEntry(
-					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirLoginModule", LoginModuleControlFlag.REQUIRED,
-					map);
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirLoginModule",
+					LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = elixirLoginModule;
 

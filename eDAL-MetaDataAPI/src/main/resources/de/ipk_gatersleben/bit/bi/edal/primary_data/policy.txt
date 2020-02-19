@@ -11,5 +11,7 @@ grant {
    	permission javax.security.auth.AuthPermission "modifyPrincipals";
    	permission java.security.SecurityPermission "getPolicy";
    	permission java.security.SecurityPermission "setPolicy";
+   	permission java.net.SocketPermission "*:389", "connect";
+    permission java.net.SocketPermission "*:636", "connect";
 };
 
