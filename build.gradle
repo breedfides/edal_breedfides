@@ -39,7 +39,8 @@ allprojects {
 	targetCompatibility = 12
 	
 	javafx {
-	    modules = ['javafx.base','javafx.controls','javafx.web','javafx.swing']
+		version ='12'
+	    modules = ['javafx.base','javafx.controls','javafx.web','javafx.swing','javafx.graphics','javafx.fxml','javafx.media']
 	}
 	
 	tasks.withType(JavaCompile) {
@@ -263,9 +264,9 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
-	  	//compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
-	  	compile group: 'org.javadelight', name: 'delight-rhino-sandbox', version: '0.0.11'
-	   	compile 'com.github.develar:proxy-vole:72c758b'
+	  	compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
+	 // 	compile group: 'org.javadelight', name: 'delight-rhino-sandbox', version: '0.0.11'
+	 //  	implementation 'com.github.develar:proxy-vole:master-SNAPSHOT'
 	   	   	
 	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
