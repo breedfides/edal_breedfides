@@ -71,24 +71,24 @@ public class TestClass {
 		// System.out.println(EdalHelpers.authenticateGoogleUser("proxy1.ipk-gatersleben.de",3128));
 		// System.out.println(EdalHelpers.authenticateORCIDUser("proxy1.ipk-gatersleben.de",3128));
 
-//		InetSocketAddress address = EdalConfiguration.guessProxySettings();
-//
-//		if (address != null) {
-//			System.out.println(EdalHelpers.authenticateElixirUser(address.getHostName(), address.getPort()));
-//		} else {
-//			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
-//		}
+		InetSocketAddress address = EdalConfiguration.guessProxySettings();
+
+		if (address != null) {
+			System.out.println(EdalHelpers.authenticateElixirUser(address.getHostName(), address.getPort()));
+		} else {
+			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
+		}
 		
 		
-		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
-		
-		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
-		
-		Thread.sleep(3000);
-		
-		DataManager.shutdown();
+//		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
+//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+//		
+//		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
+//		
+//		Thread.sleep(3000);
+//		
+//		DataManager.shutdown();
 		
 
 	}
