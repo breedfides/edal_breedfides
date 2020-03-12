@@ -26,13 +26,17 @@ allprojects {
 	apply plugin:'org.openjfx.javafxplugin'
 	
 	repositories {
+		maven {url 'https://www.jitpack.io' 
+		 	content {
+        		includeGroupByRegex "com\\.github\\.develar.*"
+    		}	
+    	}
 	    mavenCentral()
 	    jcenter()
 	    maven {url "https://oss.sonatype.org/content/repositories/snapshots"}
 	    maven {url "http://repo.maven.apache.org/maven2"}
 	    maven {url "https://maven.eveoh.nl/content/repositories/releases"}
         maven {url "https://plugins.gradle.org/m2/"}
-        maven {url "https://jitpack.io"}
 	}
 	
 	sourceCompatibility = 12
@@ -237,6 +241,8 @@ project.tasks.afterReleaseBuild.dependsOn project.getSubprojects().collect({it.g
 project(':eDAL-MetaDataAPI') {	
  	dependencies {
 	   
+	   
+	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.200'
@@ -264,9 +270,11 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
-	  	compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.5'
-	 // 	compile group: 'org.javadelight', name: 'delight-rhino-sandbox', version: '0.0.11'
-	 //  	implementation 'com.github.develar:proxy-vole:master-SNAPSHOT'
+	  	//compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.6-SNAPSHOT'
+	 	compile group: 'org.javadelight', name: 'delight-rhino-sandbox', version: '0.0.11'
+	  	compile 'com.github.develar:proxy-vole:master-SNAPSHOT'
+	 compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
+	  	
 	   	   	
 	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
@@ -284,8 +292,6 @@ project(':eDAL-MetaDataAPI') {
      	compile group: 'com.sun.xml.bind', name: 'jaxb-core', version:'2.3.0.1'	 
      	compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version:'2.3.1'	 
      	compile group: 'javax.activation', name: 'activation', version:'1.1.1'	
-     	
-     	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
      	
 	}
 	
