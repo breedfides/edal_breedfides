@@ -29,23 +29,26 @@ public class LoginCallbackHandler implements CallbackHandler {
 
 	private String username;
 
+	private String domainname;
+
 	private boolean alreadySetted = false;
 
 	public LoginCallbackHandler() {
 		super();
 	}
 
-	public LoginCallbackHandler(final String name) {
+	public LoginCallbackHandler(final String name, final String domainname) {
 		super();
 		this.username = name;
+		this.domainname = domainname;
 
 	}
 
-	public LoginCallbackHandler(final String name, final String password) {
+	public LoginCallbackHandler(final String name, final String password, final String domainname) {
 		super();
 		this.username = name;
 		this.password = password;
-
+		this.domainname = domainname;
 	}
 
 	@SuppressWarnings("unused")
@@ -68,16 +71,14 @@ public class LoginCallbackHandler implements CallbackHandler {
 	/**
 	 * Handles the callbacks, and sets the user/password detail.
 	 * 
-	 * @param callbacks
-	 *            the callbacks to handle
-	 * @throws IOException
-	 *             if an input or output error occurs.
+	 * @param callbacks the callbacks to handle
+	 * @throws IOException if an input or output error occurs.
 	 */
 	public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 
 		if (!alreadySetted) {
 
-			LoginDialog loginDlg = new LoginDialog(null, "Login to IPK-Domain (LDAP)", this.username);
+			LoginDialog loginDlg = new LoginDialog(null, "Login to " + this.domainname + "-Domain", this.username);
 			loginDlg.setVisible(true);
 
 			if (loginDlg.getStatus() == LoginDialog.TRY_LOGIN) {

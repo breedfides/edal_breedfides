@@ -129,12 +129,9 @@ public class EdalServer {
 	 * Main function to start the RMI server
 	 * {@link EdalServer#startServer(EdalConfiguration, int, int, boolean, boolean)}
 	 * 
-	 * @param args
-	 *            an array of {@link String} objects.
-	 * @throws EdalException
-	 *             if failed
-	 * @throws EdalConfigurationException
-	 *             if configuration si invalid
+	 * @param args an array of {@link String} objects.
+	 * @throws EdalException              if failed
+	 * @throws EdalConfigurationException if configuration si invalid
 	 */
 	@SuppressWarnings("unchecked")
 	public static void main(final String args[]) throws EdalException, EdalConfigurationException {
@@ -254,10 +251,13 @@ public class EdalServer {
 
 		Option instanceNameShortOption = new Option("ins", "instanceNameShort", true,
 				"Set the name of the running e!DAL instance (short version)");
-		
+
 		Option publisherOption = new Option("pu", "publisher", true,
 				"Set the string for the PUBLISHER field of the running e!DAL instance");
-		
+
+		Option noReplyEmailOption = new Option("nre", "noReplyEmail", true,
+				"Set the noreply email adresse for the eDAL email SMTP");
+
 		options.addOption(helpOption);
 		options.addOption(registryPortOption);
 		options.addOption(mountPathOption);
@@ -306,6 +306,7 @@ public class EdalServer {
 		options.addOption(instanceNameLongOption);
 		options.addOption(instanceNameShortOption);
 		options.addOption(publisherOption);
+		options.addOption(noReplyEmailOption);
 		/**
 		 * First check all mandatory parameter to create an EdalConfiguration object
 		 */
@@ -607,7 +608,9 @@ public class EdalServer {
 		if (cmd.hasOption(publisherOption.getOpt())) {
 			configuration.setPublisherString(cmd.getOptionValue(publisherOption.getOpt()));
 		}
-		
+		if (cmd.hasOption(noReplyEmailOption.getOpt())) {
+			configuration.setCustomReplyEmail(cmd.getOptionValue(noReplyEmailOption.getOpt()));
+		}
 
 		EdalServer.startServer(configuration, EdalServer.registryPort, EdalServer.dataPort, EdalServer.cleanDatabase,
 				EdalServer.serverLog);
@@ -616,20 +619,16 @@ public class EdalServer {
 	/**
 	 * Start the RMI server.
 	 * 
-	 * @param config
-	 *            the configuration class to star eDal system
-	 * @param registryPort
-	 *            the port to start {@link Registry}
-	 * @param dataPort
-	 *            the data port for RMI
-	 * @param cleanDB
-	 *            <b><code>true</code></b>: <em>TAKE CARE!!</em> if the mount path
-	 *            exist; the existing database and index files will be
-	 *            dropped!!<b><br>
-	 *            <code>false</code></b>: mount to existing mount path
-	 * @param startLogging
-	 *            <b><code>true</code></b>: print out server log to System.out. <br>
-	 *            <b><code>false</code></b>: no output of server log.
+	 * @param config       the configuration class to star eDal system
+	 * @param registryPort the port to start {@link Registry}
+	 * @param dataPort     the data port for RMI
+	 * @param cleanDB      <b><code>true</code></b>: <em>TAKE CARE!!</em> if the
+	 *                     mount path exist; the existing database and index files
+	 *                     will be dropped!!<b><br>
+	 *                     <code>false</code></b>: mount to existing mount path
+	 * @param startLogging <b><code>true</code></b>: print out server log to
+	 *                     System.out. <br>
+	 *                     <b><code>false</code></b>: no output of server log.
 	 */
 	public static void startServer(final EdalConfiguration config, final int registryPort, final int dataPort,
 			final boolean cleanDB, final boolean startLogging) {
@@ -751,12 +750,9 @@ public class EdalServer {
 	/**
 	 * Stop a running eDAL RMI server.
 	 * 
-	 * @param host
-	 *            the host to stop the {@link Registry}.
-	 * @param port
-	 *            the port to stop the {@link Registry}.
-	 * @throws RemoteException
-	 *             if unable to call remote function.
+	 * @param host the host to stop the {@link Registry}.
+	 * @param port the port to stop the {@link Registry}.
+	 * @throws RemoteException if unable to call remote function.
 	 */
 	public static void stopServer(final String host, final int port) throws RemoteException {
 
@@ -807,10 +803,8 @@ public class EdalServer {
 	/**
 	 * Clean all files in directory.
 	 * 
-	 * @param path
-	 *            a {@link Path} object.
-	 * @throws EdalException
-	 *             if unable to clean mount path.
+	 * @param path a {@link Path} object.
+	 * @throws EdalException if unable to clean mount path.
 	 */
 	private static void cleanMountPath(final Path path) throws EdalException {
 		try {

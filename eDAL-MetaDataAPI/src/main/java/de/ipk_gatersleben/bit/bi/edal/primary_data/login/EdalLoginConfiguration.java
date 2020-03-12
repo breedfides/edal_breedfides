@@ -22,7 +22,7 @@ public class EdalLoginConfiguration extends Configuration {
 
 	public EdalLoginConfiguration() {
 	}
-	
+
 	public EdalLoginConfiguration(HashMap<String, String> parameter) {
 		this.map = parameter;
 	}
@@ -81,12 +81,12 @@ public class EdalLoginConfiguration extends Configuration {
 			return array;
 		case "LDAP":
 
-//			this.map.put("debug", "false");
-//			this.map.put("useTicketCache", "false");
-//			this.map.put("storeKey", "true");
-
+			this.map.put("authentication","simple");
+			this.map.put("useSSL", "false");
+			this.map.put("debug", "true");
+			
 			AppConfigurationEntry ldapLoginModule = new AppConfigurationEntry(
-					"com.sun.security.auth.module.LdapLoginModule", LoginModuleControlFlag.REQUIRED, this.map);
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.MyLDAP", LoginModuleControlFlag.REQUIRED, this.map);
 
 			array[0] = ldapLoginModule;
 

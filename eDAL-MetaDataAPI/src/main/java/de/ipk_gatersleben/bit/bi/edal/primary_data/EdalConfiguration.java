@@ -1732,4 +1732,9 @@ public final class EdalConfiguration {
 	public void setPublisherString(String publisherString) {
 		this.publisherString = publisherString;
 	}
+
+	public void setCustomReplyEmail(String customReplyEmail) {
+		this.setEdalEmailAddress(customReplyEmail);
+	}
+
 }

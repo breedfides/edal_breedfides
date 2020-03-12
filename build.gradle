@@ -285,7 +285,7 @@ project(':eDAL-MetaDataAPI') {
      	compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version:'2.3.1'	 
      	compile group: 'javax.activation', name: 'activation', version:'1.1.1'	
      	
-     	compile group: 'commons-cli', name: 'commons-cli', version:'1.4'
+     	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
      	
 	}
 	
@@ -298,7 +298,7 @@ project(':eDAL-MetaDataAPI') {
 		mergeServiceFiles()
 		 
 		manifest {
-	        attributes 	'Main-Class':'e.ipk_gatersleben.bit.bi.edal.sample.EdalLoginTest', 'Multi-Release':'true'
+	        attributes 	'Main-Class':'de.ipk_gatersleben.bit.bi.edal.sample.EdalLoginTestKerberos', 'Multi-Release':'true'
 	    }
 		from(project.convention.getPlugin(JavaPluginConvention).sourceSets.main.output)
 		configurations = [project.configurations.runtime]

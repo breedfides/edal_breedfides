@@ -12,6 +12,7 @@ package de.ipk_gatersleben.bit.bi.edal.sample;
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -21,15 +22,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Properties;
-
-import javax.naming.Context;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.Configuration;
@@ -42,8 +34,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.hibernate.stat.CacheRegionStatistics;
 import org.hibernate.stat.Statistics;
-
-import com.sun.security.auth.module.LdapLoginModule;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -58,6 +48,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ORCIDCallBackHandler;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ORCIDLoginModule;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.UserCallBackHandler;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
+import inet.ipaddr.IPAddressString;
 import javafx.application.Platform;
 
 /**
@@ -68,25 +59,13 @@ import javafx.application.Platform;
 
 public class EdalHelpers {
 
-	static {
-		try {
-			Class.forName("javafx.embed.swing.JFXPanel");
-			Class.forName("javafx.application.Platform");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Please use an Oracle_JRE to run this module", "No Oracle_JRE found",
-					JOptionPane.ERROR_MESSAGE);
-			System.exit(-1);
-		}
-	}
-
 	/**
 	 * Authenticate user using the {@link GoogleLoginModule}.
 	 * 
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateGoogleUser() throws EdalAuthenticateException {
 
@@ -96,14 +75,12 @@ public class EdalHelpers {
 	/**
 	 * Authenticate user using the {@link ORCIDLoginModule}.
 	 * 
-	 * @param httpProxyHost
-	 *            the address of the HTTP proxy host
-	 * @param httpProxyPort
-	 *            the address of the HTTP proxy port
+	 * @param httpProxyHost the address of the HTTP proxy host
+	 * @param httpProxyPort the address of the HTTP proxy port
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateORCIDUser(String httpProxyHost, int httpProxyPort)
 			throws EdalAuthenticateException {
@@ -114,14 +91,12 @@ public class EdalHelpers {
 	/**
 	 * Authenticate user using the {@link GoogleLoginModule}.
 	 * 
-	 * @param httpProxyHost
-	 *            the address of the HTTP proxy host
-	 * @param httpProxyPort
-	 *            the address of the HTTP proxy port
+	 * @param httpProxyHost the address of the HTTP proxy host
+	 * @param httpProxyPort the address of the HTTP proxy port
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateElixirUser(String httpProxyHost, int httpProxyPort)
 			throws EdalAuthenticateException {
@@ -179,14 +154,12 @@ public class EdalHelpers {
 	/**
 	 * Authenticate user using the {@link GoogleLoginModule}.
 	 * 
-	 * @param httpProxyHost
-	 *            the address of the HTTP proxy host
-	 * @param httpProxyPort
-	 *            the address of the HTTP proxy port
+	 * @param httpProxyHost the address of the HTTP proxy host
+	 * @param httpProxyPort the address of the HTTP proxy port
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateGoogleUser(String httpProxyHost, int httpProxyPort)
 			throws EdalAuthenticateException {
@@ -291,12 +264,11 @@ public class EdalHelpers {
 	/**
 	 * Authenticate user using the IPK Kerberos-LoginModule.
 	 * 
-	 * @param user
-	 *            user name.
+	 * @param user user name.
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateIPKKerberosUser(String user) throws EdalAuthenticateException {
 
@@ -304,19 +276,31 @@ public class EdalHelpers {
 	}
 
 	/**
+	 * Authenticate user using the IPK Kerberos-LoginModule.
+	 * 
+	 * @param user user name.
+	 * @return the authenticated {@link Subject}
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
+	 */
+	public static Subject authenticateJKIKerberosUser(String user) throws EdalAuthenticateException {
+
+		return EdalHelpers.authenticateSubjectWithJKIKerberos(user);
+	}
+
+	/**
 	 * Authenticate user using the
 	 * {@link de.ipk_gatersleben.bit.bi.edal.primary_data.login.UserLoginModule}
 	 * -LoginModule.
 	 * 
-	 * @param name
-	 *            the user name to authenticate
-	 * @param password
-	 *            the password of the user to authenticate
+	 * @param name     the user name to authenticate
+	 * @param password the password of the user to authenticate
 	 * 
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateUser(String name, String password) throws EdalAuthenticateException {
 
@@ -329,9 +313,9 @@ public class EdalHelpers {
 	 * -LoginModule.
 	 * 
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateSampleUser() throws EdalAuthenticateException {
 
@@ -342,15 +326,14 @@ public class EdalHelpers {
 	 * Authenticate user using specified loginmodule.properties an
 	 * {@link CallbackHandler}.
 	 * 
-	 * @param loginModule
-	 *            the choose {@link javax.security.auth.spi.LoginModule}.
-	 * @param callbackhandler
-	 *            a {@link CallbackHandler} for the specified
-	 *            {@link javax.security.auth.spi.LoginModule}
+	 * @param loginModule     the choose
+	 *                        {@link javax.security.auth.spi.LoginModule}.
+	 * @param callbackhandler a {@link CallbackHandler} for the specified
+	 *                        {@link javax.security.auth.spi.LoginModule}
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	private static Subject authenticateSubject(final String loginModule, final CallbackHandler callbackhandler)
 			throws EdalAuthenticateException {
@@ -383,16 +366,13 @@ public class EdalHelpers {
 	/**
 	 * Authenticate user using the specified Kerberos-LoginModule.
 	 * 
-	 * @param kerberosRealm
-	 *            the Kerberos realm
-	 * @param kerberosKDC
-	 *            the Kerberos KDC
-	 * @param user
-	 *            optional username
+	 * @param kerberosRealm the Kerberos realm
+	 * @param kerberosKDC   the Kerberos KDC
+	 * @param user          optional username
 	 * @return the authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if unable to run {@link javax.security.auth.spi.LoginModule}
-	 *             successful.
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
 	 */
 	public static Subject authenticateSubjectWithKerberos(final String kerberosRealm, final String kerberosKDC,
 			String user) throws EdalAuthenticateException {
@@ -412,7 +392,7 @@ public class EdalHelpers {
 
 		while (retry) {
 			try {
-				ctx = new LoginContext("Kerberos", new LoginCallbackHandler(user));
+				ctx = new LoginContext("Kerberos", new LoginCallbackHandler(user, kerberosRealm));
 				ctx.login();
 
 				Thread.currentThread().setContextClassLoader(currentClassLoader);
@@ -420,97 +400,18 @@ public class EdalHelpers {
 				retry = false;
 				return ctx.getSubject();
 			} catch (final Exception e) {
+				e.printStackTrace();
 				if (e.getCause() == null) {
 					Thread.currentThread().setContextClassLoader(currentClassLoader);
 					return null;
 				} else {
-					
+
 					int result = 0;
-				
+
 					if (e.getCause() instanceof UnknownHostException) {
 						result = (Integer) JOptionPane.showConfirmDialog(null,
 								"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
-								"Login to IPK-Domain (LDAP)", JOptionPane.YES_NO_OPTION);
-					}
-
-					if (result == JOptionPane.YES_OPTION) {
-						retry = true;
-					} else if (result == JOptionPane.NO_OPTION) {
-						Thread.currentThread().setContextClassLoader(currentClassLoader);
-						retry = false;
-						return null;
-					}
-				}
-			}
-		}
-		return null;
-
-	}
-	
-	
-	public static Subject authenticateSubjectWithLDAP(final String providerURL, final String userBaseDN) throws EdalAuthenticateException {
-
-		
-		// Set up the environment for creating the initial context
-		HashMap<String, String> parameter = new HashMap<String,String>();
-		
-		
-		
-		parameter.put("userProvider",providerURL);
-		parameter.put("userBaseDn",userBaseDN);
-		
-		parameter.put(Context.INITIAL_CONTEXT_FACTORY, 
-			    "com.sun.jndi.ldap.LdapCtxFactory");
-		
-//		parameter.put(Context.PROVIDER_URL, "ldap://localhost:389/o=JNDITutorial");
-
-		
-		
-//		parameter.put(Context.INITIAL_CONTEXT_FACTORY, 
-//			    "com.sun.jndi.ldap.LdapCtxFactory");
-//		
-//		parameter.put(Context.PROVIDER_URL, "ldap://localhost:389/o=JNDITutorial");
-//
-//		// Authenticate as S. User and password "mysecret"
-//		parameter.put(Context.SECURITY_AUTHENTICATION, "simple");
-//		parameter.put(Context.SECURITY_PRINCIPAL, "cn=S. User, ou=NewHires, o=JNDITutorial");
-//		parameter.put(Context.SECURITY_CREDENTIALS, "mysecret");		
-		
-		Configuration.setConfiguration(new EdalLoginConfiguration(parameter));
-
-
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
-
-		LoginContext ctx = null;
-
-		boolean retry = true;
-
-		
-		
-		
-		while (retry) {
-			try {
-				ctx = new LoginContext("LDAP", new LoginCallbackHandler());
-				ctx.login();
-
-				Thread.currentThread().setContextClassLoader(currentClassLoader);
-
-				retry = false;
-				return ctx.getSubject();
-			} catch (final Exception e) {
-				if (e.getCause() == null) {
-					Thread.currentThread().setContextClassLoader(currentClassLoader);
-					return null;
-				} else {
-					
-					int result = 0;
-				
-					if (e.getCause() instanceof UnknownHostException) {
-						result = (Integer) JOptionPane.showConfirmDialog(null,
-								"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
-								"Login to LDAP-Provider", JOptionPane.YES_NO_OPTION);
+								"Login to " + kerberosRealm + "-Domain (LDAP)", JOptionPane.YES_NO_OPTION);
 					}
 
 					if (result == JOptionPane.YES_OPTION) {
@@ -527,94 +428,147 @@ public class EdalHelpers {
 
 	}
 
-	public static Subject authenticateSubjectWithLDAPV2(final String providerURL, final String baseDN,
-			String user) throws EdalAuthenticateException {
+	/**
+	 * Convenient method to check if an IP is in a certain network /IP range using
+	 * the 'ipaddress' library
+	 * 
+	 * @param network   the IP range
+	 * @param ipAddress the IP to check
+	 * @return true if IP is in network otherwise false
+	 */
 
-		
-			Hashtable<String,String> env = new Hashtable<String,String>();
-		
+	private static boolean contains(String network, String ipAddress) {
 
-	      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-//	      env.put(Context.PROVIDER_URL, "ldap://myldap:389");
+		System.out.println(new IPAddressString(network) + " contains " + new IPAddressString(ipAddress) + " "
+				+ new IPAddressString(network).contains(new IPAddressString(ipAddress)));
+		return new IPAddressString(network).contains(new IPAddressString(ipAddress));
+	}
 
-	      env.put(Context.PROVIDER_URL,providerURL);
-	      
-	      env.put(Context.SECURITY_AUTHENTICATION, "simple");
-	      env.put(Context.SECURITY_PRINCIPAL, "cn=S. User, ou=NewHires, o=JNDITutorial");
-	      env.put(Context.SECURITY_CREDENTIALS, "mysecret");
-	      
-	      LdapContext ctx = null;
+	/**
+	 * Authenticate user using the specified Kerberos-LoginModule.
+	 * 
+	 * @param user optional username
+	 * @return the authenticated {@link Subject}
+	 * @throws EdalAuthenticateException if unable to run
+	 *                                   {@link javax.security.auth.spi.LoginModule}
+	 *                                   successful.
+	 */
+	public static Subject authenticateSubjectWithJKIKerberos(String user) throws EdalAuthenticateException {
 
+		String kerberosRealm = null;
+		String kerberosKDC = null;
 
-	         
-		
-		
+		try {
+			String localIPAddress = InetAddress.getLocalHost().getHostAddress();
 
-		
-		
-		Configuration.setConfiguration(new EdalLoginConfiguration());
+			if (contains("172.31.0.0/16", localIPAddress) || contains("192.168.168.0/24", localIPAddress)
+					|| contains("192.168.0.0/24", localIPAddress) || contains("172.19.0.0/16", localIPAddress)
+					|| contains("192.168.120.0/24", localIPAddress)) {
 
+				kerberosRealm = "QUEDLINBURG.BBA.INTERN";
+				kerberosKDC = "Quedlinburg.bba.intern";
 
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+			} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
+					|| contains("192.168.200.0/24", localIPAddress)) {
 
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+				kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
+				kerberosKDC = "Braunschweig.bba.intern";
 
-	
+			} else if (contains("172.18.0.0/16", localIPAddress)) {
 
-		boolean retry = true;
+				kerberosRealm = "BERLIN.BBA.INTERN";
+				kerberosKDC = "Berlin.bba.intern";
 
-		while (retry) {
-			try {
-				ctx = new InitialLdapContext(env, null);
+			} else if (contains("172.17.0.0/16", localIPAddress)) {
 
-				Thread.currentThread().setContextClassLoader(currentClassLoader);
+				kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
+				kerberosKDC = "Kleinmachnow.bba.intern";
 
-				retry = false;
-//				return ctx.getSubject();
-			return null;
-			} catch (final Exception e) {
-				if (e.getCause() == null) {
+			} else {
+				throw new EdalAuthenticateException(
+						"You are not in a valid IP range to access the Kerberos service provider");
+			}
+
+		} catch (UnknownHostException e1) {
+			throw new EdalAuthenticateException("Cannnot determine you local IP address");
+		}
+
+		boolean foundKerberosService = false;
+
+		try {
+			InetAddress.getByName(kerberosKDC);
+
+			foundKerberosService = true;
+
+			Configuration.setConfiguration(new EdalLoginConfiguration());
+
+			final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+
+			Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+
+			System.setProperty("java.security.krb5.realm", kerberosRealm);
+			System.setProperty("java.security.krb5.kdc", kerberosKDC);
+
+			LoginContext ctx = null;
+
+			boolean retry = true;
+
+			while (retry) {
+				try {
+					ctx = new LoginContext("Kerberos", new LoginCallbackHandler(user, "JKI"));
+					ctx.login();
 					Thread.currentThread().setContextClassLoader(currentClassLoader);
-					return null;
-				} else {
-					
-					int result = 0;
-				
-					if (e.getCause() instanceof UnknownHostException) {
-						result = (Integer) JOptionPane.showConfirmDialog(null,
-								"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
-								"Login to LDAP-Provider", JOptionPane.YES_NO_OPTION);
-					}
 
-					if (result == JOptionPane.YES_OPTION) {
-						retry = true;
-					} else if (result == JOptionPane.NO_OPTION) {
+					retry = false;
+
+					return ctx.getSubject();
+
+				} catch (final Exception e) {
+					e.printStackTrace();
+					if (e.getCause() == null) {
 						Thread.currentThread().setContextClassLoader(currentClassLoader);
-						retry = false;
 						return null;
+					} else {
+
+						int result = 0;
+
+						if (e.getCause() instanceof UnknownHostException) {
+							result = (Integer) JOptionPane.showConfirmDialog(null,
+									"Your login attempt was not successful, try again? \nReason: Can not connect to LDAP-Provider,\nplease check your network/VPN configuration",
+									"Login to JKI-Domain", JOptionPane.YES_NO_OPTION);
+
+							break;
+
+						}
+
+						if (result == JOptionPane.YES_OPTION) {
+							retry = true;
+						} else if (result == JOptionPane.NO_OPTION) {
+							Thread.currentThread().setContextClassLoader(currentClassLoader);
+							retry = false;
+							return null;
+						}
 					}
 				}
 			}
+
+		} catch (UnknownHostException e) {
+			System.out.println(kerberosKDC + " cannot be resolved");
+		}
+
+		if (!foundKerberosService) {
+			throw new EdalAuthenticateException("Cannot find any Kerberos Service, please check your DNS settings");
 		}
 
 		return null;
 
 	}
-
-	
-	
-	
-	
-	
-	
-	
 
 	/**
 	 * Authenticate user using the Windows- or Unix- or MAC-LoginModule.
 	 * 
 	 * @return authenticated {@link Subject}
-	 * @throws EdalAuthenticateException
-	 *             if the authentication failed
+	 * @throws EdalAuthenticateException if the authentication failed
 	 */
 	public static Subject authenticateWinOrUnixOrMacUser() throws EdalAuthenticateException {
 
@@ -633,10 +587,8 @@ public class EdalHelpers {
 	/**
 	 * Clean all files in directory.
 	 * 
-	 * @param path
-	 *            a {@link Path} object.
-	 * @throws EdalException
-	 *             if unable to clean mount path.
+	 * @param path a {@link Path} object.
+	 * @throws EdalException if unable to clean mount path.
 	 */
 	public static void cleanMountPath(final Path path) throws EdalException {
 		try {
@@ -649,10 +601,8 @@ public class EdalHelpers {
 	/**
 	 * Delete all files in a directory recursively using {@link IOUtils}.
 	 * 
-	 * @param directory
-	 *            to delete
-	 * @throws EdalException
-	 *             if unable to clean directory
+	 * @param directory to delete
+	 * @throws EdalException if unable to clean directory
 	 */
 	private static void deleteDirectory(final Path directory) throws EdalException {
 		try {
@@ -685,10 +635,8 @@ public class EdalHelpers {
 	/**
 	 * Delete all files in a directory recursively.
 	 * 
-	 * @param directory
-	 *            to delete
-	 * @throws EdalException
-	 *             if unable to clean directory
+	 * @param directory to delete
+	 * @throws EdalException if unable to clean directory
 	 */
 	@SuppressWarnings("unused")
 	@Deprecated
@@ -743,13 +691,11 @@ public class EdalHelpers {
 	 * Get a new {@link FileSystemImplementationProvider}. The path to use for file
 	 * storage and database is set to users home/edal_test
 	 * 
-	 * @param cleanMountPathBefore
-	 *            true if you want to clean the database before start eDAL.
-	 * @param config
-	 *            the {@link EdalConfiguration} class.
+	 * @param cleanMountPathBefore true if you want to clean the database before
+	 *                             start eDAL.
+	 * @param config               the {@link EdalConfiguration} class.
 	 * @return new {@link FileSystemImplementationProvider}
-	 * @throws EdalException
-	 *             if unable to clean mount path or create new mount path.
+	 * @throws EdalException if unable to clean mount path or create new mount path.
 	 */
 	public static ImplementationProvider getFileSystemImplementationProvider(final boolean cleanMountPathBefore,
 			EdalConfiguration config) throws EdalException {
@@ -787,8 +733,7 @@ public class EdalHelpers {
 	/**
 	 * Print SearchStatistic.
 	 * 
-	 * @param statistics
-	 *            the {@link Statistics} to get information
+	 * @param statistics the {@link Statistics} to get information
 	 */
 	public static void getSearchStatistic(final Statistics statistics) {
 
@@ -862,8 +807,7 @@ public class EdalHelpers {
 	/**
 	 * Print PermissionStatistic.
 	 * 
-	 * @param statistics
-	 *            the {@link Statistics} to get information
+	 * @param statistics the {@link Statistics} to get information
 	 */
 	public static void getStatistic(final Statistics statistics) {
 
@@ -937,8 +881,7 @@ public class EdalHelpers {
 	/**
 	 * Function to open a browser and loading the given URL.
 	 * 
-	 * @param url
-	 *            the URL to open in a browser
+	 * @param url the URL to open in a browser
 	 * @return true if the function was able to open the browser
 	 */
 	public static boolean openURL(String url) {
