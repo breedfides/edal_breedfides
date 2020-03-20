@@ -83,7 +83,7 @@ public class TestZipFileRmi extends ClientServerTest {
 			System.exit(0);
 		}
 
-		try (FileSystem fs = FileSystems.newFileSystem(path, null)) {
+		try (FileSystem fs = FileSystems.newFileSystem(path, (ClassLoader) null)) {
 
 			final EdalZipFileVisitorRmi edalVisitor = new EdalZipFileVisitorRmi(
 					rootDirectory);
