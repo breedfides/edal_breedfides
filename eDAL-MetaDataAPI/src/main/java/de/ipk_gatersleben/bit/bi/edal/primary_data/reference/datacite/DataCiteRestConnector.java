@@ -39,10 +39,8 @@ public class DataCiteRestConnector {
 	/**
 	 * Constructor to initialize a REST-Connection to DateCite.
 	 * 
-	 * @param configuration
-	 *            the {@link EdalConfiguration} to use
-	 * @throws DataCiteException
-	 *             if unable to create DataCiteRestConnector.
+	 * @param configuration the {@link EdalConfiguration} to use
+	 * @throws DataCiteException if unable to create DataCiteRestConnector.
 	 */
 	public DataCiteRestConnector(EdalConfiguration configuration) throws DataCiteException {
 
@@ -71,11 +69,9 @@ public class DataCiteRestConnector {
 	/**
 	 * Get the string for the data center of the given prefix
 	 * 
-	 * @param prefix
-	 *            the prefix for this data center
+	 * @param prefix the prefix for this data center
 	 * @return the data center string
-	 * @throws DataCiteException
-	 *             if unable to query the data center
+	 * @throws DataCiteException if unable to query the data center
 	 */
 	private String getDataCentreIdForPrefix(String prefix) throws DataCiteException {
 
@@ -89,10 +85,12 @@ public class DataCiteRestConnector {
 
 			try {
 				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
-				JSONArray included = (JSONArray) json.get("included");
-				JSONObject relationships = (JSONObject) included.get(0);
-				JSONObject attributes = (JSONObject) relationships.get("attributes");
-				String dataCentreString = (String) attributes.get("symbol");
+				JSONObject data = (JSONObject) json.get("data");
+				JSONObject relationships = (JSONObject) data.get("relationships");
+				JSONObject clients = (JSONObject) relationships.get("clients");
+				JSONArray data2 = (JSONArray) clients.get("data");
+				JSONObject id = (JSONObject) data2.get(0);
+				String dataCentreString = (String) id.get("id");
 
 				return dataCentreString;
 
@@ -110,11 +108,9 @@ public class DataCiteRestConnector {
 	/**
 	 * Generate a new DOI by counting current DOI
 	 * 
-	 * @param year
-	 *            the current year.
+	 * @param year the current year.
 	 * @return the new DOI
-	 * @throws DataCiteException
-	 *             if unable to generate new DOI.
+	 * @throws DataCiteException if unable to generate new DOI.
 	 */
 	public String generateNewDOI(int year) throws DataCiteException {
 
@@ -135,10 +131,6 @@ public class DataCiteRestConnector {
 				String dataCentreName = dataCentreString.substring(dataCentreString.indexOf(".") + 1,
 						dataCentreString.length());
 
-				// int nextFreeDoiNumber = connector.getNextFreeDOI(year,
-				// getNumberOfResolvableDOIs(year, getDataCentreIdForPrefix(this.prefix)),
-				// dataCentreName);
-
 				int nextFreeDoiNumber = connector.getNextFreeDOI(year,
 						getNumberOfResolvableDOIsByPrefix(year, this.prefix), dataCentreName);
 
@@ -154,13 +146,10 @@ public class DataCiteRestConnector {
 	/**
 	 * Get the number of currently registered DOIs
 	 * 
-	 * @param year
-	 *            the current year.
-	 * @param prefix
-	 *            the prefix of the datacentre
+	 * @param year   the current year.
+	 * @param prefix the prefix of the datacentre
 	 * @return the number of DOIs
-	 * @throws DataCiteException
-	 *             if unable to query DOIs
+	 * @throws DataCiteException if unable to query DOIs
 	 */
 	private int getNumberOfResolvableDOIsByPrefix(int year, String prefix) throws DataCiteException {
 
@@ -177,9 +166,6 @@ public class DataCiteRestConnector {
 				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
 
 				JSONArray data = (JSONArray) json.get("data");
-
-				// System.out.println("NEU:"+year+"\t"+prefix+"\t"+dataCentreName +" :
-				// "+data.size());
 
 				return data.size();
 
@@ -205,11 +191,13 @@ public class DataCiteRestConnector {
 
 			try {
 				JSONObject json = (JSONObject) new JSONParser().parse(response.readEntity(String.class));
+				JSONObject data = (JSONObject) json.get("data");
+				JSONObject relationships = (JSONObject) data.get("relationships");
+				JSONObject clients = (JSONObject) relationships.get("clients");
+				JSONArray data2 = (JSONArray) clients.get("data");
+				JSONObject id = (JSONObject) data2.get(0);
 
-				JSONArray included = (JSONArray) json.get("included");
-				JSONObject relationships = (JSONObject) included.get(0);
-				JSONObject attributes = (JSONObject) relationships.get("attributes");
-				String dataCentreString = (String) attributes.get("symbol");
+				String dataCentreString = (String) id.get("id");
 
 				if (dataCentreString.toLowerCase().equals(this.configuration.getDataCiteUser().toLowerCase())) {
 					return true;
