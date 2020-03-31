@@ -276,9 +276,9 @@ public class EdalHelpers {
 	}
 
 	/**
-	 * Authenticate user using the IPK Kerberos-LoginModule.
+	 * Authenticate user using the JKI Kerberos-LoginModule.
 	 * 
-	 * @param user user name.
+	 * @param user the user name to login
 	 * @return the authenticated {@link Subject}
 	 * @throws EdalAuthenticateException if unable to run
 	 *                                   {@link javax.security.auth.spi.LoginModule}
@@ -453,7 +453,7 @@ public class EdalHelpers {
 	 *                                   {@link javax.security.auth.spi.LoginModule}
 	 *                                   successful.
 	 */
-	public static Subject authenticateSubjectWithJKIKerberos(String user) throws EdalAuthenticateException {
+	private static Subject authenticateSubjectWithJKIKerberos(String user) throws EdalAuthenticateException {
 
 		String kerberosRealm = null;
 		String kerberosKDC = null;
@@ -466,23 +466,24 @@ public class EdalHelpers {
 					|| contains("192.168.120.0/24", localIPAddress)) {
 
 				kerberosRealm = "QUEDLINBURG.BBA.INTERN";
-				kerberosKDC = "Quedlinburg.bba.intern";
+				kerberosKDC = "172.31.16.1";
 
 			} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
 					|| contains("192.168.200.0/24", localIPAddress)) {
 
 				kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
-				kerberosKDC = "Braunschweig.bba.intern";
+				kerberosKDC = "172.16.4.128";
 
 			} else if (contains("172.18.0.0/16", localIPAddress)) {
 
 				kerberosRealm = "BERLIN.BBA.INTERN";
-				kerberosKDC = "Berlin.bba.intern";
+				kerberosKDC = "172.18.1.4";
 
-			} else if (contains("172.17.0.0/16", localIPAddress)) {
+			} else if (contains("172.17.0.0/16", localIPAddress) || contains("192.168.115.0/24", localIPAddress)
+					|| contains("192.168.2.0/24", localIPAddress)) {
 
 				kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
-				kerberosKDC = "Kleinmachnow.bba.intern";
+				kerberosKDC = "172.17.21.20";
 
 			} else {
 				throw new EdalAuthenticateException(

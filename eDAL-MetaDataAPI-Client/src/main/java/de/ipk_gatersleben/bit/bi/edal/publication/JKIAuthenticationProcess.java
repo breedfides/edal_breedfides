@@ -22,7 +22,7 @@ public class JKIAuthenticationProcess extends AuthenticationProcess {
 	public JKIAuthenticationProcess() {
 
 		try {
-			Subject tmpJKISubject = EdalHelpers.authenticateSubjectWithJKIKerberos(null);
+			Subject tmpJKISubject = EdalHelpers.authenticateJKIKerberosUser(null);
 
 			for (Principal principal : tmpJKISubject.getPrincipals()) {
 

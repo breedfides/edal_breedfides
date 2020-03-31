@@ -18,7 +18,7 @@ public class EdalLoginTestKerberos {
 
 	public static void main(String[] args) throws Exception {
 
-		Subject s = EdalHelpers.authenticateSubjectWithJKIKerberos("null");
+		Subject s = EdalHelpers.authenticateJKIKerberosUser("null");
 
 		for (Principal p : s.getPrincipals()) {
 			System.out.println(p);
