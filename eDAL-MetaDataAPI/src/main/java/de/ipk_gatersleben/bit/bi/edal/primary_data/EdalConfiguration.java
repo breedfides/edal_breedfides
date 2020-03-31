@@ -881,10 +881,12 @@ public final class EdalConfiguration {
 
 		JerseyClient client = JerseyClientBuilder.createClient();
 
-		//full request
-		//WebTarget webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix+"?include=clients,providers,client-prefixes,provider-prefixes");
+		// full request
+		// WebTarget webResource = client.target("https://api.datacite.org/prefixes/" +
+		// this.dataCitePrefix+"?include=clients,providers,client-prefixes,provider-prefixes");
 
-		WebTarget webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix+"?include=clients");
+		WebTarget webResource = client
+				.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix + "?include=clients");
 
 		final Response response = webResource.request(MediaType.APPLICATION_JSON).get();
 
@@ -895,7 +897,7 @@ public final class EdalConfiguration {
 			client.close();
 			e.printStackTrace();
 		}
-		JSONArray included = (JSONArray) json.get("included");		
+		JSONArray included = (JSONArray) json.get("included");
 		JSONObject eins = (JSONObject) included.get(0);
 		JSONObject attributes = (JSONObject) eins.get("attributes");
 		String domains = (String) attributes.get("domains");
@@ -1382,7 +1384,13 @@ public final class EdalConfiguration {
 
 		JerseyClient client = JerseyClientBuilder.createClient();
 
-		WebTarget webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix);
+		WebTarget webResource = null;
+
+		if (this.isInTestMode()) {
+			webResource = client.target("https://api.datacite.org/prefixes/");
+		} else {
+			webResource = client.target("https://api.datacite.org/prefixes/" + this.dataCitePrefix);
+		}
 
 		final Response response = webResource.request(MediaType.APPLICATION_JSON).get();
 
