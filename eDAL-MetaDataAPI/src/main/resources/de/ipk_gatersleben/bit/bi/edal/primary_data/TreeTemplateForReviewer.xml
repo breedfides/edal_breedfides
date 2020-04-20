@@ -19,7 +19,15 @@
 	#else
 		<tr>
 			<td
+			
+				#if($object.toString().substring($object.toString().lastIndexOf('.') + 1) != "fa" )
+			
 				class="item file $object.toString().substring($object.toString().lastIndexOf('.') + 1)">
+				#else
+				class="item file txt">
+				#end
+				
+				
 				<a
 					href="$serverURL/$identifierType/$internalId/$object.getID()/$object.getVersionByDate($date).getRevision()/$reviewerCode">$object.toString()</a>
 			</td>
