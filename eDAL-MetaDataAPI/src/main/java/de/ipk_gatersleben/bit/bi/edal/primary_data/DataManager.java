@@ -802,7 +802,7 @@ public class DataManager {
 	 */
 	public static void shutdown() {
 
-		implementationprovider.getLogger().info("Trying to shutdown EDALClient...");
+		implementationprovider.getLogger().info("Trying to shutdown eDAL instance...");
 
 		if (!DataManager.checkReviewStatusThread.getState().equals(Thread.State.TERMINATED)) {
 			DataManager.checkReviewStatusThread.done();
@@ -828,7 +828,7 @@ public class DataManager {
 		System.clearProperty("java.security.manager");
 		System.clearProperty("java.security.policy");
 
-		implementationprovider.getLogger().info("EDALClient successfully closed !");
+		implementationprovider.getLogger().info("eDAL instance successfully closed !");
 
 		DataManager.alreadyClosed = true;
 
