@@ -39,8 +39,8 @@ allprojects {
         maven {url "https://plugins.gradle.org/m2/"}
 	}
 	
-	sourceCompatibility = 12
-	targetCompatibility = 12
+	sourceCompatibility = JavaVersion.VERSION_12
+	targetCompatibility = JavaVersion.VERSION_12
 	
 	javafx {
 		version ='12'

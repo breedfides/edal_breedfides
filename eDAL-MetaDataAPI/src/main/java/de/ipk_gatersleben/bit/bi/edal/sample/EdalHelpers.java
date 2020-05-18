@@ -14,6 +14,8 @@ import java.awt.Desktop.Action;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
@@ -22,6 +24,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.Configuration;
@@ -276,9 +282,9 @@ public class EdalHelpers {
 	}
 
 	/**
-	 * Authenticate user using the IPK Kerberos-LoginModule.
+	 * Authenticate user using the JKI Kerberos-LoginModule.
 	 * 
-	 * @param user user name.
+	 * @param user the user name to login
 	 * @return the authenticated {@link Subject}
 	 * @throws EdalAuthenticateException if unable to run
 	 *                                   {@link javax.security.auth.spi.LoginModule}
@@ -453,45 +459,85 @@ public class EdalHelpers {
 	 *                                   {@link javax.security.auth.spi.LoginModule}
 	 *                                   successful.
 	 */
-	public static Subject authenticateSubjectWithJKIKerberos(String user) throws EdalAuthenticateException {
+	private static Subject authenticateSubjectWithJKIKerberos(String user) throws EdalAuthenticateException {
 
 		String kerberosRealm = null;
 		String kerberosKDC = null;
 
+		List<InetAddress> ipAddressList = new ArrayList<InetAddress>();
+		Enumeration<NetworkInterface> interfaces = null;
 		try {
-			String localIPAddress = InetAddress.getLocalHost().getHostAddress();
+			interfaces = NetworkInterface.getNetworkInterfaces();
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
 
-			if (contains("172.31.0.0/16", localIPAddress) || contains("192.168.168.0/24", localIPAddress)
-					|| contains("192.168.0.0/24", localIPAddress) || contains("172.19.0.0/16", localIPAddress)
-					|| contains("192.168.120.0/24", localIPAddress)) {
+		InetAddress localhost = null;
 
-				kerberosRealm = "QUEDLINBURG.BBA.INTERN";
-				kerberosKDC = "Quedlinburg.bba.intern";
+		try {
+			localhost = InetAddress.getByName("127.0.0.1");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 
-			} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
-					|| contains("192.168.200.0/24", localIPAddress)) {
+		while (interfaces.hasMoreElements()) {
+			NetworkInterface ifc = interfaces.nextElement();
+			Enumeration<InetAddress> addressesOfAnInterface = ifc.getInetAddresses();
 
-				kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
-				kerberosKDC = "Braunschweig.bba.intern";
+			while (addressesOfAnInterface.hasMoreElements()) {
+				InetAddress address = addressesOfAnInterface.nextElement();
 
-			} else if (contains("172.18.0.0/16", localIPAddress)) {
+				if (!address.equals(localhost) && !address.toString().contains(":")) {
+					ipAddressList.add(address);
+					System.out.println("FOUND ADDRESS ON NIC: " + address.getHostAddress());
+				}
+			}
+		}
 
-				kerberosRealm = "BERLIN.BBA.INTERN";
-				kerberosKDC = "Berlin.bba.intern";
+//		try {
 
-			} else if (contains("172.17.0.0/16", localIPAddress)) {
+			for (InetAddress inetAddress : ipAddressList) {
 
-				kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
-				kerberosKDC = "Kleinmachnow.bba.intern";
+				String localIPAddress = inetAddress.getHostAddress();
+				System.out.println(localIPAddress);
 
-			} else {
+				if (contains("172.31.0.0/16", localIPAddress) || contains("192.168.168.0/24", localIPAddress)
+						|| contains("192.168.0.0/24", localIPAddress) || contains("172.19.0.0/16", localIPAddress)
+						|| contains("192.168.120.0/24", localIPAddress)) {
+
+					kerberosRealm = "QUEDLINBURG.BBA.INTERN";
+					kerberosKDC = "172.31.16.1";
+					break;
+
+				} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
+						|| contains("192.168.200.0/24", localIPAddress)) {
+
+					kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
+					kerberosKDC = "172.16.4.128";
+					break;
+
+				} else if (contains("172.18.0.0/16", localIPAddress)) {
+
+					kerberosRealm = "BERLIN.BBA.INTERN";
+					kerberosKDC = "172.18.1.4";
+					break;
+
+				} else if (contains("172.17.0.0/16", localIPAddress) || contains("192.168.115.0/24", localIPAddress)
+						|| contains("192.168.2.0/24", localIPAddress)) {
+
+					kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
+					kerberosKDC = "172.17.21.20";
+					break;
+				} 
+			}
+			
+			if(kerberosKDC==null && kerberosRealm==null) {
 				throw new EdalAuthenticateException(
 						"You are not in a valid IP range to access the Kerberos service provider");
 			}
-
-		} catch (UnknownHostException e1) {
-			throw new EdalAuthenticateException("Cannnot determine you local IP address");
-		}
+//		} catch (UnknownHostException e1) {
+//			throw new EdalAuthenticateException("Cannnot determine you local IP address");
+//		}
 
 		boolean foundKerberosService = false;
 

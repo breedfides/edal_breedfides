@@ -39,6 +39,7 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
@@ -688,10 +689,17 @@ class VeloCityHtmlGenerator {
 		}
 
 		Path matomoPath = Paths.get(currentPath, "MatomoTemplate.xml");
-
+		
 		if (Files.exists(matomoPath)) {
 			try {
 				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -707,7 +715,16 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} else {
+		} 
+		else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
+			try {
+				context.put("StatementTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} 
+		else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
@@ -1063,8 +1080,8 @@ class VeloCityHtmlGenerator {
 			/** license URL **/
 			try {
 				for (Entry<EnumCCLicense, String> entry : EnumCCLicense.enummap.entrySet()) {
-					if (entry.getKey().getDescription().equals(file.getMetaData()
-							.getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
+					if (entry.getKey().getDescription().equals(
+							file.getMetaData().getElementValue(EnumDublinCoreElements.RIGHTS).toString().trim())) {
 						context.put("licenseURL", entry.getValue());
 					}
 				}
@@ -1142,6 +1159,13 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		} else if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'MatomoTemplate.xml'");
 		}
@@ -1154,7 +1178,16 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} else {
+		} 
+		else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
+			try {
+				context.put("StatementTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.xml"), "UTF-8"));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} 
+		else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
@@ -1379,6 +1412,13 @@ class VeloCityHtmlGenerator {
 		if (Files.exists(matomoPath)) {
 			try {
 				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else if (Files.exists(FileUtils.getFile("MatomoTemplate.xml").toPath())) {
+			try {
+				context.put("MatomoTemplate",
+						FileUtils.readFileToString(FileUtils.getFile("MatomoTemplate.xml"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

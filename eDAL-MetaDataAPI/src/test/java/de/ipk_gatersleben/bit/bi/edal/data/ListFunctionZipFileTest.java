@@ -79,7 +79,7 @@ public class ListFunctionZipFileTest extends EdalDefaultTestCase {
 			System.exit(0);
 		}
 
-		try (FileSystem fs = FileSystems.newFileSystem(path, null)) {
+		try (FileSystem fs = FileSystems.newFileSystem(path, (ClassLoader) null)) {
 
 			EdalZipFileVisitor edalVisitor = new EdalZipFileVisitor(rootDirectory);
 			final long zeitVorher1 = System.currentTimeMillis();
