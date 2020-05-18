@@ -68,6 +68,8 @@ public class TestClass {
 
 	public static void main(final String[] args) throws Exception {
 
+		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+
 		// System.out.println(EdalHelpers.authenticateGoogleUser("proxy1.ipk-gatersleben.de",3128));
 		// System.out.println(EdalHelpers.authenticateORCIDUser("proxy1.ipk-gatersleben.de",3128));
 
@@ -78,8 +80,7 @@ public class TestClass {
 		} else {
 			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
 		}
-		
-		
+
 //		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
 //				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
 //				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
@@ -89,7 +90,6 @@ public class TestClass {
 //		Thread.sleep(3000);
 //		
 //		DataManager.shutdown();
-		
 
 	}
 
