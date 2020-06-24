@@ -2,7 +2,7 @@ plugins {
   id "com.github.johnrengelman.shadow" version "5.0.0"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
-  id 'io.codearte.nexus-staging' version '0.12.0'
+  id 'io.codearte.nexus-staging' version '0.21.2'
   id 'org.openjfx.javafxplugin' version '0.0.8'
 }
 
@@ -198,7 +198,7 @@ subprojects {
 
 nexusStaging {
 	if(project.hasProperty('nexusUsername') && project.hasProperty('nexusPassword')){
-		stagingProfileId  = "edal_ipk_gatersleben_de"	
+		stagingProfileId  = "de.ipk-gatersleben"	
 		username = nexusUsername
 		password = nexusPassword
 	}
@@ -207,7 +207,7 @@ nexusStaging {
 release {
     failOnCommitNeeded = false
     failOnPublishNeeded = true
-    failOnSnapshotDependencies = true
+    failOnSnapshotDependencies = false
     failOnUnversionedFiles = true
     failOnUpdateNeeded = true
     revertOnFail = true
@@ -295,7 +295,7 @@ project(':eDAL-MetaDataAPI') {
      	
 	}
 	
-	task shadowJarLogin(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+/*	task shadowJarLogin(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 		group = "shadow"
 		classifier = 'jar-with-dependencies'
 		description = "eDAL-Login-Test"
@@ -310,9 +310,9 @@ project(':eDAL-MetaDataAPI') {
 		configurations = [project.configurations.runtime]
 		exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
 	}
-	
+*/	
 	artifacts{
-		archives shadowJar, shadowJarLogin
+		archives shadowJar //, shadowJarLogin
 	}
 }
 
