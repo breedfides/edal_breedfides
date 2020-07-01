@@ -1,11 +1,14 @@
 /**
  * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
- * which accompanies this distribution, and is available at http://creativecommons.org/licenses/by-nd/4.0/
  *
- * Contributors:
- *      Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany - RMI Client, FileChooser, PublicationTool
+ * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
+ * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
+ * documentation material. This means, you must give appropriate credit, provide a link to the license, and indicate
+ * if changes were made. You are free to copy and redistribute e!DAL in any medium or format. You are also free to
+ * adapt, remix, transform, and build upon e!DAL for any purpose, even commercially.
+ *
+ *  Contributors:
+ *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 package de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel;
 
