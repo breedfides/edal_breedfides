@@ -239,12 +239,12 @@ public class EdalHttpServer {
 
 					this.setURL(new URL("https://" + domainNameTuUseUri.getHost() + ":"
 							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
-					this.setHttpDownloadURL(new URL("http://" + domainNameTuUseUri.getHost() + ":"
+					this.setHttpDownloadURL(new URL("https://" + domainNameTuUseUri.getHost() + ":"
 							+ configuration.getStaticServerPort() + domainNameTuUseUri.getPath()));
 
 				} else {
 					this.setURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpsPort()));
-					this.setHttpDownloadURL(new URL("http://" + domainNameToUse + ":" + configuration.getHttpPort()));
+					this.setHttpDownloadURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpPort()));
 				}
 
 			} catch (MalformedURLException | EdalConfigurationException | URISyntaxException e) {
