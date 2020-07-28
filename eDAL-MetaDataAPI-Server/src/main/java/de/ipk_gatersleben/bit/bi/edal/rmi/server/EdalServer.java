@@ -734,7 +734,7 @@ public class EdalServer {
 					EdalServer.logger.info("RMI-Server is using unsecure Connection");
 				}
 
-				EdalServer.logger.info("RMI-Server ready and listening at ports: " + registryPort + ", " + dataPort);
+				EdalServer.logger.info("RMI-Server '"+System.getProperty("java.rmi.server.hostname") +"' is ready and listening at ports: " + registryPort + ", " + dataPort);
 
 				if (config.isUseSSLForHttpListener()) {
 					EdalServer.logger.info("HTTP-Listener ready and listening at port: " + httpListenPort);
