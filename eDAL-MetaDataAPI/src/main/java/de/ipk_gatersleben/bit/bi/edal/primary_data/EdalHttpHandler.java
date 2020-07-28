@@ -46,9 +46,12 @@ import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.EnumUtils;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.HttpStatus.Code;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -91,13 +94,12 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 			zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-					TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
-					EXECUTOR_NAME);
+					TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 		} else {
 
 			zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
-					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
+					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
+					EXECUTOR_NAME);
 		}
 
 		contentPageCache.init();
@@ -323,15 +325,16 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForReviewerAlreadyClicked(reviewerHashCode, ticketAccept)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
-												.accept(ticketAccept, reviewerHashCode);
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor()
+												.newInstance().accept(ticketAccept, reviewerHashCode);
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
 									} else {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already accepted");
 									}
-								} catch (EdalApprovalException | NumberFormatException | ReflectiveOperationException e) {
+								} catch (EdalApprovalException | NumberFormatException
+										| ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromReviewerHashMap(ticketAccept);
 									this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
@@ -355,15 +358,16 @@ public class EdalHttpHandler extends AbstractHandler {
 									final int reviewerHashCode = Integer.parseInt(tokenizer.nextToken());
 
 									if (!ticketForReviewerAlreadyClicked(reviewerHashCode, ticketReject)) {
-										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
-												.reject(ticketReject, reviewerHashCode);
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor()
+												.newInstance().reject(ticketReject, reviewerHashCode);
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 									} else {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already rejected");
 									}
 
-								} catch (EdalApprovalException | NumberFormatException | ReflectiveOperationException e) {
+								} catch (EdalApprovalException | NumberFormatException
+										| ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromReviewerHashMap(ticketReject);
 									this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
@@ -383,7 +387,8 @@ public class EdalHttpHandler extends AbstractHandler {
 
 							Boolean successful = false;
 							try {
-								successful = DataManager.getImplProv().getPermissionProvider().getDeclaredConstructor().newInstance()
+								successful = DataManager.getImplProv().getPermissionProvider().getDeclaredConstructor()
+										.newInstance()
 										.validateRootUser(new InternetAddress(emailAddress), UUID.fromString(uuid));
 							} catch (final AddressException | ReflectiveOperationException e) {
 								this.sendMessage(response, HttpStatus.Code.NOT_FOUND,
@@ -448,8 +453,8 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForUserAlreadyClicked(reviewerHashCode, userAcceptTicket)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
-												.acceptTicketByUser(userAcceptTicket, reviewerHashCode);
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor()
+												.newInstance().acceptTicketByUser(userAcceptTicket, reviewerHashCode);
 
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
@@ -457,7 +462,8 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already accepted");
 									}
-								} catch (NumberFormatException | EdalApprovalException | ReflectiveOperationException e) {
+								} catch (NumberFormatException | EdalApprovalException
+										| ReflectiveOperationException e) {
 
 									EdalHttpHandler.deleteTicketFromUserHashMap(userAcceptTicket);
 
@@ -482,8 +488,8 @@ public class EdalHttpHandler extends AbstractHandler {
 
 									if (!ticketForUserAlreadyClicked(reviewerHashCode, userRejectTicket)) {
 
-										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor().newInstance()
-												.rejectTicketByUser(userRejectTicket, reviewerHashCode);
+										DataManager.getImplProv().getApprovalServiceProvider().getDeclaredConstructor()
+												.newInstance().rejectTicketByUser(userRejectTicket, reviewerHashCode);
 
 										this.sendMessage(response, HttpStatus.Code.OK, "Thank you");
 
@@ -491,7 +497,8 @@ public class EdalHttpHandler extends AbstractHandler {
 										this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 												"Ticket already rejected");
 									}
-								} catch (NumberFormatException | ReflectiveOperationException | EdalApprovalException e) {
+								} catch (NumberFormatException | ReflectiveOperationException
+										| EdalApprovalException e) {
 
 									EdalHttpHandler.deleteTicketFromUserHashMap(userRejectTicket);
 
@@ -588,6 +595,10 @@ public class EdalHttpHandler extends AbstractHandler {
 
 							break;
 
+						case LATEST:
+							this.sendLatestNews(response, HttpStatus.Code.OK);
+							break;
+
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -606,6 +617,27 @@ public class EdalHttpHandler extends AbstractHandler {
 				}
 			}
 			response.flushBuffer();
+		}
+	}
+
+	private void sendLatestNews(HttpServletResponse response, Code responseCode) {
+		try {
+
+			JSONObject json = new JSONObject();
+
+			json.put("doi", "meine_doi");
+			json.put("date", "heute");
+
+			response.setStatus(responseCode.getCode());
+			response.addHeader("Access-Control-Allow-Origin", "*");
+			response.setContentType("application/json");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(json.toJSONString().getBytes());
+			responseBody.close();
+
+		} catch (IOException eof) {
+			// Do nothing, because response was already send
 		}
 	}
 
@@ -816,14 +848,12 @@ public class EdalHttpHandler extends AbstractHandler {
 						if (MIN_NUMBER_OF_THREADS_IN_POOL < USEABLE_CORES) {
 							zipExecutor = new EdalThreadPoolExcecutor(USEABLE_CORES, USEABLE_CORES,
 									EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
-									EXECUTOR_NAME);
+									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 						} else {
 
 							zipExecutor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL,
 									MIN_NUMBER_OF_THREADS_IN_POOL, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
-									EXECUTOR_NAME);
+									new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 						}
 					}
 
@@ -1036,8 +1066,8 @@ public class EdalHttpHandler extends AbstractHandler {
 				throw new EdalException(e);
 			}
 
-			DataManager.getImplProv().getLogger()
-					.debug("Load new Contentpage (" + cacheKey + ") in " + (System.currentTimeMillis() - start) + " ms");
+			DataManager.getImplProv().getLogger().debug(
+					"Load new Contentpage (" + cacheKey + ") in " + (System.currentTimeMillis() - start) + " ms");
 
 		}
 
