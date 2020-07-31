@@ -50,8 +50,6 @@ import org.eclipse.jetty.http.HttpStatus.Code;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -623,17 +621,14 @@ public class EdalHttpHandler extends AbstractHandler {
 	private void sendLatestNews(HttpServletResponse response, Code responseCode) {
 		try {
 
-			JSONObject json = new JSONObject();
-
-			json.put("doi", "meine_doi");
-			json.put("date", "heute");
+			final String htmlOutput = velocityHtmlGenerator.generatePublicReferenceLatestStatusResponse(responseCode).toString();
 
 			response.setStatus(responseCode.getCode());
 			response.addHeader("Access-Control-Allow-Origin", "*");
 			response.setContentType("application/json");
 
 			OutputStream responseBody = response.getOutputStream();
-			responseBody.write(json.toJSONString().getBytes());
+			responseBody.write(htmlOutput.getBytes());
 			responseBody.close();
 
 		} catch (IOException eof) {

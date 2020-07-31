@@ -85,4 +85,6 @@ public interface ServiceProvider {
 	 *            the flag to set
 	 */
 	void setCleaned(boolean flag);
+	
+	String getLatestPersistentIdentifierStatus();
 }

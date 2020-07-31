@@ -37,6 +37,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
+import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalHttpHandler;
@@ -48,6 +52,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryExce
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -99,11 +104,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		if ((Runtime.getRuntime().availableProcessors() / 2) > MIN_NUMBER_OF_THREADS_IN_POOL) {
 			executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 					Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
+					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 		} else {
 			executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
-					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-					new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
+					EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),
+					EXECUTOR_NAME);
 		}
 
 	}
@@ -273,12 +278,11 @@ public class ServiceProviderImplementation implements ServiceProvider {
 				if ((Runtime.getRuntime().availableProcessors() / 2) > MIN_NUMBER_OF_THREADS_IN_POOL) {
 					executor = new EdalThreadPoolExcecutor(Runtime.getRuntime().availableProcessors() / 2,
 							Runtime.getRuntime().availableProcessors() / 2, EXCUTOR_THREAD_KEEP_ALIVE_SECONDS,
-							TimeUnit.SECONDS,
-							new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
+							TimeUnit.SECONDS, new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 				} else {
 					executor = new EdalThreadPoolExcecutor(MIN_NUMBER_OF_THREADS_IN_POOL, MIN_NUMBER_OF_THREADS_IN_POOL,
 							EXCUTOR_THREAD_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
-							new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE),EXECUTOR_NAME);
+							new LinkedBlockingQueue<>(NON_BLOCKING_QUEUE), EXECUTOR_NAME);
 				}
 			}
 
@@ -342,7 +346,7 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		try {
 			Session session4 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			session4.beginTransaction();
@@ -680,6 +684,39 @@ public class ServiceProviderImplementation implements ServiceProvider {
 			}
 		}
 
+	}
+
+	@Override
+	public String getLatestPersistentIdentifierStatus() {
+
+		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+		DetachedCriteria maxQueryInner = DetachedCriteria.forClass(PublicReferenceImplementation.class);
+		maxQueryInner.add(Restrictions.eq("publicationStatus", PublicationStatus.ACCEPTED));
+		maxQueryInner.setProjection(Projections.max("acceptedDate"));
+
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<PublicReferenceImplementation> referenceCriteria = builder
+				.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> referenceRoot = referenceCriteria.from(PublicReferenceImplementation.class);
+		referenceCriteria.where(builder.equal(referenceRoot.get("acceptedDate"),
+				maxQueryInner.getExecutableCriteria(session).uniqueResult()));
+
+		PublicReferenceImplementation reference = session.createQuery(referenceCriteria).uniqueResult();
+
+		session.close();
+
+		JSONObject json = new JSONObject();
+
+		try {
+			json.put("doi", reference.getAssignedID());
+		} catch (PublicReferenceException e) {
+			e.printStackTrace();
+		}
+		json.put("date", reference.getAcceptedDate().getTime().toString());
+
+		return json.toJSONString();
 	}
 
 }

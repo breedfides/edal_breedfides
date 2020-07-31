@@ -48,6 +48,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.HttpStatus.Code;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -692,7 +693,7 @@ class VeloCityHtmlGenerator {
 		}
 
 		Path matomoPath = Paths.get(currentPath, "MatomoTemplate.xml");
-		
+
 		if (Files.exists(matomoPath)) {
 			try {
 				context.put("MatomoTemplate", new String(Files.readAllBytes(matomoPath)));
@@ -718,16 +719,14 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} 
-		else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
+		} else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
 			try {
 				context.put("StatementTemplate",
 						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.xml"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} 
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
@@ -1181,16 +1180,14 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} 
-		else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
+		} else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
 			try {
 				context.put("StatementTemplate",
 						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.xml"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} 
-		else {
+		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
 		}
 
@@ -1443,6 +1440,25 @@ class VeloCityHtmlGenerator {
 
 		return output;
 
+	}
+
+	public Object generatePublicReferenceLatestStatusResponse(Code responseCode) {
+		try {
+			final ServiceProvider serviceProvider = DataManager.getImplProv().getServiceProvider()
+					.getDeclaredConstructor().newInstance();
+
+			String output = serviceProvider.getLatestPersistentIdentifierStatus();
+
+			return output;
+
+		} catch (ReflectiveOperationException e) {
+			e.printStackTrace();
+		}
+
+		JSONObject json = new JSONObject();
+		json.put("doi", "");
+		json.put("date", "");
+		return json.toJSONString();
 	}
 
 }
