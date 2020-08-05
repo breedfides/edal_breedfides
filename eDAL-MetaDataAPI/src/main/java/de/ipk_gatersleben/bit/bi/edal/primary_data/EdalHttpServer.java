@@ -244,7 +244,7 @@ public class EdalHttpServer {
 
 				} else {
 					this.setURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpsPort()));
-					this.setHttpDownloadURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpPort()));
+					this.setHttpDownloadURL(new URL("https://" + domainNameToUse + ":" + configuration.getHttpsPort()));
 				}
 
 			} catch (MalformedURLException | EdalConfigurationException | URISyntaxException e) {
