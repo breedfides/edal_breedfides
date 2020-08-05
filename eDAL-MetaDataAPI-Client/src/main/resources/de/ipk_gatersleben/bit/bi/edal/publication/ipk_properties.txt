@@ -72,3 +72,5 @@ CONFIRMATION_EMAIL_SUBJECT = Confirmation of your Submission to the PGP reposito
 
 PUBLICATION_PANEL_BLOCKED_WARNING = <html>Please read the Data Deposition &amp; License <br/> Agreement, before you fill the form</html>
 PUBLICATION_PANEL_BLOCKED_WARNING_TITLE = Submission blocked!
+
+INSTITUTE_LOGO = ipk_scaled.png

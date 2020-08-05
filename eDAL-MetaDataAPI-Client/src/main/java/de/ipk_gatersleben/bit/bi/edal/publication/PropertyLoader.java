@@ -61,6 +61,8 @@ public class PropertyLoader {
 	public static URL PGP_CONTRACT_URL = null;
 
 	public static URL ADOBE_GET_URL = null;
+	
+	public static URL INSTITUTE_LOGO_URL = null;
 
 	public static Image EDAL_LOGO = null;
 
@@ -157,6 +159,8 @@ public class PropertyLoader {
 	}
 
 	private static void loadEdalLogos() {
+		
+		INSTITUTE_LOGO_URL = PropertyLoader.class.getResource(PropertyLoader.props.getProperty("INSTITUTE_LOGO"));
 		EDAL_LOGO = new ImageIcon(PropertyLoader.class.getResource("edal_scaled.png")).getImage();
 		EDAL_ICON = new ImageIcon(PropertyLoader.class.getResource("edal_icon.png")).getImage();
 		PDF_ICON = new ImageIcon(PropertyLoader.class.getResource("pdf_icon.png"));
