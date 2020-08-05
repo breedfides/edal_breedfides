@@ -49,7 +49,7 @@ import de.ipk_gatersleben.bit.bi.edal.rmi.client.ClientDataManager;
  */
 public class PropertyLoader {
 
-	public static final String PROGRAM_NAME = "IPK Data Publication System";
+	public static String PROGRAM_NAME = "IPK Data Publication System";
 
 	public static final String AGREEMENT_PANEL_PROPERTY = "AGREEMENT_PANEL";
 	public static final String AGREEMENT_PDF_PROPERTY = "AGREEMENT_PDF";
@@ -208,6 +208,8 @@ public class PropertyLoader {
 			RESOURCE_TYPES.add(PropertyLoader.props.getProperty("RESOURCE_TYPE_" + i));
 			i++;
 		}
+		
+		PROGRAM_NAME = PropertyLoader.props.getProperty("PROGRAM_NAME");
 
 	}
 

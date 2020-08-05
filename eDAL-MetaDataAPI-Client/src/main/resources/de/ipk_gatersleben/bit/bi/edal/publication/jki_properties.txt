@@ -23,16 +23,16 @@ RESOURCE_LABEL		= Resource Type
 DEFAULT_UPLOAD_PATH_STRING = Please enter file or directory
 DEFAULT_TITLE_STRING = Please enter a publication title
 DEFAULT_LANGUAGE_STRING = English
-DEFAULT_PUBLISHER_STRING = e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP), IPK Gatersleben;Seeland OT Gatersleben, Corrensstraße 3;06466;Germany
+DEFAULT_PUBLISHER_STRING = JKI - Federal Research Centre for Cultivated Plants;Quedlinburg, Erwin-Bauer Str. 27;06484;Germany
 DEFAULT_DESCRIPTION_STRING = Please enter a description
 DEFAULT_AUTHORS_STRING = Please set at least one creator
 DEFAULT_SUBJECTS_STRING = Please set at least one keyword
 DEFAULT_EMBARGO_STRING = Please set optional embargo date
 DEFAULT_RESOURCE_STRING = Dataset
 
-DEFAULT_AUTHOR_VALUE_ADDRESS = Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3
-DEFAULT_AUTHOR_VALUE_ZIP = 06466
-DEFAULT_AUTHOR_VALUE_COUNTRY = Germany
+DEFAULT_AUTHOR_VALUE_ADDRESS = 
+DEFAULT_AUTHOR_VALUE_ZIP = 
+DEFAULT_AUTHOR_VALUE_COUNTRY = 
 
 LICENSE_1 = CC0 1.0 Universal (Creative Commons Public Domain Dedication)
 LICENSE_2 = CC BY 4.0 (Creative Commons Attribution)
@@ -74,3 +74,4 @@ PUBLICATION_PANEL_BLOCKED_WARNING = <html>Please read the Data Deposition &amp; 
 PUBLICATION_PANEL_BLOCKED_WARNING_TITLE = Submission blocked!
 
 INSTITUTE_LOGO = jki_scaled.png
+PROGRAM_NAME = JKI Data Publication System

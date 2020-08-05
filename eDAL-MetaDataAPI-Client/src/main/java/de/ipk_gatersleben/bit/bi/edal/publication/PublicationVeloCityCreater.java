@@ -66,11 +66,12 @@ public class PublicationVeloCityCreater {
 		VelocityContext context = new VelocityContext();
 
 		URL edalLogoUrl = PublicationFrame.class.getResource("edal_scaled.png");
-		URL ipkLogoUrl = PropertyLoader.INSTITUTE_LOGO_URL;
+		URL instituteLogoUrl = PropertyLoader.INSTITUTE_LOGO_URL;
 
 		context.put("edal", edalLogoUrl);
-		context.put("ipk", ipkLogoUrl);
+		context.put("instituteLogo", instituteLogoUrl);
 		context.put("bgcolor", PropertyLoader.HEADER_FOOTER_COLOR);
+		context.put("programname", PropertyLoader.PROGRAM_NAME);
 
 		StringWriter output = new StringWriter();
 

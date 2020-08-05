@@ -74,3 +74,4 @@ PUBLICATION_PANEL_BLOCKED_WARNING = <html>Please read the Data Deposition &amp; 
 PUBLICATION_PANEL_BLOCKED_WARNING_TITLE = Submission blocked!
 
 INSTITUTE_LOGO = ipk_scaled.png
+PROGRAM_NAME = FZJ Data Publication System
