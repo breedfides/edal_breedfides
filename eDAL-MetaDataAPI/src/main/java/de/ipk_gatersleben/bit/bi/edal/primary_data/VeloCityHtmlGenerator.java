@@ -409,6 +409,8 @@ class VeloCityHtmlGenerator {
 			throw new EdalException("unable to load entity list of the directory", e);
 		}
 
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -689,6 +691,8 @@ class VeloCityHtmlGenerator {
 
 		addStatementPathToVelocityContext(context, currentPath);
 
+		addInstituteLogoPathToVelocityContext(context, currentPath);
+		
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -729,6 +733,8 @@ class VeloCityHtmlGenerator {
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HtmlMessageTemplate.xml",
@@ -876,6 +882,8 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
 
@@ -1109,6 +1117,8 @@ class VeloCityHtmlGenerator {
 
 		addStatementPathToVelocityContext(context, currentPath);
 
+		addInstituteLogoPathToVelocityContext(context, currentPath);
+		
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -1142,6 +1152,21 @@ class VeloCityHtmlGenerator {
 			}
 		} else {
 			DataManager.getImplProv().getLogger().warn("Unable to find 'StatementTemplate.txt'");
+		}
+	}
+
+	/**
+	 * @param context
+	 * @param currentPath
+	 */
+	private void addInstituteLogoPathToVelocityContext(final VelocityContext context, String currentPath) {
+		Path institutePath = Paths.get(currentPath, "institute_logo.png");
+		if (Files.exists(institutePath)) {
+			context.put("InstituteLogo", institutePath);
+		} else if (Files.exists(FileUtils.getFile("institute_logo.png").toPath())) {
+			context.put("InstituteLogo", FileUtils.getFile("institute_logo.png").getPath());
+		} else {
+			DataManager.getImplProv().getLogger().info("Unable to find 'institute_logo.png'");
 		}
 	}
 
@@ -1369,6 +1394,8 @@ class VeloCityHtmlGenerator {
 		String currentPath = getCurrentPath();
 
 		addMatomoPathToVelocityContext(context, currentPath);
+
+		addInstituteLogoPathToVelocityContext(context, currentPath);
 
 		final OutputStreamWriter output = new OutputStreamWriter(outputStream);
 

@@ -41,6 +41,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -133,6 +134,10 @@ public class EdalHttpServer {
 		ContextHandler edalContextHandler = new ContextHandler("/");
 		edalContextHandler.setHandler(new EdalHttpHandler());
 
+		ResourceHandler resourceHandler = new ResourceHandler();
+		resourceHandler.setDirectoriesListed(true);
+		resourceHandler.setResourceBase(".");
+
 //		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 //		restHandler.setContextPath("/rest");	
 //		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
@@ -144,13 +149,13 @@ public class EdalHttpServer {
 //		contextHandlerCollection.addHandler(restHandler);
 
 //		collection.addHandler(restHandler);
+		handlerCollection.addHandler(resourceHandler);
 
 		handlerCollection.addHandler(edalContextHandler);
 
 //		collection.addHandler(contextHandlerCollection);
 
 		handlerCollection.addHandler(requestLogHandler);
-
 		/*
 		SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
