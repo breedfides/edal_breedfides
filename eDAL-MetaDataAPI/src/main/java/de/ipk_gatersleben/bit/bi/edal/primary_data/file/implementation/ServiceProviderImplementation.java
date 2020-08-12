@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -714,7 +715,12 @@ public class ServiceProviderImplementation implements ServiceProvider {
 		} catch (PublicReferenceException e) {
 			e.printStackTrace();
 		}
-		json.put("date", reference.getAcceptedDate().getTime().toString());
+		
+		SimpleDateFormat format = new SimpleDateFormat("dd-MM-YYYY HH:mm z");
+
+		String dateString = format.format( reference.getAcceptedDate().getTime()   );
+		
+		json.put("date", dateString);
 
 		return json.toJSONString();
 	}
