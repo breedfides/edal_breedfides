@@ -135,7 +135,7 @@ public class EdalHttpServer {
 		edalContextHandler.setHandler(new EdalHttpHandler());
 
 		ResourceHandler resourceHandler = new ResourceHandler();
-		resourceHandler.setDirectoriesListed(true);
+		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setResourceBase(".");
 
 //		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
