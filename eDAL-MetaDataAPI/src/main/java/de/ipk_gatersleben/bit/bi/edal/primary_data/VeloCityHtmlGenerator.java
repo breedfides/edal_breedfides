@@ -1143,10 +1143,10 @@ class VeloCityHtmlGenerator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} else if (Files.exists(FileUtils.getFile("StatementTemplate.xml").toPath())) {
+		} else if (Files.exists(FileUtils.getFile("StatementTemplate.txt").toPath())) {
 			try {
 				context.put("StatementTemplate",
-						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.xml"), "UTF-8"));
+						FileUtils.readFileToString(FileUtils.getFile("StatementTemplate.txt"), "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -1166,7 +1166,7 @@ class VeloCityHtmlGenerator {
 		} else if (Files.exists(FileUtils.getFile("institute_logo.png").toPath())) {
 			context.put("InstituteLogo", FileUtils.getFile("institute_logo.png").getPath());
 		} else {
-			DataManager.getImplProv().getLogger().info("Unable to find 'institute_logo.png'");
+			DataManager.getImplProv().getLogger().debug("Unable to find 'institute_logo.png'");
 		}
 	}
 
