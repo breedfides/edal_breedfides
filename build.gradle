@@ -13,6 +13,7 @@ project.ext {
     junitVersion = '5.5.0'
 }
 
+apply plugin: 'eclipse'
 apply plugin: 'net.researchgate.release'
 apply plugin: 'io.codearte.nexus-staging'
 
@@ -127,6 +128,8 @@ allprojects {
 	}
 
 }
+
+
 
 subprojects {
 	uploadArchives {
@@ -246,10 +249,14 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.200'
-	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.2.Final'
-	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.10.4.Final'
-	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.2.Final'
-	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.2.Final'
+	    //update von 5.20->5.21
+	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.21.Final'
+	    //5.10.4 -> 5.11.5
+	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'
+	    //5.4.2 -> 5.4.21
+	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.21.Final'
+	 	//5.4.2 -> 5.4.21
+	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.21.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'
 	
 	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'

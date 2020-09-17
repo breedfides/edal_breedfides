@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 import java.io.Serializable;
 import java.util.Map.Entry;
 
+
 /**
  * Basic type to store meta data values.
  * 

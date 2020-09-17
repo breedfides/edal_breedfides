@@ -253,7 +253,7 @@ public class MetaData implements Cloneable, Serializable {
 	public void setElementValue(final EnumDublinCoreElements key, final UntypedData value) throws MetaDataException {
 
 		final List<Class<? extends UntypedData>> datatype = MetaData.ELEMENT_TYPE_MAP.get(key);
-
+		
 		if (!datatype.contains(value.getClass())) {
 			throw new MetaDataException("It is not allowed to set a '" + value.getClass().getSimpleName()
 					+ "' datatype for the element '" + key + "'");

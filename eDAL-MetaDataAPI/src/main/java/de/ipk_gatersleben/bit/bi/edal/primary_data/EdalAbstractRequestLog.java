@@ -21,8 +21,9 @@ import javax.servlet.http.Cookie;
 
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.pathmap.PathMappings;
-import org.eclipse.jetty.server.AbstractNCSARequestLog;
+//import org.eclipse.jetty.server.AbstractNCSARequestLog;
 import org.eclipse.jetty.server.Authentication;
+import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
@@ -37,7 +38,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.Calculate
 
 public abstract class EdalAbstractRequestLog extends AbstractLifeCycle implements RequestLog {
 
-	protected static final Logger LOG = Log.getLogger(AbstractNCSARequestLog.class);
+	protected static final Logger LOG = Log.getLogger(CustomRequestLog.class);
 
 	// private static final List<String> FILTER_KEYWORD =
 	// Arrays.asList("nagios-plugins", "Yahoo! Slurp", "Googlebot",

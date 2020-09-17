@@ -772,7 +772,7 @@ public abstract class PrimaryDataEntity implements
 
 				permProv.getMethod("revokePermission", String.class,
 						String.class, EdalPermission.class).invoke(
-						permProv.newInstance(),
+						permProv.getConstructor().newInstance(),
 						principal.getClass().getSimpleName(),
 						principal.getName(), edalPermission);
 			} catch (final Exception e) {

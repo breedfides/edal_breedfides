@@ -85,7 +85,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  * 
  * @author arendd
  */
-@SuppressWarnings("restriction")
 public final class EdalConfiguration {
 
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";

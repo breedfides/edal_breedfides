@@ -118,7 +118,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * specify a more detailed search request, otherwise the search function is to
 	 * slow because of HIBERNATE.
 	 */
-	private static final int MAX_NUMBER_SEARCH_RESULTS = 1000;
+	private static final int MAX_NUMBER_SEARCH_RESULTS = 900000;
 
 	private SortedSet<PrimaryDataEntityVersionImplementation> versionList;
 
@@ -572,7 +572,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
+		
 		final Query<Integer> versionSQLQuery = session
 				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
 						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
