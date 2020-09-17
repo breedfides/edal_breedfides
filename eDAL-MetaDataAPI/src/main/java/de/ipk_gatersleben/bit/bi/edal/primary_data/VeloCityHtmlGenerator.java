@@ -392,6 +392,9 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
+		
 		List<PrimaryDataEntity> list = null;
 
 		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
@@ -657,7 +660,9 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
+		
 		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
 
 			context.put("directorynumber", publicReferenceFileDirectoryNumber.split(",")[0]);
@@ -732,6 +737,8 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		
@@ -882,7 +889,9 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
+		
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
@@ -1098,7 +1107,9 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
+		
 		if (CalculateDirectorySizeThread.referenceContent.containsKey(internalId)) {
 
 			context.put("referenceDirectoryContent",
@@ -1364,7 +1375,8 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-
+		/* set publisherURL */
+		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		/* set number of DOIs */

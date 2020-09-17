@@ -126,6 +126,8 @@ public class PropertyLoader {
 	public static final int ATTRIBUTE_PANEL_WIDTH = 680;
 	public static final int ATTRIBUTE_LABEL_WIDTH = 120;
 
+	public static String INSTITUTE_URL = "https://www.ipk-gatersleben.de";
+
 	public static List<String> SUPPORTED_LICENSES = null;
 	public static List<String> SUPPORTED_LICENSES_LEGAL_CODE_URL = null;
 	public static List<String> SUPPORTED_LICENSES_HUMAN_READABLE_URL = null;
@@ -210,7 +212,7 @@ public class PropertyLoader {
 		}
 		
 		PROGRAM_NAME = PropertyLoader.props.getProperty("PROGRAM_NAME");
-
+		INSTITUTE_URL = PropertyLoader.props.getProperty("INSTITUTE_URL");
 	}
 
 	private static void loadRunnigPath() {

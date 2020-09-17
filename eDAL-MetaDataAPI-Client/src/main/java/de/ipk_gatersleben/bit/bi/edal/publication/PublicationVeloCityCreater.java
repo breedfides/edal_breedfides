@@ -72,6 +72,7 @@ public class PublicationVeloCityCreater {
 		context.put("instituteLogo", instituteLogoUrl);
 		context.put("bgcolor", PropertyLoader.HEADER_FOOTER_COLOR);
 		context.put("programname", PropertyLoader.PROGRAM_NAME);
+		context.put("instituteURL",PropertyLoader.INSTITUTE_URL);
 
 		StringWriter output = new StringWriter();
 

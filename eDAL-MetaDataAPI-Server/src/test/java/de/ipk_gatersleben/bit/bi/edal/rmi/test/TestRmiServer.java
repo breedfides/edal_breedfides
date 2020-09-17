@@ -28,6 +28,8 @@ public class TestRmiServer {
 
 		configuration.setUseSSL(false);
 
+		configuration.setPublisherURL("https://www.ipk-gatersleben.de");
+		
 		EdalServer.startServer(configuration, EdalServer.DEFAULT_REGISTRY_PORT, EdalServer.DEFAULT_DATA_PORT, false,
 				false);
 

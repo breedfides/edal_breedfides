@@ -257,6 +257,9 @@ public class EdalServer {
 
 		Option publisherOption = new Option("pu", "publisher", true,
 				"Set the string for the PUBLISHER field of the running e!DAL instance");
+		
+		Option publisherURLOption = new Option("puu", "publisherUrl", true,
+				"Set the URL for the publisher of the running e!DAL instance");
 
 		Option noReplyEmailOption = new Option("nre", "noReplyEmail", true,
 				"Set the noreply email adresse for the eDAL email SMTP");
@@ -309,6 +312,7 @@ public class EdalServer {
 		options.addOption(instanceNameLongOption);
 		options.addOption(instanceNameShortOption);
 		options.addOption(publisherOption);
+		options.addOption(publisherURLOption);
 		options.addOption(noReplyEmailOption);
 		/**
 		 * First check all mandatory parameter to create an EdalConfiguration object
@@ -611,6 +615,10 @@ public class EdalServer {
 		if (cmd.hasOption(publisherOption.getOpt())) {
 			configuration.setPublisherString(cmd.getOptionValue(publisherOption.getOpt()));
 		}
+		if (cmd.hasOption(publisherURLOption.getOpt())) {
+			configuration.setPublisherURL(cmd.getOptionValue(publisherURLOption.getOpt()));
+		}
+		
 		if (cmd.hasOption(noReplyEmailOption.getOpt())) {
 			configuration.setCustomReplyEmail(cmd.getOptionValue(noReplyEmailOption.getOpt()));
 		}
