@@ -46,36 +46,45 @@ public class FullExample {
 				new InternetAddress("scientific_reviewer@mail.com"),
 				new InternetAddress("substitute_reviewer@mail.com"), new InternetAddress("managing_reviewer@mail.com"),
 				new InternetAddress("ralfs@ipk-gatersleben.de"));
-		// startup the instance
-		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		Logger exampleLogger = ((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger();
-
-		// get the root directory of e!DAL instance
-//		Path pathToRessource = Paths.get("C://usr//unbenannt.png");
-//		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
-//		entity.store(fin);
-//		fin.close();
-
-//		
-//		PrimaryDataDirectory subDirectory = rootDirectory.createPrimaryDataDirectory("subDirectoryTest");
-//		MetaData metadata = subDirectory.getMetaData();
-//		metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("PoweredByPlants"));
-//		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("e!DAL Poster"));
-//
-//		/* set metadata generate automatically a new version for this object */
-//		subDirectory.setMetaData(metadata);
-		ArrayList<String> strings = StoreDataScript.process(rootDirectory,50);
-//		MetaDataImplementation metadata2 = new MetaDataImplementation();
-//		metadata2.setElementValue(EnumDublinCoreElements.TITLE, metadata.getElementValue(EnumDublinCoreElements.TITLE));
-//		System.out.println(metadata.toString());
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,5);
+		MetaData storedMetaData = entities.get(0).getMetaData();
+		//Test Search by Title
+		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
+		log("\nTITLE\nINSERTED -> Title: "+expected);
+		Thread.sleep(1000);
+		List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE,
+				new UntypedData(expected), false, true);
+		String actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).getString();
+		log("\n___FOUND -> Title: "+actual);
 		
-		
-		List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(strings.get(0)), false, true);
-		for(int i = 0; i < results1.size(); i++)
-			exampleLogger.info("Title: "+results1.get(i).toString()+" Desc: "+results1.get(i).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).toString());
+		//Test Search by Description
+		expected = storedMetaData.getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
+		log("\nDESCRIPTION\nINSERTED -> Description: "+expected);
+		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DESCRIPTION,
+				new UntypedData(expected), false, true);
+		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
+		log("\n___FOUND ->  Description: "+actual);
+		try {
+			//Test Search by Creator
+			NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+			log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
+			Persons persons = new Persons();
+			persons.add(expPerson);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
+					expPerson, false, true);
+			NaturalPerson actPerson = (NaturalPerson) ((Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+			log("\n___FOUND ->  Creator: "+actPerson.toString());
+		}catch(Exception e) {
+			log("\n####FAIL###### ----------->"+e.getMessage());
+		}
 		DataManager.shutdown();
-
-	}
+    }
+    
+    
+    private static void log(String msg) {
+    	DataManager.getImplProv().getLogger().info(msg);
+    }
 }

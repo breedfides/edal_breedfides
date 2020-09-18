@@ -22,6 +22,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
@@ -32,15 +33,19 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
 public class StoreDataScript {
+	
+	private static final String[] algorithms = {"MD5","SHA1","SHA2"};
+	private static final String lexicon = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+	private static final java.util.Random rand = new java.util.Random();
 
-	public static ArrayList<String> process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
+	public static ArrayList<PrimaryDataFile> process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
 		ArrayList<String> names = getList(System.getProperty("user.home")+"/dict/names.txt");
 		ArrayList<String> words = getList(System.getProperty("user.home")+"/dict/german4000.txt");
 		int countNames =names.size();
 		int countWords =words.size();
 		Random random = new Random();
 		long startTime = System.nanoTime();
-		ArrayList<String> strings = new ArrayList<>();
+		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		MetaData firstMetadata = null;
 		for(int i = 0; i < size; i++) {
 	        String title = words.get(random.nextInt(countWords));
@@ -58,7 +63,6 @@ public class StoreDataScript {
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("roots, hordeum vulgare, protein analysis, salinity stress"));
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			strings.add(title);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
 	        if(i == 0) {
@@ -66,11 +70,12 @@ public class StoreDataScript {
 	        	System.out.println("Inserted_-> Ttitle: "+title+" Desc: "+description);
 	        }
 			entity.setMetaData(metadata);
+			files.add(entity);
 			
 		}
 		long stopTime = System.nanoTime()-startTime;
 		System.out.println("Zeit zum speichern: "+((double)stopTime / 1_000_000_000.0));
-		return strings;
+		return files;
 	}
 	
 	
@@ -82,6 +87,18 @@ public class StoreDataScript {
         strings.add(in.nextLine());
     }
     return strings;
+	}
+	
+	private static String randomIdentifier() {
+		StringBuilder builder = new StringBuilder();
+	    while(builder.toString().length() == 0) {
+	        int length = rand.nextInt(5)+5;
+	        for(int j = 0; j < length; j++) {
+	            builder.append(lexicon.charAt(rand.nextInt(lexicon.length())));
+	        }
+	    }
+	    String result = builder.toString();
+		return result;
 	}
 	
 //	public static void generateRandomDic() throws Exception {
