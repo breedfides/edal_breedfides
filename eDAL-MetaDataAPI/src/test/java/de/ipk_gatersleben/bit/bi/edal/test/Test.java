@@ -71,7 +71,8 @@ public class Test {
 
 	public static void main(final String[] args) throws Exception {
 
-		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX, new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(ROOT_USER));
+		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX, new InternetAddress(EMAIL),
+				new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(ROOT_USER),"imap.ipk-gatersleben.de","","");
 		configuration.setUseSSL(true);
 
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());

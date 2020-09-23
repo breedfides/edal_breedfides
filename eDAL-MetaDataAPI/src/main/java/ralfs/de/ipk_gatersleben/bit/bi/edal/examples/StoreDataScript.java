@@ -39,8 +39,8 @@ public class StoreDataScript {
 	private static final java.util.Random rand = new java.util.Random();
 
 	public static ArrayList<PrimaryDataFile> process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
-		ArrayList<String> names = getList(System.getProperty("user.home")+"/dict/names.txt");
-		ArrayList<String> words = getList(System.getProperty("user.home")+"/dict/german4000.txt");
+		ArrayList<String> names = getList("src/test/resources/names.txt");
+		ArrayList<String> words = getList("src/test/resources/words.txt");
 		int countNames =names.size();
 		int countWords =words.size();
 		Random random = new Random();

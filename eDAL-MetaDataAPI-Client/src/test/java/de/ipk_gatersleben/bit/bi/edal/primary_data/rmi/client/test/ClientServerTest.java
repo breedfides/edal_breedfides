@@ -85,7 +85,8 @@ public class ClientServerTest {
 
 		final EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
 				new InternetAddress("user@nodomain.com.invalid"), new InternetAddress("user@nodomain.com.invalid"),
-				new InternetAddress("user@nodomain.com.invalid"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+				new InternetAddress("user@nodomain.com.invalid"), new InternetAddress("eDAL0815@ipk-gatersleben.de"),
+				"imap.ipk-gatersleben.de","","");
 
 		configuration.setHttpPort(ClientServerTest.HTTP_PORT);
 		configuration.setHttpsPort(ClientServerTest.HTTPS_PORT);

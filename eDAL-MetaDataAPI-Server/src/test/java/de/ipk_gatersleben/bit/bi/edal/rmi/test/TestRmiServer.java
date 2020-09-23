@@ -24,7 +24,8 @@ public class TestRmiServer {
 	public static void main(String[] args) throws AddressException, EdalConfigurationException {
 		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
 				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de")
+				,"imap.ipk-gatersleben.de","","");
 
 		configuration.setUseSSL(false);
 

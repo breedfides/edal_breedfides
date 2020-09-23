@@ -39,6 +39,7 @@ import javax.persistence.Transient;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Root;
 
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -86,6 +87,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIde
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyLegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyNaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPersons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
@@ -538,7 +540,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				datatypeList = this.searchByUntypedData(data, fuzzy);
 			} else if (data.getClass().equals(NaturalPerson.class)) {
 				datatypeList = this.searchByNaturalPerson((NaturalPerson) data, fuzzy);
-			} else if (data.getClass().equals(NaturalPerson.class)) {
+			} else if (data.getClass().equals(LegalPerson.class)) {
 				datatypeList = this.searchByLegalPerson((LegalPerson) data, fuzzy);
 			} else if (data.getClass().equals(Identifier.class)) {
 				datatypeList = this.searchByIdentifier((Identifier) data, fuzzy);
@@ -1488,6 +1490,17 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				MyNaturalPerson.class);
 
 		final List<MyNaturalPerson> result = hibernateQuery.list();
+//		ArrayList<Integer> ids = new ArrayList<>();
+//		for(MyNaturalPerson mp : result) {
+//			ids.add(mp.getId());		
+//		}
+		//search for untypeddata Reports with coreesponding PersonSets
+
+//		queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyPersons.class)
+//				.get();
+//
+//		combinedQuery = queryBuilder.keyword().wildcard().onField("addressLine")
+//		.matching(naturalPerson.getAddressLine()).createQuery();
 
 		session.close();
 		return result;
@@ -1556,25 +1569,40 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 *             If unable to parse query string with <em>LUCENE<em>.
 	 */
 	private List<MyUntypedData> searchByUntypedData(final UntypedData data, final boolean fuzzy) throws ParseException {
+		long start = System.currentTimeMillis();
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		org.apache.lucene.search.Query query = null;
-
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-				.get();
-		if (fuzzy) {
-			query = queryBuilder.keyword().wildcard().onField("string").matching("*" + data.getString() + "*")
-					.createQuery();
-		} else {
-			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
+//		org.apache.lucene.search.Query query = null;
+//
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
+//				.get();
+//		if (fuzzy) {
+//			query = queryBuilder.keyword().wildcard().onField("string").matching("*" + data.getString() + "*")
+//					.createQuery();
+//		} else {
+//			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
+//		}
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
+//
+//		final List<MyUntypedData> result = hibernateQuery.list();
+		//execute logic in between
+		
+		CriteriaBuilder cb = session.getCriteriaBuilder();
+		CriteriaQuery<MyUntypedData> cr = cb.createQuery(MyUntypedData.class);
+		Root<MyUntypedData> root = cr.from(MyUntypedData.class);
+		if(fuzzy) {
+			cr.select(root).where(cb.equal(root.get("string"), data.getString()));
+		}else {
+			cr.select(root).where(cb.like(root.get("string"),"%"+ data.getString()+"%"));
 		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
-
-		final List<MyUntypedData> result = hibernateQuery.list();
+		Query<MyUntypedData> criteriaquery = session.createQuery(cr);
+		List<MyUntypedData> result = criteriaquery.getResultList();
+		long end = System.currentTimeMillis();
+		System.out.println("DEBUG: Logic A took " + ((end - start)) + " MilliSeconds");
 
 		session.close();
 

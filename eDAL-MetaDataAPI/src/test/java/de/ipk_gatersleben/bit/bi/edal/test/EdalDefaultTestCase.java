@@ -63,7 +63,8 @@ public class EdalDefaultTestCase {
 			this.configuration = new EdalConfiguration(EdalDefaultTestCase.DATACITE_USERNAME,
 					EdalDefaultTestCase.DATACITE_PASSWORD, EdalDefaultTestCase.DATACITE_PREFIX,
 					new InternetAddress(EdalDefaultTestCase.EMAIL), new InternetAddress(EdalDefaultTestCase.EMAIL),
-					new InternetAddress(EdalDefaultTestCase.EMAIL), new InternetAddress(EdalDefaultTestCase.ROOT_USER));
+					new InternetAddress(EdalDefaultTestCase.EMAIL), new InternetAddress(EdalDefaultTestCase.ROOT_USER),
+					"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(EdalDefaultTestCase.HTTP_PORT);
 			this.configuration.setHttpsPort(EdalDefaultTestCase.HTTPS_PORT);
 

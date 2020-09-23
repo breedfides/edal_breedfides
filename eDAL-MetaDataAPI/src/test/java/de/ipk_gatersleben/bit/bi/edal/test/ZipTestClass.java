@@ -43,7 +43,8 @@ public class ZipTestClass {
 		EdalConfiguration configuration = new EdalConfiguration(
 				DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX,
 				new InternetAddress(EMAIL), new InternetAddress(EMAIL),
-				new InternetAddress(EMAIL), new InternetAddress(ROOT_USER));
+				new InternetAddress(EMAIL), new InternetAddress(ROOT_USER),
+				"imap.ipk-gatersleben.de","","");
 
 		configuration.setUseSSL(true);
 
