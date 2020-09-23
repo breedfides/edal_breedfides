@@ -52,13 +52,13 @@ public class StoreDataScript {
 	        String description = words.get(random.nextInt(countWords));
 	        String firstName = names.get(random.nextInt(countNames));
 	        String lastName = names.get(random.nextInt(countNames));
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimaryDataFileNR1."+i);
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimaryDataFileNR12."+i);
 			MetaData metadata = entity.getMetaData();
-			NaturalPerson np = new NaturalPerson(firstName, lastName, "Gatersleben", "06566", "Germany");
+			NaturalPerson np = new NaturalPerson(firstName, lastName, "treztrez", "43543", "fdgdt");
 			Persons persons = new Persons();
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson("IPK Gatersleben", description, "06466", "Germany"));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson("test", description, "test", "test"));
 //			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("roots, hordeum vulgare, protein analysis, salinity stress"));

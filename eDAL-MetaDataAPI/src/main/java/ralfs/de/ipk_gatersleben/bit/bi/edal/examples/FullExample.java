@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.mail.internet.InternetAddress;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -54,7 +55,7 @@ public class FullExample {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,5);
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
@@ -80,8 +81,11 @@ public class FullExample {
 		persons.add(expPerson);
 		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
 				expPerson, true, true);
-		NaturalPerson actPerson = (NaturalPerson) ((Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
-		log("\n___FOUND ->  Creator: "+actPerson.toString());
+		for(PrimaryDataEntity n : results1) {
+			NaturalPerson actPerson = (NaturalPerson) ((Persons)n.getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+			log("\n___FOUND ->  Creator: "+actPerson.toString()+" LIST SIZE: "+results1.size()+"\n\n");
+		}
+
 		}catch(Exception e) {
 			log("\n####FAIL###### ----------->"+e.getMessage());
 		}

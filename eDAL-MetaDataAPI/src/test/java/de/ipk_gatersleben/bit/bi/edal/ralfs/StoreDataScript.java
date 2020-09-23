@@ -22,6 +22,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
@@ -54,21 +56,21 @@ public class StoreDataScript {
 	        String lastName = names.get(random.nextInt(countNames));
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimaryDataFileNR1."+i);
 			MetaData metadata = entity.getMetaData();
-			NaturalPerson np = new NaturalPerson(firstName, lastName, "Gatersleben", "06566", "Germany");
 			Persons persons = new Persons();
+			NaturalPerson np = new NaturalPerson(firstName, lastName, words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson("IPK Gatersleben", description, "06466", "Germany"));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson(names.get(random.nextInt(countNames)), description, Integer.toString(random.nextInt(countWords)), words.get(random.nextInt(countWords))));
 //			
 			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("roots, hordeum vulgare, protein analysis, salinity stress"));
+			subjects.add(new UntypedData("subject= "+words.get(random.nextInt(countWords))));
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
-	        if(i == 0) {
-	        	firstMetadata = metadata;
-	        	System.out.println("Inserted_-> Ttitle: "+title+" Desc: "+description);
-	        }
+			CheckSum checksums = new CheckSum();
+			CheckSumType checksum = new CheckSumType("SHA1","trigiorjgo");
+			checksums.add(checksum);
+			metadata.setElementValue(EnumDublinCoreElements.CHECKSUM, checksums);
 			entity.setMetaData(metadata);
 			files.add(entity);
 			

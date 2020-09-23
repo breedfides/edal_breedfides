@@ -24,11 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.security.auth.Subject;
 
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -49,7 +51,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElemen
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
@@ -75,7 +79,7 @@ class ExistingSearchTest {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,5);
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
@@ -95,7 +99,6 @@ class ExistingSearchTest {
 		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
 		Assertions.assertEquals(expected, actual);
 		log("\n___FOUND ->  Description: "+actual);
-		try {
 		//Test Search by Creator
 		NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
 		log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
@@ -104,8 +107,25 @@ class ExistingSearchTest {
 		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
 				expPerson, false, true);
 		NaturalPerson actPerson = (NaturalPerson) ((Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
-		Assertions.assertEquals(expected, actual);
+		log("\nCreator\nFOUND -> Creator: "+actPerson.toString());
+		Assertions.assertEquals(expPerson, actPerson);
+			//Test for Publisher
+			LegalPerson expLp = storedMetaData.getElementValue(EnumDublinCoreElements.PUBLISHER);
+			log("\nPublisher\nINSERTED: ->"+expLp.toString());
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.PUBLISHER, expLp, true, true);
+			LegalPerson actLp = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER);
+			log("\nPublisher\nFOUND: ->"+actLp.toString());
+			Assertions.assertEquals(expLp, actLp);
 		log("\n___FOUND ->  Creator: "+actPerson.toString());
+		try {
+//			Subjects subjects = (Subjects)storedMetaData.getElementValue(EnumDublinCoreElements.SUBJECT);
+//			UntypedData expSubj = subjects.iterator().next();
+//			log("\nSubjects\nFOUND -> Subject: "+expSubj.toString());
+//			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, expSubj, true, true);
+//			UntypedData actSubj = ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).getSubjects().iterator().next();
+//			log("\nFOUND -> Subject: "+actSubj.toString());
+//			Assertions.assertEquals(expSubj, actSubj);
+
 		}catch(Exception e) {
 			log("\n####FAIL###### ----------->"+e.getMessage());
 		}

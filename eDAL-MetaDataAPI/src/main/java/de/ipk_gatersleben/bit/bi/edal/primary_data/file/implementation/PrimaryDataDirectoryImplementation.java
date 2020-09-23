@@ -40,6 +40,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -1446,64 +1447,96 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			throws ParseException {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		
 
 		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
-				.get();
-
-		org.apache.lucene.search.Query combinedQuery = null;
-
-		if (fuzzy) {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
-					.matching("*" + naturalPerson.getGivenName() + "*").createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
-					.matching("*" + naturalPerson.getSureName() + "*").createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
-					.matching("*" + naturalPerson.getAddressLine() + "*").createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
-					.matching("*" + naturalPerson.getZip() + "*").createQuery();
-			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
-					.matching("*" + naturalPerson.getCountry() + "*").createQuery();
-
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.should(queryE).createQuery();
-
-		} else {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
-					.matching(naturalPerson.getGivenName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
-					.matching(naturalPerson.getSureName()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
-					.matching(naturalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
-					.matching(naturalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
-					.matching(naturalPerson.getCountry()).createQuery();
-
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.should(queryE).createQuery();
-		}
-
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
-				MyNaturalPerson.class);
-
-		final List<MyNaturalPerson> result = hibernateQuery.list();
-//		ArrayList<Integer> ids = new ArrayList<>();
-//		for(MyNaturalPerson mp : result) {
-//			ids.add(mp.getId());		
+		
+		CriteriaBuilder criteriaBuilder = ftSession.getCriteriaBuilder();
+		CriteriaQuery<MyNaturalPerson> criteriaQuery = criteriaBuilder.createQuery(MyNaturalPerson.class);
+		Root<MyNaturalPerson> root = criteriaQuery.from(MyNaturalPerson.class);
+		Predicate predicateGivenName
+		  = criteriaBuilder.equal(root.get("givenName"), naturalPerson.getGivenName());
+		Predicate predicateSureName
+		  = criteriaBuilder.equal(root.get("sureName"), naturalPerson.getSureName());
+		Predicate predicateAdressLine
+		  = criteriaBuilder.equal(root.get("addressLine"), naturalPerson.getAddressLine());
+		Predicate predicateZip
+		  = criteriaBuilder.equal(root.get("zip"), naturalPerson.getZip());
+		Predicate prediacteCountry
+		  = criteriaBuilder.equal(root.get("country"), naturalPerson.getCountry());
+		Predicate predicateOr = criteriaBuilder.or(predicateGivenName,predicateSureName,predicateAdressLine,predicateZip,prediacteCountry);
+		criteriaQuery.where(predicateOr);
+		List<MyNaturalPerson> result = session.createQuery(criteriaQuery).getResultList();
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
+//				.get();
+//
+//		org.apache.lucene.search.Query combinedQuery = null;
+//
+//		if (fuzzy) {
+//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
+//					.matching("*" + naturalPerson.getGivenName() + "*").createQuery();
+//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
+//					.matching("*" + naturalPerson.getSureName() + "*").createQuery();
+//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
+//					.matching("*" + naturalPerson.getAddressLine() + "*").createQuery();
+//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
+//					.matching("*" + naturalPerson.getZip() + "*").createQuery();
+//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
+//					.matching("*" + naturalPerson.getCountry() + "*").createQuery();
+//
+//			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
+//					.should(queryE).createQuery();
+//
+//		} else {
+//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
+//					.matching(naturalPerson.getGivenName()).createQuery();
+//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
+//					.matching(naturalPerson.getSureName()).createQuery();
+//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
+//					.matching(naturalPerson.getAddressLine()).createQuery();
+//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
+//					.matching(naturalPerson.getZip()).createQuery();
+//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
+//					.matching(naturalPerson.getCountry()).createQuery();
+//
+//			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
+//					.should(queryE).createQuery();
 //		}
-		//search for untypeddata Reports with coreesponding PersonSets
+//		
+//		
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
+//				MyNaturalPerson.class);
+//
+//		final List<MyNaturalPerson> result = hibernateQuery.list();
+
+		ArrayList<Integer> ids = new ArrayList<>();
+		for(MyNaturalPerson mp : result) {
+			ids.add(mp.getId());		
+		}
+		
+		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
+
+		versionSQLQuery.setParameterList("list", ids);
+
+		final List<Integer> versionIDList = versionSQLQuery.list();
+		final List<MyNaturalPerson> result2 = new ArrayList<>();
+		for(Integer i : versionIDList) {
+			MyNaturalPerson np = new MyNaturalPerson();
+			np.setId(i);
+			result2.add(np);
+		}
+		//search for untypeddata Reports with coresponding PersonSets
 
 //		queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyPersons.class)
 //				.get();
 //
 //		combinedQuery = queryBuilder.keyword().wildcard().onField("addressLine")
 //		.matching(naturalPerson.getAddressLine()).createQuery();
-
 		session.close();
-		return result;
+		return result2;
 
 	}
 
@@ -1573,9 +1606,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-//		org.apache.lucene.search.Query query = null;
-//
-//		final FullTextSession ftSession = Search.getFullTextSession(session);
+		org.apache.lucene.search.Query query = null;
+
+		final FullTextSession ftSession = Search.getFullTextSession(session);
 //
 //		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
 //				.get();
@@ -1591,7 +1624,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //		final List<MyUntypedData> result = hibernateQuery.list();
 		//execute logic in between
 		
-		CriteriaBuilder cb = session.getCriteriaBuilder();
+		CriteriaBuilder cb = ftSession.getCriteriaBuilder();
 		CriteriaQuery<MyUntypedData> cr = cb.createQuery(MyUntypedData.class);
 		Root<MyUntypedData> root = cr.from(MyUntypedData.class);
 		if(fuzzy) {
