@@ -15,7 +15,11 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Store;
+import org.hibernate.search.bridge.builtin.LongBridge;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -83,6 +87,7 @@ public final class MyDataSize extends MyUntypedData {
 	 * 
 	 * @return size
 	 */
+	@Field(store = Store.YES, bridge = @FieldBridge(impl = LongBridge.class))
 	public Long getSize() {
 		return size;
 	}

@@ -183,7 +183,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		config.setProperty("hibernate.search.default.indexBase", this.indexDirectory.toString());
 
 		if (!this.isAutoIndexing()) {
-			config.setProperty("hibernate.search.indexing_strategy", "manual");
+			//config.setProperty("hibernate.search.indexing_strategy", "manual");
 		}
 
 		Boolean exists = false;

@@ -23,6 +23,10 @@ import javax.persistence.Id;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Store;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
 

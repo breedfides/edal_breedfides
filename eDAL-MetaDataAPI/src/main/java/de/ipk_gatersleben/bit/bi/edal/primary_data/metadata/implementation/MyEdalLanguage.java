@@ -17,10 +17,14 @@ import java.util.Locale;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
 
 /**
  * Internal representation of {@link EdalLanguage} for persistence with
@@ -67,6 +71,7 @@ public class MyEdalLanguage extends MyUntypedData {
 	/**
 	 * @return the language
 	 */
+	@Field(store = Store.YES, bridge = @FieldBridge(impl = LanguageBridge.class))
 	public Locale getLanguage() {
 		return language;
 	}

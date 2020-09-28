@@ -65,12 +65,15 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
@@ -79,11 +82,14 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDateEvents;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalDateRange;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyLegalPerson;
@@ -419,7 +425,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataFormat.class)
 				.get();
 		if (fuzzy) {
-			query = queryBuilder.keyword().wildcard().onField("mimeType").matching("*" + dataFormat.getMimeType() + "*")
+			query = queryBuilder.keyword().fuzzy().onField("mimeType").matching(dataFormat.getMimeType())
 					.createQuery();
 		} else {
 			query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
@@ -553,13 +559,25 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				datatypeList = this.searchByDateEvents((DateEvents) data);
 			} else if (data.getClass().equals(IdentifierRelation.class)) {
 				datatypeList = this.searchByIdentifierRelation((IdentifierRelation) data, fuzzy);
+			}else if(data.getClass().equals(CheckSumType.class)) {
+				datatypeList = this.searchByCheckSum((CheckSumType)data,fuzzy);
+			}else if(data.getClass().equals(EdalLanguage.class)) {
+				datatypeList = this.searchByEdalLanguage((EdalLanguage)data,fuzzy);
+			}else if(data.getClass().equals(DataSize.class)) {
+				datatypeList = this.searchByDataSize((DataSize)data,fuzzy);
 			}
+
 		} catch (final ParseException e) {
 			throw new PrimaryDataDirectoryException("Unable to find the UntypedData values", e);
 		}
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().debug("Zeit (Search "
 				+ data.getClass().getSimpleName() + "): " + (System.currentTimeMillis() - startTime) + " msec");
 
+		
+		if(element == EnumDublinCoreElements.SUBJECT) {
+			datatypeList = this.mapSubjects(datatypeList);
+		}
+			
 		/** if no results found return empty List */
 		if (datatypeList.isEmpty()) {
 			return new ArrayList<PrimaryDataEntity>();
@@ -769,6 +787,123 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	}
 
+	private List<? extends MyUntypedData> searchByDataSize(DataSize data, boolean fuzzy) {
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+		final FullTextSession ftSession = Search.getFullTextSession(session);
+
+		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataSize.class)
+				.get();
+		org.apache.lucene.search.Query query = null;
+		long size = data.getFileSize();
+		if (fuzzy && size > 0) {
+			query = queryBuilder.range().onField("size").from(size-1).to(size+1).createQuery();
+		} else {
+			query = queryBuilder.range().onField("size").from(size).to(size).createQuery();
+		}
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyDataSize> hibernateQuery = ftSession.createFullTextQuery(query, MyDataSize.class);
+
+		final List<MyDataSize> result = hibernateQuery.list();
+
+		session.close();
+		return result;
+	}
+
+	private List<? extends MyUntypedData> searchByEdalLanguage(EdalLanguage data, boolean fuzzy) {
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+		final FullTextSession ftSession = Search.getFullTextSession(session);
+
+		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyEdalLanguage.class)
+				.get();
+		org.apache.lucene.search.Query query = null;
+		
+		if (fuzzy) {
+			query = queryBuilder.keyword().fuzzy().onField("language").matching(data.toString())
+					.createQuery();
+		} else {
+			query = queryBuilder.keyword().onField("language").matching(data.toString()).createQuery();
+		}
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyEdalLanguage> hibernateQuery = ftSession.createFullTextQuery(query, MyEdalLanguage.class);
+
+		final List<MyEdalLanguage> result = hibernateQuery.list();
+
+		session.close();
+	
+		return result;
+	}
+
+	private List<? extends MyUntypedData> mapSubjects(List<? extends MyUntypedData> datatypeList) {
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		
+		ArrayList<Integer> ids = new ArrayList<>();
+		for(MyUntypedData mp : datatypeList) {
+			ids.add(mp.getId());		
+		}
+		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_SUBJECTS us, TABLE(id BIGINT=(:list))list WHERE us.SUBJECTS_ID = list.id");
+
+		versionSQLQuery.setParameterList("list", ids);
+
+		final List<Integer> versionIDList = versionSQLQuery.list();
+		final List<MyUntypedData> result = new ArrayList<>();
+		for(Integer i : versionIDList) {
+			MyUntypedData np = new MyUntypedData();
+			np.setId(i);
+			result.add(np);
+		}
+
+		session.close();
+
+		return result;
+	}
+
+	private List<? extends MyUntypedData> searchByCheckSum(CheckSumType data, boolean fuzzy) {
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+		org.apache.lucene.search.Query queryAlgorithm = null;
+		org.apache.lucene.search.Query queryChecksum = null;
+
+		final FullTextSession ftSession = Search.getFullTextSession(session);
+
+		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyCheckSumType.class).get();
+
+		queryAlgorithm = queryBuilder.keyword().onField("algorithm").matching(data.getAlgorithm().toString().toLowerCase())
+				.createQuery();
+		queryChecksum = queryBuilder.keyword().onField("checkSum").matching(data.getCheckSum().toString().toLowerCase())
+				.createQuery();
+		
+		org.apache.lucene.search.Query combinedQuery = queryBuilder.bool().must(queryAlgorithm).must(queryChecksum).createQuery();
+
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyCheckSumType> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyCheckSumType.class);
+		final List<MyCheckSumType> result = hibernateQuery.list();
+		
+		ArrayList<Integer> ids = new ArrayList<>();
+		for(MyCheckSumType mp : result) {
+			ids.add(mp.getId());		
+		}
+		
+		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_CHECKSUM us, TABLE(id BIGINT=(:list))list WHERE us.DATASET_ID = list.id");
+
+		versionSQLQuery.setParameterList("list", ids);
+
+		final List<Integer> versionIDList = versionSQLQuery.list();
+		final List<MyCheckSumType> result2 = new ArrayList<>();
+		for(Integer i : versionIDList) {
+			MyCheckSumType np = new MyCheckSumType();
+			np.setId(i);
+			result2.add(np);
+		}
+
+		session.close();
+
+		return result2;
+	}
+
 	/**
 	 * Internal function to search for a {@link EdalDate}.
 	 * 
@@ -796,7 +931,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 			/** note: use DECADE(date) if the database-SQL support */
 
-			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startData"));
+			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
 
 			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
 					Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
@@ -808,46 +943,46 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				if (precission >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
 					Expression<String> monthExpression = builder.function("MONTH", String.class,
-							rootDate.get("startData"));
+							rootDate.get("startDate"));
 
 					dataCriteria.where(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
 
 					if (precission >= EdalDatePrecision.DAY.ordinal()) {
 
 						Expression<String> dayExpression = builder.function("DAY", String.class,
-								rootDate.get("startData"));
+								rootDate.get("startDate"));
 
 						dataCriteria.where(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
 
 						if (precission >= EdalDatePrecision.HOUR.ordinal()) {
 
 							Expression<String> hourExpression = builder.function("HOUR", String.class,
-									rootDate.get("startData"));
+									rootDate.get("startDate"));
 
 							dataCriteria.where(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
 
 							if (precission >= EdalDatePrecision.MINUTE.ordinal()) {
 
 								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-										rootDate.get("startData"));
+										rootDate.get("startDate"));
 
 								dataCriteria.where(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
 
 								if (precission >= EdalDatePrecision.SECOND.ordinal()) {
 
 									Expression<String> secondExpression = builder.function("SECOND", String.class,
-											rootDate.get("startData"));
+											rootDate.get("startDate"));
 
 									dataCriteria.where(builder.equal(secondExpression, date.get(Calendar.SECOND)));
 
-									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
-
-										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-												String.class, rootDate.get("startData"));
-
-										dataCriteria.where(
-												builder.equal(millisecondExpression, date.get(Calendar.MILLISECOND)));
-									}
+//									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
+//
+//										Expression<String> millisecondExpression = builder.function("MILISECOND",
+//												String.class, rootDate.get("startDate"));
+//
+//										dataCriteria.where(
+//												builder.equal(millisecondExpression, date.get(Calendar.MILLISECOND)));
+//									}
 								}
 							}
 						}
@@ -896,7 +1031,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 			/** note: use DECADE(date) if the database-SQL support */
 
-			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startData"));
+			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
 
 			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
 					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
@@ -908,46 +1043,46 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
 					Expression<String> monthExpression = builder.function("MONTH", String.class,
-							rootDate.get("startData"));
+							rootDate.get("startDate"));
 
 					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
 
 					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
 
 						Expression<String> dayExpression = builder.function("DAY", String.class,
-								rootDate.get("startData"));
+								rootDate.get("startDate"));
 
 						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
 
 						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
 
 							Expression<String> hourExpression = builder.function("HOUR", String.class,
-									rootDate.get("startData"));
+									rootDate.get("startDate"));
 
 							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
 
 							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
 
 								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-										rootDate.get("startData"));
+										rootDate.get("startDate"));
 
 								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
 
 								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
 
 									Expression<String> secondExpression = builder.function("SECOND", String.class,
-											rootDate.get("startData"));
+											rootDate.get("startDate"));
 
 									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
 
-									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
-
-										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-												String.class, rootDate.get("startData"));
-
-										dataCriteria.where(builder.equal(millisecondExpression,
-												dateStart.get(Calendar.MILLISECOND)));
-									}
+//									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
+//
+//										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+//												String.class, rootDate.get("startDate"));
+//
+//										dataCriteria.where(builder.equal(millisecondExpression,
+//												dateStart.get(Calendar.MILLISECOND)));
+//									}
 								}
 							}
 						}
@@ -1004,14 +1139,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
 
-									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
-
-										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-												String.class, rootDate.get("endDate"));
-
-										dataCriteria.where(builder.equal(millisecondExpression,
-												dateEnd.get(Calendar.MILLISECOND)));
-									}
+//									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
+//
+//										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+//												String.class, rootDate.get("endDate"));
+//
+//										dataCriteria.where(builder.equal(millisecondExpression,
+//												dateEnd.get(Calendar.MILLISECOND)));
+//									}
 								}
 							}
 						}
@@ -1048,7 +1183,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyIdentifier.class)
 				.get();
 		if (fuzzy) {
-			query = queryBuilder.keyword().wildcard().onField("identifier").matching("*" + identifier.getID() + "*")
+			query = queryBuilder.keyword().fuzzy().onField("identifier").matching(identifier.getID())
 					.createQuery();
 		} else {
 			query = queryBuilder.keyword().onField("identifier").matching(identifier.getID()).createQuery();
@@ -1135,9 +1270,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
 			} else {
 				query = queryBuilder
-						.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
+						.keyword().fuzzy().onFields("string", "givenName", "sureName", "country", "zip",
 								"addressLine", "id", "identifier", "mimeType")
-						.matching("*" + keyword + "*").createQuery();
+						.matching(keyword).createQuery();
 			}
 		} else {
 			query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
@@ -1377,14 +1512,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		org.apache.lucene.search.Query combinedQuery = null;
 
 		if (fuzzy) {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("legalName")
-					.matching("*" + legalPerson.getLegalName() + "*").createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("addressLine")
-					.matching("*" + legalPerson.getAddressLine() + "*").createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("zip")
-					.matching("*" + legalPerson.getZip() + "*").createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("country")
-					.matching("*" + legalPerson.getCountry() + "*").createQuery();
+			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("legalName")
+					.matching(legalPerson.getLegalName()).createQuery();
+			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("addressLine")
+					.matching(legalPerson.getAddressLine()).createQuery();
+			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("zip")
+					.matching(legalPerson.getZip()).createQuery();
+			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("country")
+					.matching(legalPerson.getCountry()).createQuery();
 
 			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
 					.createQuery();
@@ -1451,65 +1586,64 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final FullTextSession ftSession = Search.getFullTextSession(session);
 		
-		CriteriaBuilder criteriaBuilder = ftSession.getCriteriaBuilder();
-		CriteriaQuery<MyNaturalPerson> criteriaQuery = criteriaBuilder.createQuery(MyNaturalPerson.class);
-		Root<MyNaturalPerson> root = criteriaQuery.from(MyNaturalPerson.class);
-		Predicate predicateGivenName
-		  = criteriaBuilder.equal(root.get("givenName"), naturalPerson.getGivenName());
-		Predicate predicateSureName
-		  = criteriaBuilder.equal(root.get("sureName"), naturalPerson.getSureName());
-		Predicate predicateAdressLine
-		  = criteriaBuilder.equal(root.get("addressLine"), naturalPerson.getAddressLine());
-		Predicate predicateZip
-		  = criteriaBuilder.equal(root.get("zip"), naturalPerson.getZip());
-		Predicate prediacteCountry
-		  = criteriaBuilder.equal(root.get("country"), naturalPerson.getCountry());
-		Predicate predicateOr = criteriaBuilder.or(predicateGivenName,predicateSureName,predicateAdressLine,predicateZip,prediacteCountry);
-		criteriaQuery.where(predicateOr);
-		List<MyNaturalPerson> result = session.createQuery(criteriaQuery).getResultList();
-//
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
-//				.get();
-//
-//		org.apache.lucene.search.Query combinedQuery = null;
-//
-//		if (fuzzy) {
-//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
-//					.matching("*" + naturalPerson.getGivenName() + "*").createQuery();
-//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
-//					.matching("*" + naturalPerson.getSureName() + "*").createQuery();
-//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
-//					.matching("*" + naturalPerson.getAddressLine() + "*").createQuery();
-//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
-//					.matching("*" + naturalPerson.getZip() + "*").createQuery();
-//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
-//					.matching("*" + naturalPerson.getCountry() + "*").createQuery();
-//
-//			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-//					.should(queryE).createQuery();
-//
-//		} else {
-//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
-//					.matching(naturalPerson.getGivenName()).createQuery();
-//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
-//					.matching(naturalPerson.getSureName()).createQuery();
-//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
-//					.matching(naturalPerson.getAddressLine()).createQuery();
-//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
-//					.matching(naturalPerson.getZip()).createQuery();
-//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
-//					.matching(naturalPerson.getCountry()).createQuery();
-//
-//			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-//					.should(queryE).createQuery();
-//		}
-//		
-//		
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
-//				MyNaturalPerson.class);
-//
-//		final List<MyNaturalPerson> result = hibernateQuery.list();
+//		CriteriaBuilder criteriaBuilder = ftSession.getCriteriaBuilder();
+//		CriteriaQuery<MyNaturalPerson> criteriaQuery = criteriaBuilder.createQuery(MyNaturalPerson.class);
+//		Root<MyNaturalPerson> root = criteriaQuery.from(MyNaturalPerson.class);
+//		Predicate predicateGivenName
+//		  = criteriaBuilder.equal(root.get("givenName"), naturalPerson.getGivenName());
+//		Predicate predicateSureName
+//		  = criteriaBuilder.equal(root.get("sureName"), naturalPerson.getSureName());
+//		Predicate predicateAdressLine
+//		  = criteriaBuilder.equal(root.get("addressLine"), naturalPerson.getAddressLine());
+//		Predicate predicateZip
+//		  = criteriaBuilder.equal(root.get("zip"), naturalPerson.getZip());
+//		Predicate prediacteCountry
+//		  = criteriaBuilder.equal(root.get("country"), naturalPerson.getCountry());
+//		Predicate predicateOr = criteriaBuilder.or(predicateGivenName,predicateSureName,predicateAdressLine,predicateZip,prediacteCountry);
+//		criteriaQuery.where(predicateOr);
+//		List<MyNaturalPerson> result = session.createQuery(criteriaQuery).getResultList();
+
+		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
+				.get();
+
+		org.apache.lucene.search.Query combinedQuery = null;
+
+		if (fuzzy) {
+			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("givenName")
+					.matching(naturalPerson.getGivenName()).createQuery();
+			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("sureName")
+					.matching(naturalPerson.getSureName()).createQuery();
+			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("addressLine")
+					.matching(naturalPerson.getAddressLine()).createQuery();
+			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("zip")
+					.matching(naturalPerson.getZip()).createQuery();
+			org.apache.lucene.search.Query queryE = queryBuilder.keyword().fuzzy().onField("country")
+					.matching(naturalPerson.getCountry()).createQuery();
+
+			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
+					.should(queryE).createQuery();
+
+		} else {
+			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
+					.matching(naturalPerson.getGivenName()).createQuery();
+			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
+					.matching(naturalPerson.getSureName()).createQuery();
+			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
+					.matching(naturalPerson.getAddressLine()).createQuery();
+			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
+					.matching(naturalPerson.getZip()).createQuery();
+			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
+					.matching(naturalPerson.getCountry()).createQuery();
+
+			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
+					.should(queryE).createQuery();
+		}
+
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
+				MyNaturalPerson.class);
+
+		final List<MyNaturalPerson> result = hibernateQuery.list();
 
 		ArrayList<Integer> ids = new ArrayList<>();
 		for(MyNaturalPerson mp : result) {
@@ -1609,33 +1743,33 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		org.apache.lucene.search.Query query = null;
 
 		final FullTextSession ftSession = Search.getFullTextSession(session);
-//
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-//				.get();
-//		if (fuzzy) {
-//			query = queryBuilder.keyword().wildcard().onField("string").matching("*" + data.getString() + "*")
-//					.createQuery();
-//		} else {
-//			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
-//		}
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
-//
-//		final List<MyUntypedData> result = hibernateQuery.list();
-		//execute logic in between
-		
-		CriteriaBuilder cb = ftSession.getCriteriaBuilder();
-		CriteriaQuery<MyUntypedData> cr = cb.createQuery(MyUntypedData.class);
-		Root<MyUntypedData> root = cr.from(MyUntypedData.class);
-		if(fuzzy) {
-			cr.select(root).where(cb.equal(root.get("string"), data.getString()));
-		}else {
-			cr.select(root).where(cb.like(root.get("string"),"%"+ data.getString()+"%"));
+
+		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
+				.get();
+		if (fuzzy) {
+			query = queryBuilder.keyword().fuzzy().onField("string").matching(data.getString())
+					.createQuery();
+		} else {
+			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
 		}
-		Query<MyUntypedData> criteriaquery = session.createQuery(cr);
-		List<MyUntypedData> result = criteriaquery.getResultList();
-		long end = System.currentTimeMillis();
-		System.out.println("DEBUG: Logic A took " + ((end - start)) + " MilliSeconds");
+		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
+
+		final List<MyUntypedData> result = hibernateQuery.list();
+		//execute logic in between
+//		
+//		CriteriaBuilder cb = ftSession.getCriteriaBuilder();
+//		CriteriaQuery<MyUntypedData> cr = cb.createQuery(MyUntypedData.class);
+//		Root<MyUntypedData> root = cr.from(MyUntypedData.class);
+//		if(fuzzy) {
+//			cr.select(root).where(cb.equal(root.get("string"), data.getString()));
+//		}else {
+//			cr.select(root).where(cb.like(root.get("string"),"%"+ data.getString()+"%"));
+//		}
+//		Query<MyUntypedData> criteriaquery = session.createQuery(cr);
+//		List<MyUntypedData> result = criteriaquery.getResultList();
+//		long end = System.currentTimeMillis();
+//		System.out.println("DEBUG: Logic A took " + ((end - start)) + " MilliSeconds");
 
 		session.close();
 
