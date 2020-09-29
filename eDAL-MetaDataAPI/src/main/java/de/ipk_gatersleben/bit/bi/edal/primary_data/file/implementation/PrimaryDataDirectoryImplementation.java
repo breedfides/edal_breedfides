@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,9 +37,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.ParameterExpression;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -50,6 +55,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.SortNatural;
 import org.hibernate.criterion.CriteriaSpecification;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
 import org.hibernate.search.FullTextSession;
@@ -94,6 +100,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIde
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyIdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyLegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyNaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPersons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
@@ -1585,23 +1592,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		
 
 		final FullTextSession ftSession = Search.getFullTextSession(session);
-		
-//		CriteriaBuilder criteriaBuilder = ftSession.getCriteriaBuilder();
-//		CriteriaQuery<MyNaturalPerson> criteriaQuery = criteriaBuilder.createQuery(MyNaturalPerson.class);
-//		Root<MyNaturalPerson> root = criteriaQuery.from(MyNaturalPerson.class);
-//		Predicate predicateGivenName
-//		  = criteriaBuilder.equal(root.get("givenName"), naturalPerson.getGivenName());
-//		Predicate predicateSureName
-//		  = criteriaBuilder.equal(root.get("sureName"), naturalPerson.getSureName());
-//		Predicate predicateAdressLine
-//		  = criteriaBuilder.equal(root.get("addressLine"), naturalPerson.getAddressLine());
-//		Predicate predicateZip
-//		  = criteriaBuilder.equal(root.get("zip"), naturalPerson.getZip());
-//		Predicate prediacteCountry
-//		  = criteriaBuilder.equal(root.get("country"), naturalPerson.getCountry());
-//		Predicate predicateOr = criteriaBuilder.or(predicateGivenName,predicateSureName,predicateAdressLine,predicateZip,prediacteCountry);
-//		criteriaQuery.where(predicateOr);
-//		List<MyNaturalPerson> result = session.createQuery(criteriaQuery).getResultList();
 
 		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
 				.get();
@@ -1644,33 +1634,40 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				MyNaturalPerson.class);
 
 		final List<MyNaturalPerson> result = hibernateQuery.list();
-
-		ArrayList<Integer> ids = new ArrayList<>();
-		for(MyNaturalPerson mp : result) {
-			ids.add(mp.getId());		
-		}
 		
-		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
-
-		versionSQLQuery.setParameterList("list", ids);
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
-		final List<MyNaturalPerson> result2 = new ArrayList<>();
-		for(Integer i : versionIDList) {
-			MyNaturalPerson np = new MyNaturalPerson();
-			np.setId(i);
-			result2.add(np);
-		}
-		//search for untypeddata Reports with coresponding PersonSets
-
-//		queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyPersons.class)
-//				.get();
+//		ArrayList<Integer> ids = new ArrayList<>();
+//		for(MyNaturalPerson mp : result) {
+//			ids.add(mp.getId());		
+//		}
+//		
+//		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+//				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
 //
-//		combinedQuery = queryBuilder.keyword().wildcard().onField("addressLine")
-//		.matching(naturalPerson.getAddressLine()).createQuery();
+//		versionSQLQuery.setParameterList("list", ids);
+//
+//		final List<Integer> versionIDList = versionSQLQuery.list();
+//		final List<MyNaturalPerson> result2 = new ArrayList<>();
+//		for(Integer i : versionIDList) {
+//			MyNaturalPerson np = new MyNaturalPerson();
+//			np.setId(i);
+//			result2.add(np);
+//		}
+		//search for untypeddata Reports with coresponding PersonSets
+		
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<MyPersons> query = builder.createQuery(MyPersons.class);
+		Root<MyPersons> root = query.from(MyPersons.class);
+		Join<MyPersons, MyNaturalPerson> join = root.join("persons");
+		ParameterExpression<Collection> persons = builder.parameter(Collection.class);
+		query.where(join.in(persons));
+		TypedQuery<MyPersons> tq = session.createQuery(query);
+		List<?> resultList = tq.setParameter(persons, result).getResultList();
+		List<MyNaturalPerson> finalresult = (List<MyNaturalPerson>)resultList;
+		
+		
 		session.close();
-		return result2;
+		return finalresult;
 
 	}
 
@@ -1756,20 +1753,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
 
 		final List<MyUntypedData> result = hibernateQuery.list();
-		//execute logic in between
-//		
-//		CriteriaBuilder cb = ftSession.getCriteriaBuilder();
-//		CriteriaQuery<MyUntypedData> cr = cb.createQuery(MyUntypedData.class);
-//		Root<MyUntypedData> root = cr.from(MyUntypedData.class);
-//		if(fuzzy) {
-//			cr.select(root).where(cb.equal(root.get("string"), data.getString()));
-//		}else {
-//			cr.select(root).where(cb.like(root.get("string"),"%"+ data.getString()+"%"));
-//		}
-//		Query<MyUntypedData> criteriaquery = session.createQuery(cr);
-//		List<MyUntypedData> result = criteriaquery.getResultList();
-//		long end = System.currentTimeMillis();
-//		System.out.println("DEBUG: Logic A took " + ((end - start)) + " MilliSeconds");
 
 		session.close();
 

@@ -56,6 +56,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
@@ -111,6 +112,8 @@ class ExistingSearchTest {
 		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
 		Assertions.assertEquals(expected, actual);
 		log("\n___FOUND ->  Description: "+actual);
+		
+		
 		//Test Search by Creator
 //		NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
 //		log("\nLISTE VON PERSONEN ANZAHL: "+((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().size());
@@ -154,42 +157,42 @@ class ExistingSearchTest {
 //		for(EdalDate e : actDates)
 //			log("\nFOUND DATE ->"+e.toString());
 //		Assertions.assertEquals(storedMetaData.getElementValue(EnumDublinCoreElements.DATE), actDates);
-		try {
+		
 		//RELATION
-			IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
-			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
-			Assertions.assertEquals(entities.get(entities.size()-1), results1.get(0));
+		IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
+		Assertions.assertEquals(entities.get(entities.size()-1), results1.get(0));
+		
+		//CHecksum
+		CheckSumType expChecksum = ((CheckSum)storedMetaData.getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next();
+		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CHECKSUM, expChecksum, false, true);
+		Assertions.assertEquals(expChecksum, ((CheckSum)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next());
+		
+		//Subject
+		Subjects expSubjects = entities.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT);
+		UntypedData expSubj = expSubjects.iterator().next();
+		String fuzzy = expSubj.getString();
+		fuzzy = fuzzy.substring(1, fuzzy.length());
+		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData(fuzzy), true, true);
+		Assertions.assertEquals(expSubj, ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).iterator().next());
+		try {
+			//Lnaguage
+			EdalLanguage expLang = (EdalLanguage)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.LANGUAGE, expLang, false, true);
+			EdalLanguage actLang = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
+			Assertions.assertEquals(expLang, actLang);
 			
-			CheckSumType expChecksum = ((CheckSum)storedMetaData.getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next();
-			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CHECKSUM, expChecksum, false, true);
-			Assertions.assertEquals(expChecksum, ((CheckSum)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next());
+			//Datasize
+			DataSize expSize = (DataSize)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SIZE, expSize, false, true);
+			DataSize actSize = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
+			Assertions.assertEquals(expSize, actSize);
 			
-			Subjects expSubjects = entities.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT);
-			UntypedData expSubj = expSubjects.iterator().next();
-			String fuzzy = expSubj.getString();
-			fuzzy = fuzzy.substring(1, fuzzy.length());
-			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData(fuzzy), true, true);
-			Assertions.assertEquals(expSubj, ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).iterator().next());
-//			Calendar lastEvents = (Calendar)date.getStartDate().clone();
-//			lastEvents.set(Calendar.HOUR, 9);
-//			EdalDateRange range = new EdalDateRange(lastEvents, EdalDatePrecision.SECOND, date.getStartDate(), EdalDatePrecision.SECOND, actual);
-//			log("\nManipluiertes Date: "+range.toString());
-//			expdate = new DateEvents("dates");
-//			expdate.add(range);
-//			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
-//			actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
-//			for(EdalDate e : actDates)
-//				log("\nDATE: "+e.toString());
 			
+			String subfile = StoreDataScript.getSubfileTitle(rootDirectory);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(subfile), false, true);
+			log("\nSUBDIRECTORY FILE "+results1.get(0).toString());
 			//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
-			//Test for Identifier
-//			Subjects subjects = (Subjects)storedMetaData.getElementValue(EnumDublinCoreElements.SUBJECT);
-//			UntypedData expSubj = subjects.iterator().next();
-//			log("\nSubjects\nFOUND -> Subject: "+expSubj.toString());
-//			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, expSubj, true, true);
-//			UntypedData actSubj = ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).getSubjects().iterator().next();
-//			log("\nFOUND -> Subject: "+actSubj.toString());
-//			Assertions.assertEquals(expSubj, actSubj);
 
 		}catch(Exception e) {
 			e.printStackTrace();

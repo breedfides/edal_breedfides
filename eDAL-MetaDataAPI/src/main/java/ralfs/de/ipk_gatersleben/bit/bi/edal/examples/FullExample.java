@@ -74,14 +74,14 @@ public class FullExample {
 		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
 		log("\n___FOUND ->  Description: "+actual);
 		//Test Search by Creator
-//		NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
-//		log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
-//		Persons persons = new Persons();
-//		persons.add(expPerson);
-//		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
-//				expPerson, false, true);
-//		NaturalPerson actPerson = (NaturalPerson) ((Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
-//		log("\nCreator\nFOUND -> Creator: "+actPerson.toString());
+		NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+		log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
+		Persons persons = new Persons();
+		persons.add(expPerson);
+		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
+				expPerson, false, true);
+		NaturalPerson actPerson = (NaturalPerson) ((Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+		log("\nCreator\nFOUND -> Creator: "+actPerson.toString());
 		//Test for Publisher
 		LegalPerson expLp = storedMetaData.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		log("\nPublisher\nINSERTED: ->"+expLp.toString());

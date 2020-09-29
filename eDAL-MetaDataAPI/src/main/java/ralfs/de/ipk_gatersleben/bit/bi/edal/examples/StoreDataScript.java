@@ -18,6 +18,7 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -29,6 +30,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
@@ -40,6 +42,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
 
 public class StoreDataScript {
 	
@@ -62,20 +65,16 @@ public class StoreDataScript {
 	        String description = words.get(random.nextInt(countWords));
 	        String firstName = names.get(random.nextInt(countNames));
 	        String lastName = names.get(random.nextInt(countNames));
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("Prima111ryD1ataile."+i);
-			if(i == 0) {
-				Path pathToRessource = Paths.get(System.getProperty("user.home")+"/unbenannt(2).png");
-				FileInputStream fin = new FileInputStream(pathToRessource.toFile());
-				entity.store(fin);
-				fin.close();
-			}
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimaryDataileN."+i);
 			MetaData metadata = entity.getMetaData();
 			//metadata.setElementValue(EnumDublinCoreElements.FORMAT, new DataType(EnumDCMIDataType.IMAGE));
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson(firstName, lastName, words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)));
+			NaturalPerson np = new NaturalPerson(firstName, lastName, words.get(random.nextInt(countWords)),
+					words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson(names.get(random.nextInt(countNames)), description, Integer.toString(random.nextInt(countWords)), words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(names.get(random.nextInt(countNames)),
+					description, Integer.toString(random.nextInt(countWords)), words.get(random.nextInt(countWords))));
 //			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("subject"+words.get(random.nextInt(countWords))));
@@ -88,15 +87,38 @@ public class StoreDataScript {
 			
 		}
 		PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("entitiywithreference:"+words.get(random.nextInt(countWords)));
+		Path pathToRessource = Paths.get("src/test/resources/Unbenannt.png");
+		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
+		entity.store(fin);
+		fin.close();
 		IdentifierRelation relation = new IdentifierRelation();
 		relation.add(referenceIdentifier);
 		MetaData referenceMetaData = entity.getMetaData();
 		referenceMetaData.setElementValue(EnumDublinCoreElements.RELATION, relation);
+		EdalLanguage lang = new EdalLanguage(Locale.CHINA);
+		referenceMetaData.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		entity.setMetaData(referenceMetaData);
 		files.add(entity);
 		long stopTime = System.nanoTime()-startTime;
 		System.out.println("Zeit zum speichern: "+((double)stopTime / 1_000_000_000.0));
 		return files;
+	}
+	
+	public static String getSubfileTitle(PrimaryDataDirectory root) throws Exception {
+		ArrayList<String> names = getList("src/test/resources/names.txt");
+		PrimaryDataDirectory subdir;
+		try {
+			subdir = root.createPrimaryDataDirectory("subdirectory");
+		} catch (PrimaryDataDirectoryException e) {
+			subdir = (PrimaryDataDirectory) root.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("subdirectory"), false, true).get(0);
+		}
+		Random random = new Random();
+		String name = "subfile"+names.get(random.nextInt(names.size()));
+		PrimaryDataFile subfile = subdir.createPrimaryDataFile("subfile"+name);
+		MetaData submetadata = subfile.getMetaData();
+		submetadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(name));
+		subfile.setMetaData(submetadata);
+		return name;
 	}
 	
 	
