@@ -102,6 +102,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyLeg
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyNaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPersons;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
@@ -582,7 +583,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		
 		if(element == EnumDublinCoreElements.SUBJECT) {
-			datatypeList = this.mapSubjects(datatypeList);
+			datatypeList = this.mapCollections(datatypeList, MySubjects.class, "subjects");
 		}
 			
 		/** if no results found return empty List */
@@ -842,29 +843,22 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		return result;
 	}
 
-	private List<? extends MyUntypedData> mapSubjects(List<? extends MyUntypedData> datatypeList) {
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+	private List<? extends MyUntypedData> mapCollections(List<? extends MyUntypedData> datatypeList, Class<?> collectionClass, String setName) {
 		
-		ArrayList<Integer> ids = new ArrayList<>();
-		for(MyUntypedData mp : datatypeList) {
-			ids.add(mp.getId());		
-		}
-		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_SUBJECTS us, TABLE(id BIGINT=(:list))list WHERE us.SUBJECTS_ID = list.id");
-
-		versionSQLQuery.setParameterList("list", ids);
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
-		final List<MyUntypedData> result = new ArrayList<>();
-		for(Integer i : versionIDList) {
-			MyUntypedData np = new MyUntypedData();
-			np.setId(i);
-			result.add(np);
-		}
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();	
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<?> query = builder.createQuery(collectionClass);
+		Root<?> root = query.from(collectionClass);
+		Join<?, ?> join = root.join(setName);
+		ParameterExpression<Collection> set = builder.parameter(Collection.class);
+		query.where(join.in(set));
+		TypedQuery<?> tq = session.createQuery(query);
+		List<?> resultList = tq.setParameter(set, datatypeList).getResultList();
+		List<? extends MyUntypedData> finalresult = (List<? extends MyUntypedData>)resultList;
 
 		session.close();
 
-		return result;
+		return finalresult;
 	}
 
 	private List<? extends MyUntypedData> searchByCheckSum(CheckSumType data, boolean fuzzy) {
@@ -1655,7 +1649,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		//search for untypeddata Reports with coresponding PersonSets
 		
 		final CriteriaBuilder builder = session.getCriteriaBuilder();
-
 		CriteriaQuery<MyPersons> query = builder.createQuery(MyPersons.class);
 		Root<MyPersons> root = query.from(MyPersons.class);
 		Join<MyPersons, MyNaturalPerson> join = root.join("persons");

@@ -45,7 +45,6 @@ public class CalculateDirectorySizeThread extends EdalThread {
 	private static final int INTERVAL_TO_REPEAT_JOB = 24;
 
 	private static Scheduler scheduler;
-
 	public static Map<String, Long> directorySizes = null;
 	public static Map<String, String> directoryFiles = null;
 	public static long totalVolumeDataStock = 0;

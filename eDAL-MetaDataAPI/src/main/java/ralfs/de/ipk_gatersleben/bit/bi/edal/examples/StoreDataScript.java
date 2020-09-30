@@ -83,6 +83,7 @@ public class StoreDataScript {
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
 			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
+			Thread.sleep(2000);
 			files.add(entity);
 			
 		}
