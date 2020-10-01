@@ -88,6 +88,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataFormat;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataSize;
@@ -882,27 +883,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final Query<MyCheckSumType> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyCheckSumType.class);
 		final List<MyCheckSumType> result = hibernateQuery.list();
 		
-		ArrayList<Integer> ids = new ArrayList<>();
-		for(MyCheckSumType mp : result) {
-			ids.add(mp.getId());		
-		}
-		
-		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_CHECKSUM us, TABLE(id BIGINT=(:list))list WHERE us.DATASET_ID = list.id");
+		List<? extends MyUntypedData> datatypeList = this.mapCollections(result, MyCheckSum.class, "dataSet");
 
-		versionSQLQuery.setParameterList("list", ids);
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
-		final List<MyCheckSumType> result2 = new ArrayList<>();
-		for(Integer i : versionIDList) {
-			MyCheckSumType np = new MyCheckSumType();
-			np.setId(i);
-			result2.add(np);
-		}
-
-		session.close();
-
-		return result2;
+		return datatypeList;
 	}
 
 	/**
