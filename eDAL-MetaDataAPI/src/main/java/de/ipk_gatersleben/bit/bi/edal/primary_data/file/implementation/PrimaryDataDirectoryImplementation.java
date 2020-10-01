@@ -602,7 +602,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		
+//		long s = System.currentTimeMillis();
+//		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//		CriteriaQuery<PrimaryDataEntityVersionImplementation> query = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//		Root<PrimaryDataEntityVersionImplementation> root = query.from(PrimaryDataEntityVersionImplementation.class);
+//		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
+//		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
+//		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
+//		query.where(chainedJoin.in(persons));
+//		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(query);
+//		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
+//		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
+//		List<Integer> versionIDList = new ArrayList<>();
+//		long f = System.currentTimeMillis();
+//		long timeElapsed = f - s;
+//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
+//		for(PrimaryDataEntityVersionImplementation version : finalresult) {
+//			versionIDList.add(version.getId());
+//		}
 		final Query<Integer> versionSQLQuery = session
 				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
 						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
@@ -905,7 +922,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final int precission = edalDate.getStartPrecision().ordinal();
 		final Calendar date = edalDate.getStartDate();
-
+		
+		ArrayList<Predicate> predicates = new ArrayList<>();
 		if (precission == EdalDatePrecision.CENTURY.ordinal()) {
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
 					.warn("no Dates with CENTURY Precission allowed");
@@ -916,48 +934,47 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			/** note: use DECADE(date) if the database-SQL support */
 
 			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
-
-			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+			predicates.add(builder.equal(builder.substring(yearExpression, 1, 3),
 					Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
 
 			if (precission >= EdalDatePrecision.YEAR.ordinal()) {
 
-				dataCriteria.where(builder.equal(yearExpression, date.get(Calendar.YEAR)));
+				predicates.add(builder.equal(yearExpression, date.get(Calendar.YEAR)));
 
 				if (precission >= EdalDatePrecision.MONTH.ordinal()) {
 					/** very important: Calendar count months from 0-11 */
 					Expression<String> monthExpression = builder.function("MONTH", String.class,
 							rootDate.get("startDate"));
 
-					dataCriteria.where(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
+					predicates.add(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
 
 					if (precission >= EdalDatePrecision.DAY.ordinal()) {
 
 						Expression<String> dayExpression = builder.function("DAY", String.class,
 								rootDate.get("startDate"));
 
-						dataCriteria.where(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
+						predicates.add(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
 
 						if (precission >= EdalDatePrecision.HOUR.ordinal()) {
 
 							Expression<String> hourExpression = builder.function("HOUR", String.class,
 									rootDate.get("startDate"));
 
-							dataCriteria.where(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
+							predicates.add(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
 
 							if (precission >= EdalDatePrecision.MINUTE.ordinal()) {
 
 								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
 										rootDate.get("startDate"));
 
-								dataCriteria.where(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
+								predicates.add(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
 
 								if (precission >= EdalDatePrecision.SECOND.ordinal()) {
 
 									Expression<String> secondExpression = builder.function("SECOND", String.class,
 											rootDate.get("startDate"));
 
-									dataCriteria.where(builder.equal(secondExpression, date.get(Calendar.SECOND)));
+									predicates.add(builder.equal(secondExpression, date.get(Calendar.SECOND)));
 
 //									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
 //
@@ -974,7 +991,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				}
 			}
 		}
-
+		Predicate finalQuery = builder.and(predicates.toArray(new Predicate[0]));
+		dataCriteria.where(finalQuery);
 		final List<MyEdalDate> result = session.createQuery(dataCriteria).list();
 		session.close();
 
@@ -1010,135 +1028,139 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			return new ArrayList<MyEdalDateRange>();
 
 		}
-
-		if (precissionStart >= EdalDatePrecision.DECADE.ordinal()) {
-
-			/** note: use DECADE(date) if the database-SQL support */
-
-			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
-
-			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
-					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
-
-			if (precissionStart >= EdalDatePrecision.YEAR.ordinal()) {
-
-				dataCriteria.where(builder.equal(yearExpression, dateStart.get(Calendar.YEAR)));
-
-				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
-					/** very important: Calendar count months from 0-11 */
-					Expression<String> monthExpression = builder.function("MONTH", String.class,
-							rootDate.get("startDate"));
-
-					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
-
-					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
-
-						Expression<String> dayExpression = builder.function("DAY", String.class,
-								rootDate.get("startDate"));
-
-						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
-
-						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
-
-							Expression<String> hourExpression = builder.function("HOUR", String.class,
-									rootDate.get("startDate"));
-
-							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
-
-							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
-
-								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-										rootDate.get("startDate"));
-
-								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
-
-								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
-
-									Expression<String> secondExpression = builder.function("SECOND", String.class,
-											rootDate.get("startDate"));
-
-									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
-
-//									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
+		ArrayList<Predicate> predicates = new ArrayList<>();
+		predicates.add(builder.lessThanOrEqualTo(rootDate.<Calendar>get("startDate"), edalDateRange.getStartDate()));
+		predicates.add(builder.greaterThanOrEqualTo(rootDate.<Calendar>get("endDate"), edalDateRange.getEndDate()));
 //
-//										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-//												String.class, rootDate.get("startDate"));
+//		if (precissionStart >= EdalDatePrecision.DECADE.ordinal()) {
 //
-//										dataCriteria.where(builder.equal(millisecondExpression,
-//												dateStart.get(Calendar.MILLISECOND)));
-//									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		if (precissionEnd >= EdalDatePrecision.DECADE.ordinal()) {
-
-			/** note: use DECADE(date) if the database-SQL support */
-
-			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("endDate"));
-
-			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
-					Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
-
-			if (precissionEnd >= EdalDatePrecision.YEAR.ordinal()) {
-
-				dataCriteria.where(builder.equal(yearExpression, dateEnd.get(Calendar.YEAR)));
-
-				if (precissionEnd >= EdalDatePrecision.MONTH.ordinal()) {
-					/** very important: Calendar count months from 0-11 */
-					Expression<String> monthExpression = builder.function("MONTH", String.class,
-							rootDate.get("endDate"));
-
-					dataCriteria.where(builder.equal(monthExpression, (dateEnd.get(Calendar.MONTH) + 1)));
-
-					if (precissionEnd >= EdalDatePrecision.DAY.ordinal()) {
-
-						Expression<String> dayExpression = builder.function("DAY", String.class,
-								rootDate.get("endDate"));
-
-						dataCriteria.where(builder.equal(dayExpression, dateEnd.get(Calendar.DAY_OF_MONTH)));
-
-						if (precissionEnd >= EdalDatePrecision.HOUR.ordinal()) {
-
-							Expression<String> hourExpression = builder.function("HOUR", String.class,
-									rootDate.get("endDate"));
-
-							dataCriteria.where(builder.equal(hourExpression, dateEnd.get(Calendar.HOUR_OF_DAY)));
-
-							if (precissionEnd >= EdalDatePrecision.MINUTE.ordinal()) {
-
-								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-										rootDate.get("endDate"));
-
-								dataCriteria.where(builder.equal(minuteExpression, dateEnd.get(Calendar.MINUTE)));
-
-								if (precissionEnd >= EdalDatePrecision.SECOND.ordinal()) {
-
-									Expression<String> secondExpression = builder.function("SECOND", String.class,
-											rootDate.get("endDate"));
-
-									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
-
-//									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
+//			/** note: use DECADE(date) if the database-SQL support */
 //
-//										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-//												String.class, rootDate.get("endDate"));
+//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
 //
-//										dataCriteria.where(builder.equal(millisecondExpression,
-//												dateEnd.get(Calendar.MILLISECOND)));
-//									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+//					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
+//
+//			if (precissionStart >= EdalDatePrecision.YEAR.ordinal()) {
+//
+//				dataCriteria.where(builder.equal(yearExpression, dateStart.get(Calendar.YEAR)));
+//
+//				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
+//					/** very important: Calendar count months from 0-11 */
+//					Expression<String> monthExpression = builder.function("MONTH", String.class,
+//							rootDate.get("startDate"));
+//
+//					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
+//
+//					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
+//
+//						Expression<String> dayExpression = builder.function("DAY", String.class,
+//								rootDate.get("startDate"));
+//
+//						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
+//
+//						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
+//
+//							Expression<String> hourExpression = builder.function("HOUR", String.class,
+//									rootDate.get("startDate"));
+//
+//							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
+//
+//							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
+//
+//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+//										rootDate.get("startDate"));
+//
+//								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
+//
+//								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
+//
+//									Expression<String> secondExpression = builder.function("SECOND", String.class,
+//											rootDate.get("startDate"));
+//
+//									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
+//
+////									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
+////
+////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+////												String.class, rootDate.get("startDate"));
+////
+////										dataCriteria.where(builder.equal(millisecondExpression,
+////												dateStart.get(Calendar.MILLISECOND)));
+////									}
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//		if (precissionEnd >= EdalDatePrecision.DECADE.ordinal()) {
+//
+//			/** note: use DECADE(date) if the database-SQL support */
+//
+//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("endDate"));
+//
+//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+//					Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
+//
+//			if (precissionEnd >= EdalDatePrecision.YEAR.ordinal()) {
+//
+//				dataCriteria.where(builder.equal(yearExpression, dateEnd.get(Calendar.YEAR)));
+//
+//				if (precissionEnd >= EdalDatePrecision.MONTH.ordinal()) {
+//					/** very important: Calendar count months from 0-11 */
+//					Expression<String> monthExpression = builder.function("MONTH", String.class,
+//							rootDate.get("endDate"));
+//
+//					dataCriteria.where(builder.equal(monthExpression, (dateEnd.get(Calendar.MONTH) + 1)));
+//
+//					if (precissionEnd >= EdalDatePrecision.DAY.ordinal()) {
+//
+//						Expression<String> dayExpression = builder.function("DAY", String.class,
+//								rootDate.get("endDate"));
+//
+//						dataCriteria.where(builder.equal(dayExpression, dateEnd.get(Calendar.DAY_OF_MONTH)));
+//
+//						if (precissionEnd >= EdalDatePrecision.HOUR.ordinal()) {
+//
+//							Expression<String> hourExpression = builder.function("HOUR", String.class,
+//									rootDate.get("endDate"));
+//
+//							dataCriteria.where(builder.equal(hourExpression, dateEnd.get(Calendar.HOUR_OF_DAY)));
+//
+//							if (precissionEnd >= EdalDatePrecision.MINUTE.ordinal()) {
+//
+//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+//										rootDate.get("endDate"));
+//
+//								dataCriteria.where(builder.equal(minuteExpression, dateEnd.get(Calendar.MINUTE)));
+//
+//								if (precissionEnd >= EdalDatePrecision.SECOND.ordinal()) {
+//
+//									Expression<String> secondExpression = builder.function("SECOND", String.class,
+//											rootDate.get("endDate"));
+//
+//									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
+//
+////									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
+////
+////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+////												String.class, rootDate.get("endDate"));
+////
+////										dataCriteria.where(builder.equal(millisecondExpression,
+////												dateEnd.get(Calendar.MILLISECOND)));
+////									}
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
 
+		dataCriteria.where(predicates.toArray(new Predicate[0]));
 		final List<MyEdalDateRange> result = session.createQuery(dataCriteria).list();
 
 		session.close();

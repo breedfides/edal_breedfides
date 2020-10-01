@@ -55,7 +55,7 @@ public class FullExample {
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();

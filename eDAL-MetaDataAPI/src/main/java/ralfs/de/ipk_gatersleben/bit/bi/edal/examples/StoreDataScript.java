@@ -18,6 +18,7 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
@@ -30,6 +31,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -65,9 +70,8 @@ public class StoreDataScript {
 	        String description = words.get(random.nextInt(countWords));
 	        String firstName = names.get(random.nextInt(countNames));
 	        String lastName = names.get(random.nextInt(countNames));
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimaryDataileN."+i);
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PDFILE000000."+i);
 			MetaData metadata = entity.getMetaData();
-			//metadata.setElementValue(EnumDublinCoreElements.FORMAT, new DataType(EnumDCMIDataType.IMAGE));
 			Persons persons = new Persons();
 			NaturalPerson np = new NaturalPerson(firstName, lastName, words.get(random.nextInt(countWords)),
 					words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)));
@@ -75,15 +79,19 @@ public class StoreDataScript {
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(names.get(random.nextInt(countNames)),
 					description, Integer.toString(random.nextInt(countWords)), words.get(random.nextInt(countWords))));
-//			
+			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("subject"+words.get(random.nextInt(countWords))));
+//			Calendar cal1 = Calendar.getInstance();
+//			EdalDate createddate = new EdalDate(cal1, EdalDatePrecision.SECOND, "CREATED");
+//			cal1.set(cal1.get(Calendar.HOUR), cal1.get(Calendar.HOUR)-1);
+//			EdalDateRange rang = new EdalDateRange(cal1 , EdalDatePrecision.SECOND, Calendar.getInstance(), EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.UPDATED.toString());
+//			((DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE)).add(rang);
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
 			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
-			Thread.sleep(2000);
 			files.add(entity);
 			
 		}

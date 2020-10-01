@@ -23,12 +23,17 @@ import javax.persistence.Id;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.hibernate.search.annotations.CalendarBridge;
 import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Resolution;
 import org.hibernate.search.annotations.Store;
+import org.hibernate.search.bridge.builtin.LongBridge;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
 
 @Entity
 public class MyEdalDate implements Serializable {

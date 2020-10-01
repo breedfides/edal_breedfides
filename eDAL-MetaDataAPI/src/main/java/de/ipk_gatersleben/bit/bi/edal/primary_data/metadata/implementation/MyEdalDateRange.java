@@ -20,6 +20,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.hibernate.search.annotations.Indexed;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
 
