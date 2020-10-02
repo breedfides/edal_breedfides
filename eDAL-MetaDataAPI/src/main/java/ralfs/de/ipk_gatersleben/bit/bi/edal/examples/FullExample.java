@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -44,10 +45,21 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
-		
-		
-		ArrayList<String> names = getList("src/test/resources/names.txt");
-		ArrayList<String> words = getList("src/test/resources/words.txt");
+			testKeyword();
+    }
+	
+	private static void testKeyword() throws Exception {
+		PrimaryDataDirectory rootDirectory = getRoot();
+    	try {
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Staten", false, true);
+    		log(results.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
+    	}catch(Exception e) {
+    		log(e.getMessage());;
+    	}
+    	DataManager.shutdown();
+	}
+	
+	public static PrimaryDataDirectory getRoot() throws Exception{
 		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
 				new InternetAddress("scientific_reviewer@mail.com"),
 				new InternetAddress("substitute_reviewer@mail.com"), new InternetAddress("managing_reviewer@mail.com"),
@@ -55,6 +67,27 @@ public class FullExample {
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
+		return rootDirectory;
+	}
+	
+	public static ArrayList<String> getList(String pathName) throws FileNotFoundException{
+	File file = new File(pathName);
+    ArrayList<String> strings = new ArrayList<String>();
+    Scanner in = new Scanner(file);
+    while (in.hasNextLine()){
+        strings.add(in.nextLine());
+    }
+    return strings;
+	}    
+    
+    private static void log(String msg) {
+    	DataManager.getImplProv().getLogger().info(msg);
+    }
+    
+    private static void testSearchByDublin() throws Exception {
+		ArrayList<String> names = getList("src/test/resources/names.txt");
+		ArrayList<String> words = getList("src/test/resources/words.txt");
+		PrimaryDataDirectory rootDirectory = getRoot();
 		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
@@ -119,6 +152,18 @@ public class FullExample {
 //				actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
 //				for(EdalDate e : actDates)
 //					log("\nDATE: "+e.toString());
+				//DATE
+				EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
+				DateEvents expdate = new DateEvents("dates");
+				expdate.add(date);
+				for(EdalDate e : expdate)
+					log("\nSearched DATE ->"+e.toString());
+				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
+				DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
+				for(EdalDate e : actDates)
+					log("\nFOUND DATE ->"+e.toString());
+				log("result: "+actDates.compareTo(expdate));
+				expdate = storedMetaData.getElementValue(EnumDublinCoreElements.DATE);
 				
 				//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
 				//Test for Identifier
@@ -134,21 +179,5 @@ public class FullExample {
 				log("\n####FAIL###### ----------->"+e.getMessage());
 			}
 			DataManager.shutdown();
-    }
-	
-	public static ArrayList<String> getList(String pathName) throws FileNotFoundException{
-	File file = new File(pathName);
-    ArrayList<String> strings = new ArrayList<String>();
-    Scanner in = new Scanner(file);
-    while (in.hasNextLine()){
-        strings.add(in.nextLine());
-    }
-    return strings;
-	}
-	
-    
-    
-    private static void log(String msg) {
-    	DataManager.getImplProv().getLogger().info(msg);
     }
 }

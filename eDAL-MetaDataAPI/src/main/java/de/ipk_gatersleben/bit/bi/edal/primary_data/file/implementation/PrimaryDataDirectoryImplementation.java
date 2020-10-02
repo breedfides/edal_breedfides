@@ -48,7 +48,10 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.TermQuery;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.annotations.Cache;
@@ -60,6 +63,7 @@ import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
+import org.hibernate.search.SearchFactory;
 import org.hibernate.search.query.dsl.QueryBuilder;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -1270,26 +1274,44 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
 				.get();
 
-		if (fuzzy) {
-			if (this.consistsQueryParserSyntax(keyword)) {
-				query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
-						"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
-			} else {
-				query = queryBuilder
-						.keyword().fuzzy().onFields("string", "givenName", "sureName", "country", "zip",
-								"addressLine", "id", "identifier", "mimeType")
-						.matching(keyword).createQuery();
+		SearchFactory searchFactory = ftSession.getSearchFactory();
+		org.hibernate.Query fullTextQuery = null;
+		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+			    new MultiFieldQueryParser(new String[]{"string","givenName",
+			    		"sureName","country","zip","adressLine","legalName",
+			    		"id","identifier","mimeType"}, searchFactory.getAnalyzer(MyUntypedData.class));
+			try {
+			    org.apache.lucene.search.Query luceneQuery = parser.parse("string: "+keyword+" OR givenName: "+keyword+
+			    		" OR sureName: "+keyword+" OR country: "+keyword+" OR zip: "+keyword+" OR adressLine: "+keyword+
+			    		" OR legalName: "+keyword+" OR id: "+keyword+" OR identifier: "+keyword+" OR mimeType: "+keyword);
+
+				fullTextQuery = ftSession.createFullTextQuery(luceneQuery);
 			}
-		} else {
-			query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
-					"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
-		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, UntypedData.class);
+			catch (ParseException e) {
+			    //handle parsing failure
+			}
+			List<? extends MyUntypedData> datatypeList = fullTextQuery.list(); //return a list of managed objects
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypeList.size());
+//		if (fuzzy) {
+//			if (this.consistsQueryParserSyntax(keyword)) {
+//				query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
+//						"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
+//			} else {
+//				query = queryBuilder
+//						.keyword().fuzzy().onFields("string", "givenName", "sureName", "country", "zip",
+//								"addressLine", "id", "identifier", "mimeType")
+//						.matching(keyword).createQuery();
+//			}
+//		} else {
+//			query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
+//					"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
+//		}
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, UntypedData.class);
+//
+//		final List<MyUntypedData> datatypeList = hibernateQuery.list();
 
-		final List<MyUntypedData> datatypeList = hibernateQuery.list();
-
-		session.close();
+		//session.close();
 
 		/** if no results found return empty List */
 		if (datatypeList.isEmpty()) {
@@ -1297,6 +1319,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 		if (datatypeList.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
 			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+		}else {
+			datatypeList = this.mapCollections(datatypeList, MyNaturalPerson.class, "persons");
 		}
 
 		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
@@ -1466,6 +1490,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					throw new PrimaryDataDirectoryException("Unable to check object type", e);
 				}
 			}
+			session.close();
 			session2.close();
 
 			for (final PrimaryDataEntityVersionImplementation version : maybeInSubDirectoriesList) {
@@ -1609,23 +1634,23 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			org.apache.lucene.search.Query queryE = queryBuilder.keyword().fuzzy().onField("country")
 					.matching(naturalPerson.getCountry()).createQuery();
 
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.should(queryE).createQuery();
+			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
+					.must(queryE).createQuery();
 
 		} else {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("givenName")
-					.matching(naturalPerson.getGivenName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("sureName")
+			org.apache.lucene.search.Query queryA = queryBuilder.phrase().onField("givenName")
+					.sentence(naturalPerson.getGivenName()).createQuery();
+			org.apache.lucene.search.Query queryB = queryBuilder.keyword().onField("sureName")
 					.matching(naturalPerson.getSureName()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("addressLine")
+			org.apache.lucene.search.Query queryC = queryBuilder.keyword().onField("addressLine")
 					.matching(naturalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("zip")
+			org.apache.lucene.search.Query queryD = queryBuilder.keyword().onField("zip")
 					.matching(naturalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryE = queryBuilder.keyword().wildcard().onField("country")
+			org.apache.lucene.search.Query queryE = queryBuilder.keyword().onField("country")
 					.matching(naturalPerson.getCountry()).createQuery();
 
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.should(queryE).createQuery();
+			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
+					.must(queryE).createQuery();
 		}
 
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)

@@ -73,8 +73,7 @@ public class StoreDataScript {
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PDFILE000000."+i);
 			MetaData metadata = entity.getMetaData();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson(firstName, lastName, words.get(random.nextInt(countWords)),
-					words.get(random.nextInt(countWords)), words.get(random.nextInt(countWords)));
+			NaturalPerson np = new NaturalPerson("eric test","ralfs","marne","25709","deutscheland");
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(names.get(random.nextInt(countNames)),
@@ -141,17 +140,6 @@ public class StoreDataScript {
     return strings;
 	}
 	
-	private static String randomIdentifier() {
-		StringBuilder builder = new StringBuilder();
-	    while(builder.toString().length() == 0) {
-	        int length = rand.nextInt(5)+5;
-	        for(int j = 0; j < length; j++) {
-	            builder.append(lexicon.charAt(rand.nextInt(lexicon.length())));
-	        }
-	    }
-	    String result = builder.toString();
-		return result;
-	}
 	
 //	public static void generateRandomDic() throws Exception {
 //		File file = new File(System.getProperty("user.home")+"/dict/german.txt");

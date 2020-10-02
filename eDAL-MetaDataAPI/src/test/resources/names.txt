@@ -4947,7 +4947,7 @@ Dayle
 Dayna
 Ddene
 De
-De Witt
+DeWitt
 Deach
 Deacon
 Deadman
@@ -4992,7 +4992,7 @@ Dedra
 Dedric
 Dedrick
 Dee
-Dee Dee
+DeeDee
 DeeAnn
 Deeann
 Deeanne
@@ -10046,7 +10046,7 @@ Jahdol
 Jahn
 Jahncke
 Jaime
-Jaime 
+Jaime
 Jaimie
 Jain
 Jaine
@@ -10411,7 +10411,7 @@ Jimmy
 Jinny
 Jit
 Jo
-Jo Ann
+JoAnn
 Jo-Ann
 Jo-Anne
 JoAnn
@@ -11692,7 +11692,7 @@ Kyriako
 Kyrstin
 Kyte
 La
-La Verne
+LaVerne
 LaBaw
 LaMee
 LaMonica
@@ -14258,7 +14258,7 @@ Minta
 Minton
 Mintun
 Mintz
-Miof Mela
+MiofMela
 Miquela
 Mir
 Mira
@@ -21959,7 +21959,7 @@ Zosima
 Zoubek
 Zrike
 Zsa
-Zsa Zsa
+ZsaZsa
 Zsazsa
 Zsolway
 Zubkoff
