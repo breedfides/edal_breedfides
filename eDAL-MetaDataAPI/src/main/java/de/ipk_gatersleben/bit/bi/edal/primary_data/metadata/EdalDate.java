@@ -25,7 +25,7 @@ public class EdalDate extends UntypedData {
 	 * @author lange non exclusive list of event standard types
 	 */
 	static public enum STANDART_EVENT_TYPES {
-		CREATED, UPDATED
+		CREATED, UPDATED, CHANGED
 	}
 
 	private static final long serialVersionUID = -1172719176052596677L;

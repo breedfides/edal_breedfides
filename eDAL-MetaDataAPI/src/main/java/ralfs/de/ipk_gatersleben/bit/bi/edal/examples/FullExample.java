@@ -45,14 +45,17 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
-			testKeyword();
+		testKeyword();
     }
 	
 	private static void testKeyword() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Staten", false, true);
-    		log(results.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("personx", false, true);
+        	for(PrimaryDataEntity entity : results) {
+        		log(entity.getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
+        		log(entity.getMetaData().getElementValue(EnumDublinCoreElements.TITLE).toString());
+        	}
     	}catch(Exception e) {
     		log(e.getMessage());;
     	}
@@ -153,17 +156,27 @@ public class FullExample {
 //				for(EdalDate e : actDates)
 //					log("\nDATE: "+e.toString());
 				//DATE
-				EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
+				
 				DateEvents expdate = new DateEvents("dates");
-				expdate.add(date);
-				for(EdalDate e : expdate)
-					log("\nSearched DATE ->"+e.toString());
-				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
-				DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
-				for(EdalDate e : actDates)
-					log("\nFOUND DATE ->"+e.toString());
-				log("result: "+actDates.compareTo(expdate));
-				expdate = storedMetaData.getElementValue(EnumDublinCoreElements.DATE);
+				expdate = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
+				EdalDateRange date = null;
+				while(expdate.iterator().hasNext()) {
+					EdalDate temp = expdate.iterator().next();
+					if(temp instanceof EdalDateRange) {
+						date = (EdalDateRange) temp;
+					}
+				}
+//				EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
+//				DateEvents expdate = new DateEvents("dates");
+//				expdate.add(date);
+//				for(EdalDate e : expdate)
+//					log("\nSearched DATE ->"+e.toString());
+//				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
+//				DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
+//				for(EdalDate e : actDates)
+//					log("\nFOUND DATE ->"+e.toString());
+//				log("result: "+actDates.compareTo(expdate));
+//				expdate = storedMetaData.getElementValue(EnumDublinCoreElements.DATE);
 				
 				//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
 				//Test for Identifier

@@ -1279,19 +1279,22 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(new String[]{"string","givenName",
 			    		"sureName","country","zip","adressLine","legalName",
-			    		"id","identifier","mimeType"}, searchFactory.getAnalyzer(MyUntypedData.class));
+			    		"id","identifier","mimeType","checkSum","algorithm","size"}, searchFactory.getAnalyzer(MyUntypedData.class));
+		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
 			try {
-			    org.apache.lucene.search.Query luceneQuery = parser.parse("string: "+keyword+" OR givenName: "+keyword+
-			    		" OR sureName: "+keyword+" OR country: "+keyword+" OR zip: "+keyword+" OR adressLine: "+keyword+
-			    		" OR legalName: "+keyword+" OR id: "+keyword+" OR identifier: "+keyword+" OR mimeType: "+keyword);
+				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
 
 				fullTextQuery = ftSession.createFullTextQuery(luceneQuery);
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
 			}
 			catch (ParseException e) {
 			    //handle parsing failure
 			}
 			List<? extends MyUntypedData> datatypeList = fullTextQuery.list(); //return a list of managed objects
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypeList.size());
+			
+			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
+			
 //		if (fuzzy) {
 //			if (this.consistsQueryParserSyntax(keyword)) {
 //				query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
@@ -1319,7 +1322,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 		if (datatypeList.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
 			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-		}else {
+		}
+		if(datatypeList.get(0).getClass().equals(MyPerson.class)){
 			datatypeList = this.mapCollections(datatypeList, MyNaturalPerson.class, "persons");
 		}
 

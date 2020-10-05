@@ -64,28 +64,26 @@ public class StoreDataScript {
 		long startTime = System.nanoTime();
 		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
-		MetaData firstMetadata = null;
 		for(int i = 0; i < size; i++) {
 	        String title = words.get(random.nextInt(countWords));
 	        String description = words.get(random.nextInt(countWords));
 	        String firstName = names.get(random.nextInt(countNames));
 	        String lastName = names.get(random.nextInt(countNames));
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PDFILE000000."+i);
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PDFILE0450000."+i);
 			MetaData metadata = entity.getMetaData();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("eric test","ralfs","marne","25709","deutscheland");
+			NaturalPerson np = new NaturalPerson("Bever","Hawthorn","Montagegehaeuse","uebertragungseinrichtungen","Kupferhall");
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(names.get(random.nextInt(countNames)),
-					description, Integer.toString(random.nextInt(countWords)), words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("Amalea",
+					"Meistergerechtigkeit", "1096241", "Nabeltieres"));
 			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("subject"+words.get(random.nextInt(countWords))));
-//			Calendar cal1 = Calendar.getInstance();
-//			EdalDate createddate = new EdalDate(cal1, EdalDatePrecision.SECOND, "CREATED");
-//			cal1.set(cal1.get(Calendar.HOUR), cal1.get(Calendar.HOUR)-1);
-//			EdalDateRange rang = new EdalDateRange(cal1 , EdalDatePrecision.SECOND, Calendar.getInstance(), EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.UPDATED.toString());
-//			((DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE)).add(rang);
+			Calendar cal1 = Calendar.getInstance();
+			EdalDate createddate = new EdalDate(cal1, EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.CHANGED.toString());
+			//EdalDateRange rang = new EdalDateRange(cal1 , EdalDatePrecision.SECOND, Calendar.getInstance(), EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.CHANGED.toString());
+			((DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE)).add(createddate);
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));

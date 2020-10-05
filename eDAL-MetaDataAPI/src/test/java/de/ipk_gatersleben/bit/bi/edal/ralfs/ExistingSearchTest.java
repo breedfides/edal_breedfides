@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -101,7 +102,7 @@ class ExistingSearchTest {
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
 		log("\nTITLE\nINSERTED -> Title: "+expected);
 		List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE,
-				new UntypedData(expected), false, true);
+				new UntypedData("division"), false, true);
 		String actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).getString();
 		log("\n___FOUND -> Title: "+actual);
 		Assertions.assertEquals(expected, actual);
@@ -152,16 +153,18 @@ class ExistingSearchTest {
 		Assertions.assertEquals(expdt, actdt);
 		log("\nFOUND -->"+actdt.toString());
 		//DATE
-		EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
 		DateEvents expdate = new DateEvents("dates");
-		expdate.add(date);
+		DateEvents savedDates = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
+		expdate.add(savedDates.iterator().next());
 		for(EdalDate e : expdate)
 			log("\nSearched DATE ->"+e.toString());
 		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
-		DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
-		for(EdalDate e : actDates)
-			log("\nFOUND DATE ->"+e.toString());
-		log("result: "+actDates.compareTo(expdate));
+		for(int i = 0; i < results1.size(); i++) {
+			DateEvents actDates = results1.get(i).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
+			for(EdalDate e : actDates)
+				log("\nFOUND DATE ->"+e.toString());
+			log("result: "+actDates.compareTo(expdate));
+		}
 		//Assertions.assertTrue(actDates.compareTo(expdate) == 1);
 		
 		//RELATION
@@ -199,12 +202,12 @@ class ExistingSearchTest {
 			Assertions.assertEquals(expSize, actSize);
 			
 			
-			String subfile = StoreDataScript.getSubfileTitle(rootDirectory);
-			log("\nSEARCHED SUBDIRECTORY FILE "+subfile);
-			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(subfile), false, true);
-			log("\nFOUND SUBDIRECTORY FILE "+results1.get(0).toString());
-			//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
-			
+//			String subfile = StoreDataScript.getSubfileTitle(rootDirectory);
+//			log("\nSEARCHED SUBDIRECTORY FILE "+subfile);
+//			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(subfile), false, true);
+//			log("\nFOUND SUBDIRECTORY FILE "+results1.get(0).toString());
+//			//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
+//			
 			
 
 		}catch(Exception e) {
@@ -214,16 +217,38 @@ class ExistingSearchTest {
 		DataManager.shutdown();
     }
     
+    
     //@Test
     void testKeywordSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("eric", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("116542", false, true);
     	try {
-    		log(results.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
+    		MetaData temp = results.get(0).getMetaData();
+    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
+    			if(temp.getElementValue(element) != null)
+    				log(element.toString()+": "+temp.getElementValue(element));
+    		}
     	}catch(Exception e) {
     		e.printStackTrace();
+    	}
+    }
+    
+    //@Test
+    void testMetaDataSearch() throws Exception {
+    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
+		MetaData metaData = entities.get(0).getMetaData();
+		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+			log("Searched MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
+		}
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByMetaData(metaData, false, true);
+    	for(PrimaryDataEntity entity : results) {
+    		log("LegalPerson: "+entity.getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
+    		log("LegalPerson: "+entity.getMetaData().getElementValue(EnumDublinCoreElements.CREATOR).toString());
     	}
     }
     
