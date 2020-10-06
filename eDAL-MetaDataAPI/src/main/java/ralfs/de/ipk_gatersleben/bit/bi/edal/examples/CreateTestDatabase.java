@@ -19,12 +19,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.mail.internet.InternetAddress;
+
+import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
@@ -48,66 +54,69 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
-public class StoreDataScript {
+public class CreateTestDatabase {
 	
-	private static final String[] algorithms = {"MD5","SHA1","SHA2"};
-	private static final String lexicon = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-	private static final java.util.Random rand = new java.util.Random();
+	public static void main(String[] args) throws Exception {
+		PrimaryDataDirectory rootDirectory = getRoot();
+    	try {
+			process(rootDirectory, 8000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    	DataManager.shutdown();
+	}
 
-	public static ArrayList<PrimaryDataFile> process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
+	public static void process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
 		ArrayList<String> names = getList("src/test/resources/names.txt");
 		ArrayList<String> words = getList("src/test/resources/words.txt");
+		Path pathToRessource = Paths.get("src/test/resources/_TEST.zip");
+		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
+		Locale[] locals = Locale.getAvailableLocales();
 		int countNames =names.size();
 		int countWords =words.size();
 		Random random = new Random();
-		long startTime = System.nanoTime();
 		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		for(int i = 0; i < size; i++) {
-	        String title = words.get(random.nextInt(countWords));
-	        String description = words.get(random.nextInt(countWords));
-	        String firstName = names.get(random.nextInt(countNames));
-	        String lastName = names.get(random.nextInt(countNames));
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PDF."+i);
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("PrimFileNumero0."+i);
+			entity.store(fin);
 			MetaData metadata = entity.getMetaData();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("Bever","Hawthorn","Montagegehaeuse","uebertragungseinrichtungen","Kupferhall");
+			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
+					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("Amalea",
-					"Meistergerechtigkeit", "1096241", "Nabeltieres"));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
 			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("subject"+words.get(random.nextInt(countWords))));
-			Calendar cal1 = Calendar.getInstance();
-			EdalDate createddate = new EdalDate(cal1, EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.CHANGED.toString());
-			//EdalDateRange rang = new EdalDateRange(cal1 , EdalDatePrecision.SECOND, Calendar.getInstance(), EdalDatePrecision.SECOND, EdalDate.STANDART_EVENT_TYPES.CHANGED.toString());
-			((DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE)).add(createddate);
+			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
+			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(locals.length)]);
+			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
-			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
+			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
-			entity.setMetaData(metadata);
-			files.add(entity);
-			
+			entity.setMetaData(metadata);	
+			log("Directory "+i+"/"+size+" Saved");
 		}
-		PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("entitiywithreference:"+words.get(random.nextInt(countWords)));
-		Path pathToRessource = Paths.get("src/test/resources/Unbenannt.png");
-		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
-		entity.store(fin);
 		fin.close();
-		IdentifierRelation relation = new IdentifierRelation();
-		relation.add(referenceIdentifier);
-		MetaData referenceMetaData = entity.getMetaData();
-		referenceMetaData.setElementValue(EnumDublinCoreElements.RELATION, relation);
-		EdalLanguage lang = new EdalLanguage(Locale.CHINA);
-		referenceMetaData.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-		entity.setMetaData(referenceMetaData);
-		files.add(entity);
-		long stopTime = System.nanoTime()-startTime;
-		System.out.println("Zeit zum speichern: "+((double)stopTime / 1_000_000_000.0));
-		return files;
+	}
+	
+	
+	public static PrimaryDataDirectory getRoot() throws Exception{
+		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
+				new InternetAddress("scientific_reviewer@mail.com"),
+				new InternetAddress("substitute_reviewer@mail.com"), new InternetAddress("managing_reviewer@mail.com"),
+				new InternetAddress("ralfs@ipk-gatersleben.de"),"imap.ipk-gatersleben.de","","");
+		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+		return rootDirectory;
 	}
 	
 	public static String getSubfileTitle(PrimaryDataDirectory root) throws Exception {
@@ -137,6 +146,10 @@ public class StoreDataScript {
     }
     return strings;
 	}
+	
+    private static void log(String msg) {
+    	DataManager.getImplProv().getLogger().info(msg);
+    }
 	
 	
 //	public static void generateRandomDic() throws Exception {

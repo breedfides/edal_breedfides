@@ -17,9 +17,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -45,16 +48,27 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
+//		PrimaryDataDirectory rootDirectory = getRoot();
+//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+//		LocalDateTime localDateTime = LocalDateTime.from(formatter.parse("15.01.2020"));
+//		Calendar calendar = Calendar.getInstance();
+//	      calendar.clear();
+//	      calendar.set(localDateTime.getYear(), localDateTime.getMonthValue()-1, localDateTime.getDayOfMonth(),
+//	              localDateTime.getHour(), localDateTime.getMinute(), localDateTime.getSecond());
+//		log(calendar.toString());
 		testKeyword();
     }
 	
 	private static void testKeyword() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("personx", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("text", false, true);
+        	log("\n#### Result Size: "+results.size()+" ####\n");
         	for(PrimaryDataEntity entity : results) {
-        		log(entity.getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
-        		log(entity.getMetaData().getElementValue(EnumDublinCoreElements.TITLE).toString());
+    			log("\n\n#### Entity: "+entity.toString()+" ####");
+        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+        			log(element.toString()+": "+entity.getMetaData().getElementValue(element));
+        		}
         	}
     	}catch(Exception e) {
     		log(e.getMessage());;

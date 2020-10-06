@@ -606,33 +606,33 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-//		long s = System.currentTimeMillis();
-//		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//		CriteriaQuery<PrimaryDataEntityVersionImplementation> query = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-//		Root<PrimaryDataEntityVersionImplementation> root = query.from(PrimaryDataEntityVersionImplementation.class);
-//		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
-//		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
-//		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
-//		query.where(chainedJoin.in(persons));
-//		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(query);
-//		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
-//		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
-//		List<Integer> versionIDList = new ArrayList<>();
-//		long f = System.currentTimeMillis();
-//		long timeElapsed = f - s;
-//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
-//		for(PrimaryDataEntityVersionImplementation version : finalresult) {
-//			versionIDList.add(version.getId());
-//		}
-		final Query<Integer> versionSQLQuery = session
-				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
-						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
-						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
-
-		versionSQLQuery.setParameterList("list", datatypeIDList);
-		versionSQLQuery.setParameter("key", element.ordinal());
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
+		long s = System.currentTimeMillis();
+		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<PrimaryDataEntityVersionImplementation> query = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+		Root<PrimaryDataEntityVersionImplementation> root = query.from(PrimaryDataEntityVersionImplementation.class);
+		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
+		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
+		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
+		query.where(chainedJoin.in(persons));
+		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(query);
+		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
+		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
+		List<Integer> versionIDList = new ArrayList<>();
+		long f = System.currentTimeMillis();
+		long timeElapsed = f - s;
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
+		for(PrimaryDataEntityVersionImplementation version : finalresult) {
+			versionIDList.add(version.getId());
+		}
+//		final Query<Integer> versionSQLQuery = session
+//				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
+//						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
+//						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+//
+//		versionSQLQuery.setParameterList("list", datatypeIDList);
+//		versionSQLQuery.setParameter("key", element.ordinal());
+//
+//		final List<Integer> versionIDList = versionSQLQuery.list();
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 
@@ -1279,7 +1279,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(new String[]{"string","givenName",
 			    		"sureName","country","zip","adressLine","legalName",
-			    		"id","identifier","mimeType","checkSum","algorithm","size"}, searchFactory.getAnalyzer(MyUntypedData.class));
+			    		"id","identifier","mimeType","checkSum","algorithm",
+			    		"size","language"}, searchFactory.getAnalyzer(MyUntypedData.class));
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
 			try {
 				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
@@ -1290,8 +1291,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			catch (ParseException e) {
 			    //handle parsing failure
 			}
-			List<? extends MyUntypedData> datatypeList = fullTextQuery.list(); //return a list of managed objects
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypeList.size());
+			List<? extends MyUntypedData> datatypes = fullTextQuery.list(); //return a list of managed objects
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());
 			
 			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
 			
@@ -1315,16 +1316,36 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //		final List<MyUntypedData> datatypeList = hibernateQuery.list();
 
 		//session.close();
-
+		Collection<MyUntypedData> datatypeList = new ArrayList<>();
 		/** if no results found return empty List */
-		if (datatypeList.isEmpty()) {
+		if (datatypes.isEmpty()) {
 			return new ArrayList<PrimaryDataEntity>();
 		}
-		if (datatypeList.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+		if (datatypes.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
 			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-		}
-		if(datatypeList.get(0).getClass().equals(MyPerson.class)){
-			datatypeList = this.mapCollections(datatypeList, MyNaturalPerson.class, "persons");
+		}else {
+		//filter Collection-associated Objects for mapping
+			ArrayList<MyNaturalPerson> naturalPersons = new ArrayList<>();
+			ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
+			ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
+			//Subjects - MyUntypedData
+			for(MyUntypedData data: datatypes) {
+				if(data instanceof MyNaturalPerson) {
+					naturalPersons.add((MyNaturalPerson) data);
+				}else if(data instanceof MyCheckSumType) {
+					checksumTypes.add((MyCheckSumType)data);
+				}else {
+					datatypeList.add(data);
+				}
+			}
+			//Values getting deleted, is that a problem?
+			datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
+			if(naturalPersons.size() > 0) {
+				datatypeList.addAll(this.mapCollections(naturalPersons, MyPersons.class, "persons"));
+			}
+			if(checksumTypes.size() > 0) {
+
+			}
 		}
 
 		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
@@ -1343,6 +1364,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		versionSQLQuery.setParameterList("list", datatypeIDList);
 
 		final List<Integer> versionIDList = versionSQLQuery.list();
+//		long s = System.currentTimeMillis();
+//		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//		CriteriaQuery<PrimaryDataEntityVersionImplementation> cirQuery = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//		Root<PrimaryDataEntityVersionImplementation> root = cirQuery.from(PrimaryDataEntityVersionImplementation.class);
+//		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
+//		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
+//		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
+//		cirQuery.where(chainedJoin.in(persons));
+//		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(cirQuery);
+//		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
+//		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
+//		List<Integer> versionIDList = new ArrayList<>();
+//		long f = System.currentTimeMillis();
+//		long timeElapsed = f - s;
+//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
+//		for(PrimaryDataEntityVersionImplementation version : finalresult) {
+//			versionIDList.add(version.getId());
+//		}
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 

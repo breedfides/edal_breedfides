@@ -71,6 +71,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.CreateTestDatabase;
 import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.StoreDataScript;
 
 class ExistingSearchTest {
@@ -218,21 +219,47 @@ class ExistingSearchTest {
     }
     
     
+    @Test
+    void create() throws Exception {
+    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+    	CreateTestDatabase.process(rootDirectory, 100000);
+    	DataManager.shutdown();
+    }
+    //@Test 
+    void searchByDublinCorePerformance() throws Exception{
+    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+    	long start = System.currentTimeMillis();
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.PUBLISHER, new LegalPerson("Lukey","Klimaschrankes","Roggenernte","wegdruecktest"), false, true); 
+    	long finish = System.currentTimeMillis();
+    	log("Size: "+results.size()+"\nTime: "+(start-finish));
+    	DataManager.shutdown();
+    }
+    
     //@Test
     void testKeywordSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("116542", false, true);
+    	long start = System.currentTimeMillis();
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("rentenerloes", false, true);
+    	long finish = System.currentTimeMillis();
     	try {
-    		MetaData temp = results.get(0).getMetaData();
-    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
-    			if(temp.getElementValue(element) != null)
-    				log(element.toString()+": "+temp.getElementValue(element));
+    		for(PrimaryDataEntity p : results) {
+    			MetaData temp = p.getMetaData();
+	    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
+	    			if(temp.getElementValue(element) != null)
+	    				log(element.toString()+": "+temp.getElementValue(element));
+	    		}
     		}
     	}catch(Exception e) {
     		e.printStackTrace();
     	}
+    	log("Size: "+results.size()+"\nTime: "+(finish-start));
+    	DataManager.shutdown();
     }
     
     //@Test
