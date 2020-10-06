@@ -26,11 +26,7 @@ allprojects {
 	apply plugin:'org.openjfx.javafxplugin'
 	
 	repositories {
-		maven {url 'https://www.jitpack.io' 
-		 	content {
-        		includeGroupByRegex "com\\.github\\.develar.*"
-    		}	
-    	}
+	
 	    mavenCentral()
 	    jcenter()
 	    maven {url "https://oss.sonatype.org/content/repositories/snapshots"}
@@ -270,9 +266,8 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
-	  	//compile group: 'com.github.markusbernhardt', name: 'proxy-vole', version:'1.0.6-SNAPSHOT'
-	 	compile group: 'org.javadelight', name: 'delight-rhino-sandbox', version: '0.0.11'
-	  	compile 'com.github.develar:proxy-vole:master-SNAPSHOT'
+		compile 'org.bidib.com.github.markusbernhardt:proxy-vole:1.0.10'
+				  
 	 	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
 	  	
 	   	   	
