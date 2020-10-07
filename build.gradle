@@ -2,15 +2,15 @@ plugins {
   id "com.github.johnrengelman.shadow" version "5.0.0"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
-   id "io.codearte.nexus-staging" version "0.21.2"
+  id "io.codearte.nexus-staging" version "0.21.2"
   id "org.openjfx.javafxplugin" version "0.0.9"
 }
 
 project.ext {
-    aspectjVersion = '1.9.4'
+    aspectjVersion = '1.9.5'
     jerseyVersion = '2.27'
-    jettyVersion = '9.4.24.v20191120'
-    junitVersion = '5.5.0'
+    jettyVersion = '9.4.32.v20200930'
+    junitVersion = '5.6.0'
 }
 
 apply plugin: 'net.researchgate.release'
@@ -266,7 +266,7 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
-		compile 'org.bidib.com.github.markusbernhardt:proxy-vole:1.0.10'
+		compile group: 'org.bidib.com.github.markusbernhardt', name: 'proxy-vole', version: '1.0.10'
 				  
 	 	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
 	  	
