@@ -39,9 +39,12 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -138,51 +141,56 @@ public class EdalHttpServer {
 		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setResourceBase(".");
 
-//		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-//		restHandler.setContextPath("/rest");	
-//		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
-//		jerseyServlet.setInitOrder(0);
-//		jerseyServlet.setInitParameter("jersey.config.server.provider.packages", "de.ipk_gatersleben.bit.bi.edal.primary_data");
+		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		restHandler.setContextPath("/rest");
+		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+		jerseyServlet.setInitOrder(1);
+		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
+				"de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageRest,de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageTest");
 
 //		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
 //		contextHandlerCollection.addHandler(edalContextHandler);
 //		contextHandlerCollection.addHandler(restHandler);
+//		contextHandlerCollection.addHandler(resourceHandler);
+//		contextHandlerCollection.addHandler(requestLogHandler);
+
+//		handlerCollection.addHandler(restHandler);
+		handlerCollection.addHandler(edalContextHandler);
+		handlerCollection.addHandler(resourceHandler);
+		handlerCollection.addHandler(requestLogHandler);
 
 //		collection.addHandler(restHandler);
-		handlerCollection.addHandler(resourceHandler);
-
-		handlerCollection.addHandler(edalContextHandler);
-
-//		collection.addHandler(contextHandlerCollection);
-
-		handlerCollection.addHandler(requestLogHandler);
+//		handlerCollection.addHandler(resourceHandler);
+//
+//		handlerCollection.addHandler(edalContextHandler);
+//
+//		handlerCollection.addHandler(contextHandlerCollection);
+//
+//		handlerCollection.addHandler(requestLogHandler);
 		/*
-		SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-
-		String[] defaultCiphers = ssf.getDefaultCipherSuites();
-		String[] availableCiphers = ssf.getSupportedCipherSuites();
-
-		TreeMap ciphers = new TreeMap();
-
-		for (int i = 0; i < availableCiphers.length; ++i)
-			ciphers.put(availableCiphers[i], Boolean.FALSE);
-
-		for (int i = 0; i < defaultCiphers.length; ++i)
-			ciphers.put(defaultCiphers[i], Boolean.TRUE);
-
-		System.out.println("Default\tCipher");
-		for (Iterator i = ciphers.entrySet().iterator(); i.hasNext();) {
-			Map.Entry cipher = (Map.Entry) i.next();
-
-			if (Boolean.TRUE.equals(cipher.getValue()))
-				System.out.print('*');
-			else
-				System.out.print(' ');
-
-			System.out.print('\t');
-			System.out.println(cipher.getKey());
-		}
-		*/
+		 * SSLServerSocketFactory ssf = (SSLServerSocketFactory)
+		 * SSLServerSocketFactory.getDefault();
+		 * 
+		 * String[] defaultCiphers = ssf.getDefaultCipherSuites(); String[]
+		 * availableCiphers = ssf.getSupportedCipherSuites();
+		 * 
+		 * TreeMap ciphers = new TreeMap();
+		 * 
+		 * for (int i = 0; i < availableCiphers.length; ++i)
+		 * ciphers.put(availableCiphers[i], Boolean.FALSE);
+		 * 
+		 * for (int i = 0; i < defaultCiphers.length; ++i)
+		 * ciphers.put(defaultCiphers[i], Boolean.TRUE);
+		 * 
+		 * System.out.println("Default\tCipher"); for (Iterator i =
+		 * ciphers.entrySet().iterator(); i.hasNext();) { Map.Entry cipher = (Map.Entry)
+		 * i.next();
+		 * 
+		 * if (Boolean.TRUE.equals(cipher.getValue())) System.out.print('*'); else
+		 * System.out.print(' ');
+		 * 
+		 * System.out.print('\t'); System.out.println(cipher.getKey()); }
+		 */
 
 		if (this.useSSL) {
 
