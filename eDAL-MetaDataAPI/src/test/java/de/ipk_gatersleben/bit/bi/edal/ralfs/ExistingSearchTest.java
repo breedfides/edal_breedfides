@@ -71,7 +71,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.CreateTestDatabase;
 import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.StoreDataScript;
 
 class ExistingSearchTest {
@@ -90,6 +89,17 @@ class ExistingSearchTest {
 	public Path mountPath = null;
 
 
+    //@Test
+    void createGiantDB() throws Exception {
+    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+    	Inserterr inserter = new Inserterr(rootDirectory);
+    	inserter.process(rootDirectory, 50000);
+    	DataManager.shutdown();
+    }
+	
+	
 	//@Test
     void searchByDublinCoreElementTest() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
@@ -219,14 +229,6 @@ class ExistingSearchTest {
     }
     
     
-    @Test
-    void create() throws Exception {
-    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
-				EdalHelpers.authenticateWinOrUnixOrMacUser());
-    	CreateTestDatabase.process(rootDirectory, 100000);
-    	DataManager.shutdown();
-    }
     //@Test 
     void searchByDublinCorePerformance() throws Exception{
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(

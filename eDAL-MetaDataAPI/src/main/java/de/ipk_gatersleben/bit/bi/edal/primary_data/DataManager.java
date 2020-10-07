@@ -804,25 +804,36 @@ public class DataManager {
 	 * Convenience function to shutdown the eDAL system.
 	 */
 	public static void shutdown() {
-
+    	long start = System.currentTimeMillis();
 		implementationprovider.getLogger().info("Trying to shutdown eDAL instance...");
-
 		if (!DataManager.checkReviewStatusThread.getState().equals(Thread.State.TERMINATED)) {
+			implementationprovider.getLogger().info("Trying to shutdown checkReviewStatusThread");
 			DataManager.checkReviewStatusThread.done();
 		}
+    	long finish = System.currentTimeMillis();
+		implementationprovider.getLogger().info("\nTime: "+(finish-start));
+    	start = System.currentTimeMillis();
 		if (!DataManager.calculateThread.getState().equals(Thread.State.TERMINATED)) {
+			implementationprovider.getLogger().info("Trying to shutdown calculateThread");
 			DataManager.calculateThread.done();
 		}
-
+    	finish = System.currentTimeMillis();
+		implementationprovider.getLogger().info("\nTime: "+(finish-start));
+		implementationprovider.getLogger().info("Trying to shutdown ImplProvider");
+    	start = System.currentTimeMillis();
 		DataManager.getImplProv().shutdown();
+    	finish = System.currentTimeMillis();
+		implementationprovider.getLogger().info("\nTime: "+(finish-start));
 		if (DataManager.server != null) {
 			DataManager.server.stop();
 			DataManager.server = null;
 		}
 		DataManager.isConfigurationValid = false;
-
+		implementationprovider.getLogger().info("Trying to shutdown Serviceses:jetty");
 		DataManager.getJettyExecutorService().shutdown();
+		implementationprovider.getLogger().info("Trying to shutdown Serviceses:ListExecutor");
 		DataManager.getListExecutorService().shutdown();
+		implementationprovider.getLogger().info("Trying to shutdown Serviceses:Velocity");
 		DataManager.getVelocityExecutorService().shutdown();
 
 		DataManager.stopLatch.countDown();

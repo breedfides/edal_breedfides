@@ -48,15 +48,10 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
-//		PrimaryDataDirectory rootDirectory = getRoot();
-//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-//		LocalDateTime localDateTime = LocalDateTime.from(formatter.parse("15.01.2020"));
-//		Calendar calendar = Calendar.getInstance();
-//	      calendar.clear();
-//	      calendar.set(localDateTime.getYear(), localDateTime.getMonthValue()-1, localDateTime.getDayOfMonth(),
-//	              localDateTime.getHour(), localDateTime.getMinute(), localDateTime.getSecond());
-//		log(calendar.toString());
-		testKeyword();
+	PrimaryDataDirectory rootDirectory = getRoot();
+	Inserter inserter = new Inserter(rootDirectory);
+	inserter.process(rootDirectory, 40000);
+	DataManager.shutdown();
     }
 	
 	private static void testKeyword() throws Exception {

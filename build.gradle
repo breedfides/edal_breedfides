@@ -30,6 +30,7 @@ allprojects {
 		maven {url 'https://www.jitpack.io' 
 		 	content {
         		includeGroupByRegex "com\\.github\\.develar.*"
+        		//includeGroupByRegex "com\\.github\\.h2database.*"
     		}	
     	}
 	    mavenCentral()
@@ -249,14 +250,11 @@ project(':eDAL-MetaDataAPI') {
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.200'
-	    //update von 5.20->5.21
-	    compile group: 'org.hibernate', name: 'hibernate-core', version:'5.4.21.Final'
-	    //5.10.4 -> 5.11.5
+    	//compile 'com.github.h2database:h2database:master-SNAPSHOT'
+		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.22.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'
-	    //5.4.2 -> 5.4.21
-	 	compile group: 'org.hibernate', name: 'hibernate-jcache', version:'5.4.21.Final'
-	 	//5.4.2 -> 5.4.21
-	    compile group: 'org.hibernate', name: 'hibernate-c3p0', version:'5.4.21.Final'
+		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.4.22.Final'
+		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.4.22.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'
 	
 	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'

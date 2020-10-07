@@ -357,7 +357,7 @@ public class IndexWriterThread extends EdalThread {
 		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
 		this.lock.lock();
 		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
-		this.indexWriterThreadLogger.debug("FINALZE indexing...");
+		this.indexWriterThreadLogger.info("FINALZE indexing...");
 		this.executeIndexing();
 
 		/** close SessionFactory so no indexing again */
