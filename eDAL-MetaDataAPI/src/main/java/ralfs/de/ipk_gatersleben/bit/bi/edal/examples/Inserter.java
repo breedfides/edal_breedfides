@@ -57,12 +57,13 @@ public class Inserter {
 		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
+		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%10000 == 0) {
-				currentDirectory = rootDirectory.createPrimaryDataDirectory("Archi"+i);
+				archiveName = "Libraryp."+(i/10000);
+				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
-			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("PrimFil."+i);
-			//entity.store(fin);
+			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
 			MetaData metadata = entity.getMetaData();
 			Persons persons = new Persons();
 			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
@@ -70,20 +71,21 @@ public class Inserter {
 					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
-			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
-			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
-			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			//Subjects subjects = new Subjects();
+			//subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
+			//EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
+			//metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			//metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
-			entity.setMetaData(metadata);	
-			log(currentDirectory.getName()+i+"/"+size+" Saved");
+			//metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
+			entity.setMetaData(metadata);
+			//entity.store(fin);
+			log(archiveName+i+"/"+size+" Saved");
 		}
 		fin.close();
 	}

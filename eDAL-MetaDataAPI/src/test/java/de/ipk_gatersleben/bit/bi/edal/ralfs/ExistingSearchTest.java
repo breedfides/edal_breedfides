@@ -95,7 +95,7 @@ class ExistingSearchTest {
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
     	Inserterr inserter = new Inserterr(rootDirectory);
-    	inserter.process(rootDirectory, 50000);
+    	inserter.process(rootDirectory, 20000);
     	DataManager.shutdown();
     }
 	

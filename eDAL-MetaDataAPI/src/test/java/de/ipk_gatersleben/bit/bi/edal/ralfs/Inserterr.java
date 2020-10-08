@@ -59,10 +59,10 @@ public class Inserterr {
 		PrimaryDataDirectory currentDirectory = null;
 		for(int i = 0; i < size; i++) {
 			if(i%10000 == 0) {
-				currentDirectory = rootDirectory.createPrimaryDataDirectory("Archiveee"+i);
+				currentDirectory = rootDirectory.createPrimaryDataDirectory("ArchiveNummmeros."+i);
 			}
-			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("PrimFileNNN."+i);
-			//entity.store(fin);
+			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("PrimFileNummmeros."+i);
+			entity.store(fin);
 			MetaData metadata = entity.getMetaData();
 			Persons persons = new Persons();
 			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),

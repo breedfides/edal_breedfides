@@ -50,7 +50,7 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(rootDirectory, 40000);
+	inserter.process(rootDirectory, 10000);
 	DataManager.shutdown();
     }
 	
