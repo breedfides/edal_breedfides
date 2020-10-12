@@ -68,8 +68,8 @@ allprojects {
 	    	maxParallelForks = Runtime.runtime.availableProcessors()
 	    }
 
-	    minHeapSize = "4g"
-	    maxHeapSize = "8g"
+	    minHeapSize = "8g"
+	    maxHeapSize = "16g"
 	
 	    systemProperties = ["java.security.policy": file("./src/main/resources/de/ipk_gatersleben/bit/bi/edal/primary_data/policy.txt").absolutePath ]
 	
