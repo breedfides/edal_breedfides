@@ -30,7 +30,7 @@ allprojects {
 		maven {url 'https://www.jitpack.io' 
 		 	content {
         		includeGroupByRegex "com\\.github\\.develar.*"
-        		//includeGroupByRegex "com\\.github\\.h2database.*"
+        		includeGroupByRegex "com\\.github\\.h2database.*"
     		}	
     	}
 	    mavenCentral()
@@ -249,8 +249,10 @@ project(':eDAL-MetaDataAPI') {
 	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
-	    compile group: 'com.h2database', name: 'h2', version:'1.4.200'
-    	//compile 'com.github.h2database:h2database:master-SNAPSHOT'
+	    //compile group: 'com.h2database', name: 'h2', version:'1.4.200'
+    	compile ('com.github.h2database:h2database:master-SNAPSHOT'){
+        	exclude group: 'org.apache.lucene'
+    	}
 		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.22.Final'
 	    compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'
 		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.4.22.Final'

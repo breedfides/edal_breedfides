@@ -75,7 +75,7 @@ class H2ChunkCorruptionTest extends EdalTestCaseWithoutShutdown {
 				EdalHelpers.getFileSystemImplementationProvider(true,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(100000);
+    	createAndInsert(50000);
     	DataManager.shutdown();
 	}
 	
@@ -96,7 +96,7 @@ class H2ChunkCorruptionTest extends EdalTestCaseWithoutShutdown {
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%1000 == 0) {
-				archiveName = "LibraryV7."+(i/1000);
+				archiveName = "LibraryV20."+(i/1000);
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
