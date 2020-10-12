@@ -64,8 +64,8 @@ public class EdalTestCaseWithoutShutdown {
 					new InternetAddress(EdalTestCaseWithoutShutdown.EMAIL),
 					new InternetAddress(EdalTestCaseWithoutShutdown.EMAIL),
 					new InternetAddress(EdalTestCaseWithoutShutdown.EMAIL),
-					new InternetAddress(EdalTestCaseWithoutShutdown.ROOT_USER)
-					,"imap.ipk-gatersleben.de","","");
+					new InternetAddress(EdalTestCaseWithoutShutdown.ROOT_USER),
+					"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(EdalTestCaseWithoutShutdown.HTTP_PORT);
 			this.configuration.setHttpsPort(EdalTestCaseWithoutShutdown.HTTPS_PORT);
 
