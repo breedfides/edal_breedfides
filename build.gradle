@@ -253,14 +253,10 @@ project(':eDAL-MetaDataAPI') {
     	/*compile ('com.github.h2database:h2database:master-SNAPSHOT'){
         	exclude group: 'org.apache.lucene'
     	}*/
-    	
-		//compile group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.0.0.Alpha6'
-		//compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '6.0.0.Alpha6', ext: 'pom'
-		//compile group: 'org.hibernate', name: 'hibernate-jcache', version: '6.0.0.Alpha5', ext: 'pom'
+		//compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'*/
 		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Beta10'
     	compile group: 'org.hibernate.search', name: 'hibernate-search-backend-lucene', version: '6.0.0.Beta11'
 		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.22.Final'
-	    //compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'*/
 		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.4.22.Final'
 		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.4.22.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'

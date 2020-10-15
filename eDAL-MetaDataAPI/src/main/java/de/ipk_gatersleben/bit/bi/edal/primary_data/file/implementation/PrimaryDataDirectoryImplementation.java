@@ -1484,7 +1484,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<Integer> versionSQLQuery = session2.createQuery("SELECT DISTINCT v.ID "
+		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
 				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
 				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
 

@@ -233,13 +233,13 @@ class ExistingSearchTest {
     	DataManager.shutdown();
     }
     
-    //@Test
+    @Test
     void testKeywordSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
     	long start = System.currentTimeMillis();
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("bogenlilie", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("lackiererei", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {
