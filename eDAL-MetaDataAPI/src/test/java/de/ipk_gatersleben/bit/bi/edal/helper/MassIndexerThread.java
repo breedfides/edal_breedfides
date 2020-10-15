@@ -16,9 +16,9 @@ import org.hibernate.CacheMode;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.MassIndexer;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 
@@ -50,13 +50,13 @@ public class MassIndexerThread extends Thread {
 
 			Session session = this.getSessionFactory().openSession();
 
-			FullTextSession fullTextSession = Search
-					.getFullTextSession(session);
+			SearchSession fullTextSession = Search
+					.session(session);
 
-			Transaction transaction = fullTextSession.beginTransaction();
+			//Transaction transaction = fullTextSession.beginTransaction();
 
 			this.setMassIndexer(fullTextSession
-					.createIndexer(MyUntypedData.class)
+					.massIndexer(MyUntypedData.class)
 					.batchSizeToLoadObjects(30).cacheMode(CacheMode.NORMAL)
 					.threadsToLoadObjects(4));
 
@@ -72,7 +72,7 @@ public class MassIndexerThread extends Thread {
 						+ " millisec");
 				indexingTime = end - start;
 
-				transaction.commit();
+				//transaction.commit();
 				session.close();
 
 			} catch (InterruptedException e) {

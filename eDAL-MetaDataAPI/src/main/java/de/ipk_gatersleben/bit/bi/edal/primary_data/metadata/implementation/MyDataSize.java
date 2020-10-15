@@ -15,14 +15,21 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.FieldBridge;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
-import org.hibernate.search.bridge.builtin.LongBridge;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBridgeRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.FieldBridge;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
+//import org.hibernate.search.bridge.builtin.LongBridge;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LongBridge;
 
 /**
  * Internal representation of {@link DataSize} for persistence with
@@ -87,7 +94,10 @@ public final class MyDataSize extends MyUntypedData {
 	 * 
 	 * @return size
 	 */
-	@Field(store = Store.YES, bridge = @FieldBridge(impl = LongBridge.class))
+	//@Field(store = Store.YES, bridge = @FieldBridge(impl = LongBridge.class))
+    @FullTextField( 
+    		analyzer = "default", valueBridge = @ValueBridgeRef(type = LongBridge.class)
+    )
 	public Long getSize() {
 		return size;
 	}

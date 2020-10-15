@@ -71,18 +71,18 @@ public class Inserterr {
 					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
-			//Subjects subjects = new Subjects();
-			//subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
-			//EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
-			//metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-			//metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			Subjects subjects = new Subjects();
+			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
+			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
+			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
-			//metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
-			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
+			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			//entity.store(fin);
 			log(archiveName+i+"/"+size+" Saved");

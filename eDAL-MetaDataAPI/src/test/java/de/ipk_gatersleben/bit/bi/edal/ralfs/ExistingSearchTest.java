@@ -87,17 +87,6 @@ class ExistingSearchTest {
 
 	public EdalConfiguration configuration = null;
 	public Path mountPath = null;
-
-
-    //@Test
-    void createGiantDB() throws Exception {
-    	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
-				EdalHelpers.authenticateWinOrUnixOrMacUser());
-    	Inserterr inserter = new Inserterr(rootDirectory);
-    	inserter.process(rootDirectory, 20000);
-    	DataManager.shutdown();
-    }
 	
 	
 	//@Test
@@ -105,106 +94,109 @@ class ExistingSearchTest {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
 		MetaData storedMetaData = entities.get(0).getMetaData();
-		//wait for IndexerThread to finish
-		Thread.sleep(2000);
 		//Test Search by Title
-		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
-		log("\nTITLE\nINSERTED -> Title: "+expected);
-		List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE,
-				new UntypedData("division"), false, true);
-		String actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).getString();
-		log("\n___FOUND -> Title: "+actual);
-		Assertions.assertEquals(expected, actual);
-		//Test Search by Description
-		expected = storedMetaData.getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
-		log("\nDESCRIPTION\nINSERTED -> Description: "+expected);
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DESCRIPTION,
-				new UntypedData(expected), false, true);
-		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
-		Assertions.assertEquals(expected, actual);
-		log("\n___FOUND ->  Description: "+actual);
-		
-		
-		//Test Search by Creator
-		NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
-		log("\nLISTE VON PERSONEN ANZAHL: "+((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().size());
-		log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
-		Persons persons = new Persons();
-		persons.add(expPerson);
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
-				expPerson, false, true);
-		Persons foundPersons = (Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR);
-		NaturalPerson actPerson = (NaturalPerson) foundPersons.getPersons().iterator().next();
-		for(Person p : foundPersons) {
-			log("\n Found Person: "+p.toString());
-		}
-		Assertions.assertEquals(expPerson, actPerson);
-		//Test for Publisher
-		LegalPerson expLp = storedMetaData.getElementValue(EnumDublinCoreElements.PUBLISHER);
-		log("\nPublisher\nINSERTED: ->"+expLp.toString());
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.PUBLISHER, expLp, false, true);
-		LegalPerson actLp = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER);
-		log("\nPublisher\nFOUND: ->"+expLp.toString());
-		Assertions.assertEquals(expLp, actLp);
-		log("\n___FOUND ->  Publisher: "+actLp.toString());
-		//Identifier
-		Identifier expIdent = storedMetaData.getElementValue(EnumDublinCoreElements.IDENTIFIER);
-		log("\nIdentifier\nCreated Identifier ->: "+expIdent.toString());
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.IDENTIFIER,expIdent, false, true);
-		Identifier actIdent = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER);
-		log("\nFOUND -> "+actIdent.toString());
-		Assertions.assertEquals(expIdent, actIdent);
-		//Format
-		DataFormat expdt = storedMetaData.getElementValue(EnumDublinCoreElements.FORMAT);
-		log("\nDATAFORMAT\nFormat\nCreated ->: "+expdt.toString());
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.FORMAT, expdt, false, true);
-		DataFormat actdt = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.FORMAT);
-		Assertions.assertEquals(expdt, actdt);
-		log("\nFOUND -->"+actdt.toString());
-		//DATE
-		DateEvents expdate = new DateEvents("dates");
-		DateEvents savedDates = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
-		expdate.add(savedDates.iterator().next());
-		for(EdalDate e : expdate)
-			log("\nSearched DATE ->"+e.toString());
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
-		for(int i = 0; i < results1.size(); i++) {
-			DateEvents actDates = results1.get(i).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
-			for(EdalDate e : actDates)
-				log("\nFOUND DATE ->"+e.toString());
-			log("result: "+actDates.compareTo(expdate));
-		}
-		//Assertions.assertTrue(actDates.compareTo(expdate) == 1);
-		
-		//RELATION
-		IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
-		Assertions.assertEquals(entities.get(entities.size()-1), results1.get(0));
-		
-		//CHecksum
-		CheckSumType expChecksum = ((CheckSum)storedMetaData.getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next();
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CHECKSUM, expChecksum, false, true);
-		Assertions.assertEquals(expChecksum, ((CheckSum)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next());
-		
-		//Subject
-		Subjects expSubjects = entities.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT);
-		UntypedData expSubj = expSubjects.iterator().next();
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, expSubj, true, true);
-		UntypedData actSubj = ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).iterator().next();
-		Assertions.assertEquals(actSubj, expSubj);
-		
-		String fuzzy = expSubj.getString();
-		fuzzy = fuzzy.substring(0, fuzzy.length()-2);
-		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData(fuzzy), true, true);
-		Assertions.assertTrue(results1.size() > 0);
 		try {
+			String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
+			log("\nTITLE\nINSERTED -> Title: "+expected);
+			Thread.sleep(2000);
+			List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE,
+					new UntypedData(expected), false, true);
+			String actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).getString();
+			log("\n___FOUND -> Title: "+actual);
+			Assertions.assertEquals(expected, actual);
+			//Test Search by Description
+			expected = storedMetaData.getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
+			log("\nDESCRIPTION\nINSERTED -> Description: "+expected);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DESCRIPTION,
+					new UntypedData(expected), false, true);
+			actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
+			Assertions.assertEquals(expected, actual);
+			log("\n___FOUND ->  Description: "+actual);
+			
+			
+			//Test Search by Creator
+			NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+			log("\nLISTE VON PERSONEN ANZAHL: "+((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().size());
+			log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
+			Persons persons = new Persons();
+			persons.add(expPerson);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CREATOR,
+					expPerson, false, true);
+			Persons foundPersons = (Persons)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CREATOR);
+			NaturalPerson actPerson = (NaturalPerson) foundPersons.getPersons().iterator().next();
+			for(Person p : foundPersons) {
+				log("\n Found Person: "+p.toString());
+			}
+			Assertions.assertEquals(expPerson, actPerson);
+			//Test for Publisher
+			LegalPerson expLp = storedMetaData.getElementValue(EnumDublinCoreElements.PUBLISHER);
+			log("\nPublisher\nINSERTED: ->"+expLp.toString());
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.PUBLISHER, expLp, false, true);
+			LegalPerson actLp = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER);
+			log("\nPublisher\nFOUND: ->"+expLp.toString());
+			Assertions.assertEquals(expLp, actLp);
+			log("\n___FOUND ->  Publisher: "+actLp.toString());
+			//Identifier
+			Identifier expIdent = storedMetaData.getElementValue(EnumDublinCoreElements.IDENTIFIER);
+			log("\nIdentifier\nCreated Identifier ->: "+expIdent.toString());
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.IDENTIFIER,expIdent, false, true);
+			Identifier actIdent = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER);
+			log("\nFOUND -> "+actIdent.toString());
+			Assertions.assertEquals(expIdent, actIdent);
+			//Format
+			DataFormat expdt = storedMetaData.getElementValue(EnumDublinCoreElements.FORMAT);
+			log("\nDATAFORMAT\nFormat\nCreated ->: "+expdt.toString());
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.FORMAT, expdt, false, true);
+			DataFormat actdt = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.FORMAT);
+			Assertions.assertEquals(expdt, actdt);
+			log("\nFOUND -->"+actdt.toString());
+			//DATE
+			DateEvents expdate = new DateEvents("dates");
+			DateEvents savedDates = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
+			expdate.add(savedDates.iterator().next());
+			for(EdalDate e : expdate)
+				log("\nSearched DATE ->"+e.toString());
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
+			for(int i = 0; i < results1.size(); i++) {
+				DateEvents actDates = results1.get(i).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
+				for(EdalDate e : actDates)
+					log("\nFOUND DATE ->"+e.toString());
+				log("result: "+actDates.compareTo(expdate));
+			}
+			//Assertions.assertTrue(actDates.compareTo(expdate) == 1);
+			
+			//RELATION
+//			IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+//			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
+//			String searchedRelation = relation.getRelations().iterator().next().getID();
+//			String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getID();
+//			Assertions.assertEquals(searchedRelation, foundRelation);
+			
+			//CHecksum
+			CheckSumType expChecksum = ((CheckSum)storedMetaData.getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next();
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CHECKSUM, expChecksum, false, true);
+			Assertions.assertEquals(expChecksum, ((CheckSum)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next());
+			
+			//Subject
+			Subjects expSubjects = entities.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT);
+			UntypedData expSubj = expSubjects.iterator().next();
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, expSubj, true, true);
+			UntypedData actSubj = ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).iterator().next();
+			Assertions.assertEquals(actSubj, expSubj);
+			
+			String fuzzy = expSubj.getString();
+			fuzzy = fuzzy.substring(0, fuzzy.length()-2);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData(fuzzy), true, true);
+			Assertions.assertTrue(results1.size() > 0);
 			//Lnaguage
 			EdalLanguage expLang = (EdalLanguage)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
+			log("\nDATAFORMAT\nFormat\nCreated ->: "+expLang.toString());
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.LANGUAGE, expLang, false, true);
 			EdalLanguage actLang = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
 			Assertions.assertEquals(expLang, actLang);
+			log("\nFOUND -->"+actLang.toString());
 			
 			//Datasize
 			DataSize expSize = (DataSize)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
@@ -247,7 +239,7 @@ class ExistingSearchTest {
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
     	long start = System.currentTimeMillis();
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("rentenerloes", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("bogenlilie", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {

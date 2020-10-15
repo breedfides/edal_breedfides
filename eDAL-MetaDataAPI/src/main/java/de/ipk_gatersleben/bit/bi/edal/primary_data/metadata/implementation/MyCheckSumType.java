@@ -15,10 +15,13 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Index;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -69,7 +72,8 @@ public final class MyCheckSumType extends MyUntypedData {
 	/**
 	 * @return the algorithm
 	 */
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getAlgorithm() {
 		return algorithm;
 	}
@@ -77,7 +81,8 @@ public final class MyCheckSumType extends MyUntypedData {
 	/**
 	 * @return the checkSum
 	 */
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getCheckSum() {
 		return checkSum;
 	}

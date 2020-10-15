@@ -12,11 +12,18 @@
  */
 package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 
-import org.hibernate.search.bridge.StringBridge;
+import java.util.Locale;
 
-public class LanguageBridge implements StringBridge {
+import org.hibernate.search.mapper.pojo.bridge.ValueBridge;
+import org.hibernate.search.mapper.pojo.bridge.runtime.ValueBridgeToIndexedValueContext;
 
-    public String objectToString(Object object) {
-        return object.toString();
-    }
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
+
+public class LanguageBridge implements ValueBridge<Locale, String> {
+
+
+	@Override
+	public String toIndexedValue(Locale value, ValueBridgeToIndexedValueContext context) {
+		return value == null ? null : value.toString();
+	}
 } 

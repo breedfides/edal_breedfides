@@ -16,7 +16,9 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
 
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Indexed;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;

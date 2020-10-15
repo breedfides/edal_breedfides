@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -48,6 +49,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -61,10 +63,16 @@ import org.hibernate.criterion.CriteriaSpecification;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
-import org.hibernate.search.SearchFactory;
-import org.hibernate.search.query.dsl.QueryBuilder;
+import org.hibernate.search.backend.lucene.LuceneBackend;
+import org.hibernate.search.backend.lucene.LuceneExtension;
+import org.hibernate.search.backend.lucene.index.LuceneIndexManager;
+import org.hibernate.search.backend.lucene.search.query.LuceneSearchQuery;
+import org.hibernate.search.engine.backend.Backend;
+import org.hibernate.search.engine.backend.index.IndexManager;
+import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.mapping.SearchMapping;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -431,22 +439,32 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		org.apache.lucene.search.Query query = null;
+		//org.apache.lucene.search.Query query = null;
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyDataFormat> searchQuery = null;
 
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataFormat.class)
-				.get();
 		if (fuzzy) {
-			query = queryBuilder.keyword().fuzzy().onField("mimeType").matching(dataFormat.getMimeType())
-					.createQuery();
+//			query = queryBuilder.keyword().fuzzy().onField("mimeType").matching(dataFormat.getMimeType())
+//					.createQuery();
+			searchQuery = ftSession.search( MyDataFormat.class ) 
+	        .where( f -> f.match() 
+	                .field( "mimeType" )
+	                .matching( dataFormat.getMimeType() )
+	                .fuzzy() )
+	        .fetch( 200 ); 
 		} else {
-			query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
+			//query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
+			searchQuery = ftSession.search( MyDataFormat.class ) 
+	        .where( f -> f.match() 
+	                .field( "mimeType" )
+	                .matching( dataFormat.getMimeType() ) )
+	        .fetch( 200 ); 
 		}
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyDataFormat> hibernateQuery = ftSession.createFullTextQuery(query, MyDataFormat.class);
-		final List<MyDataFormat> result = hibernateQuery.list();
+		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		//final Query<MyDataFormat> hibernateQuery = ftSession.createFullTextQuery(query, MyDataFormat.class);
+		final List<MyDataFormat> result = searchQuery.hits();
 
 		session.close();
 
@@ -465,22 +483,34 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		org.apache.lucene.search.Query query = null;
-
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataType.class).get();
-
-		query = queryBuilder.keyword().onField("string").matching(dataType.getDataType().toString().toLowerCase())
-				.createQuery();
-
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyDataType> hibernateQuery = ftSession.createFullTextQuery(query, MyDataType.class);
-		final List<MyDataType> result = hibernateQuery.list();
-
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyDataType> searchQuery = 
+			ftSession.search( MyDataType.class ) 
+	        .where( f -> f.match() 
+	                .field( "string" )
+	                .matching( dataType.getDataType().toString().toLowerCase() ) )
+	        .fetch( 200 ); 
+		final List<MyDataType> result = searchQuery.hits();
 		session.close();
-
+		
 		return result;
+//
+//		org.apache.lucene.search.Query query = null;
+//
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataType.class).get();
+//
+//		query = queryBuilder.keyword().onField("string").matching(dataType.getDataType().toString().toLowerCase())
+//				.createQuery();
+//
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyDataType> hibernateQuery = ftSession.createFullTextQuery(query, MyDataType.class);
+//		final List<MyDataType> result = hibernateQuery.list();
+//
+//		session.close();
+//
+//		return result;
 
 	}
 
@@ -510,7 +540,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				if (edalDate instanceof EdalDateRange) {
 					final List<MyEdalDateRange> list = this.searchByEDALDateRange((EdalDateRange) edalDate);
 					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final Query<Integer> metaDataQuery = session.createSQLQuery(
+					final Query<Integer> metaDataQuery = session.createQuery(
 							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 					metaDataQuery.setParameterList("list", list);
@@ -525,7 +555,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 					final List<MyEdalDate> list = this.searchByEDALDate(edalDate);
 					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final Query<Integer> metaDataQuery = session.createSQLQuery(
+					final Query<Integer> metaDataQuery = session.createQuery(
 							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 					metaDataQuery.setParameterList("list", list);
@@ -547,7 +577,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	/** {@inheritDoc} */
 	@Override
-	@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 	protected List<PrimaryDataEntity> searchByDublinCoreElementImpl(final EnumDublinCoreElements element,
 			final UntypedData data, final boolean fuzzy, final boolean recursiveIntoSubdirectories)
 			throws PrimaryDataDirectoryException {
@@ -818,51 +847,91 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	}
 
 	private List<? extends MyUntypedData> searchByDataSize(DataSize data, boolean fuzzy) {
+		
+		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataSize.class)
-				.get();
-		org.apache.lucene.search.Query query = null;
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyDataSize> searchQuery = null;
 		long size = data.getFileSize();
-		if (fuzzy && size > 0) {
-			query = queryBuilder.range().onField("size").from(size-1).to(size+1).createQuery();
-		} else {
-			query = queryBuilder.range().onField("size").from(size).to(size).createQuery();
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyDataSize.class ) 
+	        .where( f -> f.range().field("size").between(size-1, size+1) )
+	        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyDataSize.class ) 
+	        .where( f -> f.match() 
+	                .field( "size" )
+	                .matching( size ) )
+	        .fetch( 200 ); 
 		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyDataSize> hibernateQuery = ftSession.createFullTextQuery(query, MyDataSize.class);
-
-		final List<MyDataSize> result = hibernateQuery.list();
-
+		final List<MyDataSize> result = searchQuery.hits();
 		session.close();
+		
 		return result;
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyDataSize.class)
+//				.get();
+//		org.apache.lucene.search.Query query = null;
+//		long size = data.getFileSize();
+//		if (fuzzy && size > 0) {
+//			query = queryBuilder.range().onField("size").from(size-1).to(size+1).createQuery();
+//		} else {
+//			query = queryBuilder.range().onField("size").from(size).to(size).createQuery();
+//		}
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyDataSize> hibernateQuery = ftSession.createFullTextQuery(query, MyDataSize.class);
+//
+//		final List<MyDataSize> result = hibernateQuery.list();
+//
+//		session.close();
+//		return result;
 	}
 
 	private List<? extends MyUntypedData> searchByEdalLanguage(EdalLanguage data, boolean fuzzy) {
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyEdalLanguage.class)
-				.get();
-		org.apache.lucene.search.Query query = null;
-		
-		if (fuzzy) {
-			query = queryBuilder.keyword().fuzzy().onField("language").matching(data.toString())
-					.createQuery();
-		} else {
-			query = queryBuilder.keyword().onField("language").matching(data.toString()).createQuery();
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyEdalLanguage> searchQuery = null;
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyEdalLanguage.class ) 
+	        .where( f -> f.match() 
+	                .field( "language" )
+	                .matching( data.getLanguage() )
+	                .fuzzy())
+	        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyEdalLanguage.class ) 
+	        .where( f -> f.match() 
+	                .field( "language" )
+	                .matching( data.getLanguage() ) )
+	        .fetch( 200 ); 
 		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyEdalLanguage> hibernateQuery = ftSession.createFullTextQuery(query, MyEdalLanguage.class);
-
-		final List<MyEdalLanguage> result = hibernateQuery.list();
-
+		final List<MyEdalLanguage> result = searchQuery.hits();
 		session.close();
-	
+		
 		return result;
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyEdalLanguage.class)
+//				.get();
+//		org.apache.lucene.search.Query query = null;
+//		
+//		if (fuzzy) {
+//			query = queryBuilder.keyword().fuzzy().onField("language").matching(data.toString())
+//					.createQuery();
+//		} else {
+//			query = queryBuilder.keyword().onField("language").matching(data.toString()).createQuery();
+//		}
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyEdalLanguage> hibernateQuery = ftSession.createFullTextQuery(query, MyEdalLanguage.class);
+//
+//		final List<MyEdalLanguage> result = hibernateQuery.list();
+//
+//		session.close();
+//	
+//		return result;
 	}
 
 	private List<? extends MyUntypedData> mapCollections(List<? extends MyUntypedData> datatypeList, Class<?> collectionClass, String setName) {
@@ -885,28 +954,49 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	private List<? extends MyUntypedData> searchByCheckSum(CheckSumType data, boolean fuzzy) {
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		org.apache.lucene.search.Query queryAlgorithm = null;
-		org.apache.lucene.search.Query queryChecksum = null;
-
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyCheckSumType.class).get();
-
-		queryAlgorithm = queryBuilder.keyword().onField("algorithm").matching(data.getAlgorithm().toString().toLowerCase())
-				.createQuery();
-		queryChecksum = queryBuilder.keyword().onField("checkSum").matching(data.getCheckSum().toString().toLowerCase())
-				.createQuery();
 		
-		org.apache.lucene.search.Query combinedQuery = queryBuilder.bool().must(queryAlgorithm).must(queryChecksum).createQuery();
-
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyCheckSumType> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyCheckSumType.class);
-		final List<MyCheckSumType> result = hibernateQuery.list();
-		
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyCheckSumType> searchQuery = null;
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyCheckSumType.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "algorithm" ).matching( data.getAlgorithm() ).fuzzy())
+		        		.must(f.match().fields( "checkSum" ).matching( data.getCheckSum() ).fuzzy()))
+		        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyCheckSumType.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "algorithm" ).matching( data.getAlgorithm() ).fuzzy())
+		        		.must(f.match().fields( "checkSum" ).matching( data.getCheckSum() )))
+		        .fetch( 200 ); 
+		}
+		final List<MyCheckSumType> result = searchQuery.hits();
 		List<? extends MyUntypedData> datatypeList = this.mapCollections(result, MyCheckSum.class, "dataSet");
-
+		session.close();
+		
 		return datatypeList;
+		
+//		org.apache.lucene.search.Query queryAlgorithm = null;
+//		org.apache.lucene.search.Query queryChecksum = null;
+//
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyCheckSumType.class).get();
+//
+//		queryAlgorithm = queryBuilder.keyword().onField("algorithm").matching(data.getAlgorithm().toString().toLowerCase())
+//				.createQuery();
+//		queryChecksum = queryBuilder.keyword().onField("checkSum").matching(data.getCheckSum().toString().toLowerCase())
+//				.createQuery();
+//		
+//		org.apache.lucene.search.Query combinedQuery = queryBuilder.bool().must(queryAlgorithm).must(queryChecksum).createQuery();
+//
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyCheckSumType> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyCheckSumType.class);
+//		final List<MyCheckSumType> result = hibernateQuery.list();
+//		
+//		List<? extends MyUntypedData> datatypeList = this.mapCollections(result, MyCheckSum.class, "dataSet");
+//
+//		return datatypeList;
 	}
 
 	/**
@@ -1185,27 +1275,50 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			throws ParseException {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		
 
-		org.apache.lucene.search.Query query = null;
-
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyIdentifier.class)
-				.get();
-		if (fuzzy) {
-			query = queryBuilder.keyword().fuzzy().onField("identifier").matching(identifier.getID())
-					.createQuery();
-		} else {
-			query = queryBuilder.keyword().onField("identifier").matching(identifier.getID()).createQuery();
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyIdentifier> searchQuery = null;
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyIdentifier.class ) 
+	        .where( f -> f.match() 
+	                .field( "identifier" )
+	                .matching( identifier.getID() )
+	                .fuzzy())
+	        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyIdentifier.class ) 
+	        .where( f -> f.match() 
+	                .field( "identifier" )
+	                .matching( identifier.getID() ) )
+	        .fetch( 200 ); 
 		}
-
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyIdentifier> hibernateQuery = ftSession.createFullTextQuery(query, MyIdentifier.class);
-		final List<MyIdentifier> result = hibernateQuery.list();
-
+		final List<MyIdentifier> result = searchQuery.hits();
 		session.close();
-
+		
 		return result;
+		
+//
+//		org.apache.lucene.search.Query query = null;
+//
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
+//
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyIdentifier.class)
+//				.get();
+//		if (fuzzy) {
+//			query = queryBuilder.keyword().fuzzy().onField("identifier").matching(identifier.getID())
+//					.createQuery();
+//		} else {
+//			query = queryBuilder.keyword().onField("identifier").matching(identifier.getID()).createQuery();
+//		}
+//
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyIdentifier> hibernateQuery = ftSession.createFullTextQuery(query, MyIdentifier.class);
+//		final List<MyIdentifier> result = hibernateQuery.list();
+//
+//		session.close();
+//
+//		return result;
 
 	}
 
@@ -1269,29 +1382,43 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		org.apache.lucene.search.Query query = null;
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-				.get();
-
-		SearchFactory searchFactory = ftSession.getSearchFactory();
-		org.hibernate.Query fullTextQuery = null;
+		//final FullTextSession ftSession = Search.getFullTextSession(session);
+		final SearchSession ftSession = Search.session(session);
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
+//				.get();
+//
+//		SearchFactory searchFactory = ftSession.getSearchFactory();
+		//org.hibernate.Query fullTextQuery = null;
+		SearchMapping mapping = Search.mapping(session.getSessionFactory()); 
+		Backend backend = mapping.backend(); 
+		LuceneBackend luceneBackend = backend.unwrap( LuceneBackend.class ); 
+		Optional<? extends Analyzer> analyzer = luceneBackend.analyzer( "default" );
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(new String[]{"string","givenName",
 			    		"sureName","country","zip","adressLine","legalName",
 			    		"id","identifier","mimeType","checkSum","algorithm",
-			    		"size","language"}, searchFactory.getAnalyzer(MyUntypedData.class));
+			    		"size","language"}, analyzer.get());
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+		SearchResult<MyUntypedData> searchResult = null;
 			try {
 				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
 
-				fullTextQuery = ftSession.createFullTextQuery(luceneQuery);
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
+				searchResult = ftSession.search(MyUntypedData.class)
+				        .extension( LuceneExtension.get() ) 
+				        .where( f -> f.fromLuceneQuery( 
+				                luceneQuery ))
+				        .fetch(200);
+//				fullTextQuery = ftSession.
+//				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
 			}
 			catch (ParseException e) {
 			    //handle parsing failure
 			}
-			List<? extends MyUntypedData> datatypes = fullTextQuery.list(); //return a list of managed objects
+
+
+
+
+			List<? extends MyUntypedData> datatypes = searchResult.hits(); //return a list of managed objects
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());
 			
 			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
@@ -1357,7 +1484,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
+		final Query<Integer> versionSQLQuery = session2.createQuery("SELECT DISTINCT v.ID "
 				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
 				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
 
@@ -1561,7 +1688,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
 				.info("Zeit (Search by keyword): " + (System.currentTimeMillis() - startTime) + " msec");
 		return results;
-
 	}
 
 	/**
@@ -1577,45 +1703,37 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			throws ParseException {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyLegalPerson> searchQuery = null;
+		//final FullTextSession ftSession = Search.getFullTextSession(session);
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
+//				.get();
+//
+//		org.apache.lucene.search.Query combinedQuery = null;
 
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
-				.get();
-
-		org.apache.lucene.search.Query combinedQuery = null;
-
-		if (fuzzy) {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("legalName")
-					.matching(legalPerson.getLegalName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("addressLine")
-					.matching(legalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("zip")
-					.matching(legalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("country")
-					.matching(legalPerson.getCountry()).createQuery();
-
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.createQuery();
-
-		} else {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().wildcard().onField("legalName")
-					.matching(legalPerson.getLegalName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().wildcard().onField("addressLine")
-					.matching(legalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().wildcard().onField("zip")
-					.matching(legalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().wildcard().onField("country")
-					.matching(legalPerson.getCountry()).createQuery();
-
-			combinedQuery = queryBuilder.bool().should(queryA).should(queryB).should(queryC).should(queryD)
-					.createQuery();
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyLegalPerson.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "legalName" ).matching( legalPerson.getLegalName() ).fuzzy())
+		        		.must(f.match().fields( "addressLine" ).matching( legalPerson.getAddressLine() ).fuzzy())
+		        		.must(f.match().fields( "zip" ).matching( legalPerson.getZip() ).fuzzy())
+						.must(f.match().fields( "country" ).matching( legalPerson.getCountry()).fuzzy()))
+		        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyLegalPerson.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "legalName" ).matching( legalPerson.getLegalName() ))
+		        		.must(f.match().fields( "addressLine" ).matching( legalPerson.getAddressLine() ))
+		        		.must(f.match().fields( "zip" ).matching( legalPerson.getZip() ))
+						.must(f.match().fields( "country" ).matching( legalPerson.getCountry())))
+		        .fetch( 200 ); 
 		}
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
+		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
 
-		final List<MyLegalPerson> result = hibernateQuery.list();
+		final List<MyLegalPerson> result = searchQuery.hits();
 
 		session.close();
 		return result;
@@ -1654,73 +1772,112 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	private List<MyNaturalPerson> searchByNaturalPerson(final NaturalPerson naturalPerson, final boolean fuzzy)
 			throws ParseException {
-
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyNaturalPerson> searchQuery = null;
+		//final FullTextSession ftSession = Search.getFullTextSession(session);
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
+//				.get();
+//
+//		org.apache.lucene.search.Query combinedQuery = null;
 
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
-				.get();
-
-		org.apache.lucene.search.Query combinedQuery = null;
-
-		if (fuzzy) {
-			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("givenName")
-					.matching(naturalPerson.getGivenName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("sureName")
-					.matching(naturalPerson.getSureName()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("addressLine")
-					.matching(naturalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("zip")
-					.matching(naturalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryE = queryBuilder.keyword().fuzzy().onField("country")
-					.matching(naturalPerson.getCountry()).createQuery();
-
-			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
-					.must(queryE).createQuery();
-
-		} else {
-			org.apache.lucene.search.Query queryA = queryBuilder.phrase().onField("givenName")
-					.sentence(naturalPerson.getGivenName()).createQuery();
-			org.apache.lucene.search.Query queryB = queryBuilder.keyword().onField("sureName")
-					.matching(naturalPerson.getSureName()).createQuery();
-			org.apache.lucene.search.Query queryC = queryBuilder.keyword().onField("addressLine")
-					.matching(naturalPerson.getAddressLine()).createQuery();
-			org.apache.lucene.search.Query queryD = queryBuilder.keyword().onField("zip")
-					.matching(naturalPerson.getZip()).createQuery();
-			org.apache.lucene.search.Query queryE = queryBuilder.keyword().onField("country")
-					.matching(naturalPerson.getCountry()).createQuery();
-
-			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
-					.must(queryE).createQuery();
+		if(fuzzy) {
+			searchQuery = ftSession.search( MyNaturalPerson.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "givenName" ).matching( naturalPerson.getGivenName() ).fuzzy())
+		        		.must(f.match().fields( "sureName" ).matching( naturalPerson.getSureName() ).fuzzy())
+		        		.must(f.match().fields( "addressLine" ).matching( naturalPerson.getAddressLine() ).fuzzy())
+		        		.must(f.match().fields( "zip" ).matching( naturalPerson.getZip() ).fuzzy())
+						.must(f.match().fields( "country" ).matching( naturalPerson.getCountry()).fuzzy()))
+		        .fetch( 200 ); 
+		}else {
+			searchQuery = ftSession.search( MyNaturalPerson.class ) 
+		        .where( f -> f.bool()
+		        		.must(f.match().fields( "givenName" ).matching( naturalPerson.getGivenName() ))
+		        		.must(f.match().fields( "sureName" ).matching( naturalPerson.getSureName() ))
+		        		.must(f.match().fields( "addressLine" ).matching( naturalPerson.getAddressLine() ))
+		        		.must(f.match().fields( "zip" ).matching( naturalPerson.getZip() ))
+						.must(f.match().fields( "country" ).matching( naturalPerson.getCountry())))
+		        .fetch( 200 ); 
 		}
 
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
-				MyNaturalPerson.class);
+		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
 
-		final List<MyNaturalPerson> result = hibernateQuery.list();
+		final List<MyNaturalPerson> result = searchQuery.hits();
+
 		
-//		ArrayList<Integer> ids = new ArrayList<>();
-//		for(MyNaturalPerson mp : result) {
-//			ids.add(mp.getId());		
-//		}
+		
+		
+//
+//		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 //		
-//		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-//				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
 //
-//		versionSQLQuery.setParameterList("list", ids);
+//		final FullTextSession ftSession = Search.getFullTextSession(session);
 //
-//		final List<Integer> versionIDList = versionSQLQuery.list();
-//		final List<MyNaturalPerson> result2 = new ArrayList<>();
-//		for(Integer i : versionIDList) {
-//			MyNaturalPerson np = new MyNaturalPerson();
-//			np.setId(i);
-//			result2.add(np);
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
+//				.get();
+//
+//		org.apache.lucene.search.Query combinedQuery = null;
+//
+//		if (fuzzy) {
+//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("givenName")
+//					.matching(naturalPerson.getGivenName()).createQuery();
+//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("sureName")
+//					.matching(naturalPerson.getSureName()).createQuery();
+//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("addressLine")
+//					.matching(naturalPerson.getAddressLine()).createQuery();
+//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("zip")
+//					.matching(naturalPerson.getZip()).createQuery();
+//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().fuzzy().onField("country")
+//					.matching(naturalPerson.getCountry()).createQuery();
+//
+//			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
+//					.must(queryE).createQuery();
+//
+//		} else {
+//			org.apache.lucene.search.Query queryA = queryBuilder.phrase().onField("givenName")
+//					.sentence(naturalPerson.getGivenName()).createQuery();
+//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().onField("sureName")
+//					.matching(naturalPerson.getSureName()).createQuery();
+//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().onField("addressLine")
+//					.matching(naturalPerson.getAddressLine()).createQuery();
+//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().onField("zip")
+//					.matching(naturalPerson.getZip()).createQuery();
+//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().onField("country")
+//					.matching(naturalPerson.getCountry()).createQuery();
+//
+//			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
+//					.must(queryE).createQuery();
 //		}
-		//search for untypeddata Reports with coresponding PersonSets
+//
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
+//				MyNaturalPerson.class);
+//
+//		final List<MyNaturalPerson> result = hibernateQuery.list();
+//		
+////		ArrayList<Integer> ids = new ArrayList<>();
+////		for(MyNaturalPerson mp : result) {
+////			ids.add(mp.getId());		
+////		}
+////		
+////		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+////				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
+////
+////		versionSQLQuery.setParameterList("list", ids);
+////
+////		final List<Integer> versionIDList = versionSQLQuery.list();
+////		final List<MyNaturalPerson> result2 = new ArrayList<>();
+////		for(Integer i : versionIDList) {
+////			MyNaturalPerson np = new MyNaturalPerson();
+////			np.setId(i);
+////			result2.add(np);
+////		}
 		
+		//search for untypeddata Reports with related PersonSets		
 		final CriteriaBuilder builder = session.getCriteriaBuilder();
 		CriteriaQuery<MyPersons> query = builder.createQuery(MyPersons.class);
 		Root<MyPersons> root = query.from(MyPersons.class);
@@ -1803,22 +1960,41 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		org.apache.lucene.search.Query query = null;
+		//org.apache.lucene.search.Query query = null;
+		
+		final SearchSession ftSession = Search.session(session);
+		SearchResult<MyUntypedData> searchQuery = null;
 
-		final FullTextSession ftSession = Search.getFullTextSession(session);
-
-		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-				.get();
 		if (fuzzy) {
-			query = queryBuilder.keyword().fuzzy().onField("string").matching(data.getString())
-					.createQuery();
+//			query = queryBuilder.keyword().fuzzy().onField("mimeType").matching(dataFormat.getMimeType())
+//					.createQuery();
+			searchQuery = ftSession.search( MyUntypedData.class ) 
+	        .where( f -> f.match() 
+	                .field( "string" )
+	                .matching( data.getString() )
+	                .fuzzy() )
+	        .fetch( 200 ); 
 		} else {
-			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
+			//query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
+			searchQuery = ftSession.search( MyUntypedData.class ) 
+	        .where( f -> f.match() 
+	                .field( "string" )
+	                .matching( data.getString() ) )
+	        .fetch( 200 ); 
 		}
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
 
-		final List<MyUntypedData> result = hibernateQuery.list();
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
+//				.get();
+//		if (fuzzy) {
+//			query = queryBuilder.keyword().fuzzy().onField("string").matching(data.getString())
+//					.createQuery();
+//		} else {
+//			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
+//		}
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
+
+		final List<MyUntypedData> result = searchQuery.hits();
 
 		session.close();
 

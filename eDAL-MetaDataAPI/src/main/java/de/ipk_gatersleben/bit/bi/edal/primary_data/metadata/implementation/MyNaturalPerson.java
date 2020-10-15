@@ -19,10 +19,12 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Index;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -35,7 +37,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("13")
-@Indexed
+//@Indexed
 public class MyNaturalPerson extends MyPerson {
 
 	private static final long serialVersionUID = -8540414353817218447L;
@@ -109,7 +111,8 @@ public class MyNaturalPerson extends MyPerson {
 	 * @return the givenName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getGivenName() {
 		return givenName;
 	}
@@ -126,7 +129,8 @@ public class MyNaturalPerson extends MyPerson {
 	 * @return the sureName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getSureName() {
 		return sureName;
 	}

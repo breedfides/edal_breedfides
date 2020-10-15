@@ -26,9 +26,12 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
@@ -100,7 +103,8 @@ public class MyUntypedData extends UntypedData implements Serializable {
 	 */
 	@Override
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = org.hibernate.search.annotations.Index.YES, store = Store.YES)
+	//@Field(index = org.hibernate.search.annotations.Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getString() {
 		return this.string;
 	}

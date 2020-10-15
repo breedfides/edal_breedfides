@@ -15,10 +15,13 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Index;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -77,7 +80,8 @@ public class MyPerson extends MyUntypedData {
 	 * @return address line of the {@link Person}.
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getAddressLine() {
 		return addressLine;
 	}
@@ -87,7 +91,8 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return country of the {@link Person}.
 	 */
-	@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
+	//@Field(index = Index.YES, store = Store.YES)
 	public String getCountry() {
 		return country;
 	}
@@ -97,7 +102,8 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return zip of the {@link Person}.
 	 */
-	@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
+	//@Field(index = Index.YES, store = Store.YES)
 	public String getZip() {
 		return zip;
 	}

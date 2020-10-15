@@ -35,8 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
@@ -48,10 +47,11 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
-	PrimaryDataDirectory rootDirectory = getRoot();
-	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(rootDirectory, 10000);
-	DataManager.shutdown();
+//	PrimaryDataDirectory rootDirectory = getRoot();
+//	Inserter inserter = new Inserter(rootDirectory);
+//	inserter.process(rootDirectory, 2);
+//	DataManager.shutdown();
+		testSearchByDublin();
     }
 	
 	private static void testKeyword() throws Exception {
@@ -97,15 +97,13 @@ public class FullExample {
     }
     
     private static void testSearchByDublin() throws Exception {
-		ArrayList<String> names = getList("src/test/resources/names.txt");
-		ArrayList<String> words = getList("src/test/resources/words.txt");
 		PrimaryDataDirectory rootDirectory = getRoot();
 		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
 		log("\nTITLE\nINSERTED -> Title: "+expected);
-		Thread.sleep(1000);
+		Thread.sleep(4000);
 		List<PrimaryDataEntity> results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE,
 				new UntypedData(expected), false, true);
 		String actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).getString();
@@ -139,6 +137,17 @@ public class FullExample {
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.IDENTIFIER,expIdent, false, true);
 			Identifier actIdent = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER);
 			
+			CheckSumType expChecksum = ((CheckSum)storedMetaData.getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next();
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.CHECKSUM, expChecksum, false, true);
+			
+			EdalLanguage expLang = (EdalLanguage)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.LANGUAGE, expLang, false, true);
+			EdalLanguage actLang = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
+			
+			//Datasize
+			DataSize expSize = (DataSize)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
+			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SIZE, expSize, false, true);
+			DataSize actSize = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
 			
 //			Subjects subjects = (Subjects)storedMetaData.getElementValue(EnumDublinCoreElements.SUBJECT);
 //			UntypedData expSubj = subjects.iterator().next();
@@ -150,9 +159,12 @@ public class FullExample {
 			try {
 							
 			//RELATION
+				
 				IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
 				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
-				log("\n STORED: "+entities.get(1).getMetaData().getElementValue(EnumDublinCoreElements.TITLE).toString()+"\n FOUND: "+results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.TITLE));
+				String searchedRelation = relation.getRelations().iterator().next().getID();
+				String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getID();
+				log("\n STORED: "+searchedRelation+"\n FOUND: "+foundRelation);
 				
 //				Calendar lastEvents = (Calendar)date.getStartDate().clone();
 //				lastEvents.set(Calendar.HOUR, 9);
@@ -166,25 +178,25 @@ public class FullExample {
 //					log("\nDATE: "+e.toString());
 				//DATE
 				
-				DateEvents expdate = new DateEvents("dates");
-				expdate = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
-				EdalDateRange date = null;
-				while(expdate.iterator().hasNext()) {
-					EdalDate temp = expdate.iterator().next();
-					if(temp instanceof EdalDateRange) {
-						date = (EdalDateRange) temp;
-					}
-				}
-//				EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
 //				DateEvents expdate = new DateEvents("dates");
-//				expdate.add(date);
-//				for(EdalDate e : expdate)
-//					log("\nSearched DATE ->"+e.toString());
-//				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
-//				DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
-//				for(EdalDate e : actDates)
-//					log("\nFOUND DATE ->"+e.toString());
-//				log("result: "+actDates.compareTo(expdate));
+//				expdate = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE));
+//				EdalDateRange date = null;
+//				while(expdate.iterator().hasNext()) {
+//					EdalDate temp = expdate.iterator().next();
+//					if(temp instanceof EdalDateRange) {
+//						date = (EdalDateRange) temp;
+//					}
+//				}
+				EdalDate date = ((DateEvents)storedMetaData.getElementValue(EnumDublinCoreElements.DATE)).iterator().next();
+				DateEvents expdate = new DateEvents("dates");
+				expdate.add(date);
+				for(EdalDate e : expdate)
+					log("\nSearched DATE ->"+e.toString());
+				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE, expdate, false, true);
+				DateEvents actDates = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DATE);
+				for(EdalDate e : actDates)
+					log("\nFOUND DATE ->"+e.toString());
+				log("result: "+actDates.compareTo(expdate));
 //				expdate = storedMetaData.getElementValue(EnumDublinCoreElements.DATE);
 				
 				//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);

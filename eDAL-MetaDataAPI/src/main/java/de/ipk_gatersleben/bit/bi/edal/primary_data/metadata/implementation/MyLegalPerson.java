@@ -16,10 +16,13 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Index;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -71,7 +74,8 @@ public class MyLegalPerson extends MyPerson {
 	 * @return the legalName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public String getLegalName() {
 		return this.legalName;
 	}

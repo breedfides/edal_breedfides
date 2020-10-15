@@ -51,7 +51,7 @@ public class MD5Repair {
 
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
+		NativeQuery getAllCheckSumIDs = session.createNativeQuery(
 				"SELECT ID FROM UNTYPEDDATA WHERE ALGORITHM is not null and CHECKSUM is not 'd41d8cd98f0b24e980998ecf8427e'");
 
 //		NativeQuery getAllCheckSumIDs = session.createSQLQuery(
@@ -94,9 +94,9 @@ public class MD5Repair {
 
 		for (Integer i : CHECKSUM_IDs) {
 			NativeQuery getCheckSums = session
-					.createSQLQuery("SELECT CHECKSUM FROM UNTYPEDDATA WHERE ALGORITHM is not null and ID = ?");
+					.createNativeQuery("SELECT CHECKSUM FROM UNTYPEDDATA WHERE ALGORITHM is not null and ID = ?");
 
-			getCheckSums.setInteger(1, i);
+			getCheckSums.setParameter(1, i);
 
 			ID_TO_CHECKSUM_MAP.put(i, (String) getCheckSums.uniqueResult());
 		}
@@ -137,10 +137,10 @@ public class MD5Repair {
 		Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		for (Integer i : CHECKSUM_IDs) {
-			NativeQuery getPrimaryDataIDs = session.createSQLQuery(
+			NativeQuery getPrimaryDataIDs = session.createNativeQuery(
 					"SELECT PRIMARYENTITYID FROM ENTITY_VERSIONS WHERE METADATA_ID in(SELECT METADATA_ID FROM METADATA_MAP WHERE MYMAP_ID in(SELECT UNTYPEDDATA_ID FROM UNTYPEDDATA_CHECKSUM WHERE DATASET_ID =?))");
 
-			getPrimaryDataIDs.setInteger(1, i);
+			getPrimaryDataIDs.setParameter(1, i);
 
 			if (getPrimaryDataIDs.uniqueResult() != null) {
 				PRIMARYIDATAID_TO_CHECKSUM_ID.put((String) getPrimaryDataIDs.uniqueResult(), i);
@@ -249,9 +249,9 @@ public class MD5Repair {
 				Transaction trans = session.beginTransaction();
 
 				NativeQuery sqlQuery = session
-						.createSQLQuery("UPDATE UNTYPEDDATA SET CHECKSUM=?, ALGORITHM='SHA-256' WHERE ID=?");
-				sqlQuery.setInteger(2, entry.getKey());
-				sqlQuery.setString(1, entry.getValue());
+						.createNativeQuery("UPDATE UNTYPEDDATA SET CHECKSUM=?, ALGORITHM='SHA-256' WHERE ID=?");
+				sqlQuery.setParameter(2, entry.getKey());
+				sqlQuery.setParameter(1, entry.getValue());
 				sqlQuery.executeUpdate();
 				trans.commit();
 
@@ -272,7 +272,7 @@ public class MD5Repair {
 
 			Transaction trans = session.beginTransaction();
 
-			NativeQuery sqlQuery = session.createSQLQuery(
+			NativeQuery sqlQuery = session.createNativeQuery(
 					"UPDATE UNTYPEDDATA SET CHECKSUM='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',ALGORITHM='SHA-256' WHERE CHECKSUM='d41d8cd98f0b24e980998ecf8427e' AND ALGORITHM='MD5'");
 
 			sqlQuery.executeUpdate();

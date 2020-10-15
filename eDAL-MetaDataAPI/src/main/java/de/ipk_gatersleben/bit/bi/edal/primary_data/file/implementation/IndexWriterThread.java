@@ -39,11 +39,11 @@ import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
-import org.hibernate.search.SearchFactory;
-
-import org.hibernate.search.indexes.IndexReaderAccessor;
+import org.hibernate.search.backend.lucene.lowlevel.index.impl.IndexAccessor;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
+import org.hibernate.search.mapper.orm.work.SearchIndexingPlan;
+import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
@@ -63,11 +63,11 @@ public class IndexWriterThread extends EdalThread {
 	private SessionFactory sessionFactory;
 
 	private int lastIndexedID = 0;
-
 	private Path indexDirectory;
-
 	private Logger indexWriterThreadLogger = null;
 	private Logger implementationProviderLogger = null;
+	SearchIndexingPlan indexingPlan = null;
+	SearchWorkspace workspace = null;
 
 	private boolean requestForReset = false;
 
@@ -100,16 +100,15 @@ public class IndexWriterThread extends EdalThread {
 		this.sessionFactory = sessionFactory;
 
 		final Session session = this.sessionFactory.openSession();
-		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();
 
-		final IndexReaderAccessor readerProvider = searchFactory.getIndexReaderAccessor();
+		//final IndexAccessor readerProvider = searchFactory
 
-		final IndexReader reader = readerProvider.open(MyUntypedData.class);
+		//final IndexReader reader = readerProvider.open(MyUntypedData.class);
 
 		try {
 
-			this.implementationProviderLogger
-					.info("Starting IndexWriterThread (current number of documents : " + reader.numDocs() + ")");
+//			this.implementationProviderLogger
+//					.info("Starting IndexWriterThread (current number of documents : " + reader.numDocs() + ")");
 
 			Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
@@ -127,7 +126,7 @@ public class IndexWriterThread extends EdalThread {
 			this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
 
 		} finally {
-			readerProvider.close(reader);
+			//readerProvider.close(reader);
 			session.close();
 		}
 	}
@@ -139,13 +138,11 @@ public class IndexWriterThread extends EdalThread {
 
 			session.setDefaultReadOnly(true);
 
-			final FullTextSession fullTextSession = Search.getFullTextSession(session);
-
 			/** high value fetch objects faster, but more memory is needed */
 			final int fetchSize = (int) Math.pow(10, 4);
 
-			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-			fullTextSession.setCacheMode(CacheMode.NORMAL);
+//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
+//			fullTextSession.setCacheMode(CacheMode.NORMAL);
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -168,29 +165,33 @@ public class IndexWriterThread extends EdalThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
-
+			final SearchSession searchFactory = Search.session(session);
+			indexingPlan = searchFactory.indexingPlan(); 
+			workspace = searchFactory.workspace(MyUntypedData.class);
+			session.getTransaction().begin();
 			while (results.next()) {
 				indexedObjects++;
 				/** index each element */
-				fullTextSession.index(results.get(0));
+				indexingPlan.addOrUpdate(((Object[])results.get())[0]);
 
 				if (indexedObjects % fetchSize == 0) {
 
 					try {
 						/** apply changes to indexes */
-						fullTextSession.flushToIndexes();
+						workspace.flush();
 						/** free memory since the queue is processed */
-						fullTextSession.clear();
+						//fullTextSession.clear();
 						flushedObjects += fetchSize;
 					} catch (Exception e) {
 						throw new Error("Unable to read/write index files");
 					}
 
-					if (((MyUntypedData) results.get(0)).getId() > this.lastIndexedID) {
-						this.lastIndexedID = ((MyUntypedData) results.get(0)).getId();
+					if (((MyUntypedData) ((Object[])results.get())[0]).getId() > this.lastIndexedID) {
+						this.lastIndexedID = ((MyUntypedData) ((Object[])results.get())[0]).getId();
 					}
 				}
 			}
+			session.getTransaction().commit();
 			results.close();
 			session.close();
 
@@ -241,10 +242,10 @@ public class IndexWriterThread extends EdalThread {
 
 			session.setDefaultReadOnly(true);
 
-			final FullTextSession fullTextSession = Search.getFullTextSession(session);
+			//final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
-			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-			fullTextSession.setCacheMode(CacheMode.NORMAL);
+//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
+//			fullTextSession.setCacheMode(CacheMode.NORMAL);
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -262,13 +263,17 @@ public class IndexWriterThread extends EdalThread {
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
-
+			final SearchSession searchFactory = Search.session(session);
+			indexingPlan = searchFactory.indexingPlan(); 
+			workspace = searchFactory.workspace(MyUntypedData.class);
+			session.getTransaction().begin();
 			while (results.next()) {
 				/** index each element */
-				fullTextSession.index(results.get(0));
+				//fullTextSession.index(results.get(0));
+				indexingPlan.addOrUpdate(((Object[])results.get())[0]);
 
-				if (((MyUntypedData) results.get(0)).getId() > this.lastIndexedID) {
-					this.lastIndexedID = ((MyUntypedData) results.get(0)).getId();
+				if (((MyUntypedData) ((Object[])results.get())[0]).getId() > this.lastIndexedID) {
+					this.lastIndexedID = ((MyUntypedData) ((Object[])results.get())[0]).getId() ;
 				}
 				indexedObjects++;
 				flushedObjects++;
@@ -276,13 +281,13 @@ public class IndexWriterThread extends EdalThread {
 
 			try {
 				/** apply changes to indexes */
-				fullTextSession.flushToIndexes();
+				workspace.flush();
 				/** free memory since the queue is processed */
-				fullTextSession.clear();
+				//fullTextSession.clear();
 			} catch (Exception e) {
 				throw new Error("Unable to read/write index files");
 			}
-
+			session.getTransaction().commit();
 			results.close();
 			session.close();
 
@@ -386,21 +391,21 @@ public class IndexWriterThread extends EdalThread {
 
 		final Session session = this.sessionFactory.openSession();
 		session.setDefaultReadOnly(true);
-		final FullTextSession fullTextSession = Search.getFullTextSession(session);
+		//final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
-		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-		fullTextSession.setCacheMode(CacheMode.NORMAL);
+//		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
+//		fullTextSession.setCacheMode(CacheMode.NORMAL);
 
-		fullTextSession.purgeAll(MyUntypedData.class);
-		fullTextSession.flushToIndexes();
+		workspace.purge();
+		//fullTextSession.flushToIndexes();
+//
+//		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();
+//		final IndexReaderAccessor readerProvider = searchFactory.getIndexReaderAccessor();
+//		final IndexReader reader = readerProvider.open(MyUntypedData.class);
 
-		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();
-		final IndexReaderAccessor readerProvider = searchFactory.getIndexReaderAccessor();
-		final IndexReader reader = readerProvider.open(MyUntypedData.class);
+		//this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
 
-		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
-
-		readerProvider.close(reader);
+		//readerProvider.close(reader);
 		session.close();
 
 		this.lastIndexedID = 0;

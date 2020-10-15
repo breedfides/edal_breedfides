@@ -27,18 +27,23 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.mail.internet.InternetAddress;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import javax.security.auth.Subject;
 import javax.swing.JOptionPane;
 
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.query.Query;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EdalPermissionImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
@@ -78,11 +83,16 @@ public class Test {
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		final Criteria getFile = session.createCriteria(PublicReferenceImplementation.class);
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<PublicReferenceImplementation> cr = builder.createQuery(PublicReferenceImplementation.class);
+		Root<PublicReferenceImplementation> root = cr.from(PublicReferenceImplementation.class);
+		cr.select(root);
+		Query<PublicReferenceImplementation> query = session.createQuery(cr);
+		//List<PublicReferenceImplementation> permissions = query.getResultList();
+		//final Criteria getFile = session.createCriteria(PublicReferenceImplementation.class);
 
 		@SuppressWarnings("unchecked")
-		List<PublicReferenceImplementation> list = getFile.list();
+		List<PublicReferenceImplementation> list = query.getResultList();
 
 		session.close();
 

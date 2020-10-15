@@ -179,11 +179,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE");
 		config.setProperty("hibernate.connection.username", this.getDatabaseUsername());
 		config.setProperty("hibernate.connection.password", this.getDatabasePassword());
-		config.setProperty("hibernate.search.default.exclusive_index_use", "false");
-		config.setProperty("hibernate.search.default.indexBase", this.indexDirectory.toString());
+		//config.setProperty("hibernate.search.backend.exclusive_index_use", "false");
+		config.setProperty("hibernate.search.backend.directory.root", this.indexDirectory.toString());
 
 		if (!this.isAutoIndexing()) {
-			config.setProperty("hibernate.search.indexing_strategy", "manual");
+			config.setProperty("hibernate.search.automatic_indexing.strategy", "none");
 		}
 
 		Boolean exists = false;

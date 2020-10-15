@@ -15,9 +15,13 @@ package de.ipk_gatersleben.bit.bi.edal.test;
 import java.util.List;
 
 import javax.mail.internet.InternetAddress;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.query.Query;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -108,11 +112,17 @@ public class CleanTest {
 		session.beginTransaction();
 
 		session.delete(file);
-
-		@SuppressWarnings("unchecked")
-		List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
-				.createCriteria(EdalPermissionImplementation.class).add(Restrictions.eq("internId", file.getID()))
-				.list();
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<EdalPermissionImplementation> cr = builder.createQuery(EdalPermissionImplementation.class);
+		Root<EdalPermissionImplementation> root = cr.from(EdalPermissionImplementation.class);
+		cr.select(root).where(builder.equal(root.get("internId"), file.getID()));
+		Query<EdalPermissionImplementation> query = session.createQuery(cr);
+		List<EdalPermissionImplementation> permissions = query.getResultList();
+				
+//		@SuppressWarnings("unchecked")
+//		List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
+//				.createCriteria(EdalPermissionImplementation.class).add(Restrictions.eq("internId", file.getID()))
+//				.list();
 
 		for (EdalPermissionImplementation permission : permissions) {
 			session.delete(permission);
@@ -131,11 +141,17 @@ public class CleanTest {
 		session.beginTransaction();
 
 		session.delete(directory);
+		CriteriaBuilder builder = session.getCriteriaBuilder();
+		CriteriaQuery<EdalPermissionImplementation> cr = builder.createQuery(EdalPermissionImplementation.class);
+		Root<EdalPermissionImplementation> root = cr.from(EdalPermissionImplementation.class);
+		cr.select(root).where(builder.equal(root.get("internId"), directory.getID()));
+		Query<EdalPermissionImplementation> query = session.createQuery(cr);
+		List<EdalPermissionImplementation> permissions = query.getResultList();
 
-		@SuppressWarnings("unchecked")
-		List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
-				.createCriteria(EdalPermissionImplementation.class).add(Restrictions.eq("internId", directory.getID()))
-				.list();
+//		@SuppressWarnings("unchecked")
+//		List<EdalPermissionImplementation> permissions = (List<EdalPermissionImplementation>) session
+//				.createCriteria(EdalPermissionImplementation.class).add(Restrictions.eq("internId", directory.getID()))
+//				.list();
 
 		for (EdalPermissionImplementation permission : permissions) {
 			session.delete(permission);

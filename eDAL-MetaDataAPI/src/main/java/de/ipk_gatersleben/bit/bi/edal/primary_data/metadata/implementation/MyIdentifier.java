@@ -15,10 +15,13 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.Index;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -78,7 +81,8 @@ public final class MyIdentifier extends MyUntypedData {
 	 * 
 	 * @return the identifier
 	 */
-	@Field(index = Index.YES, store = Store.YES)
+	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default")
 	public final String getIdentifier() {
 		return identifier;
 	}

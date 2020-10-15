@@ -16,10 +16,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
-
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 
 /**
  * Represent a natural person.
@@ -148,8 +145,7 @@ public class NaturalPerson extends Person {
 	 * 
 	 * @return the sure name
 	 */
-	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
+	@Column(columnDefinition = "varchar(4000)")	
 	public String getSureName() {
 		return this.sureName;
 	}
@@ -160,7 +156,6 @@ public class NaturalPerson extends Person {
 	 * @return the given name
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	@Field(index = Index.YES, store = Store.YES)
 	public String getGivenName() {
 		return this.givenName;
 	}

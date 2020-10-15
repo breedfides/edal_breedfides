@@ -14,13 +14,19 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 
 import java.util.Locale;
 
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.FieldBridge;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBridgeRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+
+//import org.hibernate.search.annotations.Field;
+//import org.hibernate.search.annotations.FieldBridge;
+//import org.hibernate.search.annotations.Indexed;
+//import org.hibernate.search.annotations.Store;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
@@ -71,7 +77,10 @@ public class MyEdalLanguage extends MyUntypedData {
 	/**
 	 * @return the language
 	 */
-	@Field(store = Store.YES, bridge = @FieldBridge(impl = LanguageBridge.class))
+	//@Field(store = Store.YES, bridge = @FieldBridge(impl = LanguageBridge.class))
+    @FullTextField( 
+    		analyzer = "default", valueBridge = @ValueBridgeRef(type = LanguageBridge.class)
+    )
 	public Locale getLanguage() {
 		return language;
 	}
