@@ -6,9 +6,9 @@
                     <div id="edal-detail-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
                     <div id="edal-detail-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
                      #if( $InstituteLogo)
-					<div class="col text-right pt-1"><a target="_blank" href="http://www.ipk-gatersleben.de"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
+					<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
 					#else	
-					<div class="col text-right pt-1"><a target="_blank" href="http://www.ipk-gatersleben.de"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
+					<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
             		#end
                 </div>
             </div>

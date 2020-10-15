@@ -402,6 +402,7 @@ public final class EdalConfiguration {
 	private String instanceNameLong = "e!DAL - Plant Genomics & Phenomics Research Data Repository";
 	private String instanceNameShort = "e!DAL - PGP Repository";
 	private String publisherString = "e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP), IPK Gatersleben";
+	private String publisherURL = "https://www.ipk-gatersleben.de";
 
 	/**
 	 * default constructor set default values for parameter that has not specified
@@ -1736,11 +1737,19 @@ public final class EdalConfiguration {
 	}
 
 	public String getPublisherString() {
-		return publisherString;
+		return this.publisherString;
 	}
 
 	public void setPublisherString(String publisherString) {
 		this.publisherString = publisherString;
+	}
+	
+	public String getPublisherURL() {
+		return this.publisherURL;
+	}
+
+	public void setPublisherURL(String publisherURL) {
+		this.publisherURL = publisherURL;
 	}
 
 	public void setCustomReplyEmail(String customReplyEmail) {

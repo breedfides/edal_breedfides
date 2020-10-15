@@ -708,21 +708,35 @@ public class ServiceProviderImplementation implements ServiceProvider {
 
 		session.close();
 
-		JSONObject json = new JSONObject();
+		if (reference != null) {
+			JSONObject json = new JSONObject();
 
-		try {
-			json.put("doi", reference.getAssignedID());
-		} catch (PublicReferenceException e) {
-			e.printStackTrace();
+			try {
+				json.put("doi", reference.getAssignedID());
+			} catch (PublicReferenceException e) {
+				e.printStackTrace();
+			}
+
+			SimpleDateFormat format = new SimpleDateFormat("dd-MM-YYYY HH:mm z");
+
+			String dateString = format.format(reference.getAcceptedDate().getTime());
+
+			json.put("date", dateString);
+			return json.toJSONString();
+
+		} else {
+			JSONObject json = new JSONObject();
+
+			json.put("doi", "no DOI assigned");
+
+			SimpleDateFormat format = new SimpleDateFormat("dd-MM-YYYY HH:mm z");
+
+			String dateString = format.format(Calendar.getInstance().getTime());
+
+			json.put("date", dateString);
+			return json.toJSONString();
 		}
-		
-		SimpleDateFormat format = new SimpleDateFormat("dd-MM-YYYY HH:mm z");
 
-		String dateString = format.format( reference.getAcceptedDate().getTime()   );
-		
-		json.put("date", dateString);
-
-		return json.toJSONString();
 	}
 
 }

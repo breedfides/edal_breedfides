@@ -5,7 +5,7 @@
 			<ThresholdFilter level="INFO" onMatch="ACCEPT"
 				onMismatch="DENY" />
 			<PatternLayout
-				pattern="%d{HH:mm:ss.SSS} %-5level%logger{36} - %msg%n" />
+				pattern="%d{HH:mm:ss.SSS} %level %logger{36} - %msg%n" />
 		</Console>
 		<RollingFile name="RollingFileInfo"
 			fileName="${sys:user.home}/.eDAL/eDAL_INFO.log"

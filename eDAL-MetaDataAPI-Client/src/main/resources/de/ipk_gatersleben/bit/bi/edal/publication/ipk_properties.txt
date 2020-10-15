@@ -75,3 +75,4 @@ PUBLICATION_PANEL_BLOCKED_WARNING_TITLE = Submission blocked!
 
 INSTITUTE_LOGO = ipk_scaled.png
 PROGRAM_NAME = IPK Data Publication System
+INSTITUTE_URL = https://www.ipk-gatersleben.de

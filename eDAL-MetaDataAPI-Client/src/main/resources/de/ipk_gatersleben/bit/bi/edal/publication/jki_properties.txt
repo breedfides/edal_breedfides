@@ -75,3 +75,4 @@ PUBLICATION_PANEL_BLOCKED_WARNING_TITLE = Submission blocked!
 
 INSTITUTE_LOGO = jki_scaled.png
 PROGRAM_NAME = JKI Data Publication System
+INSTITUTE_URL = https://www.julius-kuehn.de/
