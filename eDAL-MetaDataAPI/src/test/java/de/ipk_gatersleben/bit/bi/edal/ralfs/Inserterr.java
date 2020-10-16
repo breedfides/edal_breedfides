@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
@@ -25,12 +26,14 @@ import java.util.Scanner;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
@@ -39,16 +42,18 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 public class Inserterr {
 	
 	private PrimaryDataDirectory rootDirectory;
+	private MetaData searchable = null;
+	private FileInputStream fin = null;
 	
 	public Inserterr(PrimaryDataDirectory root) {
 		this.rootDirectory = root;
 	}
 
-	public void process(PrimaryDataDirectory rootDirectory, int size) throws Exception {
+	public void process(int size) throws Exception {
 		ArrayList<String> names = getList("src/test/resources/names.txt");
 		ArrayList<String> words = getList("src/test/resources/words.txt");
 		Path pathToRessource = Paths.get("src/test/resources/_TEST.zip");
-		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
+		fin = new FileInputStream(pathToRessource.toFile());
 		Locale[] locals = Locale.getAvailableLocales();
 		int length = locals.length-1;
 		int countNames =names.size();
@@ -60,7 +65,7 @@ public class Inserterr {
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%10000 == 0) {
-				archiveName = "Libraryp."+(i/10000);
+				archiveName = names.get(random.nextInt(countNames))+(i/10000);
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
@@ -84,9 +89,10 @@ public class Inserterr {
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
-			//entity.store(fin);
+			entity.store(fin);
 			log(archiveName+i+"/"+size+" Saved");
 		}
+		insertSearchable(currentDirectory);
 		fin.close();
 	}
 	
@@ -107,6 +113,38 @@ public class Inserterr {
 		subfile.setMetaData(submetadata);
 		return name;
 	}
+	
+	public MetaData getSearchableMetaData() {
+		return this.searchable;
+	}
+	
+	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
+		PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
+		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
+		if(result.size() < 0) {
+			log("Inserting new searchable");
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
+			searchable = entity.getMetaData();
+			Persons persons = new Persons();
+			NaturalPerson np = new NaturalPerson("Eric","Ralfs","Halberstadt","38820","DE");
+			persons.add(np);
+			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
+			Subjects subjects = new Subjects();
+			subjects.add(new UntypedData("Sed ut perspiciatis"));
+			EdalLanguage lang = new EdalLanguage(Locale.US);
+			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"));
+			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
+			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
+			entity.setMetaData(searchable);
+			entity.store(fin);
+		}else {
+			searchable = result.get(0).getMetaData();
+		}
+	}
+	
 	
 	
 	public ArrayList<String> getList(String pathName) throws FileNotFoundException{

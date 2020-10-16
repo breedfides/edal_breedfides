@@ -92,7 +92,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 			}
 			((PrimaryDataDirectory) array[4]).listPrimaryDataEntities();
 			((PrimaryDataDirectory) array[5]).searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("test"), true, true);
-			//((PrimaryDataDirectory) array[6]).searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
+			((PrimaryDataDirectory) array[6]).searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
 			((PrimaryDataDirectory) array[7]).searchByPublicationStatus(PublicationStatus.ACCEPTED);
 
 			MetaData meta = DataManager.getImplProv().createMetaDataInstance();
@@ -125,7 +125,7 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 								((PrimaryDataDirectory) array[5]).getMetaData();
 							} catch (AccessControlException ace5) {
 								try {
-									//((PrimaryDataDirectory) array[6]).getMetaData();
+									((PrimaryDataDirectory) array[6]).getMetaData();
 								} catch (AccessControlException ace6) {
 									try {
 										((PrimaryDataDirectory) array[7]).getMetaData();
@@ -183,8 +183,8 @@ public class GrantRevokePermissionTest extends EdalTestCaseWithoutShutdown {
 								((PrimaryDataDirectory) array[5]).searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(), true, true);
 							} catch (AccessControlException ace5) {
 								try {
-//									DataManager.getImplProv().getLogger().info("try method 7");
-//									((PrimaryDataDirectory) array[6]).searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
+									DataManager.getImplProv().getLogger().info("try method 7");
+									((PrimaryDataDirectory) array[6]).searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
 								} catch (AccessControlException ace6) {
 									try {
 										DataManager.getImplProv().getLogger().info("try method 8");

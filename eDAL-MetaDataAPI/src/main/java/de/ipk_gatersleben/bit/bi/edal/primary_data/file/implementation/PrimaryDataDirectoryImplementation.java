@@ -69,9 +69,11 @@ import org.hibernate.search.backend.lucene.index.LuceneIndexManager;
 import org.hibernate.search.backend.lucene.search.query.LuceneSearchQuery;
 import org.hibernate.search.engine.backend.Backend;
 import org.hibernate.search.engine.backend.index.IndexManager;
+import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.mapping.SearchMapping;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -555,7 +557,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 					final List<MyEdalDate> list = this.searchByEDALDate(edalDate);
 					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final Query<Integer> metaDataQuery = session.createQuery(
+					final Query<Integer> metaDataQuery = session.createSQLQuery(
 							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 					metaDataQuery.setParameterList("list", list);
@@ -649,19 +651,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		List<Integer> versionIDList = new ArrayList<>();
 		long f = System.currentTimeMillis();
 		long timeElapsed = f - s;
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS - Mapping IDs to Versions: "+timeElapsed);
 		for(PrimaryDataEntityVersionImplementation version : finalresult) {
 			versionIDList.add(version.getId());
 		}
-//		final Query<Integer> versionSQLQuery = session
-//				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
-//						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
-//						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
-//
-//		versionSQLQuery.setParameterList("list", datatypeIDList);
-//		versionSQLQuery.setParameter("key", element.ordinal());
-//
-//		final List<Integer> versionIDList = versionSQLQuery.list();
+		s = System.currentTimeMillis();
+		final Query<Integer> versionSQLQuery = session
+				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
+						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
+						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+
+		versionSQLQuery.setParameterList("list", datatypeIDList);
+		versionSQLQuery.setParameter("key", element.ordinal());
+
+		versionIDList = versionSQLQuery.list();
+		f = System.currentTimeMillis();
+		timeElapsed = f - s;
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("SQL Time for Mapping in MS - Mapping IDs to Versions: "+timeElapsed);
+		
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 
@@ -888,17 +895,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //		session.close();
 //		return result;
 	}
+	private Boolean testBool() {
+		return true;
+	}
 
 	private List<? extends MyUntypedData> searchByEdalLanguage(EdalLanguage data, boolean fuzzy) {
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		final SearchSession ftSession = Search.session(session);
+		SearchScope<MyEdalLanguage> scope = ftSession.scope( MyEdalLanguage.class );
 		SearchResult<MyEdalLanguage> searchQuery = null;
 		if(fuzzy) {
+//			SearchPredicate pred = scope.predicate().match().field( "title" )
+//            .matching( "robot" )
+//            .toPredicate();
 			searchQuery = ftSession.search( MyEdalLanguage.class ) 
 	        .where( f -> f.match() 
 	                .field( "language" )
-	                .matching( data.getLanguage() )
+	                .matching( data.getLanguage() )	            
 	                .fuzzy())
 	        .fetch( 200 ); 
 		}else {
@@ -1747,16 +1761,29 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
 
+		//filter empty Elements/Attributes
+		ArrayList<HashSet<PrimaryDataEntity>> resultsList = new ArrayList<>();
 		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
-					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
-			hashSet.addAll(tempList);
+			HashSet<PrimaryDataEntity> set = new HashSet();
+			set.addAll(this.searchByDublinCoreElement(element,query.getElementValue(element), fuzzy, recursiveIntoSubdirectories));
+			if(!set.isEmpty())
+				resultsList.add(set);		
+//			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
+//					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
+//			hashSet.addAll(tempList);
 		}
-
-		if (hashSet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+		int size = resultsList.size();
+		HashSet<PrimaryDataEntity> entitySet = resultsList.get(0);
+		for(int i = 0; i < size; i++) {
+			entitySet.retainAll(resultsList.get(i));
+		}
+		if(entitySet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
 			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
 		}
-		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(hashSet);
+//		if (hashSet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+//			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+//		}
+		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(entitySet);
 
 		return entityList;
 	}
@@ -1859,24 +1886,29 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //
 //		final List<MyNaturalPerson> result = hibernateQuery.list();
 //		
-////		ArrayList<Integer> ids = new ArrayList<>();
-////		for(MyNaturalPerson mp : result) {
-////			ids.add(mp.getId());		
-////		}
-////		
-////		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-////				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
-////
-////		versionSQLQuery.setParameterList("list", ids);
-////
-////		final List<Integer> versionIDList = versionSQLQuery.list();
-////		final List<MyNaturalPerson> result2 = new ArrayList<>();
-////		for(Integer i : versionIDList) {
-////			MyNaturalPerson np = new MyNaturalPerson();
-////			np.setId(i);
-////			result2.add(np);
-////		}
+		long s = System.currentTimeMillis();
+		ArrayList<Integer> ids = new ArrayList<>();
+		for(MyNaturalPerson mp : result) {
+			ids.add(mp.getId());		
+		}
 		
+		final Query<Integer> versionSQLQuery = session.createSQLQuery(
+				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
+
+		versionSQLQuery.setParameterList("list", ids);
+
+		final List<Integer> versionIDList = versionSQLQuery.list();
+		final List<MyNaturalPerson> result2 = new ArrayList<>();
+		for(Integer i : versionIDList) {
+			MyNaturalPerson np = new MyNaturalPerson();
+			np.setId(i);
+			result2.add(np);
+		}
+		long f = System.currentTimeMillis();
+		long timeElapsed = f - s;
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("SQL Time for Mapping in MS - NaturalPerson "+timeElapsed);
+		
+		s = System.currentTimeMillis();
 		//search for untypeddata Reports with related PersonSets		
 		final CriteriaBuilder builder = session.getCriteriaBuilder();
 		CriteriaQuery<MyPersons> query = builder.createQuery(MyPersons.class);
@@ -1887,6 +1919,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		TypedQuery<MyPersons> tq = session.createQuery(query);
 		List<?> resultList = tq.setParameter(persons, result).getResultList();
 		List<MyNaturalPerson> finalresult = (List<MyNaturalPerson>)resultList;
+		f = System.currentTimeMillis();
+		timeElapsed = f - s;
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Query Time in MS - NaturalPerson: "+timeElapsed);
 		
 		
 		session.close();

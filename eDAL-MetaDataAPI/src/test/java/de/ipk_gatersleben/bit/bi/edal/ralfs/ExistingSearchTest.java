@@ -94,8 +94,9 @@ class ExistingSearchTest {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
-		MetaData storedMetaData = entities.get(0).getMetaData();
+		Inserterr insert = new Inserterr(rootDirectory);
+		insert.process(2);
+		MetaData storedMetaData = insert.getSearchableMetaData();
 		//Test Search by Title
 		try {
 			String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
@@ -180,7 +181,7 @@ class ExistingSearchTest {
 			Assertions.assertEquals(expChecksum, ((CheckSum)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.CHECKSUM)).iterator().next());
 			
 			//Subject
-			Subjects expSubjects = entities.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT);
+			Subjects expSubjects = storedMetaData.getElementValue(EnumDublinCoreElements.SUBJECT);
 			UntypedData expSubj = expSubjects.iterator().next();
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, expSubj, true, true);
 			UntypedData actSubj = ((Subjects)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SUBJECT)).iterator().next();
@@ -191,28 +192,26 @@ class ExistingSearchTest {
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData(fuzzy), true, true);
 			Assertions.assertTrue(results1.size() > 0);
 			//Lnaguage
-			EdalLanguage expLang = (EdalLanguage)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
-			log("\nDATAFORMAT\nFormat\nCreated ->: "+expLang.toString());
+			EdalLanguage expLang = (EdalLanguage)storedMetaData.getElementValue(EnumDublinCoreElements.LANGUAGE);
+			log("\nLanguage\nFormat\nCreated ->: "+expLang.toString());
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.LANGUAGE, expLang, false, true);
 			EdalLanguage actLang = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.LANGUAGE);
 			Assertions.assertEquals(expLang, actLang);
 			log("\nFOUND -->"+actLang.toString());
 			
 			//Datasize
-			DataSize expSize = (DataSize)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
+			DataSize expSize = storedMetaData.getElementValue(EnumDublinCoreElements.SIZE);
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.SIZE, expSize, false, true);
 			DataSize actSize = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.SIZE);
 			Assertions.assertEquals(expSize, actSize);
-			
-			
+				
 //			String subfile = StoreDataScript.getSubfileTitle(rootDirectory);
 //			log("\nSEARCHED SUBDIRECTORY FILE "+subfile);
 //			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData(subfile), false, true);
 //			log("\nFOUND SUBDIRECTORY FILE "+results1.get(0).toString());
-//			//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
+			//results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DATE);
 //			
 			
-
 		}catch(Exception e) {
 			e.printStackTrace();
 			log("\n####FAIL###### ----------->"+e.getMessage());
@@ -239,14 +238,15 @@ class ExistingSearchTest {
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
     	long start = System.currentTimeMillis();
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("lackiererei", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Fritzistcool", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {
     			MetaData temp = p.getMetaData();
+    			log("Entity Type: "+temp.getElementValue(EnumDublinCoreElements.TYPE));
 	    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
-	    			if(temp.getElementValue(element) != null)
-	    				log(element.toString()+": "+temp.getElementValue(element));
+	    			if(temp.getElementValue(element) != null && element.equals(EnumDublinCoreElements.CREATOR))
+	    				log(element.toString()+": "+((NaturalPerson)((Persons)temp.getElementValue(element)).getPersons().iterator().next()).getGivenName().toString());
 	    		}
     		}
     	}catch(Exception e) {
@@ -256,20 +256,24 @@ class ExistingSearchTest {
     	DataManager.shutdown();
     }
     
-    //@Test
+   // @Test
     void testMetaDataSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
-		MetaData metaData = entities.get(0).getMetaData();
+		Inserterr insert = new Inserterr(rootDirectory);
+		insert.process(2);
+		MetaData metaData = insert.getSearchableMetaData();
 		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
 			log("Searched MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
 		}
     	List<PrimaryDataEntity> results =  rootDirectory.searchByMetaData(metaData, false, true);
-    	for(PrimaryDataEntity entity : results) {
-    		log("LegalPerson: "+entity.getMetaData().getElementValue(EnumDublinCoreElements.PUBLISHER).toString());
-    		log("LegalPerson: "+entity.getMetaData().getElementValue(EnumDublinCoreElements.CREATOR).toString());
+    	if(!results.isEmpty()) {
+			for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+				log("Found MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
+			}
+    	}else {
+    		log("No identical Metadata found!");
     	}
     }
     

@@ -32,7 +32,10 @@ import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
 import org.hibernate.ScrollMode;
@@ -106,6 +109,14 @@ public class IndexWriterThread extends EdalThread {
 		//final IndexReader reader = readerProvider.open(MyUntypedData.class);
 
 		try {
+			try {
+				Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
+				IndexReader reader = DirectoryReader.open( directory );
+				this.implementationProviderLogger.info("Number of docs after index rebuild: " + reader.numDocs());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 //			this.implementationProviderLogger
 //					.info("Starting IndexWriterThread (current number of documents : " + reader.numDocs() + ")");
@@ -172,7 +183,8 @@ public class IndexWriterThread extends EdalThread {
 			while (results.next()) {
 				indexedObjects++;
 				/** index each element */
-				indexingPlan.addOrUpdate(((Object[])results.get())[0]);
+				MyUntypedData data = (MyUntypedData) results.get(0);
+				indexingPlan.addOrUpdate((results.get(0)));
 
 				if (indexedObjects % fetchSize == 0) {
 
@@ -185,9 +197,8 @@ public class IndexWriterThread extends EdalThread {
 					} catch (Exception e) {
 						throw new Error("Unable to read/write index files");
 					}
-
-					if (((MyUntypedData) ((Object[])results.get())[0]).getId() > this.lastIndexedID) {
-						this.lastIndexedID = ((MyUntypedData) ((Object[])results.get())[0]).getId();
+					if (data.getId() > this.lastIndexedID) {
+						this.lastIndexedID = data.getId() ;
 					}
 				}
 			}
@@ -270,15 +281,15 @@ public class IndexWriterThread extends EdalThread {
 			while (results.next()) {
 				/** index each element */
 				//fullTextSession.index(results.get(0));
-				indexingPlan.addOrUpdate(((Object[])results.get())[0]);
+				MyUntypedData data = (MyUntypedData) results.get(0);
+				indexingPlan.addOrUpdate((results.get(0)));
 
-				if (((MyUntypedData) ((Object[])results.get())[0]).getId() > this.lastIndexedID) {
-					this.lastIndexedID = ((MyUntypedData) ((Object[])results.get())[0]).getId() ;
+				if (data.getId() > this.lastIndexedID) {
+					this.lastIndexedID = data.getId() ;
 				}
 				indexedObjects++;
 				flushedObjects++;
 			}
-
 			try {
 				/** apply changes to indexes */
 				workspace.flush();
@@ -391,6 +402,14 @@ public class IndexWriterThread extends EdalThread {
 
 		final Session session = this.sessionFactory.openSession();
 		session.setDefaultReadOnly(true);
+		try {
+			Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
+			IndexReader reader = DirectoryReader.open( directory );
+			this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		//final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
 //		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);

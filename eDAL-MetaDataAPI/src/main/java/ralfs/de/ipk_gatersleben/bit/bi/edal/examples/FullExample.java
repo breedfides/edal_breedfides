@@ -47,11 +47,13 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 	public static void main(String[] args) throws Exception {
-//	PrimaryDataDirectory rootDirectory = getRoot();
-//	Inserter inserter = new Inserter(rootDirectory);
-//	inserter.process(rootDirectory, 2);
-//	DataManager.shutdown();
-		testSearchByDublin();
+	PrimaryDataDirectory rootDirectory = getRoot();
+	Inserter inserter = new Inserter(rootDirectory);
+	inserter.process(rootDirectory, 1);
+	MetaData searchable = inserter.getSearchable();
+	testMetaDataSearch(rootDirectory, searchable);
+	DataManager.shutdown();
+		//testSearchByDublin();
     }
 	
 	private static void testKeyword() throws Exception {
@@ -96,9 +98,23 @@ public class FullExample {
     	DataManager.getImplProv().getLogger().info(msg);
     }
     
+    static void testMetaDataSearch(PrimaryDataDirectory rootDirectory, MetaData metaData) throws Exception {
+		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+			log("Searched MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
+		}
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByMetaData(metaData, false, true);
+    	if(!results.isEmpty()) {
+			for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+				log("Found MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
+			}
+    	}else {
+    		log("No identical Metadata found!");
+    	}
+    }
+    
     private static void testSearchByDublin() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
-		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,2);
+		ArrayList<PrimaryDataFile> entities = StoreDataScript.process(rootDirectory,1);
 		MetaData storedMetaData = entities.get(0).getMetaData();
 		//Test Search by Title
 		String expected = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();

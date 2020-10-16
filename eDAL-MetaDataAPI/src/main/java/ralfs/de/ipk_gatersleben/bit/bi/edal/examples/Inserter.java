@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
@@ -25,6 +26,7 @@ import java.util.Scanner;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -39,7 +41,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
-	
+	private MetaData searchable = null;
 	public Inserter(PrimaryDataDirectory root) {
 		this.rootDirectory = root;
 	}
@@ -60,8 +62,8 @@ public class Inserter {
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%10000 == 0) {
-				archiveName = "Library89."+(i/10000);
-				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
+				archiveName = "Lib000."+(i/10000);
+				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName+names.get(random.nextInt(countNames)));
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entity86.."+i);
 			MetaData metadata = entity.getMetaData();
@@ -87,6 +89,7 @@ public class Inserter {
 			//entity.store(fin);
 			log(archiveName+i+"/"+size+" Saved");
 		}
+		insertSearchable(currentDirectory);
 		fin.close();
 	}
 	
@@ -106,6 +109,36 @@ public class Inserter {
 		submetadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(name));
 		subfile.setMetaData(submetadata);
 		return name;
+	}
+	
+	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
+		PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
+		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
+		if(result.isEmpty()) {
+			log("Inserting new searchable");
+			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
+			searchable = entity.getMetaData();
+			Persons persons = new Persons();
+			NaturalPerson np = new NaturalPerson("Eric","Ralfs","Halberstadt","38820","DE");
+			persons.add(np);
+			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
+			Subjects subjects = new Subjects();
+			subjects.add(new UntypedData("Sed ut perspiciatis"));
+			EdalLanguage lang = new EdalLanguage(Locale.US);
+			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"));
+			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
+			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
+			entity.setMetaData(searchable);
+		}else {
+			searchable = result.get(0).getMetaData();
+		}
+	}
+	
+	public MetaData getSearchable() {
+		return searchable;
 	}
 	
 	

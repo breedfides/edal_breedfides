@@ -35,6 +35,7 @@ import javax.mail.internet.InternetAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -72,10 +73,10 @@ class H2ChunkCorruptionTest {
 	@Test
 	void generateDataTest() throws Exception {
 		rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(true,
+				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(100000);
+    	createAndInsert(150000);
     	DataManager.shutdown();
 	}
 	
@@ -83,8 +84,8 @@ class H2ChunkCorruptionTest {
 	private void createAndInsert(int size) throws Exception {
 		ArrayList<String> names = getList("src/test/resources/names.txt");
 		ArrayList<String> words = getList("src/test/resources/words.txt");
-		Path pathToRessource = Paths.get("src/test/resources/_TEST.zip");
-		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
+		Path path = Paths.get("src/test/resources/testing_directory");
+		//FileInputStream fin = new FileInputStream(pathToRessource.toFile());
 		Locale[] locals = Locale.getAvailableLocales();
 		int length = locals.length-1;
 		int countNames =names.size();
@@ -96,7 +97,7 @@ class H2ChunkCorruptionTest {
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%1000 == 0) {
-				archiveName = "Library0."+(i/1000);
+				archiveName = "ArchivX"+(i/1000);
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
@@ -105,23 +106,25 @@ class H2ChunkCorruptionTest {
 			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
 			persons.add(np);
 			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
-			//EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
-			//metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-			//metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
+			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
-			//metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
-			//entity.setMetaData(metadata);
-			entity.store(fin);
+			entity.setMetaData(metadata);
+			//entity.store(fin);
+			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
+			//Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
 		}
-		fin.close();
+		//fin.close();
 	}
 	
 	@BeforeEach
