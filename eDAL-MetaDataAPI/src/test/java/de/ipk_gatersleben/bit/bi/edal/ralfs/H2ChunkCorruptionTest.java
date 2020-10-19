@@ -97,7 +97,7 @@ class H2ChunkCorruptionTest {
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%1000 == 0) {
-				archiveName = "ArchivX"+(i/1000);
+				archiveName = "ArchivX0"+(i/1000);
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);

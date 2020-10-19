@@ -1754,6 +1754,40 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	}
 
+//	/** {@inheritDoc} */
+//	@Override
+//	protected List<PrimaryDataEntity> searchByMetaDataImpl(final MetaData query, final boolean fuzzy,
+//			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException, MetaDataException {
+//
+//		final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
+//
+//		//filter empty Elements/Attributes
+//		ArrayList<HashSet<PrimaryDataEntity>> resultsList = new ArrayList<>();
+//		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+//			HashSet<PrimaryDataEntity> set = new HashSet();
+//			set.addAll(this.searchByDublinCoreElement(element,query.getElementValue(element), fuzzy, recursiveIntoSubdirectories));
+//			if(!set.isEmpty())
+//				resultsList.add(set);		
+////			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
+////					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
+////			hashSet.addAll(tempList);
+//		}
+//		int size = resultsList.size();
+//		HashSet<PrimaryDataEntity> entitySet = resultsList.get(0);
+//		for(int i = 0; i < size; i++) {
+//			entitySet.retainAll(resultsList.get(i));
+//		}
+//		if(entitySet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+//			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+//		}
+////		if (hashSet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+////			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+////		}
+//		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(entitySet);
+//
+//		return entityList;
+//	}
+	
 	/** {@inheritDoc} */
 	@Override
 	protected List<PrimaryDataEntity> searchByMetaDataImpl(final MetaData query, final boolean fuzzy,
@@ -1761,29 +1795,16 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
 
-		//filter empty Elements/Attributes
-		ArrayList<HashSet<PrimaryDataEntity>> resultsList = new ArrayList<>();
 		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-			HashSet<PrimaryDataEntity> set = new HashSet();
-			set.addAll(this.searchByDublinCoreElement(element,query.getElementValue(element), fuzzy, recursiveIntoSubdirectories));
-			if(!set.isEmpty())
-				resultsList.add(set);		
-//			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
-//					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
-//			hashSet.addAll(tempList);
+			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
+					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
+			hashSet.addAll(tempList);
 		}
-		int size = resultsList.size();
-		HashSet<PrimaryDataEntity> entitySet = resultsList.get(0);
-		for(int i = 0; i < size; i++) {
-			entitySet.retainAll(resultsList.get(i));
-		}
-		if(entitySet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+
+		if (hashSet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
 			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
 		}
-//		if (hashSet.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
-//			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-//		}
-		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(entitySet);
+		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(hashSet);
 
 		return entityList;
 	}
