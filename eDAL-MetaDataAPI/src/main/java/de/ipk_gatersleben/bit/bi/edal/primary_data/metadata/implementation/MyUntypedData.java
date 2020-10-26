@@ -26,6 +26,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -104,7 +105,7 @@ public class MyUntypedData extends UntypedData implements Serializable {
 	@Override
 	@Column(columnDefinition = "varchar(4000)")
 	//@Field(index = org.hibernate.search.annotations.Index.YES, store = Store.YES)
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getString() {
 		return this.string;
 	}
@@ -124,4 +125,10 @@ public class MyUntypedData extends UntypedData implements Serializable {
 	public void setString(final String string) {
 		this.string = string;
 	}
+	
+	public void setValues(MyUntypedDataWrapper wrapper) {
+		if(wrapper != null)
+			wrapper.setStrings(string);
+	}
+	
 }

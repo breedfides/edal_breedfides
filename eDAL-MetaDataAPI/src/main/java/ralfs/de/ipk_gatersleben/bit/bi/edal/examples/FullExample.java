@@ -49,17 +49,18 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(rootDirectory, 1);
+	inserter.process(rootDirectory, 5);
 	MetaData searchable = inserter.getSearchable();
-	testMetaDataSearch(rootDirectory, searchable);
+	//testSearchByDublin();
+	//testMetaDataSearch(rootDirectory, searchable);
 	DataManager.shutdown();
 		//testSearchByDublin();
     }
-	
+
 	private static void testKeyword() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("text", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("38820", false, true);
         	log("\n#### Result Size: "+results.size()+" ####\n");
         	for(PrimaryDataEntity entity : results) {
     			log("\n\n#### Entity: "+entity.toString()+" ####");
@@ -103,12 +104,15 @@ public class FullExample {
 			log("Searched MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
 		}
     	List<PrimaryDataEntity> results =  rootDirectory.searchByMetaData(metaData, false, true);
-    	if(!results.isEmpty()) {
-			for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-				log("Found MEtadata key: "+element.toString()+" value: "+metaData.getElementValue(element));
-			}
-    	}else {
-    		log("No identical Metadata found!");
+    	for(PrimaryDataEntity primEntity : results) {
+    		MetaData curMetaData = primEntity.getMetaData();
+	    	if(!results.isEmpty()) {
+				for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+					log("Found MEtadata key: "+element.toString()+" value: "+curMetaData.getElementValue(element));
+				}
+	    	}else {
+	    		log("No identical Metadata found!");
+	    	}
     	}
     }
     
@@ -129,7 +133,14 @@ public class FullExample {
 		expected = storedMetaData.getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
 		log("\nDESCRIPTION\nINSERTED -> Description: "+expected);
 		results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.DESCRIPTION,
-				new UntypedData(expected), false, true);
+				new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"), false, true);
+    	for(PrimaryDataEntity primEntity : results1) {
+    		MetaData curMetaData = primEntity.getMetaData();
+				for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+					log("Found MEtadata key: "+element.toString()+" value: "+curMetaData.getElementValue(element));
+				}
+    	}
+		
 		actual = results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.DESCRIPTION).getString();
 		log("\n___FOUND ->  Description: "+actual);
 		//Test Search by Creator

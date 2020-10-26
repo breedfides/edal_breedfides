@@ -18,6 +18,7 @@ import javax.persistence.Convert;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBridgeRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
@@ -79,7 +80,7 @@ public class MyEdalLanguage extends MyUntypedData {
 	 */
 	//@Field(store = Store.YES, bridge = @FieldBridge(impl = LanguageBridge.class))
     @FullTextField( 
-    		analyzer = "default", valueBridge = @ValueBridgeRef(type = LanguageBridge.class)
+    		analyzer = "default",projectable = Projectable.YES, valueBridge = @ValueBridgeRef(type = LanguageBridge.class)
     )
 	public Locale getLanguage() {
 		return language;

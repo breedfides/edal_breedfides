@@ -1,3 +1,4 @@
+package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 /**
  * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -10,23 +11,30 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
-
-
-import java.util.Locale;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import org.hibernate.search.mapper.pojo.bridge.ValueBridge;
 import org.hibernate.search.mapper.pojo.bridge.runtime.ValueBridgeToIndexedValueContext;
-
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
-
-public class LongBridge implements ValueBridge<Long, String> {
+public class StringSetBridge implements ValueBridge<HashSet<String>, String> {
 
 	@Override
-	public String toIndexedValue(Long value, ValueBridgeToIndexedValueContext context) {
-		if(value != null) {
-			return Long.toString(value);
-		}else
-			return null;
+	public String toIndexedValue(HashSet<String> value, ValueBridgeToIndexedValueContext context) {
+        if(value != null)
+        {
+        	StringBuilder  buf = new StringBuilder ();
+
+            HashSet<?> col = (HashSet<?>)value;
+            Iterator<?> it = col.iterator();
+            while(it.hasNext())
+            {
+                String next = it.next().toString();
+                buf.append(next);
+                if(it.hasNext())
+                    buf.append(", ");
+            }
+            return buf.toString();
+        }
+        return null;
 	}
 } 

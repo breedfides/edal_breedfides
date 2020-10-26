@@ -32,6 +32,16 @@ import java.util.concurrent.ThreadLocalRandom;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +52,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
@@ -76,7 +87,18 @@ class H2ChunkCorruptionTest {
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(150000);
+    	createAndInsert(2);
+    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper"));
+    	IndexReader reader = DirectoryReader.open(indexDirectory);
+    	IndexSearcher searcher = new IndexSearcher(reader);
+    	QueryParser parser = new QueryParser("address", new StandardAnalyzer());
+        Query query = parser.parse("Verzeichnisdienste");
+        ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
+        for(int i = 0; i < hits.length; i++) {
+        	Document doc = searcher.doc(hits[i].doc);
+        	log("Document "+i+" address; "+doc.get("address"));
+        	log("Document "+i+" versionId; "+doc.get("versionID"));
+        }
     	DataManager.shutdown();
 	}
 	
@@ -95,13 +117,14 @@ class H2ChunkCorruptionTest {
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
 		String archiveName = "";
+		long start = System.currentTimeMillis();
 		for(int i = 0; i < size; i++) {
 			if(i%1000 == 0) {
-				archiveName = "ArchivX0"+(i/1000);
+				archiveName = "ArchivX4"+(i/1000)+names.get(random.nextInt(countNames));
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
-			MetaData metadata = entity.getMetaData();
+			MetaData metadata = entity.getMetaData().clone();
 			Persons persons = new Persons();
 			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
 			persons.add(np);
@@ -109,21 +132,25 @@ class H2ChunkCorruptionTest {
 			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
 					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
 					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
-			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
-			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+//			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
+//			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			//entity.store(fin);
-			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
+			//EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
 			//Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
 		}
+		log("Time to insert Data: "+(System.currentTimeMillis()-start));
 		//fin.close();
 	}
 	
@@ -149,7 +176,7 @@ class H2ChunkCorruptionTest {
 			this.configuration.setHttpPort(H2ChunkCorruptionTest.HTTP_PORT);
 			this.configuration.setHttpsPort(H2ChunkCorruptionTest.HTTPS_PORT);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "SEARCHTESTS");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "Keywordsearch_");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

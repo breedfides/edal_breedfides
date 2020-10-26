@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -71,7 +72,7 @@ public final class MyDataFormat extends MyUntypedData {
 	 * @return the mimeType
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getMimeType() {
 		return mimeType;
 	}

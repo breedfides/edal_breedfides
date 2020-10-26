@@ -12,6 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.util.Arrays;
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +22,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -82,6 +82,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPer
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnknownMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
 
@@ -112,6 +113,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private Path indexDirectory = null;
 	private CacheManager cacheManager = null;
 
+	public Path getIndexDirectory() {
+		return this.indexDirectory;
+	}
+	
 	public FileSystemImplementationProvider(EdalConfiguration configuration) {
 
 		this.configuration = configuration;
@@ -208,7 +213,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
 				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
 				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
-				MyDateEvents.class, MyORCID.class);
+				MyDateEvents.class, MyORCID.class, MyUntypedDataWrapper.class);
 
 		if (!exists) {
 

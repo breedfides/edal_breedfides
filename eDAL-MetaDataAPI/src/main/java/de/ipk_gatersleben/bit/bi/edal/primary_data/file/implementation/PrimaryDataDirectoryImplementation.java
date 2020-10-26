@@ -11,7 +11,8 @@
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
-
+import java.util.Arrays;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -50,10 +51,18 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.annotations.Cache;
@@ -1390,7 +1399,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	protected List<? extends PrimaryDataEntity> searchByKeywordImpl(final String keyword, final boolean fuzzy,
 			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException {
 
-		final long startTime = System.currentTimeMillis();
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
@@ -1403,21 +1411,52 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //
 //		SearchFactory searchFactory = ftSession.getSearchFactory();
 		//org.hibernate.Query fullTextQuery = null;
+		SearchResult<MyNaturalPerson> searchQuery = null;
+		//final FullTextSession ftSession = Search.getFullTextSession(session);
+
+//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
+//				.get();
+//
+//		org.apache.lucene.search.Query combinedQuery = null;
+
+		List<MyUntypedData> hits = ftSession.search( Arrays.asList(MyUntypedData.class,MyNaturalPerson.class) ) 
+	        .where( f -> f.bool()
+	        		.must(f.match().fields( "string" ).matching( "titanfall"))
+	        		.must(f.match().fields( "givenName" ).matching( "Asterix")))
+	        .fetchHits(20);
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits: "+hits.size());
+
+
+//		List<MyUntypedData> hits = ftSession.search( MyUntypedData.class )
+//		        .where( f -> f.match()
+//		                .field( "givenName" ).field( "string" )
+//		                .matching( keyword ) )
+//		        .fetchHits( 20 );
+
+
+
+		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
+
+		//final List<MyNaturalPerson> result = searchQuery.hits();
+		
 		SearchMapping mapping = Search.mapping(session.getSessionFactory()); 
 		Backend backend = mapping.backend(); 
 		LuceneBackend luceneBackend = backend.unwrap( LuceneBackend.class ); 
 		Optional<? extends Analyzer> analyzer = luceneBackend.analyzer( "default" );
+		final long startTime = System.currentTimeMillis();
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(new String[]{"string","givenName",
-			    		"sureName","country","zip","adressLine","legalName",
+			    		"sureName","country","zip","addressLine","legalName",
 			    		"id","identifier","mimeType","checkSum","algorithm",
 			    		"size","language"}, analyzer.get());
-		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
-		SearchResult<MyUntypedData> searchResult = null;
+		parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+		SearchResult<MetaDataImplementation> searchResult = null;
 			try {
 				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Parsed Query: "+luceneQuery.toString());
 
-				searchResult = ftSession.search(MyUntypedData.class)
+				searchResult = ftSession.search(ftSession.scope(MetaDataImplementation.class))//Searches all Indexes of that type and Sub Types!
 				        .extension( LuceneExtension.get() ) 
 				        .where( f -> f.fromLuceneQuery( 
 				                luceneQuery ))
@@ -1432,7 +1471,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 
 
-			List<? extends MyUntypedData> datatypes = searchResult.hits(); //return a list of managed objects
+			List<? extends MetaDataImplementation> datatypes = searchResult.hits(); //return a list of managed objects
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());
 			
 			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
@@ -1470,15 +1509,15 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
 			ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
 			//Subjects - MyUntypedData
-			for(MyUntypedData data: datatypes) {
-				if(data instanceof MyNaturalPerson) {
-					naturalPersons.add((MyNaturalPerson) data);
-				}else if(data instanceof MyCheckSumType) {
-					checksumTypes.add((MyCheckSumType)data);
-				}else {
-					datatypeList.add(data);
-				}
-			}
+//			for(MetaDataImplementation data: datatypes) {
+//				if(data instanceof MyNaturalPerson) {
+//					naturalPersons.add((MyNaturalPerson) data);
+//				}else if(data instanceof MyCheckSumType) {
+//					checksumTypes.add((MyCheckSumType)data);
+//				}else {
+//					datatypeList.add(data);
+//				}
+//			}
 			//Values getting deleted, is that a problem?
 			datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
 			if(naturalPersons.size() > 0) {
@@ -1759,21 +1798,29 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //	protected List<PrimaryDataEntity> searchByMetaDataImpl(final MetaData query, final boolean fuzzy,
 //			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException, MetaDataException {
 //
-//		final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
+//		//final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
 //
 //		//filter empty Elements/Attributes
 //		ArrayList<HashSet<PrimaryDataEntity>> resultsList = new ArrayList<>();
 //		for (final EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-//			HashSet<PrimaryDataEntity> set = new HashSet();
-//			set.addAll(this.searchByDublinCoreElement(element,query.getElementValue(element), fuzzy, recursiveIntoSubdirectories));
-//			if(!set.isEmpty())
-//				resultsList.add(set);		
+//			final HashSet<PrimaryDataEntity> hashSet = new HashSet<PrimaryDataEntity>();
+//			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
+//			query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
+//			hashSet.addAll(tempList);
+//			if(!hashSet.isEmpty())
+//				resultsList.add(hashSet);		
 ////			final List<PrimaryDataEntity> tempList = this.searchByDublinCoreElement(element,
 ////					query.getElementValue(element), fuzzy, recursiveIntoSubdirectories);
 ////			hashSet.addAll(tempList);
 //		}
 //		int size = resultsList.size();
-//		HashSet<PrimaryDataEntity> entitySet = resultsList.get(0);
+//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Size before search end"+resultsList.get(0).size());
+//
+//		HashSet<PrimaryDataEntity> entitySet = new HashSet<>();
+//		if(size > 0) {
+//		//boolean temp = resultsList.get(1).iterator().next().equals(resultsList.get(3).iterator().next());
+//			 entitySet = resultsList.get(0);
+//		}
 //		for(int i = 0; i < size; i++) {
 //			entitySet.retainAll(resultsList.get(i));
 //		}
@@ -1784,7 +1831,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 ////			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
 ////		}
 //		final List<PrimaryDataEntity> entityList = new ArrayList<PrimaryDataEntity>(entitySet);
-//
 //		return entityList;
 //	}
 	
@@ -2033,7 +2079,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		} else {
 			//query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
 			searchQuery = ftSession.search( MyUntypedData.class ) 
-	        .where( f -> f.match() 
+	        .where( f -> f.phrase() 
 	                .field( "string" )
 	                .matching( data.getString() ) )
 	        .fetch( 200 ); 
@@ -2174,8 +2220,19 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			 * saveOrUpdate the version --> Cascade.ALL --> saves automatically MetaData
 			 */
 			session.saveOrUpdate(privateVersion);
-
 			transaction.commit();
+			privateVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
+			java.nio.file.Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
+			Directory indexDirectory = FSDirectory.open(indexPath);
+			StandardAnalyzer analyzer = new StandardAnalyzer();
+		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+		    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
+		    Document doc = new Document();
+		    doc.add(new TextField("string", privateVersion.getMetaData().getWrapper().getStrings(),Store.YES));
+		    if( privateVersion.getMetaData().getWrapper().getGivenName() != null)
+		    	doc.add(new TextField("givenName", privateVersion.getMetaData().getWrapper().getGivenName(),Store.YES));
+		    writer.addDocument(doc);
+		    writer.close();
 		} catch (final Exception e) {
 			if (transaction != null) {
 				transaction.rollback();

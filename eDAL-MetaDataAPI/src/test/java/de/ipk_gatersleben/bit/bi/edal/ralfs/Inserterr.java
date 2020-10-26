@@ -45,8 +45,12 @@ public class Inserterr {
 	private MetaData searchable = null;
 	private FileInputStream fin = null;
 	
-	public Inserterr(PrimaryDataDirectory root) {
+	public Inserterr(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
+		List<PrimaryDataEntity> result = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
+		if(!result.isEmpty()) {
+			searchable = result.get(0).getMetaData();
+		}
 	}
 
 	public void process(int size) throws Exception {
@@ -120,26 +124,25 @@ public class Inserterr {
 	
 	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
 		PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
-		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
-		if(result.size() < 0) {
+		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("indextest"), false, true);
+		if(result.isEmpty()) {
 			log("Inserting new searchable");
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
 			searchable = entity.getMetaData();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("Eric","Ralfs","Halberstadt","38820","DE");
+			NaturalPerson np = new NaturalPerson("Asterix","Gallier","Corsair","38820","DE");
 			persons.add(np);
 			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
+			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","25709","USA"));		
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("Sed ut perspiciatis"));
 			EdalLanguage lang = new EdalLanguage(Locale.US);
 			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"));
+			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("titanfall"));
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			entity.setMetaData(searchable);
-			entity.store(fin);
 		}else {
 			searchable = result.get(0).getMetaData();
 		}

@@ -16,6 +16,7 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -75,7 +76,7 @@ public class MyLegalPerson extends MyPerson {
 	 */
 	@Column(columnDefinition = "varchar(4000)")
 	//@Field(index = Index.YES, store = Store.YES)
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getLegalName() {
 		return this.legalName;
 	}

@@ -12,6 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -51,6 +53,7 @@ import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedDataWrapper;
 
 /**
  * IndexWriterThread class to realize manual indexing strategy
@@ -109,15 +112,32 @@ public class IndexWriterThread extends EdalThread {
 		//final IndexReader reader = readerProvider.open(MyUntypedData.class);
 
 		try {
-			try {
-				Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
-				IndexReader reader = DirectoryReader.open( directory );
-				this.implementationProviderLogger.info("Number of docs after index rebuild: " + reader.numDocs());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+//			try {
+//				Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
+//				IndexReader reader = DirectoryReader.open( directory );
+//				this.implementationProviderLogger.info("Number of docs after index rebuild: " + reader.numDocs());
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			
+			File folder = new File(this.indexDirectory.toString());
+			File[] listOfFiles = folder.listFiles();
+			Directory directory = null;
+			IndexReader reader = null;
+			int numberDocs = 0;
+			for (File file : listOfFiles) {
+				  if (file.isDirectory()) {
+						try {					
+							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
+							reader = DirectoryReader.open( directory );
+							numberDocs += reader.numDocs();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+				  }
 			}
-
+			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
 //			this.implementationProviderLogger
 //					.info("Starting IndexWriterThread (current number of documents : " + reader.numDocs() + ")");
 
@@ -204,6 +224,36 @@ public class IndexWriterThread extends EdalThread {
 			}
 			session.getTransaction().commit();
 			results.close();
+//			CriteriaBuilder builder = session.getCriteriaBuilder();
+//			
+//			CriteriaQuery<MyUntypedDataWrapper> criteria2 = builder.createQuery( MyUntypedDataWrapper.class );
+//			Root<MyUntypedDataWrapper> root2 = criteria2.from( MyUntypedDataWrapper.class );
+//			criteria2.select( root2 );
+//			final List<MyUntypedDataWrapper> results2 = session.createQuery(criteria2)
+//					.list();
+//			session.getTransaction().begin();
+//			indexedObjects = 0;
+//			flushedObjects = 0;
+//			workspace = searchFactory.workspace(MyUntypedData.class);
+//			for(MyUntypedDataWrapper wrapper : results2) {
+//				indexedObjects++;
+//				/** index each element */
+//				indexingPlan.addOrUpdate(wrapper);
+//
+//				if (indexedObjects % fetchSize == 0) {
+//
+//					try {
+//						/** apply changes to indexes */
+//						workspace.flush();
+//						/** free memory since the queue is processed */
+//						//fullTextSession.clear();
+//						flushedObjects += fetchSize;
+//					} catch (Exception e) {
+//						throw new Error("Unable to read/write index files");
+//					}
+//				}
+//			}
+//			session.getTransaction().commit();
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -402,14 +452,23 @@ public class IndexWriterThread extends EdalThread {
 
 		final Session session = this.sessionFactory.openSession();
 		session.setDefaultReadOnly(true);
-		try {
-			Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
-			IndexReader reader = DirectoryReader.open( directory );
-			this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		File folder = new File(this.indexDirectory.toString());
+		File[] listOfFiles = folder.listFiles();
+		Directory directory = null;
+		IndexReader reader = null;
+		int numberDocs = 0;
+		for (File file : listOfFiles) {
+			  if (file.isDirectory()) {
+					try {					
+						directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
+						reader = DirectoryReader.open( directory );
+						numberDocs += reader.numDocs();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+			  }
 		}
+		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 		//final FullTextSession fullTextSession = Search.getFullTextSession(session);
 
 //		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);

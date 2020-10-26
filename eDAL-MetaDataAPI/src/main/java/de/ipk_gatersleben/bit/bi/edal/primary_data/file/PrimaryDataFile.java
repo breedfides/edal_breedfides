@@ -240,7 +240,6 @@ public abstract class PrimaryDataFile extends PrimaryDataEntity {
 			throw new MetaDataException(
 					"it is not allowed to overwrite the checksum of a PrimaryDataFile ! Rollback to " + originalData);
 		}
-
 		super.setMetaData(newMetadata);
 	}
 

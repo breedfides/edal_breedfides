@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -81,7 +82,7 @@ public class MyPerson extends MyUntypedData {
 	 */
 	@Column(columnDefinition = "varchar(4000)")
 	//@Field(index = Index.YES, store = Store.YES)
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getAddressLine() {
 		return addressLine;
 	}
@@ -91,7 +92,7 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return country of the {@link Person}.
 	 */
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	//@Field(index = Index.YES, store = Store.YES)
 	public String getCountry() {
 		return country;
@@ -102,7 +103,7 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return zip of the {@link Person}.
 	 */
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	//@Field(index = Index.YES, store = Store.YES)
 	public String getZip() {
 		return zip;
@@ -142,5 +143,9 @@ public class MyPerson extends MyUntypedData {
 	@Override
 	public String toString() {
 		return this.addressLine + ", " + this.zip + ", " + this.country;
+	}
+	public void setValues(MyUntypedDataWrapper wrapper) {
+		super.setValues(wrapper);
+		wrapper.setAddressLine(addressLine);
 	}
 }

@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -82,7 +83,7 @@ public final class MyIdentifier extends MyUntypedData {
 	 * @return the identifier
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public final String getIdentifier() {
 		return identifier;
 	}
@@ -110,5 +111,11 @@ public final class MyIdentifier extends MyUntypedData {
 	@Override
 	public String toString() {
 		return "MyIdentifier [identifier=" + identifier + "]";
+	}
+	public void setValues(MyUntypedDataWrapper wrapper) {
+		if(wrapper != null) {
+			wrapper.setIdentifier(identifier);
+			super.setValues(wrapper);
+		}
 	}
 }

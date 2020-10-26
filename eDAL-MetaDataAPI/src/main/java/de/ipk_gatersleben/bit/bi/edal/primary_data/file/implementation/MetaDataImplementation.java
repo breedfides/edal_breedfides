@@ -27,11 +27,15 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyEnumerated;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
@@ -70,6 +74,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPer
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnknownMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
 
 /**
@@ -82,6 +87,16 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException
 public class MetaDataImplementation extends MetaData implements Cloneable {
 
 	private static final long serialVersionUID = 1L;
+	private MyUntypedDataWrapper wrapper = new MyUntypedDataWrapper();
+	
+	@OneToOne(mappedBy = "metaData", cascade = CascadeType.ALL)
+	public MyUntypedDataWrapper getWrapper() {
+		return wrapper;
+	}
+
+	public void setWrapper(MyUntypedDataWrapper wrapper) {
+		this.wrapper = wrapper;
+	}
 
 	@SuppressWarnings("serial")
 	private static final Map<Class<? extends UntypedData>, Class<? extends MyUntypedData>> DATATYPE_MAP = Collections
@@ -116,6 +131,10 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	 */
 	public MetaDataImplementation() {
 		super();
+		if(wrapper == null) {
+			wrapper = new MyUntypedDataWrapper();
+		}
+		wrapper.setMetaData(this);
 		this.myMap = new HashMap<>();
 
 		/* put default values into the internal Map */
@@ -123,6 +142,7 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 		for (EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
 			try {
 				this.myMap.put(element, this.convertToPrivateUntypedData(super.getElementValue(element)));
+				
 			} catch (MetaDataException e) {
 				e.printStackTrace();
 			}
@@ -165,8 +185,10 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 		try {
 			Constructor<? extends MyUntypedData> constructor = MetaDataImplementation.DATATYPE_MAP.get(value.getClass())
 					.getConstructor(UntypedData.class);
-
-			return constructor.newInstance(value);
+			MyUntypedData data = constructor.newInstance(value);
+			if(data != null)
+				data.setValues(wrapper);
+			return data;
 
 		} catch (final Exception e) {
 			/* should never happen! */
@@ -281,6 +303,10 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	@MapKeyEnumerated(value = EnumType.ORDINAL)
 	@JoinTable(name = "METADATA_MAP", joinColumns = @JoinColumn(name = "METADATA_ID"))
 	@Fetch(FetchMode.SELECT)
+//	@IndexedEmbedded
+//    @AssociationInverseSide( 
+//            inversePath =@ObjectPath( @PropertyValue( propertyName = "metaData" ) )
+//    )
 	protected Map<EnumDublinCoreElements, MyUntypedData> getMyMap() {
 		return this.myMap;
 	}
@@ -296,6 +322,10 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 
 		/* set values in myMap */
 		this.myMap.put(key, this.convertToPrivateUntypedData(value));
+		if(key.equals(EnumDublinCoreElements.CREATOR)) {
+			MyNaturalPerson p = (MyNaturalPerson) ((MyPersons) this.myMap.get(key)).getPersons().iterator().next();
+			p.setValues(this.wrapper);
+		}
 	}
 
 	/**

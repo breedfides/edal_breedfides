@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBridgeRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
@@ -39,7 +40,7 @@ import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LongBridge;
  */
 @Entity
 @DiscriminatorValue("4")
-@Indexed
+//@Indexed
 public final class MyDataSize extends MyUntypedData {
 
 	private static final long serialVersionUID = 6243943469009086574L;
@@ -96,7 +97,7 @@ public final class MyDataSize extends MyUntypedData {
 	 */
 	//@Field(store = Store.YES, bridge = @FieldBridge(impl = LongBridge.class))
     @FullTextField( 
-    		analyzer = "default", valueBridge = @ValueBridgeRef(type = LongBridge.class)
+    		analyzer = "default",projectable = Projectable.YES, valueBridge = @ValueBridgeRef(type = LongBridge.class)
     )
 	public Long getSize() {
 		return size;
