@@ -34,8 +34,14 @@ import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.hibernate.CacheMode;
@@ -50,9 +56,16 @@ import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.hibernate.search.mapper.orm.work.SearchIndexingPlan;
 import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 
 /**
@@ -72,8 +85,6 @@ public class IndexWriterThread extends EdalThread {
 	private Path indexDirectory;
 	private Logger indexWriterThreadLogger = null;
 	private Logger implementationProviderLogger = null;
-	SearchIndexingPlan indexingPlan = null;
-	SearchWorkspace workspace = null;
 
 	private boolean requestForReset = false;
 
@@ -179,8 +190,8 @@ public class IndexWriterThread extends EdalThread {
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 
-			CriteriaQuery<MyUntypedData> criteria = criteriaBuilder.createQuery(MyUntypedData.class);
-			Root<MyUntypedData> root = criteria.from(MyUntypedData.class);
+			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
 					.orderBy(criteriaBuilder.asc(root.get("id")));
 
@@ -196,64 +207,29 @@ public class IndexWriterThread extends EdalThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
-			final SearchSession searchFactory = Search.session(session);
-			indexingPlan = searchFactory.indexingPlan(); 
-			workspace = searchFactory.workspace(MyUntypedData.class);
-			session.getTransaction().begin();
 			while (results.next()) {
 				indexedObjects++;
 				/** index each element */
-				MyUntypedData data = (MyUntypedData) results.get(0);
-				indexingPlan.addOrUpdate((results.get(0)));
+				PrimaryDataEntityVersionImplementation version = (PrimaryDataEntityVersionImplementation) results.get(0);
+				try {
+					this.indexVersion(version);
+				} catch (MetaDataException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				if (indexedObjects % fetchSize == 0) {
-
-					try {
-						/** apply changes to indexes */
-						workspace.flush();
-						/** free memory since the queue is processed */
 						//fullTextSession.clear();
 						flushedObjects += fetchSize;
-					} catch (Exception e) {
-						throw new Error("Unable to read/write index files");
-					}
-					if (data.getId() > this.lastIndexedID) {
-						this.lastIndexedID = data.getId() ;
+					if (version.getId() > this.lastIndexedID) {
+						this.lastIndexedID = version.getId() ;
 					}
 				}
 			}
-			session.getTransaction().commit();
 			results.close();
-//			CriteriaBuilder builder = session.getCriteriaBuilder();
-//			
-//			CriteriaQuery<MyUntypedDataWrapper> criteria2 = builder.createQuery( MyUntypedDataWrapper.class );
-//			Root<MyUntypedDataWrapper> root2 = criteria2.from( MyUntypedDataWrapper.class );
-//			criteria2.select( root2 );
-//			final List<MyUntypedDataWrapper> results2 = session.createQuery(criteria2)
-//					.list();
-//			session.getTransaction().begin();
-//			indexedObjects = 0;
-//			flushedObjects = 0;
-//			workspace = searchFactory.workspace(MyUntypedData.class);
-//			for(MyUntypedDataWrapper wrapper : results2) {
-//				indexedObjects++;
-//				/** index each element */
-//				indexingPlan.addOrUpdate(wrapper);
-//
-//				if (indexedObjects % fetchSize == 0) {
-//
-//					try {
-//						/** apply changes to indexes */
-//						workspace.flush();
-//						/** free memory since the queue is processed */
-//						//fullTextSession.clear();
-//						flushedObjects += fetchSize;
-//					} catch (Exception e) {
-//						throw new Error("Unable to read/write index files");
-//					}
-//				}
-//			}
-//			session.getTransaction().commit();
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -295,6 +271,32 @@ public class IndexWriterThread extends EdalThread {
 
 		}
 	}
+	
+	private void indexVersion(PrimaryDataEntityVersionImplementation version) throws MetaDataException, IOException {
+		MetaData metadata = version.getMetaData();
+		Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
+		Directory indexDirectory = FSDirectory.open(indexPath);
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+	    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+	    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
+	    Document doc = new Document();
+	    doc.add(new TextField("title",getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)),Store.YES));
+	    doc.add(new TextField("description",getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),Store.YES));
+	    doc.add(new TextField("coverage",getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)),Store.YES));
+	    doc.add(new TextField("identifier",getString(metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)),Store.YES));
+	    doc.add(new TextField("mimeType",getString(((DataFormat)metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()),Store.YES));
+	    doc.add(new TextField("versionID", Integer.toString(version.getId()),Store.YES));
+	    writer.addDocument(doc);
+	    writer.close();
+	}
+	
+	private String getString(UntypedData data) {
+		String string = data.getString();
+		return string == null ? "" : string;
+	}
+	private String getString(String string) {
+		return string == null ? "" : string;
+	}
 
 	private void indexRestObjects() {
 
@@ -312,8 +314,8 @@ public class IndexWriterThread extends EdalThread {
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 
-			CriteriaQuery<MyUntypedData> criteria = criteriaBuilder.createQuery(MyUntypedData.class);
-			Root<MyUntypedData> root = criteria.from(MyUntypedData.class);
+			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
 					.orderBy(criteriaBuilder.asc(root.get("id")));
 
@@ -324,31 +326,25 @@ public class IndexWriterThread extends EdalThread {
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
-			final SearchSession searchFactory = Search.session(session);
-			indexingPlan = searchFactory.indexingPlan(); 
-			workspace = searchFactory.workspace(MyUntypedData.class);
-			session.getTransaction().begin();
 			while (results.next()) {
 				/** index each element */
 				//fullTextSession.index(results.get(0));
-				MyUntypedData data = (MyUntypedData) results.get(0);
-				indexingPlan.addOrUpdate((results.get(0)));
-
-				if (data.getId() > this.lastIndexedID) {
-					this.lastIndexedID = data.getId() ;
+				PrimaryDataEntityVersionImplementation version = (PrimaryDataEntityVersionImplementation) results.get(0);
+				try {
+					this.indexVersion(version);
+				} catch (MetaDataException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if (version.getId() > this.lastIndexedID) {
+					this.lastIndexedID = version.getId() ;
 				}
 				indexedObjects++;
 				flushedObjects++;
 			}
-			try {
-				/** apply changes to indexes */
-				workspace.flush();
-				/** free memory since the queue is processed */
-				//fullTextSession.clear();
-			} catch (Exception e) {
-				throw new Error("Unable to read/write index files");
-			}
-			session.getTransaction().commit();
 			results.close();
 			session.close();
 
@@ -474,7 +470,6 @@ public class IndexWriterThread extends EdalThread {
 //		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 //		fullTextSession.setCacheMode(CacheMode.NORMAL);
 
-		workspace.purge();
 		//fullTextSession.flushToIndexes();
 //
 //		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();

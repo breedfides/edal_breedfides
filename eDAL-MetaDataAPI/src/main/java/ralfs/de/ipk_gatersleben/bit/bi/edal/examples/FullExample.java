@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
@@ -30,8 +31,10 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.Logger;
+import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -40,6 +43,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataEntityVersionImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
@@ -50,6 +54,17 @@ public class FullExample {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
 	inserter.process(rootDirectory, 5);
+	final Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSession();
+	CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+
+	CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+	Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
+	criteria.select(root);
+
+	/**
+	 * ScrollableResults will avoid loading too many objects in memory
+	 */
+	final Collection<PrimaryDataEntityVersionImplementation> results = session.createQuery(criteria).list();
 	MetaData searchable = inserter.getSearchable();
 	//testSearchByDublin();
 	//testMetaDataSearch(rootDirectory, searchable);

@@ -465,7 +465,6 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 
 			transaction.commit();
 			publicVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
-			this.indexWrapperData(publicVersion.getMetaData().getWrapper());
 			
 		} catch (final Exception e) {
 
