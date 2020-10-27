@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -87,13 +88,16 @@ class H2ChunkCorruptionTest {
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(2);
+    	createAndInsert(1);
     	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper"));
     	IndexReader reader = DirectoryReader.open(indexDirectory);
     	IndexSearcher searcher = new IndexSearcher(reader);
-    	QueryParser parser = new QueryParser("address", new StandardAnalyzer());
-        Query query = parser.parse("Verzeichnisdienste");
+		MultiFieldQueryParser parser =
+			    new MultiFieldQueryParser(new String[]{"title","address","givenName"}, new StandardAnalyzer());
+		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+        Query query = parser.parse("Cotter");
         ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
+    	log("Hits LEngth:_ "+hits.length);
         for(int i = 0; i < hits.length; i++) {
         	Document doc = searcher.doc(hits[i].doc);
         	log("Document "+i+" address; "+doc.get("address"));
@@ -145,10 +149,15 @@ class H2ChunkCorruptionTest {
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
+			
 			//entity.store(fin);
 			//EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
 			//Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
+			log("###############Entity saved: ######################");
+			for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+				log(element.toString()+": "+metadata.getElementValue(element));
+			}
 		}
 		log("Time to insert Data: "+(System.currentTimeMillis()-start));
 		//fin.close();

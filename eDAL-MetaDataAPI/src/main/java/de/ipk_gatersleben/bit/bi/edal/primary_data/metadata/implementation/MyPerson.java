@@ -144,8 +144,4 @@ public class MyPerson extends MyUntypedData {
 	public String toString() {
 		return this.addressLine + ", " + this.zip + ", " + this.country;
 	}
-	public void setValues(MyUntypedDataWrapper wrapper) {
-		super.setValues(wrapper);
-		wrapper.setAddressLine(addressLine);
-	}
 }

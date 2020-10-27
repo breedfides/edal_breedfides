@@ -154,9 +154,5 @@ public class MyNaturalPerson extends MyPerson {
 	public void setOrcid(MyORCID orcid) {
 		this.orcid = orcid;
 	}
-	public void setValues(MyUntypedDataWrapper wrapper) {
-		super.setValues(wrapper);
-		wrapper.setGivenName(givenName);
-	}
 
 }

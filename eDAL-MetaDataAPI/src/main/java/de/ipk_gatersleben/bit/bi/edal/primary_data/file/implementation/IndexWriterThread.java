@@ -52,8 +52,8 @@ import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedDataWrapper;
 
 /**
  * IndexWriterThread class to realize manual indexing strategy

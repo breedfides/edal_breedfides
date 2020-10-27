@@ -61,6 +61,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataFormat;
@@ -82,7 +83,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPer
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnknownMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
 

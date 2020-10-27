@@ -74,6 +74,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
 
 /**
@@ -328,6 +329,78 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 		this.versionList = Collections.synchronizedSortedSet(versionList);
 		this.setCurrentVersion(this.versionList.last());
 	}
+	
+	private void indexWrapperData(MyUntypedDataWrapper wrapper) throws IOException {
+		Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
+		Directory indexDirectory = FSDirectory.open(indexPath);
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+	    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+	    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
+	    Document doc = new Document();
+	    if(wrapper.getTitle() != null) {
+	    	doc.add(new TextField("title", wrapper.getTitle(),Store.YES));
+	    }
+	    if(wrapper.getDescription() != null) {
+	    	doc.add(new TextField("description", wrapper.getDescription(),Store.YES));
+	    }
+	    if(wrapper.getCoverage() != null) {
+	    	doc.add(new TextField("coverage", wrapper.getCoverage(),Store.YES));
+	    }
+	    if(wrapper.getIdentifier() != null) {
+	    	doc.add(new TextField("identifier", wrapper.getIdentifier(),Store.YES));
+	    }
+	    if(wrapper.getMimeType() != null) {
+	    	doc.add(new TextField("mimeType", wrapper.getMimeType(),Store.YES));
+	    }
+	    if(wrapper.getFormat() != null) {
+	    doc.add(new TextField("format", wrapper.getFormat(),Store.YES));
+	    }
+	    if(wrapper.getType() != null) {
+	    	doc.add(new TextField("type", wrapper.getType(),Store.YES));
+	    }
+	    if(wrapper.getSize() != null) {
+	    	doc.add(new TextField("size", Long.toString(wrapper.getSize()),Store.YES));
+	    }
+	    if(wrapper.getSource() != null) {
+	    	doc.add(new TextField("source", wrapper.getSource(),Store.YES));
+	    }
+	    if(wrapper.getLanguage() != null) {
+	    	doc.add(new TextField("language", wrapper.getLanguage(),Store.YES));
+	    }
+	    if(wrapper.getGivenName().toString().length() > 0) {
+	    	doc.add(new TextField("givenName", wrapper.getGivenName(),Store.YES));
+	    }
+	    if(wrapper.getSureName().toString().length() > 0) {
+	    	doc.add(new TextField("sureName", wrapper.getSureName(),Store.YES));
+	    }
+	    if(wrapper.getLegalName().toString().length() > 0) {
+	   	doc.add(new TextField("legalName", wrapper.getLegalName(),Store.YES));
+	    }
+	    if(wrapper.getAddressLine().toString().length() > 0) {
+	    	doc.add(new TextField("address", wrapper.getAddressLine(),Store.YES));
+	    }
+	    if(wrapper.getZip().toString().length() > 0) {
+	    	doc.add(new TextField("zip", wrapper.getZip(),Store.YES));
+	    }
+	    if(wrapper.getCountry().toString().length() > 0) {
+	    	doc.add(new TextField("counrty", wrapper.getCountry(),Store.YES));
+	    }
+	    if(wrapper.getAlgorithm().toString().length() > 0) {
+	    	doc.add(new TextField("algorithm", wrapper.getAlgorithm(),Store.YES));
+	    }
+	    if(wrapper.getCheckSum().toString().length() > 0) {
+	    	doc.add(new TextField("checkSum", wrapper.getCheckSum(),Store.YES));
+	    }
+	    if(wrapper.getRelations().toString().length() > 0) {
+	    	doc.add(new TextField("relations", wrapper.getRelations(),Store.YES));
+	    }
+	    if(wrapper.getSubjects().toString().length() > 0) {
+	    	doc.add(new TextField("subjects", wrapper.getSubjects(),Store.YES));
+	    }
+	    doc.add(new TextField("versionID", Integer.toString(wrapper.getVersionId()),Store.YES));
+	    writer.addDocument(doc);
+	    writer.close();
+	}
 
 	/** {@inheritDoc} */
 	@Override
@@ -359,8 +432,6 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 	protected void storeVersion(final PrimaryDataEntityVersion publicVersion) throws PrimaryDataEntityVersionException {
 
 		final MetaDataImplementation metadata = (MetaDataImplementation) publicVersion.getMetaData();
-		//test
-		metadata.getWrapper().setMetaData(metadata);
 		
 
 		/* create new version */
@@ -393,24 +464,8 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 			session.saveOrUpdate(privateVersion);
 
 			transaction.commit();
-			privateVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
-			
-			
-//			Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
-//			Directory indexDirectory = FSDirectory.open(indexPath);
-//			StandardAnalyzer analyzer = new StandardAnalyzer();
-//		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-//		    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
-//		    Document doc = new Document();
-//		    doc.add(new TextField("string", privateVersion.getMetaData().getWrapper().getStrings(),Store.YES));
-//		    doc.add(new TextField("versionID", Integer.toString(privateVersion.getMetaData().getWrapper().getVersionId()),Store.YES));
-//		    TextField addressField = new TextField("address", privateVersion.getMetaData().getWrapper().getAddressLine(),Store.YES);
-//		    if( privateVersion.getMetaData().getWrapper().getAddressLine() != null) {
-//		    	doc.add(addressField);
-//				this.getImplementationProvider().getLogger().info("Addressline saved: " + privateVersion.getMetaData().getWrapper().getAddressLine().toString());
-//		    }
-//		    writer.addDocument(doc);
-//		    writer.close();
+			publicVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
+			this.indexWrapperData(publicVersion.getMetaData().getWrapper());
 			
 		} catch (final Exception e) {
 

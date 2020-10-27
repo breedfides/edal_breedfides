@@ -126,9 +126,5 @@ public class MyUntypedData extends UntypedData implements Serializable {
 		this.string = string;
 	}
 	
-	public void setValues(MyUntypedDataWrapper wrapper) {
-		if(wrapper != null)
-			wrapper.setStrings(string);
-	}
 	
 }

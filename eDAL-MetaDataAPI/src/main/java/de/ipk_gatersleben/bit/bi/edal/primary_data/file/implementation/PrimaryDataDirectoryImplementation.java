@@ -1450,7 +1450,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			    		"sureName","country","zip","addressLine","legalName",
 			    		"id","identifier","mimeType","checkSum","algorithm",
 			    		"size","language"}, analyzer.get());
-		parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
 		SearchResult<MetaDataImplementation> searchResult = null;
 			try {
 				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
@@ -2221,18 +2221,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			 */
 			session.saveOrUpdate(privateVersion);
 			transaction.commit();
-			privateVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
-			java.nio.file.Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
-			Directory indexDirectory = FSDirectory.open(indexPath);
-			StandardAnalyzer analyzer = new StandardAnalyzer();
-		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-		    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
-		    Document doc = new Document();
-		    doc.add(new TextField("string", privateVersion.getMetaData().getWrapper().getStrings(),Store.YES));
-		    if( privateVersion.getMetaData().getWrapper().getGivenName() != null)
-		    	doc.add(new TextField("givenName", privateVersion.getMetaData().getWrapper().getGivenName(),Store.YES));
-		    writer.addDocument(doc);
-		    writer.close();
+			publicVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
+//			java.nio.file.Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
+//			Directory indexDirectory = FSDirectory.open(indexPath);
+//			StandardAnalyzer analyzer = new StandardAnalyzer();
+//		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+//		    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
+//		    Document doc = new Document();
+//		    doc.add(new TextField("string", privateVersion.getMetaData().getWrapper().getStrings(),Store.YES));
+//		    if( privateVersion.getMetaData().getWrapper().getGivenName() != null)
+//		    	doc.add(new TextField("givenName", privateVersion.getMetaData().getWrapper().getGivenName(),Store.YES));
+//		    writer.addDocument(doc);
+//		    writer.close();
 		} catch (final Exception e) {
 			if (transaction != null) {
 				transaction.rollback();

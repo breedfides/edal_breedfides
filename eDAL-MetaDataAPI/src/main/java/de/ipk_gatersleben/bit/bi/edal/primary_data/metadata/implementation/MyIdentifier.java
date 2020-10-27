@@ -112,10 +112,4 @@ public final class MyIdentifier extends MyUntypedData {
 	public String toString() {
 		return "MyIdentifier [identifier=" + identifier + "]";
 	}
-	public void setValues(MyUntypedDataWrapper wrapper) {
-		if(wrapper != null) {
-			wrapper.setIdentifier(identifier);
-			super.setValues(wrapper);
-		}
-	}
 }

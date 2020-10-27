@@ -91,7 +91,7 @@ class ExistingSearchTest {
 	public Path mountPath = null;
 	
 	
-	@Test
+	//@Test
     void searchByDublinCoreElementTest() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
@@ -243,7 +243,7 @@ class ExistingSearchTest {
 //    	Inserterr insert = new Inserterr(rootDirectory);
 //		insert.process(2);
 //		MetaData metaData = insert.getSearchableMetaData();
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Asterix", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Gellman", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {
@@ -313,7 +313,7 @@ class ExistingSearchTest {
 			this.configuration.setHttpPort(ExistingSearchTest.HTTP_PORT);
 			this.configuration.setHttpsPort(ExistingSearchTest.HTTPS_PORT);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "KEYWORDTEST");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "Keywordsearch_");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

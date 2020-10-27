@@ -71,7 +71,7 @@ public class MySubjects extends MyUntypedData {
 		}
 	}
 
-	public Subjects toSubjets() {
+	public Subjects toSubjects() {
 
 		Subjects subjects = new Subjects();
 

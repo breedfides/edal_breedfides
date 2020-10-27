@@ -70,7 +70,7 @@ public class Inserter {
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName+names.get(random.nextInt(countNames)));
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entity86.."+i);
-			MetaData metadata = entity.getMetaData();
+			MetaData metadata = entity.getMetaData().clone();
 			Persons persons = new Persons();
 			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
 					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
