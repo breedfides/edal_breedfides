@@ -30,6 +30,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("6")
+@Indexed
 public final class MyDirectoryMetaData extends MyUntypedData {
 
 	private static final long serialVersionUID = 6713690306176488008L;

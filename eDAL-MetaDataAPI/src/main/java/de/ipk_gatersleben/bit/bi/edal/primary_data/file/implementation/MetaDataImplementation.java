@@ -124,6 +124,7 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String ALGORITHM = "algorithm";
 	public static final String CHECKSUM = "checkSum";
 	public static final String VERSIONID = "versionID";
+	public static final String SUBJECT = "subject";
 	
 
 	private Map<EnumDublinCoreElements, MyUntypedData> myMap;

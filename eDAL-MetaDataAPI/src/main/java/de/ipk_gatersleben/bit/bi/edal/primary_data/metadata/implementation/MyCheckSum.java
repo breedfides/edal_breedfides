@@ -37,6 +37,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("12")
+@Indexed
 public final class MyCheckSum extends MyUntypedData {
 
 	private static final long serialVersionUID = 1L;

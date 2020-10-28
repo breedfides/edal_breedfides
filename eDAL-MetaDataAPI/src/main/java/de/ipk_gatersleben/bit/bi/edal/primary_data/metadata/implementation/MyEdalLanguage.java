@@ -41,6 +41,7 @@ import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
  */
 @Entity
 @DiscriminatorValue("15")
+@Indexed
 public class MyEdalLanguage extends MyUntypedData {
 
 	private static final long serialVersionUID = -7524581040275981979L;

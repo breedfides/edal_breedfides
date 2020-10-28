@@ -36,6 +36,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("14")
+@Indexed
 public class MyLegalPerson extends MyPerson {
 
 	private static final long serialVersionUID = -2818063618946751154L;
@@ -74,8 +75,7 @@ public class MyLegalPerson extends MyPerson {
 	 * @return the legalName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getLegalName() {
 		return this.legalName;
 	}

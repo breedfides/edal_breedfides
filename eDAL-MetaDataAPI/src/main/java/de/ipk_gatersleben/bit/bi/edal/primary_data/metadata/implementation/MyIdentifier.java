@@ -35,6 +35,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("8")
+@Indexed
 public final class MyIdentifier extends MyUntypedData {
 
 	private static final long serialVersionUID = -460725495792281812L;
@@ -82,7 +83,7 @@ public final class MyIdentifier extends MyUntypedData {
 	 * @return the identifier
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public final String getIdentifier() {
 		return identifier;
 	}

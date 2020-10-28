@@ -33,6 +33,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
 @Entity
 @DiscriminatorValue("2")
+@Indexed
 public class MyDateEvents extends MyUntypedData {
 
 	/**

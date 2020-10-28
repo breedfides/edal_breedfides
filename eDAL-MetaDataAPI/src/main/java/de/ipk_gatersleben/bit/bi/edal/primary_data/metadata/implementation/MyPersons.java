@@ -37,6 +37,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException
 
 @Entity
 @DiscriminatorValue("17")
+@Indexed
 public class MyPersons extends MyPerson {
 
 	private static final long serialVersionUID = 3989021444510959618L;

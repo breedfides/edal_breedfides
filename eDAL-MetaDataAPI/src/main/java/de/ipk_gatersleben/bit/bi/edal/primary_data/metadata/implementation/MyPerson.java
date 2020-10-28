@@ -39,6 +39,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  * 
  * no DiscriminatorValue necessary because Person is abstract
  */
+@Indexed
 public class MyPerson extends MyUntypedData {
 
 	private static final long serialVersionUID = -6403638807931955763L;
@@ -80,8 +81,7 @@ public class MyPerson extends MyUntypedData {
 	 * @return address line of the {@link Person}.
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getAddressLine() {
 		return addressLine;
 	}
@@ -91,8 +91,7 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return country of the {@link Person}.
 	 */
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
-	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getCountry() {
 		return country;
 	}
@@ -102,8 +101,7 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return zip of the {@link Person}.
 	 */
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
-	//@Field(index = Index.YES, store = Store.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getZip() {
 		return zip;
 	}

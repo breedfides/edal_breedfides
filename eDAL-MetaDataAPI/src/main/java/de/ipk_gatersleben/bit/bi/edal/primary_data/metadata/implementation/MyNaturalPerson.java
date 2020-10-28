@@ -39,6 +39,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("13")
+@Indexed
 public class MyNaturalPerson extends MyPerson {
 
 	private static final long serialVersionUID = -8540414353817218447L;
@@ -112,8 +113,7 @@ public class MyNaturalPerson extends MyPerson {
 	 * @return the givenName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getGivenName() {
 		return givenName;
 	}
@@ -130,8 +130,7 @@ public class MyNaturalPerson extends MyPerson {
 	 * @return the sureName
 	 */
 	@Column(columnDefinition = "varchar(4000)")
-	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getSureName() {
 		return sureName;
 	}

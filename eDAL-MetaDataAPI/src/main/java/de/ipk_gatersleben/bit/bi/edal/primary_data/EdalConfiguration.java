@@ -87,6 +87,12 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  */
 public final class EdalConfiguration {
 
+	public static final String HIBERNATE_SEARCH_INDEX_WRITER_THREAD = "hibernate_search_indexing";
+	
+	public static final String NATIVE_LUCENE_INDEX_WRITER_THREAD = "native_lucene_indexing";
+	
+	private static final String DEFAULT_INDEX_WRITER_THREAD = NATIVE_LUCENE_INDEX_WRITER_THREAD;
+	
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";
 
 	private static final String MSG_UNABLE_TO_SET_PROXY = "unable to set proxy: ";
@@ -310,6 +316,21 @@ public final class EdalConfiguration {
 
 	private boolean inTestMode = false;
 	private boolean inReadOnlyMode = false;
+
+	/**
+	 * The IndexWriterThread to use
+	 */
+	private String indexWriterThread = this.DEFAULT_INDEX_WRITER_THREAD;
+	
+	
+	
+	public String getIndexWriterThread() {
+		return indexWriterThread;
+	}
+
+	public void setIndexWriterThread(String indexWriterThread) {
+		this.indexWriterThread = indexWriterThread;
+	}
 
 	/**
 	 * The eMail address to send messages of edal.

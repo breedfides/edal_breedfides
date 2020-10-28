@@ -301,7 +301,13 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
 
 		if (!this.isAutoIndexing()) {
-			this.setIndexThread(new IndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+			if(this.configuration.getIndexWriterThread().equals(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD)) {
+				logger.info("USING HIBERNATE INDEXER");
+				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+			}else if(this.configuration.getIndexWriterThread().equals(EdalConfiguration.NATIVE_LUCENE_INDEX_WRITER_THREAD)) {
+				logger.info("USING LUCENE INDEXER");
+				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+			}
 			this.getIndexThread().start();
 		}
 	}

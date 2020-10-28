@@ -35,6 +35,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("3")
+@Indexed
 public final class MyDataFormat extends MyUntypedData {
 
 	private static final long serialVersionUID = -9055352152889379069L;
@@ -71,7 +72,7 @@ public final class MyDataFormat extends MyUntypedData {
 	 * @return the mimeType
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getMimeType() {
 		return mimeType;
 	}

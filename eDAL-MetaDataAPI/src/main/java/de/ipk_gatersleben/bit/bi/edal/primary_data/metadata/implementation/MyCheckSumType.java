@@ -35,6 +35,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("11")
+@Indexed
 public final class MyCheckSumType extends MyUntypedData {
 
 	private static final long serialVersionUID = 1L;
@@ -73,7 +74,7 @@ public final class MyCheckSumType extends MyUntypedData {
 	 * @return the algorithm
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default")
+	@FullTextField(analyzer = "default")
 	public String getAlgorithm() {
 		return algorithm;
 	}
@@ -82,7 +83,7 @@ public final class MyCheckSumType extends MyUntypedData {
 	 * @return the checkSum
 	 */
 	//@Field(index = Index.YES, store = Store.YES)
-	//@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getCheckSum() {
 		return checkSum;
 	}

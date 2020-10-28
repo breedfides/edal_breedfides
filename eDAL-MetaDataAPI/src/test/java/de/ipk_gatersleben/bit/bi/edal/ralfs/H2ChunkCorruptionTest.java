@@ -82,27 +82,27 @@ class H2ChunkCorruptionTest {
 	public Path mountPath = null;
 	private PrimaryDataDirectory rootDirectory;
 
-	//@Test
+	@Test
 	void generateDataTest() throws Exception {
 		rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(1);
-    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
-    	IndexReader reader = DirectoryReader.open(indexDirectory);
-    	IndexSearcher searcher = new IndexSearcher(reader);
-		MultiFieldQueryParser parser =
-			    new MultiFieldQueryParser(new String[]{"title","address","givenName"}, new StandardAnalyzer());
-		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
-        Query query = parser.parse("Cotter");
-        ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
-    	log("Hits LEngth:_ "+hits.length);
-        for(int i = 0; i < hits.length; i++) {
-        	Document doc = searcher.doc(hits[i].doc);
-        	log("Document "+i+" address; "+doc.get("address"));
-        	log("Document "+i+" versionId; "+doc.get("versionID"));
-        }
+    	createAndInsert(5);
+//    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+//    	IndexReader reader = DirectoryReader.open(indexDirectory);
+//    	IndexSearcher searcher = new IndexSearcher(reader);
+//		MultiFieldQueryParser parser =
+//			    new MultiFieldQueryParser(new String[]{"title","address","givenName"}, new StandardAnalyzer());
+//		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+//        Query query = parser.parse("Cotter");
+//        ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
+//    	log("Hits LEngth:_ "+hits.length);
+//        for(int i = 0; i < hits.length; i++) {
+//        	Document doc = searcher.doc(hits[i].doc);
+//        	log("Document "+i+" address; "+doc.get("address"));
+//        	log("Document "+i+" versionId; "+doc.get("versionID"));
+//        }
     	DataManager.shutdown();
 	}
 	
@@ -184,6 +184,7 @@ class H2ChunkCorruptionTest {
 					,"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(H2ChunkCorruptionTest.HTTP_PORT);
 			this.configuration.setHttpsPort(H2ChunkCorruptionTest.HTTPS_PORT);
+			this.configuration.setIndexWriterThread(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD);
 
 			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "Keywordsearch_");
 			Files.createDirectories(mountPath);
