@@ -40,7 +40,6 @@ import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LongBridge;
  */
 @Entity
 @DiscriminatorValue("4")
-//@Indexed
 public final class MyDataSize extends MyUntypedData {
 
 	private static final long serialVersionUID = 6243943469009086574L;
@@ -96,9 +95,9 @@ public final class MyDataSize extends MyUntypedData {
 	 * @return size
 	 */
 	//@Field(store = Store.YES, bridge = @FieldBridge(impl = LongBridge.class))
-    @FullTextField( 
-    		analyzer = "default",projectable = Projectable.YES, valueBridge = @ValueBridgeRef(type = LongBridge.class)
-    )
+//    @FullTextField( 
+//    		analyzer = "default",projectable = Projectable.YES, valueBridge = @ValueBridgeRef(type = LongBridge.class)
+//    )
 	public Long getSize() {
 		return size;
 	}

@@ -935,7 +935,6 @@ public abstract class PrimaryDataEntity implements
 			
 			final PrimaryDataEntityVersion newVersion = new PrimaryDataEntityVersion(
 					this, false, cloneNewMetaData);
-			newVersion.getMetaData().setWrapperValues();
 			this.commitVersion(newVersion);
 
 		} else {

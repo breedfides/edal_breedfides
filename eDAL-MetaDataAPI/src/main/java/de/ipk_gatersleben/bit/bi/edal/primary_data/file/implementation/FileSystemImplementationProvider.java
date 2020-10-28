@@ -61,7 +61,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyCheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyDataFormat;
@@ -213,7 +212,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
 				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
 				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
-				MyDateEvents.class, MyORCID.class, MyUntypedDataWrapper.class);
+				MyDateEvents.class, MyORCID.class);
 
 		if (!exists) {
 

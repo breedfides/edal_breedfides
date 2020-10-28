@@ -12,6 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 import java.util.Arrays;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -55,11 +56,15 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -1344,6 +1349,26 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //		return result;
 
 	}
+	
+	private ArrayList<Integer> searchKeywordOnindex(String keyword) throws IOException, ParseException {
+    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+    	IndexReader reader = DirectoryReader.open(indexDirectory);
+    	IndexSearcher searcher = new IndexSearcher(reader);
+		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+			    new MultiFieldQueryParser(new String[]{"string","givenName","title",
+			    		"sureName","country","zip","addressLine","legalName",
+			    		"identifier","mimeType","checkSum","algorithm",
+			    		"size","language"}, new StandardAnalyzer());
+		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+        org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
+        ScoreDoc[] hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+    	final ArrayList<Integer> versionIDList = new ArrayList<>();
+        for(int i = 0; i < hits2.length; i++) {
+        	Document doc = searcher.doc(hits2[i].doc);
+        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+        }
+        return versionIDList;
+	}
 
 	/**
 	 * Internal function to search for a {@link IdentifierRelation}.
@@ -1419,12 +1444,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //
 //		org.apache.lucene.search.Query combinedQuery = null;
 
-		List<MyUntypedData> hits = ftSession.search( Arrays.asList(MyUntypedData.class,MyNaturalPerson.class) ) 
-	        .where( f -> f.bool()
-	        		.must(f.match().fields( "string" ).matching( "titanfall"))
-	        		.must(f.match().fields( "givenName" ).matching( "Asterix")))
-	        .fetchHits(20);
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits: "+hits.size());
 
 
 //		List<MyUntypedData> hits = ftSession.search( MyUntypedData.class )
@@ -1440,39 +1459,41 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		//final List<MyNaturalPerson> result = searchQuery.hits();
 		
-		SearchMapping mapping = Search.mapping(session.getSessionFactory()); 
-		Backend backend = mapping.backend(); 
-		LuceneBackend luceneBackend = backend.unwrap( LuceneBackend.class ); 
-		Optional<? extends Analyzer> analyzer = luceneBackend.analyzer( "default" );
 		final long startTime = System.currentTimeMillis();
-		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
-			    new MultiFieldQueryParser(new String[]{"string","givenName",
-			    		"sureName","country","zip","addressLine","legalName",
-			    		"id","identifier","mimeType","checkSum","algorithm",
-			    		"size","language"}, analyzer.get());
-		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
-		SearchResult<MetaDataImplementation> searchResult = null;
-			try {
-				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Parsed Query: "+luceneQuery.toString());
+		ArrayList<Integer> versionIDList = null;
+		try {
+			versionIDList = this.searchKeywordOnindex(keyword);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (ParseException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found while searching: "+versionIDList.size()+" values");
+		
+//		SearchResult<MetaDataImplementation> searchResult = null;
+//			try {
+//				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
+//				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Parsed Query: "+luceneQuery.toString());
+//
+//				searchResult = ftSession.search(ftSession.scope(MetaDataImplementation.class))//Searches all Indexes of that type and Sub Types!
+//				        .extension( LuceneExtension.get() ) 
+//				        .where( f -> f.fromLuceneQuery( 
+//				                luceneQuery ))
+//				        .fetch(200);
+////				fullTextQuery = ftSession.
+////				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
+//			}
+//			catch (ParseException e) {
+//			    //handle parsing failure
+//			}
 
-				searchResult = ftSession.search(ftSession.scope(MetaDataImplementation.class))//Searches all Indexes of that type and Sub Types!
-				        .extension( LuceneExtension.get() ) 
-				        .where( f -> f.fromLuceneQuery( 
-				                luceneQuery ))
-				        .fetch(200);
-//				fullTextQuery = ftSession.
-//				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
-			}
-			catch (ParseException e) {
-			    //handle parsing failure
-			}
 
 
 
-
-			List<? extends MetaDataImplementation> datatypes = searchResult.hits(); //return a list of managed objects
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());
+			/*List<? extends MetaDataImplementation> datatypes = searchResult.hits(); //return a list of managed objects
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());*/
 			
 			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
 			
@@ -1496,77 +1517,62 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //		final List<MyUntypedData> datatypeList = hibernateQuery.list();
 
 		//session.close();
-		Collection<MyUntypedData> datatypeList = new ArrayList<>();
-		/** if no results found return empty List */
-		if (datatypes.isEmpty()) {
-			return new ArrayList<PrimaryDataEntity>();
-		}
-		if (datatypes.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
-			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-		}else {
-		//filter Collection-associated Objects for mapping
-			ArrayList<MyNaturalPerson> naturalPersons = new ArrayList<>();
-			ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
-			ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
-			//Subjects - MyUntypedData
-//			for(MetaDataImplementation data: datatypes) {
-//				if(data instanceof MyNaturalPerson) {
-//					naturalPersons.add((MyNaturalPerson) data);
-//				}else if(data instanceof MyCheckSumType) {
-//					checksumTypes.add((MyCheckSumType)data);
-//				}else {
-//					datatypeList.add(data);
-//				}
-//			}
-			//Values getting deleted, is that a problem?
-			datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
-			if(naturalPersons.size() > 0) {
-				datatypeList.addAll(this.mapCollections(naturalPersons, MyPersons.class, "persons"));
-			}
-			if(checksumTypes.size() > 0) {
-
-			}
-		}
-
-		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
-
-		for (final MyUntypedData myUntypedData : datatypeList) {
-			datatypeIDList.add(myUntypedData.getId());
-		}
-
-		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
-				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
-				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
-
-		versionSQLQuery.setParameterList("list", datatypeIDList);
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
-//		long s = System.currentTimeMillis();
-//		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//		CriteriaQuery<PrimaryDataEntityVersionImplementation> cirQuery = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-//		Root<PrimaryDataEntityVersionImplementation> root = cirQuery.from(PrimaryDataEntityVersionImplementation.class);
-//		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
-//		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
-//		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
-//		cirQuery.where(chainedJoin.in(persons));
-//		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(cirQuery);
-//		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
-//		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
-//		List<Integer> versionIDList = new ArrayList<>();
-//		long f = System.currentTimeMillis();
-//		long timeElapsed = f - s;
-//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS: "+timeElapsed);
-//		for(PrimaryDataEntityVersionImplementation version : finalresult) {
-//			versionIDList.add(version.getId());
+		
+//        
+//        Collection<MyUntypedData> datatypeList = new ArrayList<>();
+//		/** if no results found return empty List */
+//		if (datatypes.isEmpty()) {
+//			return new ArrayList<PrimaryDataEntity>();
 //		}
+//		if (datatypes.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+//			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+//		}else {
+//		//filter Collection-associated Objects for mapping
+//			ArrayList<MyNaturalPerson> naturalPersons = new ArrayList<>();
+//			ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
+//			ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
+//			//Subjects - MyUntypedData
+////			for(MetaDataImplementation data: datatypes) {
+////				if(data instanceof MyNaturalPerson) {
+////					naturalPersons.add((MyNaturalPerson) data);
+////				}else if(data instanceof MyCheckSumType) {
+////					checksumTypes.add((MyCheckSumType)data);
+////				}else {
+////					datatypeList.add(data);
+////				}
+////			}
+//			//Values getting deleted, is that a problem?
+//			datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
+//			if(naturalPersons.size() > 0) {
+//				datatypeList.addAll(this.mapCollections(naturalPersons, MyPersons.class, "persons"));
+//			}
+//			if(checksumTypes.size() > 0) {
+//
+//			}
+//		}
+//
+//		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
+//
+//		for (final MyUntypedData myUntypedData : datatypeList) {
+//			datatypeIDList.add(myUntypedData.getId());
+//		}
+//
+//
+//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+//		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
+//				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
+//				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+//
+//		versionSQLQuery.setParameterList("list", datatypeIDList);
+//
+//		final List<Integer> versionIDList = versionSQLQuery.list();
+		
+		
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 
 		final long startEntityQuery = System.currentTimeMillis();
-
+		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		if (!recursiveIntoSubdirectories) {
 			for (final Integer version : versionIDList) {
 				final PrimaryDataEntityVersionImplementation currentVersion = session2
@@ -2221,18 +2227,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			 */
 			session.saveOrUpdate(privateVersion);
 			transaction.commit();
-			publicVersion.getMetaData().getWrapper().setVersionId(privateVersion.getId());
-//			java.nio.file.Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
-//			Directory indexDirectory = FSDirectory.open(indexPath);
-//			StandardAnalyzer analyzer = new StandardAnalyzer();
-//		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-//		    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
-//		    Document doc = new Document();
-//		    doc.add(new TextField("string", privateVersion.getMetaData().getWrapper().getStrings(),Store.YES));
-//		    if( privateVersion.getMetaData().getWrapper().getGivenName() != null)
-//		    	doc.add(new TextField("givenName", privateVersion.getMetaData().getWrapper().getGivenName(),Store.YES));
-//		    writer.addDocument(doc);
-//		    writer.close();
 		} catch (final Exception e) {
 			if (transaction != null) {
 				transaction.rollback();

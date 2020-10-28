@@ -38,7 +38,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 public class MetaData implements Cloneable, Serializable {
 
 	protected static final String UNKNOWN_STRING = "unknown";
-	private MyUntypedDataWrapper wrapper = new MyUntypedDataWrapper();
 	
 	public static final EnumMap<EnumDublinCoreElements, List<Class<? extends UntypedData>>> ELEMENT_TYPE_MAP = new EnumMap<>(
 			EnumDublinCoreElements.class);
@@ -111,7 +110,6 @@ public class MetaData implements Cloneable, Serializable {
 	protected MetaData() {
 
 		this.metaDataValues = this.constructEmptyMetaDataMap();
-		this.wrapper.setMetaData(this);
 	}
 
 	/**
@@ -149,7 +147,6 @@ public class MetaData implements Cloneable, Serializable {
 		}
 
 		clone.metaDataValues = copy;
-		clone.wrapper = this.wrapper;
 		return clone;
 	}
 
@@ -267,24 +264,6 @@ public class MetaData implements Cloneable, Serializable {
 		}
 	}
 	
-	public void setWrapperValues() {
-		wrapper.clearStringBuilders();
-		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
-			try {
-				wrapper.addValue(element, this.getElementValue(element));
-			} catch (MetaDataException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	public MyUntypedDataWrapper getWrapper() {
-		return wrapper;
-	}
-
-	public void setWrapper(MyUntypedDataWrapper wrapper) {
-		this.wrapper = wrapper;
-	}
 
 	/** {@inheritDoc} */
 	@Override

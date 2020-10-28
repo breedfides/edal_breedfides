@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -39,6 +40,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -60,11 +62,19 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MyUntypedDataWrapper;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 
@@ -85,6 +95,10 @@ public class IndexWriterThread extends EdalThread {
 	private Path indexDirectory;
 	private Logger indexWriterThreadLogger = null;
 	private Logger implementationProviderLogger = null;
+	
+	Path indexPath;
+	Directory indexinDirectory;
+	StandardAnalyzer analyzer;
 
 	private boolean requestForReset = false;
 
@@ -117,6 +131,16 @@ public class IndexWriterThread extends EdalThread {
 		this.sessionFactory = sessionFactory;
 
 		final Session session = this.sessionFactory.openSession();
+		
+		indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+		this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
+		try {
+			indexinDirectory = FSDirectory.open(indexPath);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		analyzer = new StandardAnalyzer();
 
 		//final IndexAccessor readerProvider = searchFactory
 
@@ -143,6 +167,8 @@ public class IndexWriterThread extends EdalThread {
 							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
 							reader = DirectoryReader.open( directory );
 							numberDocs += reader.numDocs();
+						} catch (IndexNotFoundException e) {
+							this.implementationProviderLogger.info("Index is currently empty ");
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -166,6 +192,7 @@ public class IndexWriterThread extends EdalThread {
 				}
 			}
 			this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
+			this.implementationProviderLogger.info("Last indexed ID : " + this.lastIndexedID);
 
 		} finally {
 			//readerProvider.close(reader);
@@ -207,31 +234,45 @@ public class IndexWriterThread extends EdalThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
+		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+		    IndexWriter writer = null;
+		    try {
+				writer = new IndexWriter(indexinDirectory, iwc);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				indexedObjects++;
-				/** index each element */
-				PrimaryDataEntityVersionImplementation version = (PrimaryDataEntityVersionImplementation) results.get(0);
+				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
-					this.indexVersion(version);
+					/** index each element */
+					this.indexVersion(writer, version);
 				} catch (MetaDataException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 				if (indexedObjects % fetchSize == 0) {
 						//fullTextSession.clear();
 						flushedObjects += fetchSize;
-					if (version.getId() > this.lastIndexedID) {
-						this.lastIndexedID = version.getId() ;
-					}
 				}
 			}
 			results.close();
 			session.close();
-
+			try {
+				writer.close();
+				if(version != null)
+					this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
+				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+					this.lastIndexedID = version.getId() ;
+				}
+				this.implementationProviderLogger.info("WRITER CLOSED ");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
 
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
@@ -243,17 +284,14 @@ public class IndexWriterThread extends EdalThread {
 								+ df.format(new Date(queryTime)));
 			}
 
-			if (flushedObjects != 0) {
-				try {
-					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(this.lastIndexedID);
-					oos.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
+			try {
+				FileOutputStream fos = new FileOutputStream(
+						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.writeObject(this.lastIndexedID);
+				oos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 
 			try {
@@ -272,22 +310,43 @@ public class IndexWriterThread extends EdalThread {
 		}
 	}
 	
-	private void indexVersion(PrimaryDataEntityVersionImplementation version) throws MetaDataException, IOException {
+	private void indexVersion(IndexWriter writer,PrimaryDataEntityVersionImplementation version) throws MetaDataException, IOException {
 		MetaData metadata = version.getMetaData();
-		Path indexPath = Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper");
-		Directory indexDirectory = FSDirectory.open(indexPath);
-		StandardAnalyzer analyzer = new StandardAnalyzer();
-	    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-	    IndexWriter writer = new IndexWriter(indexDirectory, iwc);
 	    Document doc = new Document();
-	    doc.add(new TextField("title",getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)),Store.YES));
-	    doc.add(new TextField("description",getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),Store.YES));
-	    doc.add(new TextField("coverage",getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)),Store.YES));
-	    doc.add(new TextField("identifier",getString(metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)),Store.YES));
-	    doc.add(new TextField("mimeType",getString(((DataFormat)metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()),Store.YES));
-	    doc.add(new TextField("versionID", Integer.toString(version.getId()),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.TITLE,getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.DESCRIPTION,getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.COVERAGE,getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.IDENTIFIER,getString(metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.SIZE,Long.toString(((DataSize)metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.LANGUAGE,getString(((EdalLanguage)metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()),Store.YES));
+	    Persons naturalPersons = (Persons)metadata.getElementValue(EnumDublinCoreElements.CREATOR);
+	    Persons persons = (Persons)metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
+	    persons.addAll(naturalPersons);
+	    LegalPerson legalPerson = (LegalPerson)metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
+	    persons.add(legalPerson);
+	    for(Person currentPerson : persons) {
+	    	if(currentPerson instanceof NaturalPerson) {
+	    	    doc.add(new TextField(MetaDataImplementation.GIVENNAME,((NaturalPerson)currentPerson).getGivenName(),Store.YES));
+	    	    doc.add(new TextField(MetaDataImplementation.SURENAME,((NaturalPerson)currentPerson).getSureName(),Store.YES));
+	    	}
+    	    doc.add(new TextField(MetaDataImplementation.ADDRESSLINE,currentPerson.getAddressLine(),Store.YES));
+    	    doc.add(new TextField(MetaDataImplementation.ZIP,currentPerson.getZip(),Store.YES));
+    	    doc.add(new TextField(MetaDataImplementation.COUNTRY,currentPerson.getCountry(),Store.YES));
+	    }
+	    doc.add(new TextField(MetaDataImplementation.LEGALNAME,getString(legalPerson.getLegalName()),Store.YES));
+	    CheckSum checkSums = (CheckSum)metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
+	    for(CheckSumType checkSum : checkSums) {
+	    	doc.add(new TextField(MetaDataImplementation.ALGORITHM,checkSum.getAlgorithm(),Store.YES));
+	    	doc.add(new TextField(MetaDataImplementation.CHECKSUM,checkSum.getCheckSum(),Store.YES));
+	    }
+	    if(metadata.getElementValue(EnumDublinCoreElements.TYPE) instanceof EmptyMetaData) {
+	    	doc.add(new TextField(MetaDataImplementation.TYPE,"none",Store.YES));
+	    }else {
+	    	doc.add(new TextField(MetaDataImplementation.TYPE,metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(),Store.YES));
+	    }
+
+	    doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()),Store.YES));
 	    writer.addDocument(doc);
-	    writer.close();
 	}
 	
 	private String getString(UntypedData data) {
@@ -326,12 +385,21 @@ public class IndexWriterThread extends EdalThread {
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
+		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+		    IndexWriter writer = null;
+		    try {
+				writer = new IndexWriter(indexinDirectory, iwc);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				/** index each element */
 				//fullTextSession.index(results.get(0));
-				PrimaryDataEntityVersionImplementation version = (PrimaryDataEntityVersionImplementation) results.get(0);
+				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
-					this.indexVersion(version);
+					this.indexVersion(writer, version);
 				} catch (MetaDataException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -339,14 +407,21 @@ public class IndexWriterThread extends EdalThread {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				if (version.getId() > this.lastIndexedID) {
-					this.lastIndexedID = version.getId() ;
-				}
 				indexedObjects++;
 				flushedObjects++;
 			}
 			results.close();
 			session.close();
+			try {
+				writer.close();
+				if(version != null)
+				this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
+				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+					this.lastIndexedID = version.getId() ;
+				}
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
 
@@ -359,16 +434,14 @@ public class IndexWriterThread extends EdalThread {
 								+ df.format(new Date(queryTime)));
 			}
 
-			if (flushedObjects != 0) {
-				try {
-					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(this.lastIndexedID);
-					oos.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+			try {
+				FileOutputStream fos = new FileOutputStream(
+						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.writeObject(this.lastIndexedID);
+				oos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 
 			try {

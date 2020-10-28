@@ -47,10 +47,6 @@ public class Inserterr {
 	
 	public Inserterr(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
-		List<PrimaryDataEntity> result = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
-		if(!result.isEmpty()) {
-			searchable = result.get(0).getMetaData();
-		}
 	}
 
 	public void process(int size) throws Exception {
@@ -123,9 +119,7 @@ public class Inserterr {
 	}
 	
 	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
-		PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
-		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("indextest"), false, true);
-		if(result.isEmpty()) {
+			PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
 			log("Inserting new searchable");
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
 			searchable = entity.getMetaData();
@@ -143,9 +137,7 @@ public class Inserterr {
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			entity.setMetaData(searchable);
-		}else {
-			searchable = result.get(0).getMetaData();
-		}
+			log("Searchable isnerted!");
 	}
 	
 	

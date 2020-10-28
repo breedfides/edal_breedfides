@@ -30,7 +30,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
  */
 @Entity
 @DiscriminatorValue("7")
-@Indexed
 public final class MyEmptyMetaData extends MyUntypedData {
 
 	private static final long serialVersionUID = 7842671382148442580L;

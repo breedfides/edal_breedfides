@@ -107,6 +107,24 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 			});
 
 	private int id;
+	
+	public static final String TITLE = "title";
+	public static final String DESCRIPTION = "description";
+	public static final String COVERAGE = "coverage";
+	public static final String IDENTIFIER = "identifier";
+	public static final String SIZE = "size";
+	public static final String TYPE = "type";
+	public static final String LANGUAGE = "language";
+	public static final String GIVENNAME = "givenName";
+	public static final String SURENAME = "sureName";
+	public static final String LEGALNAME = "legalName";
+	public static final String ADDRESSLINE = "addressLine";
+	public static final String ZIP = "zip";
+	public static final String COUNTRY = "country";
+	public static final String ALGORITHM = "algorithm";
+	public static final String CHECKSUM = "checkSum";
+	public static final String VERSIONID = "versionID";
+	
 
 	private Map<EnumDublinCoreElements, MyUntypedData> myMap;
 

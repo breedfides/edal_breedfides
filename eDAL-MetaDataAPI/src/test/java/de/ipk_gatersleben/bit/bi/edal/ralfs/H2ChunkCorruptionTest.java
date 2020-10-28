@@ -82,14 +82,14 @@ class H2ChunkCorruptionTest {
 	public Path mountPath = null;
 	private PrimaryDataDirectory rootDirectory;
 
-	@Test
+	//@Test
 	void generateDataTest() throws Exception {
 		rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
     	createAndInsert(1);
-    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"MyUntypedDataWrapper"));
+    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
     	IndexReader reader = DirectoryReader.open(indexDirectory);
     	IndexSearcher searcher = new IndexSearcher(reader);
 		MultiFieldQueryParser parser =

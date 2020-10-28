@@ -53,18 +53,11 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(rootDirectory, 5);
-	final Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSession();
-	CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-
-	CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-	Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-	criteria.select(root);
+	inserter.process(rootDirectory, 2);
 
 	/**
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
-	final Collection<PrimaryDataEntityVersionImplementation> results = session.createQuery(criteria).list();
 	MetaData searchable = inserter.getSearchable();
 	//testSearchByDublin();
 	//testMetaDataSearch(rootDirectory, searchable);

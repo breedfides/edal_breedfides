@@ -97,7 +97,7 @@ class ExistingSearchTest {
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
 		Inserterr insert = new Inserterr(rootDirectory);
-		insert.process(2);
+		insert.process(1);
 		MetaData storedMetaData = insert.getSearchableMetaData();
 		//Test Search by Title
 //		try {
@@ -234,16 +234,24 @@ class ExistingSearchTest {
     	DataManager.shutdown();
     }
     
-    @Test
+    //@Test
     void testKeywordSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
+		Inserterr insert = new Inserterr(rootDirectory);
+		insert.process(1);
+		MetaData storedMetaData = insert.getSearchableMetaData();
+		Thread.sleep(2000);
     	long start = System.currentTimeMillis();
 //    	Inserterr insert = new Inserterr(rootDirectory);
 //		insert.process(2);
 //		MetaData metaData = insert.getSearchableMetaData();
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Gellman", false, true);
+    	String title = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
+    	String givenName = ((NaturalPerson)((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next()).getGivenName();
+    	String searched = title+" AND "+givenName;
+    	log("Searching: "+searched);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("titanfall AND Asterix", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {
