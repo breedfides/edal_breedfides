@@ -96,7 +96,6 @@ class H2ChunkCorruptionTest {
 						.authenticateWinOrUnixOrMacUser());
 		long startBeforeInsert = System.currentTimeMillis();
     	createAndInsert(1);
-    	this.searchUsingTermRangeQuery();
 		long startAfterInserting = System.currentTimeMillis();
 //    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //    	IndexReader reader = DirectoryReader.open(indexDirectory);
@@ -219,9 +218,9 @@ class H2ChunkCorruptionTest {
 					,"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(H2ChunkCorruptionTest.HTTP_PORT);
 			this.configuration.setHttpsPort(H2ChunkCorruptionTest.HTTPS_PORT);
-			this.configuration.setIndexWriterThread(EdalConfiguration.NATIVE_LUCENE_INDEX_WRITER_THREAD);
+			this.configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "NATIVE_LUCENE_INDEXING");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "HIBERNATE_INDEXING");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

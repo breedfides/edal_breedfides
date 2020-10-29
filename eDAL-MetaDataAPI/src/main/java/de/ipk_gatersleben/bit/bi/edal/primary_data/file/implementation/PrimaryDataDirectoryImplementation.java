@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+  * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -159,6 +159,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
 
 	private static final String SUPPRESS_UNCHECKED_WARNING = "unchecked";
+	
+	private long startTime;
 
 	/**
 	 * Maximal number of search result, if the number is higher the user must
@@ -598,93 +600,43 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			final UntypedData data, final boolean fuzzy, final boolean recursiveIntoSubdirectories)
 			throws PrimaryDataDirectoryException {
 
-		final long startTime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 
-		List<? extends MyUntypedData> datatypeList = new ArrayList<MyUntypedData>();
+		List<Integer> versionIDList = new ArrayList<Integer>();
 		try {
 			if (data.getClass().equals(UntypedData.class)) {
-				datatypeList = this.searchByUntypedData(data, fuzzy);
-			} else if (data.getClass().equals(NaturalPerson.class)) {
-				datatypeList = this.searchByNaturalPerson((NaturalPerson) data, fuzzy);
-			} else if (data.getClass().equals(LegalPerson.class)) {
-				datatypeList = this.searchByLegalPerson((LegalPerson) data, fuzzy);
-			} else if (data.getClass().equals(Identifier.class)) {
-				datatypeList = this.searchByIdentifier((Identifier) data, fuzzy);
-			} else if (data.getClass().equals(DataType.class)) {
-				datatypeList = this.searchByDataType((DataType) data);
-			} else if (data.getClass().equals(DataFormat.class)) {
-				datatypeList = this.searchByDataFormat((DataFormat) data, fuzzy);
-			} else if (data.getClass().equals(DateEvents.class)) {
-				datatypeList = this.searchByDateEvents((DateEvents) data);
-			} else if (data.getClass().equals(IdentifierRelation.class)) {
-				datatypeList = this.searchByIdentifierRelation((IdentifierRelation) data, fuzzy);
-			}else if(data.getClass().equals(CheckSumType.class)) {
-				datatypeList = this.searchByCheckSum((CheckSumType)data,fuzzy);
-			}else if(data.getClass().equals(EdalLanguage.class)) {
-				datatypeList = this.searchByEdalLanguage((EdalLanguage)data,fuzzy);
-			}else if(data.getClass().equals(DataSize.class)) {
-				datatypeList = this.searchByDataSize((DataSize)data,fuzzy);
+				versionIDList = this.searchByUntypedData(data, element, fuzzy);
+			} 
+			else if (data.getClass().equals(NaturalPerson.class)) {
+				versionIDList = this.searchByNaturalPerson((NaturalPerson) data, element, fuzzy);
 			}
+			else if (data.getClass().equals(LegalPerson.class)) {
+				versionIDList = this.searchByLegalPerson((LegalPerson) data, element, fuzzy);
+			}
+				//else if (data.getClass().equals(Identifier.class)) {
+//				versionIDList = this.searchByIdentifier((Identifier) data, fuzzy);
+//			} else if (data.getClass().equals(DataType.class)) {
+//				versionIDList = this.searchByDataType((DataType) data);
+//			} else if (data.getClass().equals(DataFormat.class)) {
+//				versionIDList = this.searchByDataFormat((DataFormat) data, fuzzy);
+//			} else if (data.getClass().equals(DateEvents.class)) {
+//				versionIDList = this.searchByDateEvents((DateEvents) data);
+//			} else if (data.getClass().equals(IdentifierRelation.class)) {
+//				versionIDList = this.searchByIdentifierRelation((IdentifierRelation) data, fuzzy);
+//			}else if(data.getClass().equals(CheckSumType.class)) {
+//				versionIDList = this.searchByCheckSum((CheckSumType)data,fuzzy);
+//			}else if(data.getClass().equals(EdalLanguage.class)) {
+//				versionIDList = this.searchByEdalLanguage((EdalLanguage)data,fuzzy);
+//			}else if(data.getClass().equals(DataSize.class)) {
+//				versionIDList = this.searchByDataSize((DataSize)data,fuzzy);
+//			}
 
 		} catch (final ParseException e) {
 			throw new PrimaryDataDirectoryException("Unable to find the UntypedData values", e);
 		}
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().debug("Zeit (Search "
-				+ data.getClass().getSimpleName() + "): " + (System.currentTimeMillis() - startTime) + " msec");
-
-		
-		if(element == EnumDublinCoreElements.SUBJECT) {
-			datatypeList = this.mapCollections(datatypeList, MySubjects.class, "subjects");
-		}
-			
-		/** if no results found return empty List */
-		if (datatypeList.isEmpty()) {
-			return new ArrayList<PrimaryDataEntity>();
-		}
-		if (datatypeList.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
-			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-		}
-
-		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
-
-		for (final MyUntypedData myUntypedData : datatypeList) {
-			datatypeIDList.add(myUntypedData.getId());
-		}
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		long s = System.currentTimeMillis();
-		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-		CriteriaQuery<PrimaryDataEntityVersionImplementation> query = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-		Root<PrimaryDataEntityVersionImplementation> root = query.from(PrimaryDataEntityVersionImplementation.class);
-		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
-		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
-		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
-		query.where(chainedJoin.in(persons));
-		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(query);
-		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
-		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
-		List<Integer> versionIDList = new ArrayList<>();
-		long f = System.currentTimeMillis();
-		long timeElapsed = f - s;
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS - Mapping IDs to Versions: "+timeElapsed);
-		for(PrimaryDataEntityVersionImplementation version : finalresult) {
-			versionIDList.add(version.getId());
-		}
-		s = System.currentTimeMillis();
-		final Query<Integer> versionSQLQuery = session
-				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
-						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
-						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
-
-		versionSQLQuery.setParameterList("list", datatypeIDList);
-		versionSQLQuery.setParameter("key", element.ordinal());
-
-		versionIDList = versionSQLQuery.list();
-		f = System.currentTimeMillis();
-		timeElapsed = f - s;
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("SQL Time for Mapping in MS - Mapping IDs to Versions: "+timeElapsed);
 		
-
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 
 		final long startEntityQuery = System.currentTimeMillis();
@@ -1753,50 +1705,76 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	/**
 	 * Internal function to search for a {@link LegalPerson}.
 	 * 
-	 * @param legalPerson
+	 * @param person
 	 * @param fuzzy
 	 * @return List<MyLegalPerson>
 	 * @throws ParseException
 	 *             If unable to parse query string with <em>LUCENE<em>.
+	 * @throws PrimaryDataDirectoryException 
 	 */
-	private List<MyLegalPerson> searchByLegalPerson(final LegalPerson legalPerson, final boolean fuzzy)
-			throws ParseException {
+	private List<Integer> searchByLegalPerson(final LegalPerson person, EnumDublinCoreElements element, final boolean fuzzy)
+			throws ParseException, PrimaryDataDirectoryException {
 
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		final SearchSession ftSession = Search.session(session);
-		SearchResult<MyLegalPerson> searchQuery = null;
-		//final FullTextSession ftSession = Search.getFullTextSession(session);
-
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
-//				.get();
-//
-//		org.apache.lucene.search.Query combinedQuery = null;
-
-		if(fuzzy) {
-			searchQuery = ftSession.search( MyLegalPerson.class ) 
-		        .where( f -> f.bool()
-		        		.must(f.match().fields( "legalName" ).matching( legalPerson.getLegalName() ).fuzzy())
-		        		.must(f.match().fields( "addressLine" ).matching( legalPerson.getAddressLine() ).fuzzy())
-		        		.must(f.match().fields( "zip" ).matching( legalPerson.getZip() ).fuzzy())
-						.must(f.match().fields( "country" ).matching( legalPerson.getCountry()).fuzzy()))
-		        .fetch( 200 ); 
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+			final SearchSession ftSession = Search.session(session);
+			SearchResult<MyLegalPerson> searchQuery = null;
+			if(fuzzy) {
+				searchQuery = ftSession.search( MyLegalPerson.class ) 
+			        .where( f -> f.bool()
+			        		.must(f.match().fields( "legalName" ).matching( person.getLegalName() ).fuzzy())
+			        		.must(f.match().fields( "addressLine" ).matching( person.getAddressLine() ).fuzzy())
+			        		.must(f.match().fields( "zip" ).matching( person.getZip() ).fuzzy())
+							.must(f.match().fields( "country" ).matching( person.getCountry()).fuzzy()))
+			        .fetch( 200 ); 
+			}else {
+				searchQuery = ftSession.search( MyLegalPerson.class ) 
+			        .where( f -> f.bool()
+			        		.must(f.match().fields( "legalName" ).matching( person.getLegalName() ))
+			        		.must(f.match().fields( "addressLine" ).matching( person.getAddressLine() ))
+			        		.must(f.match().fields( "zip" ).matching( person.getZip() ))
+							.must(f.match().fields( "country" ).matching( person.getCountry())))
+			        .fetch( 200 ); 
+			}	
+			final List<MyLegalPerson> untypedDataList = searchQuery.hits();
+			session.close();
+			return this.retrieveVersionIds(untypedDataList, element);
 		}else {
-			searchQuery = ftSession.search( MyLegalPerson.class ) 
-		        .where( f -> f.bool()
-		        		.must(f.match().fields( "legalName" ).matching( legalPerson.getLegalName() ))
-		        		.must(f.match().fields( "addressLine" ).matching( legalPerson.getAddressLine() ))
-		        		.must(f.match().fields( "zip" ).matching( legalPerson.getZip() ))
-						.must(f.match().fields( "country" ).matching( legalPerson.getCountry())))
-		        .fetch( 200 ); 
+	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
+			IndexReader reader = null;
+			
+			//Create IndexSearcher from IndexDirectory
+			try {
+				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager
+						.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+				reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+				e.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+	    	
+	    	//Search Documents with Parsed Query
+			QueryParser parser = new QueryParser("legalName", new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+			String luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+" "
+			+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
+	        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
+	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+	        ScoreDoc[] hits2;
+			try {
+				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = searcher.doc(hits2[i].doc);
+		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+	        return versionIDList;
 		}
-
-		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
-
-		final List<MyLegalPerson> result = searchQuery.hits();
-
-		session.close();
-		return result;
 
 	}
 
@@ -1865,141 +1843,79 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	/**
 	 * Internal function to search for a {@link NaturalPerson}.
 	 * 
-	 * @param naturalPerson
+	 * @param person
 	 * @param fuzzy
 	 * @return List<MyNaturalPerson>
 	 * @throws ParseException
 	 *             If unable to parse query string with <em>LUCENE<em>.
+	 * @throws PrimaryDataDirectoryException 
 	 */
-	private List<MyNaturalPerson> searchByNaturalPerson(final NaturalPerson naturalPerson, final boolean fuzzy)
-			throws ParseException {
-		
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		final SearchSession ftSession = Search.session(session);
-		SearchResult<MyNaturalPerson> searchQuery = null;
-		//final FullTextSession ftSession = Search.getFullTextSession(session);
-
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
-//				.get();
-//
-//		org.apache.lucene.search.Query combinedQuery = null;
-
-		if(fuzzy) {
-			searchQuery = ftSession.search( MyNaturalPerson.class ) 
-		        .where( f -> f.bool()
-		        		.must(f.match().fields( "givenName" ).matching( naturalPerson.getGivenName() ).fuzzy())
-		        		.must(f.match().fields( "sureName" ).matching( naturalPerson.getSureName() ).fuzzy())
-		        		.must(f.match().fields( "addressLine" ).matching( naturalPerson.getAddressLine() ).fuzzy())
-		        		.must(f.match().fields( "zip" ).matching( naturalPerson.getZip() ).fuzzy())
-						.must(f.match().fields( "country" ).matching( naturalPerson.getCountry()).fuzzy()))
-		        .fetch( 200 ); 
+	private List<Integer> searchByNaturalPerson(final NaturalPerson person,EnumDublinCoreElements element , final boolean fuzzy)
+			throws ParseException, PrimaryDataDirectoryException {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()){
+			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+			final SearchSession ftSession = Search.session(session);
+			SearchResult<MyNaturalPerson> searchQuery = null;
+	
+			if(fuzzy) {
+				searchQuery = ftSession.search( MyNaturalPerson.class ) 
+			        .where( f -> f.bool()
+			        		.must(f.match().fields( "givenName" ).matching( person.getGivenName() ).fuzzy())
+			        		.must(f.match().fields( "sureName" ).matching( person.getSureName() ).fuzzy())
+			        		.must(f.match().fields( "addressLine" ).matching( person.getAddressLine() ).fuzzy())
+			        		.must(f.match().fields( "zip" ).matching( person.getZip() ).fuzzy())
+							.must(f.match().fields( "country" ).matching( person.getCountry()).fuzzy()))
+			        .fetch( 200 ); 
+			}else {
+				searchQuery = ftSession.search( MyNaturalPerson.class ) 
+			        .where( f -> f.bool()
+			        		.must(f.match().fields( "givenName" ).matching( person.getGivenName() ))
+			        		.must(f.match().fields( "sureName" ).matching( person.getSureName() ))
+			        		.must(f.match().fields( "addressLine" ).matching( person.getAddressLine() ))
+			        		.must(f.match().fields( "zip" ).matching( person.getZip() ))
+							.must(f.match().fields( "country" ).matching( person.getCountry())))
+			        .fetch( 200 ); 
+			}
+	
+			final List<MyNaturalPerson> result = searchQuery.hits();
+			List<? extends MyUntypedData> untypedDataList = this.mapCollections(result, MyPersons.class, "persons");
+			return this.retrieveVersionIds(untypedDataList, element);
 		}else {
-			searchQuery = ftSession.search( MyNaturalPerson.class ) 
-		        .where( f -> f.bool()
-		        		.must(f.match().fields( "givenName" ).matching( naturalPerson.getGivenName() ))
-		        		.must(f.match().fields( "sureName" ).matching( naturalPerson.getSureName() ))
-		        		.must(f.match().fields( "addressLine" ).matching( naturalPerson.getAddressLine() ))
-		        		.must(f.match().fields( "zip" ).matching( naturalPerson.getZip() ))
-						.must(f.match().fields( "country" ).matching( naturalPerson.getCountry())))
-		        .fetch( 200 ); 
+	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
+			IndexReader reader = null;
+			
+			//Create IndexSearcher from IndexDirectory
+			try {
+				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+				reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+				e.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+	    	
+	    	//Search Documents with Parsed Query
+			QueryParser parser = new QueryParser("givenName", new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+			String luceneString = MetaDataImplementation.GIVENNAME+":"
+			+person.getGivenName()+" "+MetaDataImplementation.SURENAME+":"+person.getSureName()+
+	        		" "+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
+	        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
+	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+	        ScoreDoc[] hits2;
+			try {
+				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = searcher.doc(hits2[i].doc);
+		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+	        return versionIDList;
 		}
-
-		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
-
-		final List<MyNaturalPerson> result = searchQuery.hits();
-
-		
-		
-		
-//
-//		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-//		
-//
-//		final FullTextSession ftSession = Search.getFullTextSession(session);
-//
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyNaturalPerson.class)
-//				.get();
-//
-//		org.apache.lucene.search.Query combinedQuery = null;
-//
-//		if (fuzzy) {
-//			org.apache.lucene.search.Query queryA = queryBuilder.keyword().fuzzy().onField("givenName")
-//					.matching(naturalPerson.getGivenName()).createQuery();
-//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().fuzzy().onField("sureName")
-//					.matching(naturalPerson.getSureName()).createQuery();
-//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().fuzzy().onField("addressLine")
-//					.matching(naturalPerson.getAddressLine()).createQuery();
-//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().fuzzy().onField("zip")
-//					.matching(naturalPerson.getZip()).createQuery();
-//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().fuzzy().onField("country")
-//					.matching(naturalPerson.getCountry()).createQuery();
-//
-//			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
-//					.must(queryE).createQuery();
-//
-//		} else {
-//			org.apache.lucene.search.Query queryA = queryBuilder.phrase().onField("givenName")
-//					.sentence(naturalPerson.getGivenName()).createQuery();
-//			org.apache.lucene.search.Query queryB = queryBuilder.keyword().onField("sureName")
-//					.matching(naturalPerson.getSureName()).createQuery();
-//			org.apache.lucene.search.Query queryC = queryBuilder.keyword().onField("addressLine")
-//					.matching(naturalPerson.getAddressLine()).createQuery();
-//			org.apache.lucene.search.Query queryD = queryBuilder.keyword().onField("zip")
-//					.matching(naturalPerson.getZip()).createQuery();
-//			org.apache.lucene.search.Query queryE = queryBuilder.keyword().onField("country")
-//					.matching(naturalPerson.getCountry()).createQuery();
-//
-//			combinedQuery = queryBuilder.bool().must(queryA).must(queryB).must(queryC).must(queryD)
-//					.must(queryE).createQuery();
-//		}
-//
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<MyNaturalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery,
-//				MyNaturalPerson.class);
-//
-//		final List<MyNaturalPerson> result = hibernateQuery.list();
-//		
-		long s = System.currentTimeMillis();
-		ArrayList<Integer> ids = new ArrayList<>();
-		for(MyNaturalPerson mp : result) {
-			ids.add(mp.getId());		
-		}
-		
-		final Query<Integer> versionSQLQuery = session.createSQLQuery(
-				"Select distinct UNTYPEDDATA_ID FROM UNTYPEDDATA_PERSONS up, TABLE(id BIGINT=(:list))list WHERE up.PERSONS_ID = list.id");
-
-		versionSQLQuery.setParameterList("list", ids);
-
-		final List<Integer> versionIDList = versionSQLQuery.list();
-		final List<MyNaturalPerson> result2 = new ArrayList<>();
-		for(Integer i : versionIDList) {
-			MyNaturalPerson np = new MyNaturalPerson();
-			np.setId(i);
-			result2.add(np);
-		}
-		long f = System.currentTimeMillis();
-		long timeElapsed = f - s;
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("SQL Time for Mapping in MS - NaturalPerson "+timeElapsed);
-		
-		s = System.currentTimeMillis();
-		//search for untypeddata Reports with related PersonSets		
-		final CriteriaBuilder builder = session.getCriteriaBuilder();
-		CriteriaQuery<MyPersons> query = builder.createQuery(MyPersons.class);
-		Root<MyPersons> root = query.from(MyPersons.class);
-		Join<MyPersons, MyNaturalPerson> join = root.join("persons");
-		ParameterExpression<Collection> persons = builder.parameter(Collection.class);
-		query.where(join.in(persons));
-		TypedQuery<MyPersons> tq = session.createQuery(query);
-		List<?> resultList = tq.setParameter(persons, result).getResultList();
-		List<MyNaturalPerson> finalresult = (List<MyNaturalPerson>)resultList;
-		f = System.currentTimeMillis();
-		timeElapsed = f - s;
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Query Time in MS - NaturalPerson: "+timeElapsed);
-		
-		
-		session.close();
-		return finalresult;
 
 	}
 
@@ -2054,6 +1970,52 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		return results;
 	}
+	
+	private List<Integer> retrieveVersionIds(List<? extends MyUntypedData> untypedDataList, EnumDublinCoreElements element) throws PrimaryDataDirectoryException{		
+//		if(element == EnumDublinCoreElements.SUBJECT) {
+//			datatypeList = this.mapCollections(datatypeList, MySubjects.class, "subjects");
+//		}
+			
+		/** if no results found return empty List */
+		if (untypedDataList.isEmpty()) {
+			return new ArrayList<Integer>();
+		}
+		if (untypedDataList.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+		}
+
+		final List<Integer> datatypeIDList = new ArrayList<Integer>(untypedDataList.size());
+
+		for (final MyUntypedData myUntypedData : untypedDataList) {
+			datatypeIDList.add(myUntypedData.getId());
+		}
+
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+//		final CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//		CriteriaQuery<PrimaryDataEntityVersionImplementation> query = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//		Root<PrimaryDataEntityVersionImplementation> root = query.from(PrimaryDataEntityVersionImplementation.class);
+//		Join<PrimaryDataEntityVersionImplementation, MetaDataImplementation> join = root.join("metaData");
+//		Join<MetaDataImplementation, MyUntypedData> chainedJoin = join.join("myMap");
+//		ParameterExpression<Collection> persons = criteriaBuilder.parameter(Collection.class);
+//		query.where(chainedJoin.in(persons));
+//		TypedQuery<PrimaryDataEntityVersionImplementation> tq = session.createQuery(query);
+//		List<PrimaryDataEntityVersionImplementation> resultList = tq.setParameter(persons, datatypeList).getResultList();
+//		List<PrimaryDataEntityVersionImplementation> finalresult = (List<PrimaryDataEntityVersionImplementation>)resultList;
+//		List<Integer> versionIDList = new ArrayList<>();
+//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Criteria Time for Mapping in MS - Mapping IDs to Versions: "+timeElapsed);
+//		for(PrimaryDataEntityVersionImplementation version : finalresult) {
+//			versionIDList.add(version.getId());
+//		}
+		final Query<Integer> versionSQLQuery = session
+				.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
+						+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
+						+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+
+		versionSQLQuery.setParameterList("list", datatypeIDList);
+		versionSQLQuery.setParameter("key", element.ordinal());
+
+		return versionSQLQuery.list();
+	}
 
 	/**
 	 * Internal function to search for a {@link UntypedData}.
@@ -2063,53 +2025,73 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * @return List<MyUntypedData>
 	 * @throws ParseException
 	 *             If unable to parse query string with <em>LUCENE<em>.
+	 * @throws PrimaryDataDirectoryException 
 	 */
-	private List<MyUntypedData> searchByUntypedData(final UntypedData data, final boolean fuzzy) throws ParseException {
+	private List<Integer> searchByUntypedData(final UntypedData data,EnumDublinCoreElements element, final boolean fuzzy) throws ParseException, PrimaryDataDirectoryException {
 
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexThread().equals(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD)) {
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		//org.apache.lucene.search.Query query = null;
-		
-		final SearchSession ftSession = Search.session(session);
-		SearchResult<MyUntypedData> searchQuery = null;
-
-		if (fuzzy) {
-//			query = queryBuilder.keyword().fuzzy().onField("mimeType").matching(dataFormat.getMimeType())
-//					.createQuery();
-			searchQuery = ftSession.search( MyUntypedData.class ) 
-	        .where( f -> f.match() 
-	                .field( "string" )
-	                .matching( data.getString() )
-	                .fuzzy() )
-	        .fetch( 200 ); 
-		} else {
-			//query = queryBuilder.keyword().onField("mimeType").matching(dataFormat.getMimeType()).createQuery();
-			searchQuery = ftSession.search( MyUntypedData.class ) 
-	        .where( f -> f.phrase() 
-	                .field( "string" )
-	                .matching( data.getString() ) )
-	        .fetch( 200 ); 
-		}
-
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-//				.get();
-//		if (fuzzy) {
-//			query = queryBuilder.keyword().fuzzy().onField("string").matching(data.getString())
-//					.createQuery();
-//		} else {
-//			query = queryBuilder.keyword().onField("string").matching(data.getString()).createQuery();
-//		}
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, MyUntypedData.class);
-
-		final List<MyUntypedData> result = searchQuery.hits();
-
-		session.close();
-
-		return result;
-		}else {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
+			final SearchSession ftSession = Search.session(session);
+			SearchResult<MyUntypedData> searchQuery = null;
+	
+			if (fuzzy) {
+				searchQuery = ftSession.search( MyUntypedData.class ) 
+		        .where( f -> f.match() 
+		                .field( "string" )
+		                .matching( data.getString() )
+		                .fuzzy() )
+		        .fetch( 200 ); 
+			} else {
+				searchQuery = ftSession.search( MyUntypedData.class ) 
+		        .where( f -> f.phrase() 
+		                .field( "string" )
+		                .matching( data.getString() ) )
+		        .fetch( 200 ); 
+			}
+	
+			final List<MyUntypedData> result = searchQuery.hits();
+	
+			session.close();
+			
+	
+			return this.retrieveVersionIds(result, element);
+		}else {
+	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
+			IndexReader reader = null;
+			
+			//Create IndexSearcher from IndexDirectory
+			try {
+				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+				reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+				e.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+	    	
+	    	//Search Documents with Parsed Query
+			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+				    new MultiFieldQueryParser(
+				    		new String[]{MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,
+				    				MetaDataImplementation.TYPE,MetaDataImplementation.COVERAGE,
+				    				MetaDataImplementation.SUBJECT},
+				    		new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+	        org.apache.lucene.search.Query luceneQuery = parser.parse(data.getString());
+	        ScoreDoc[] hits2;
+			try {
+				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = searcher.doc(hits2[i].doc);
+		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+	        return versionIDList;
 		}
 	}
 

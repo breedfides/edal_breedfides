@@ -99,6 +99,16 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
 
 	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
+	
+	private boolean hibernateIndexing = false;
+
+	public boolean isHibernateIndexing() {
+		return hibernateIndexing;
+	}
+
+	public void setHibernateIndexing(boolean hibernateIndexing) {
+		this.hibernateIndexing = hibernateIndexing;
+	}
 
 	private boolean autoIndexing;
 
@@ -301,10 +311,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
 
 		if (!this.isAutoIndexing()) {
-			if(this.configuration.getIndexWriterThread().equals(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD)) {
+			if(this.configuration.getIndexingStrategy()) {
 				logger.info("USING HIBERNATE INDEXER");
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
-			}else if(this.configuration.getIndexWriterThread().equals(EdalConfiguration.NATIVE_LUCENE_INDEX_WRITER_THREAD)) {
+			}else {
 				logger.info("USING LUCENE INDEXER");
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
 			}
@@ -616,6 +626,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private void setAutoIndexing(final boolean autoIndexing) {
 		this.autoIndexing = autoIndexing;
 	}
+	
 
 	private void setConnection(final Connection connection) {
 		this.connection = connection;

@@ -86,12 +86,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  * @author arendd
  */
 public final class EdalConfiguration {
-
-	public static final String HIBERNATE_SEARCH_INDEX_WRITER_THREAD = "hibernate_search_indexing";
-	
-	public static final String NATIVE_LUCENE_INDEX_WRITER_THREAD = "native_lucene_indexing";
-	
-	private static final String DEFAULT_INDEX_WRITER_THREAD = NATIVE_LUCENE_INDEX_WRITER_THREAD;
 	
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";
 
@@ -316,22 +310,7 @@ public final class EdalConfiguration {
 
 	private boolean inTestMode = false;
 	private boolean inReadOnlyMode = false;
-
-	/**
-	 * The IndexWriterThread to use
-	 */
-	private String indexWriterThread = this.DEFAULT_INDEX_WRITER_THREAD;
 	
-	
-	
-	public String getIndexWriterThread() {
-		return indexWriterThread;
-	}
-
-	public void setIndexWriterThread(String indexWriterThread) {
-		this.indexWriterThread = indexWriterThread;
-	}
-
 	/**
 	 * The eMail address to send messages of edal.
 	 */
@@ -413,7 +392,14 @@ public final class EdalConfiguration {
 
 	private String keystorePasswordForHttpListener = "";
 
+	
 	private boolean cleanBrokenEntities = true;
+	
+	private boolean indexingStrategy = false;
+	
+	public static int HIBERNATE_SEARCH_INDEXING = 0;
+	
+	public static int NATIVE_LUCENE_INDEXING = 1;
 
 	/**
 	 * Alias domain name for HTTP server
@@ -432,7 +418,6 @@ public final class EdalConfiguration {
 	 * @throws EdalConfigurationException if unable to load reviewer rule files.
 	 */
 	private EdalConfiguration() throws EdalConfigurationException {
-
 		this.setDatabaseUsername(EdalConfiguration.DEFAULT_DATABASE_USERNAME);
 		this.setDatabasePassword(EdalConfiguration.DEFAULT_DATABASE_PASSWORD);
 		this.setSupportedPrincipals(EdalConfiguration.DEFAULT_SUPPORTED_PRINCIPALS);
@@ -505,6 +490,19 @@ public final class EdalConfiguration {
 		this.setMailSmtpLogin(smtpLogin);
 		this.setMailSmtpPassword(smtpPassword);
 		this.validate();
+	}
+	
+
+	public void setHibernateIndexing(int configValue) {
+		if(configValue == this.HIBERNATE_SEARCH_INDEXING)
+			this.indexingStrategy = true;
+		else if(configValue == this.NATIVE_LUCENE_INDEXING)
+			this.indexingStrategy = false;
+	}
+	
+
+	public boolean getIndexingStrategy() {
+		return this.indexingStrategy;
 	}
 
 	/**
