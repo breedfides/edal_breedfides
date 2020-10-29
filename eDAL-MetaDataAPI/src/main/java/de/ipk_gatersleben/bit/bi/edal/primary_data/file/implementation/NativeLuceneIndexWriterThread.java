@@ -40,6 +40,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
@@ -67,6 +68,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -249,6 +253,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	    Subjects subjects = (Subjects)metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
 	    for(UntypedData subject : subjects) {
 	    	doc.add(new TextField(MetaDataImplementation.SUBJECT,subject.getString(),Store.YES));
+	    }
+	    DateEvents events = (DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE);
+	    for(EdalDate date : events) {
+	    	doc.add(new LongPoint("startDate", date.getStartDate().getTimeInMillis()));
+	    	if(date instanceof EdalDateRange) {
+		    	doc.add(new LongPoint("endDate", ((EdalDateRange)date).getEndDate().getTimeInMillis()));
+	    	}
 	    }
 	    if(metadata.getElementValue(EnumDublinCoreElements.TYPE) instanceof EmptyMetaData) {
 	    	doc.add(new TextField(MetaDataImplementation.TYPE,"none",Store.YES));

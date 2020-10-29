@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
@@ -34,13 +35,18 @@ import javax.mail.internet.InternetAddress;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PointRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +94,10 @@ class H2ChunkCorruptionTest {
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-    	createAndInsert(5);
+		long startBeforeInsert = System.currentTimeMillis();
+    	createAndInsert(1);
+    	this.searchUsingTermRangeQuery();
+		long startAfterInserting = System.currentTimeMillis();
 //    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //    	IndexReader reader = DirectoryReader.open(indexDirectory);
 //    	IndexSearcher searcher = new IndexSearcher(reader);
@@ -104,6 +113,8 @@ class H2ChunkCorruptionTest {
 //        	log("Document "+i+" versionId; "+doc.get("versionID"));
 //        }
     	DataManager.shutdown();
+    	log("Elapsed Time since BeforeStart: "+(System.currentTimeMillis()-startBeforeInsert)+"ms");
+    	log("Elapsed Time since AfterStart, only SHutdown: "+(System.currentTimeMillis()-startAfterInserting)+"ms");
 	}
 	
 	
@@ -121,6 +132,7 @@ class H2ChunkCorruptionTest {
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
 		String archiveName = "";
+		int last = size-1;
 		long start = System.currentTimeMillis();
 		for(int i = 0; i < size; i++) {
 			if(i%1000 == 0) {
@@ -154,14 +166,37 @@ class H2ChunkCorruptionTest {
 			//EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
 			//Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
-			log("###############Entity saved: ######################");
-			for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-				log(element.toString()+": "+metadata.getElementValue(element));
+			if(i == last) {
+				log("###############Last Entity saved: ######################");
+				for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+					log(element.toString()+": "+metadata.getElementValue(element));
+				}
 			}
 		}
 		log("Time to insert Data: "+(System.currentTimeMillis()-start));
 		//fin.close();
 	}
+	
+	private void searchUsingTermRangeQuery()throws IOException, ParseException {
+		    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+		    	IndexReader reader = DirectoryReader.open(indexDirectory);
+		    	IndexSearcher searcher = new IndexSearcher(reader);
+			   long startTime = System.currentTimeMillis();
+			   Calendar now = Calendar.getInstance();
+			   now.set(Calendar.HOUR, now.get(Calendar.HOUR)-4);
+			   Calendar ago = now;
+			   now = Calendar.getInstance();
+			   //create the term query object
+			   Query query = LongPoint.newRangeQuery("startDate", ago.getTimeInMillis(), now.getTimeInMillis());
+			   //do the search
+		        ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
+		    	log("Hits LEngth:_ "+hits.length);
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
+		        	log("Document "+i+" address; "+doc.get("address"));
+		        	log("Document "+i+" versionId; "+doc.get("versionID"));
+		        }
+			}
 	
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -184,9 +219,9 @@ class H2ChunkCorruptionTest {
 					,"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(H2ChunkCorruptionTest.HTTP_PORT);
 			this.configuration.setHttpsPort(H2ChunkCorruptionTest.HTTPS_PORT);
-			this.configuration.setIndexWriterThread(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD);
+			this.configuration.setIndexWriterThread(EdalConfiguration.NATIVE_LUCENE_INDEX_WRITER_THREAD);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "Keywordsearch_");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "NATIVE_LUCENE_INDEXING");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

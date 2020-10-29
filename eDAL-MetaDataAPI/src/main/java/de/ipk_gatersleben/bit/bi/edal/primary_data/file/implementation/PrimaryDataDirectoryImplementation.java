@@ -91,6 +91,7 @@ import org.hibernate.search.mapper.orm.scope.SearchScope;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
@@ -2064,8 +2065,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 *             If unable to parse query string with <em>LUCENE<em>.
 	 */
 	private List<MyUntypedData> searchByUntypedData(final UntypedData data, final boolean fuzzy) throws ParseException {
-		long start = System.currentTimeMillis();
 
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexThread().equals(EdalConfiguration.HIBERNATE_SEARCH_INDEX_WRITER_THREAD)) {
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		//org.apache.lucene.search.Query query = null;
@@ -2107,6 +2108,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		session.close();
 
 		return result;
+		}else {
+			
+		}
 	}
 
 	/**

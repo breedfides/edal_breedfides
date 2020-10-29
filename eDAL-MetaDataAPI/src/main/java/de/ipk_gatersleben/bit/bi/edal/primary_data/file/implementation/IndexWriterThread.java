@@ -46,7 +46,16 @@ abstract class IndexWriterThread extends EdalThread {
 	/** create {@link CountDownLatch} to wait for finishing index */
 	protected CountDownLatch latch = new CountDownLatch(1);
 	
-	
+	/**
+	 * Constructor for IndexWriterThread
+	 * 
+	 * @param sessionFactory
+	 *            the current {@link SessionFactory} object.
+	 * @param indexDirectory
+	 *            the mount path of the running instance
+	 * @param implementationProviderLogger
+	 *            the logger of the used {@link ImplementationProvider}
+	 */
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 		super();
@@ -58,16 +67,7 @@ abstract class IndexWriterThread extends EdalThread {
 		this.sessionFactory = sessionFactory;
 
 		final Session session = this.sessionFactory.openSession();
-		try {
-//			try {
-//				Directory directory = FSDirectory.open( Paths.get(this.indexDirectory.toString(),"UntypedData"));
-//				IndexReader reader = DirectoryReader.open( directory );
-//				this.implementationProviderLogger.info("Number of docs after index rebuild: " + reader.numDocs());
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			
+		try {			
 			File folder = new File(this.indexDirectory.toString());
 			File[] listOfFiles = folder.listFiles();
 			Directory directory = null;
@@ -168,15 +168,4 @@ abstract class IndexWriterThread extends EdalThread {
 
 	//final IndexReader reader = readerProvider.open(MyUntypedData.class);
 
-
-	/**
-	 * Constructor for IndexWriterThread
-	 * 
-	 * @param sessionFactory
-	 *            the current {@link SessionFactory} object.
-	 * @param indexDirectory
-	 *            the mount path of the running instance
-	 * @param implementationProviderLogger
-	 *            the logger of the used {@link ImplementationProvider}
-	 */
 }
