@@ -21,6 +21,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.search.mapper.orm.work.SearchIndexingPlan;
 import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 
@@ -30,6 +31,8 @@ abstract class IndexWriterThread extends EdalThread {
 	protected static final long MAX_THREAD_SLEEP_MILLISECONDS = 2000;
 
 	protected SessionFactory sessionFactory;
+	
+	protected Logger indexLogger = null;
 
 	protected int lastIndexedID = 0;
 	protected Path indexDirectory;
@@ -59,6 +62,7 @@ abstract class IndexWriterThread extends EdalThread {
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 		super();
+		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
 
@@ -161,6 +165,7 @@ abstract class IndexWriterThread extends EdalThread {
 		this.lock.unlock();
 		this.indexWriterThreadLogger
 				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
 		this.indexWriterThreadLogger.debug("unlock Lock");
 	}
 

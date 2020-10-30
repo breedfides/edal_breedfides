@@ -312,10 +312,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		if (!this.isAutoIndexing()) {
 			if(this.configuration.getIndexingStrategy()) {
-				logger.info("USING HIBERNATE INDEXER");
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
 			}else {
-				logger.info("USING LUCENE INDEXER");
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
 			}
 			this.getIndexThread().start();

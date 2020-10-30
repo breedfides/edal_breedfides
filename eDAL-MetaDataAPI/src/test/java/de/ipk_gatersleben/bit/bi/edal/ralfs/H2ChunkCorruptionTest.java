@@ -95,7 +95,7 @@ class H2ChunkCorruptionTest {
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
 		long startBeforeInsert = System.currentTimeMillis();
-    	createAndInsert(1);
+    	createAndInsert(150000);
 		long startAfterInserting = System.currentTimeMillis();
 //    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //    	IndexReader reader = DirectoryReader.open(indexDirectory);
@@ -220,7 +220,7 @@ class H2ChunkCorruptionTest {
 			this.configuration.setHttpsPort(H2ChunkCorruptionTest.HTTPS_PORT);
 			this.configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "HIBERNATE_INDEXING");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "LUCENE_INDEXING");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

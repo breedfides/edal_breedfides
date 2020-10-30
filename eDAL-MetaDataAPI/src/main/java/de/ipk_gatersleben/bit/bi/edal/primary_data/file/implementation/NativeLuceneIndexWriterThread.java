@@ -74,6 +74,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -114,6 +116,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	protected void executeIndexing() {
 
 		if (!this.sessionFactory.isClosed()) {
+			long executeIndexingStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
 
 			session.setDefaultReadOnly(true);
@@ -166,7 +169,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
-						//fullTextSession.clear();
+					try {
+						writer.commit();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 						flushedObjects += fetchSize;
 				}
 			}
@@ -185,7 +193,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e1.printStackTrace();
 			}
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-
+			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
 			if (indexedObjects > 0 || flushedObjects > 0) {
@@ -217,7 +225,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			if (flushedObjects != indexedObjects) {
 				indexRestObjects();
 			}
-
+			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
+			this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 	
@@ -254,6 +263,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	    for(UntypedData subject : subjects) {
 	    	doc.add(new TextField(MetaDataImplementation.SUBJECT,subject.getString(),Store.YES));
 	    }
+	    IdentifierRelation relations = (IdentifierRelation)metadata.getElementValue(EnumDublinCoreElements.RELATION);
+	    for(Identifier identifier : relations) {
+	    	doc.add(new TextField(MetaDataImplementation.RELATION,identifier.getID(),Store.YES));
+	    }
 	    DateEvents events = (DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE);
 	    for(EdalDate date : events) {
 	    	doc.add(new LongPoint("startDate", date.getStartDate().getTimeInMillis()));
@@ -261,12 +274,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		    	doc.add(new LongPoint("endDate", ((EdalDateRange)date).getEndDate().getTimeInMillis()));
 	    	}
 	    }
-	    if(metadata.getElementValue(EnumDublinCoreElements.TYPE) instanceof EmptyMetaData) {
+	    if(metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
+		    doc.add(new TextField(MetaDataImplementation.MIMETYPE,"none",Store.YES));
 	    	doc.add(new TextField(MetaDataImplementation.TYPE,"none",Store.YES));
 	    }else {
+		    doc.add(new TextField(MetaDataImplementation.MIMETYPE,getString(((DataFormat)metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()),Store.YES));
 	    	doc.add(new TextField(MetaDataImplementation.TYPE,metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(),Store.YES));
 	    }
-
 	    doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()),Store.YES));
 	    writer.addDocument(doc);
 	}
@@ -280,6 +294,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	}
 
 	protected void indexRestObjects() {
+		long executeIndexingStart = System.currentTimeMillis();
 
 		if (!this.sessionFactory.isClosed()) {
 			final Session session = this.sessionFactory.openSession();
@@ -346,7 +361,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-
+			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
 			if (indexedObjects > 0 || flushedObjects > 0) {
@@ -374,6 +389,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
+			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
+			this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 

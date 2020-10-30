@@ -67,7 +67,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 	}
 
 	protected void executeIndexing() {
-
+		long executeIndexingStart = System.currentTimeMillis();
 		if (!this.sessionFactory.isClosed()) {
 			final Session session = this.sessionFactory.openSession();
 
@@ -131,6 +131,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
+			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
@@ -166,13 +167,15 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			if (flushedObjects != indexedObjects) {
 				indexRestObjects();
 			}
-
+			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
+			this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 
 	protected void indexRestObjects() {
 
 		if (!this.sessionFactory.isClosed()) {
+			long indexRestStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
 
 			session.setDefaultReadOnly(true);
@@ -227,6 +230,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
+			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+ flushedObjects);
 
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
@@ -257,6 +261,8 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
+			long executeIndexingFinishTime = System.currentTimeMillis()-indexRestStart;
+			this.indexLogger.info("IndexRestObejects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+ "flushedObjects: "+flushedObjects);
 		}
 	}
 

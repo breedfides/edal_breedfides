@@ -29,6 +29,17 @@
 			</Policies>
 			<DefaultRolloverStrategy max="60" />
 		</RollingFile>
+		<RollingFile name="RollingFileIndexing"
+			fileName="${sys:user.home}/.eDAL/eDAL_INDEXING.log"
+			filePattern="${sys:user.home}/.eDAL/eDAL_ERROR-%d{yyyy-MM-dd}.log">
+			<PatternLayout>
+				<Pattern>%m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="60" />
+		</RollingFile>
 	</appenders>
 	<loggers>
 		<Logger name="org.quartz" level="ERROR">
@@ -55,6 +66,10 @@
 		<Logger name="eDAL-API" level="INFO" additivity="false">
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
+		</Logger>
+		<Logger name="index-thread" level="INFO" additivity="false">
+			<appender-ref ref="Console" />
+			<appender-ref ref="RollingFileIndexing" />
 		</Logger>
 		<root level="INFO">
 			<appender-ref ref="RollingFileInfo" />
