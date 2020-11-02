@@ -54,6 +54,7 @@ import javax.persistence.criteria.Root;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.DirectoryReader;
@@ -63,6 +64,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -511,7 +514,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    		luceneString = dataFormat.getMimeType();
 	    	}
 			QueryParser parser = new QueryParser(MetaDataImplementation.MIMETYPE, new StandardAnalyzer());
-	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+	        org.apache.lucene.search.Query luceneQuery = parser.parse(QueryParser.escape(luceneString));
 	        ScoreDoc[] hits2;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
@@ -592,13 +595,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * Internal function to search for a {@link DateEvents}.
 	 * 
 	 * @param dateEvents
+	 * @param element 
 	 * @return List<MyDateEvents>
 	 */
-	private List<MyDateEvents> searchByDateEvents(final DateEvents dateEvents) {
+	private List<Integer> searchByDateEvents(final DateEvents dateEvents, EnumDublinCoreElements element) {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
-		final List<MyDateEvents> result = new ArrayList<MyDateEvents>();
+		List<Integer> result = new ArrayList<Integer>();
 
 		final Set<EdalDate> set = dateEvents.getSet();
 
@@ -612,32 +616,20 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			for (final EdalDate edalDate : set) {
 
 				if (edalDate instanceof EdalDateRange) {
-					final List<MyEdalDateRange> list = this.searchByEDALDateRange((EdalDateRange) edalDate);
-					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final Query<Integer> metaDataQuery = session.createQuery(
-							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
+					result = this.searchByEDALDateRange((EdalDateRange)edalDate);
 
-					metaDataQuery.setParameterList("list", list);
-					final List<Integer> idlist = metaDataQuery.list();
-
-					for (final Integer integer : idlist) {
-						result.add(session.get(MyDateEvents.class, integer));
-					}
+//					for (final Integer integer : idlist) {
+//						result.add(session.get(MyDateEvents.class, integer));
+//					}
 				}
 
 				else if (edalDate instanceof EdalDate) {
 
-					final List<MyEdalDate> list = this.searchByEDALDate(edalDate);
-					@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-					final Query<Integer> metaDataQuery = session.createSQLQuery(
-							"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
+					result =  this.searchByEDALDate(edalDate);
 
-					metaDataQuery.setParameterList("list", list);
-					final List<Integer> idlist = metaDataQuery.list();
-
-					for (final Integer integer : idlist) {
-						result.add(session.get(MyDateEvents.class, integer));
-					}
+//					for (final Integer integer : idlist) {
+//						result.add(session.get(MyDateEvents.class, integer));
+//					}
 				}
 
 			}
@@ -677,9 +669,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			else if (data.getClass().equals(DataFormat.class)) {
 				versionIDList = this.searchByDataFormat((DataFormat) data, element, fuzzy);
 			} 
-			//else if (data.getClass().equals(DateEvents.class)) {
-//				versionIDList = this.searchByDateEvents((DateEvents) data);
-			//} 
+			else if (data.getClass().equals(DateEvents.class)) {
+				versionIDList = this.searchByDateEvents((DateEvents) data, element);
+			} 
 			else if (data.getClass().equals(IdentifierRelation.class)) {
 				versionIDList = this.searchByIdentifierRelation((IdentifierRelation) data, element, fuzzy);
 			}
@@ -1117,92 +1109,131 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * @param edalDate
 	 * @return List<MyEDALDate>
 	 */
-	private List<MyEdalDate> searchByEDALDate(final EdalDate edalDate) {
-
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		final CriteriaBuilder builder = session.getCriteriaBuilder();
-
-		CriteriaQuery<MyEdalDate> dataCriteria = builder.createQuery(MyEdalDate.class);
-		Root<MyEdalDate> rootDate = dataCriteria.from(MyEdalDate.class);
-
+	private List<Integer> searchByEDALDate(final EdalDate edalDate) {
+		
+		
+		
 		final int precission = edalDate.getStartPrecision().ordinal();
 		final Calendar date = edalDate.getStartDate();
 		
-		ArrayList<Predicate> predicates = new ArrayList<>();
-		if (precission == EdalDatePrecision.CENTURY.ordinal()) {
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-					.warn("no Dates with CENTURY Precission allowed");
-			return new ArrayList<MyEdalDate>();
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
 
-		} else if (precission >= EdalDatePrecision.DECADE.ordinal()) {
-
-			/** note: use DECADE(date) if the database-SQL support */
-
-			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
-			predicates.add(builder.equal(builder.substring(yearExpression, 1, 3),
-					Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
-
-			if (precission >= EdalDatePrecision.YEAR.ordinal()) {
-
-				predicates.add(builder.equal(yearExpression, date.get(Calendar.YEAR)));
-
-				if (precission >= EdalDatePrecision.MONTH.ordinal()) {
-					/** very important: Calendar count months from 0-11 */
-					Expression<String> monthExpression = builder.function("MONTH", String.class,
-							rootDate.get("startDate"));
-
-					predicates.add(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
-
-					if (precission >= EdalDatePrecision.DAY.ordinal()) {
-
-						Expression<String> dayExpression = builder.function("DAY", String.class,
+			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		
+			final CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+			CriteriaQuery<MyEdalDate> dataCriteria = builder.createQuery(MyEdalDate.class);
+			Root<MyEdalDate> rootDate = dataCriteria.from(MyEdalDate.class);
+			
+			ArrayList<Predicate> predicates = new ArrayList<>();
+			if (precission == EdalDatePrecision.CENTURY.ordinal()) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+						.warn("no Dates with CENTURY Precission allowed");
+				return new ArrayList<Integer>();
+		
+			} else if (precission >= EdalDatePrecision.DECADE.ordinal()) {
+		
+				/** note: use DECADE(date) if the database-SQL support */
+		
+				Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
+				predicates.add(builder.equal(builder.substring(yearExpression, 1, 3),
+						Integer.toString(date.get(Calendar.YEAR)).substring(0, 3)));
+		
+				if (precission >= EdalDatePrecision.YEAR.ordinal()) {
+		
+					predicates.add(builder.equal(yearExpression, date.get(Calendar.YEAR)));
+		
+					if (precission >= EdalDatePrecision.MONTH.ordinal()) {
+						/** very important: Calendar count months from 0-11 */
+						Expression<String> monthExpression = builder.function("MONTH", String.class,
 								rootDate.get("startDate"));
-
-						predicates.add(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
-
-						if (precission >= EdalDatePrecision.HOUR.ordinal()) {
-
-							Expression<String> hourExpression = builder.function("HOUR", String.class,
+		
+						predicates.add(builder.equal(monthExpression, (date.get(Calendar.MONTH) + 1)));
+		
+						if (precission >= EdalDatePrecision.DAY.ordinal()) {
+		
+							Expression<String> dayExpression = builder.function("DAY", String.class,
 									rootDate.get("startDate"));
-
-							predicates.add(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
-
-							if (precission >= EdalDatePrecision.MINUTE.ordinal()) {
-
-								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+		
+							predicates.add(builder.equal(dayExpression, date.get(Calendar.DAY_OF_MONTH)));
+		
+							if (precission >= EdalDatePrecision.HOUR.ordinal()) {
+		
+								Expression<String> hourExpression = builder.function("HOUR", String.class,
 										rootDate.get("startDate"));
-
-								predicates.add(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
-
-								if (precission >= EdalDatePrecision.SECOND.ordinal()) {
-
-									Expression<String> secondExpression = builder.function("SECOND", String.class,
+		
+								predicates.add(builder.equal(hourExpression, date.get(Calendar.HOUR_OF_DAY)));
+		
+								if (precission >= EdalDatePrecision.MINUTE.ordinal()) {
+		
+									Expression<String> minuteExpression = builder.function("MINUTE", String.class,
 											rootDate.get("startDate"));
-
-									predicates.add(builder.equal(secondExpression, date.get(Calendar.SECOND)));
-
-//									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
-//
-//										Expression<String> millisecondExpression = builder.function("MILISECOND",
-//												String.class, rootDate.get("startDate"));
-//
-//										dataCriteria.where(
-//												builder.equal(millisecondExpression, date.get(Calendar.MILLISECOND)));
-//									}
+		
+									predicates.add(builder.equal(minuteExpression, date.get(Calendar.MINUTE)));
+		
+									if (precission >= EdalDatePrecision.SECOND.ordinal()) {
+		
+										Expression<String> secondExpression = builder.function("SECOND", String.class,
+												rootDate.get("startDate"));
+		
+										predicates.add(builder.equal(secondExpression, date.get(Calendar.SECOND)));
+		
+		//									if (precission >= EdalDatePrecision.MILLISECOND.ordinal()) {
+		//
+		//										Expression<String> millisecondExpression = builder.function("MILISECOND",
+		//												String.class, rootDate.get("startDate"));
+		//
+		//										dataCriteria.where(
+		//												builder.equal(millisecondExpression, date.get(Calendar.MILLISECOND)));
+		//									}
+									}
 								}
 							}
 						}
 					}
 				}
 			}
-		}
-		Predicate finalQuery = builder.and(predicates.toArray(new Predicate[0]));
-		dataCriteria.where(finalQuery);
-		final List<MyEdalDate> result = session.createQuery(dataCriteria).list();
-		session.close();
+			Predicate finalQuery = builder.and(predicates.toArray(new Predicate[0]));
+			dataCriteria.where(finalQuery);
+			final List<MyEdalDate> list = session.createQuery(dataCriteria).list();
+			session.close();
+			@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+			final Query<Integer> metaDataQuery = session.createSQLQuery(
+					"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
-		return result;
+			metaDataQuery.setParameterList("list", list);
+			return  metaDataQuery.list();
+		}
+		else {
+			final ArrayList<Integer> versionIDList = new ArrayList<>();
+			IndexReader reader = null;
+			
+			//Create IndexSearcher from IndexDirectory
+			try {
+				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv())
+						.getIndexDirectory().toString(),"Master_Index"));
+				reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+				e.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+		   //create the BooleanQuery query object
+		   org.apache.lucene.search.Query query = LongPoint.newExactQuery(MetaDataImplementation.STARTDATE, date.getTimeInMillis());
+
+		   //do the search
+			try {
+		        ScoreDoc[] hits = searcher.search(query, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
+		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return versionIDList;
+		}
 
 	}
 
@@ -1212,166 +1243,206 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * @param edalDateRange
 	 * @return List<MyEDALDateRange>
 	 */
-	private List<MyEdalDateRange> searchByEDALDateRange(final EdalDateRange edalDateRange) {
-
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		final CriteriaBuilder builder = session.getCriteriaBuilder();
-
-		CriteriaQuery<MyEdalDateRange> dataCriteria = builder.createQuery(MyEdalDateRange.class);
-		Root<MyEdalDateRange> rootDate = dataCriteria.from(MyEdalDateRange.class);
-
+	private List<Integer> searchByEDALDateRange(final EdalDateRange edalDateRange) {
+		
 		final int precissionStart = edalDateRange.getStartPrecision().ordinal();
 		final Calendar dateStart = edalDateRange.getStartDate();
 
 		final int precissionEnd = edalDateRange.getEndPrecision().ordinal();
 		final Calendar dateEnd = edalDateRange.getEndDate();
+		
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+	
+			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+	
+			final CriteriaBuilder builder = session.getCriteriaBuilder();
+	
+			CriteriaQuery<MyEdalDateRange> dataCriteria = builder.createQuery(MyEdalDateRange.class);
+			Root<MyEdalDateRange> rootDate = dataCriteria.from(MyEdalDateRange.class);
+		
+			if (precissionStart == EdalDatePrecision.CENTURY.ordinal()
+					|| precissionEnd == EdalDatePrecision.CENTURY.ordinal()) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+						.warn("no DateRanges with CENTURY Precission allowed");
+				return new ArrayList<Integer>();
+	
+			}
+			ArrayList<Predicate> predicates = new ArrayList<>();
+			predicates.add(builder.lessThanOrEqualTo(rootDate.<Calendar>get("startDate"), edalDateRange.getStartDate()));
+			predicates.add(builder.greaterThanOrEqualTo(rootDate.<Calendar>get("endDate"), edalDateRange.getEndDate()));
+	//
+	//		if (precissionStart >= EdalDatePrecision.DECADE.ordinal()) {
+	//
+	//			/** note: use DECADE(date) if the database-SQL support */
+	//
+	//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
+	//
+	//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+	//					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
+	//
+	//			if (precissionStart >= EdalDatePrecision.YEAR.ordinal()) {
+	//
+	//				dataCriteria.where(builder.equal(yearExpression, dateStart.get(Calendar.YEAR)));
+	//
+	//				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
+	//					/** very important: Calendar count months from 0-11 */
+	//					Expression<String> monthExpression = builder.function("MONTH", String.class,
+	//							rootDate.get("startDate"));
+	//
+	//					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
+	//
+	//					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
+	//
+	//						Expression<String> dayExpression = builder.function("DAY", String.class,
+	//								rootDate.get("startDate"));
+	//
+	//						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
+	//
+	//						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
+	//
+	//							Expression<String> hourExpression = builder.function("HOUR", String.class,
+	//									rootDate.get("startDate"));
+	//
+	//							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
+	//
+	//							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
+	//
+	//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+	//										rootDate.get("startDate"));
+	//
+	//								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
+	//
+	//								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
+	//
+	//									Expression<String> secondExpression = builder.function("SECOND", String.class,
+	//											rootDate.get("startDate"));
+	//
+	//									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
+	//
+	////									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
+	////
+	////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+	////												String.class, rootDate.get("startDate"));
+	////
+	////										dataCriteria.where(builder.equal(millisecondExpression,
+	////												dateStart.get(Calendar.MILLISECOND)));
+	////									}
+	//								}
+	//							}
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//
+	//		if (precissionEnd >= EdalDatePrecision.DECADE.ordinal()) {
+	//
+	//			/** note: use DECADE(date) if the database-SQL support */
+	//
+	//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("endDate"));
+	//
+	//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
+	//					Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
+	//
+	//			if (precissionEnd >= EdalDatePrecision.YEAR.ordinal()) {
+	//
+	//				dataCriteria.where(builder.equal(yearExpression, dateEnd.get(Calendar.YEAR)));
+	//
+	//				if (precissionEnd >= EdalDatePrecision.MONTH.ordinal()) {
+	//					/** very important: Calendar count months from 0-11 */
+	//					Expression<String> monthExpression = builder.function("MONTH", String.class,
+	//							rootDate.get("endDate"));
+	//
+	//					dataCriteria.where(builder.equal(monthExpression, (dateEnd.get(Calendar.MONTH) + 1)));
+	//
+	//					if (precissionEnd >= EdalDatePrecision.DAY.ordinal()) {
+	//
+	//						Expression<String> dayExpression = builder.function("DAY", String.class,
+	//								rootDate.get("endDate"));
+	//
+	//						dataCriteria.where(builder.equal(dayExpression, dateEnd.get(Calendar.DAY_OF_MONTH)));
+	//
+	//						if (precissionEnd >= EdalDatePrecision.HOUR.ordinal()) {
+	//
+	//							Expression<String> hourExpression = builder.function("HOUR", String.class,
+	//									rootDate.get("endDate"));
+	//
+	//							dataCriteria.where(builder.equal(hourExpression, dateEnd.get(Calendar.HOUR_OF_DAY)));
+	//
+	//							if (precissionEnd >= EdalDatePrecision.MINUTE.ordinal()) {
+	//
+	//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
+	//										rootDate.get("endDate"));
+	//
+	//								dataCriteria.where(builder.equal(minuteExpression, dateEnd.get(Calendar.MINUTE)));
+	//
+	//								if (precissionEnd >= EdalDatePrecision.SECOND.ordinal()) {
+	//
+	//									Expression<String> secondExpression = builder.function("SECOND", String.class,
+	//											rootDate.get("endDate"));
+	//
+	//									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
+	//
+	////									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
+	////
+	////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
+	////												String.class, rootDate.get("endDate"));
+	////
+	////										dataCriteria.where(builder.equal(millisecondExpression,
+	////												dateEnd.get(Calendar.MILLISECOND)));
+	////									}
+	//								}
+	//							}
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	
+			dataCriteria.where(predicates.toArray(new Predicate[0]));
+			final List<MyEdalDateRange> list = session.createQuery(dataCriteria).list();
+	
+			session.close();
+			
+			@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+			final Query<Integer> metaDataQuery = session.createQuery(
+					"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
-		if (precissionStart == EdalDatePrecision.CENTURY.ordinal()
-				|| precissionEnd == EdalDatePrecision.CENTURY.ordinal()) {
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-					.warn("no DateRanges with CENTURY Precission allowed");
-			return new ArrayList<MyEdalDateRange>();
+			metaDataQuery.setParameterList("list", list);
+			return metaDataQuery.list();
+		}else {
+			final ArrayList<Integer> versionIDList = new ArrayList<>();
+			IndexReader reader = null;
+			
+			//Create IndexSearcher from IndexDirectory
+			try {
+				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+				reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+				e.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+		   //create the BooleanQuery query object
+		   org.apache.lucene.search.Query start = LongPoint.newExactQuery(MetaDataImplementation.STARTDATE, dateStart.getTimeInMillis());
+		   org.apache.lucene.search.Query end = LongPoint.newExactQuery(MetaDataImplementation.ENDDATE, dateEnd.getTimeInMillis());
+		   BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+		   booleanQuery.add(start, BooleanClause.Occur.MUST);
+		    booleanQuery.add(end, BooleanClause.Occur.MUST);
 
+		   //do the search
+			try {
+		        ScoreDoc[] hits = searcher.search(booleanQuery.build(), 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
+		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return versionIDList;
 		}
-		ArrayList<Predicate> predicates = new ArrayList<>();
-		predicates.add(builder.lessThanOrEqualTo(rootDate.<Calendar>get("startDate"), edalDateRange.getStartDate()));
-		predicates.add(builder.greaterThanOrEqualTo(rootDate.<Calendar>get("endDate"), edalDateRange.getEndDate()));
-//
-//		if (precissionStart >= EdalDatePrecision.DECADE.ordinal()) {
-//
-//			/** note: use DECADE(date) if the database-SQL support */
-//
-//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("startDate"));
-//
-//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
-//					Integer.toString(dateStart.get(Calendar.YEAR)).substring(0, 3)));
-//
-//			if (precissionStart >= EdalDatePrecision.YEAR.ordinal()) {
-//
-//				dataCriteria.where(builder.equal(yearExpression, dateStart.get(Calendar.YEAR)));
-//
-//				if (precissionStart >= EdalDatePrecision.MONTH.ordinal()) {
-//					/** very important: Calendar count months from 0-11 */
-//					Expression<String> monthExpression = builder.function("MONTH", String.class,
-//							rootDate.get("startDate"));
-//
-//					dataCriteria.where(builder.equal(monthExpression, (dateStart.get(Calendar.MONTH) + 1)));
-//
-//					if (precissionStart >= EdalDatePrecision.DAY.ordinal()) {
-//
-//						Expression<String> dayExpression = builder.function("DAY", String.class,
-//								rootDate.get("startDate"));
-//
-//						dataCriteria.where(builder.equal(dayExpression, dateStart.get(Calendar.DAY_OF_MONTH)));
-//
-//						if (precissionStart >= EdalDatePrecision.HOUR.ordinal()) {
-//
-//							Expression<String> hourExpression = builder.function("HOUR", String.class,
-//									rootDate.get("startDate"));
-//
-//							dataCriteria.where(builder.equal(hourExpression, dateStart.get(Calendar.HOUR_OF_DAY)));
-//
-//							if (precissionStart >= EdalDatePrecision.MINUTE.ordinal()) {
-//
-//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-//										rootDate.get("startDate"));
-//
-//								dataCriteria.where(builder.equal(minuteExpression, dateStart.get(Calendar.MINUTE)));
-//
-//								if (precissionStart >= EdalDatePrecision.SECOND.ordinal()) {
-//
-//									Expression<String> secondExpression = builder.function("SECOND", String.class,
-//											rootDate.get("startDate"));
-//
-//									dataCriteria.where(builder.equal(secondExpression, dateStart.get(Calendar.SECOND)));
-//
-////									if (precissionStart >= EdalDatePrecision.MILLISECOND.ordinal()) {
-////
-////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-////												String.class, rootDate.get("startDate"));
-////
-////										dataCriteria.where(builder.equal(millisecondExpression,
-////												dateStart.get(Calendar.MILLISECOND)));
-////									}
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-//
-//		if (precissionEnd >= EdalDatePrecision.DECADE.ordinal()) {
-//
-//			/** note: use DECADE(date) if the database-SQL support */
-//
-//			Expression<String> yearExpression = builder.function("YEAR", String.class, rootDate.get("endDate"));
-//
-//			dataCriteria.where(builder.equal(builder.substring(yearExpression, 1, 3),
-//					Integer.toString(dateEnd.get(Calendar.YEAR)).substring(0, 3)));
-//
-//			if (precissionEnd >= EdalDatePrecision.YEAR.ordinal()) {
-//
-//				dataCriteria.where(builder.equal(yearExpression, dateEnd.get(Calendar.YEAR)));
-//
-//				if (precissionEnd >= EdalDatePrecision.MONTH.ordinal()) {
-//					/** very important: Calendar count months from 0-11 */
-//					Expression<String> monthExpression = builder.function("MONTH", String.class,
-//							rootDate.get("endDate"));
-//
-//					dataCriteria.where(builder.equal(monthExpression, (dateEnd.get(Calendar.MONTH) + 1)));
-//
-//					if (precissionEnd >= EdalDatePrecision.DAY.ordinal()) {
-//
-//						Expression<String> dayExpression = builder.function("DAY", String.class,
-//								rootDate.get("endDate"));
-//
-//						dataCriteria.where(builder.equal(dayExpression, dateEnd.get(Calendar.DAY_OF_MONTH)));
-//
-//						if (precissionEnd >= EdalDatePrecision.HOUR.ordinal()) {
-//
-//							Expression<String> hourExpression = builder.function("HOUR", String.class,
-//									rootDate.get("endDate"));
-//
-//							dataCriteria.where(builder.equal(hourExpression, dateEnd.get(Calendar.HOUR_OF_DAY)));
-//
-//							if (precissionEnd >= EdalDatePrecision.MINUTE.ordinal()) {
-//
-//								Expression<String> minuteExpression = builder.function("MINUTE", String.class,
-//										rootDate.get("endDate"));
-//
-//								dataCriteria.where(builder.equal(minuteExpression, dateEnd.get(Calendar.MINUTE)));
-//
-//								if (precissionEnd >= EdalDatePrecision.SECOND.ordinal()) {
-//
-//									Expression<String> secondExpression = builder.function("SECOND", String.class,
-//											rootDate.get("endDate"));
-//
-//									dataCriteria.where(builder.equal(secondExpression, dateEnd.get(Calendar.SECOND)));
-//
-////									if (precissionEnd >= EdalDatePrecision.MILLISECOND.ordinal()) {
-////
-////										Expression<String> millisecondExpression = builder.function("MILLISECOND",
-////												String.class, rootDate.get("endDate"));
-////
-////										dataCriteria.where(builder.equal(millisecondExpression,
-////												dateEnd.get(Calendar.MILLISECOND)));
-////									}
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-
-		dataCriteria.where(predicates.toArray(new Predicate[0]));
-		final List<MyEdalDateRange> result = session.createQuery(dataCriteria).list();
-
-		session.close();
-
-		return result;
 	}
 
 	/**
@@ -1586,180 +1657,164 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	@Override
 	protected List<? extends PrimaryDataEntity> searchByKeywordImpl(final String keyword, final boolean fuzzy,
 			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException {
-
-
+		
+		List<Integer> versionIDList = new ArrayList<>();
+		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		org.apache.lucene.search.Query query = null;
-
-		//final FullTextSession ftSession = Search.getFullTextSession(session);
-		final SearchSession ftSession = Search.session(session);
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
-//				.get();
-//
-//		SearchFactory searchFactory = ftSession.getSearchFactory();
-		//org.hibernate.Query fullTextQuery = null;
-		SearchResult<MyNaturalPerson> searchQuery = null;
-		//final FullTextSession ftSession = Search.getFullTextSession(session);
-
-//		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyLegalPerson.class)
-//				.get();
-//
-//		org.apache.lucene.search.Query combinedQuery = null;
-
-
-
-//		List<MyUntypedData> hits = ftSession.search( MyUntypedData.class )
-//		        .where( f -> f.match()
-//		                .field( "givenName" ).field( "string" )
-//		                .matching( keyword ) )
-//		        .fetchHits( 20 );
-
-
-
-		//@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-		//final Query<MyLegalPerson> hibernateQuery = ftSession.createFullTextQuery(combinedQuery, MyLegalPerson.class);
-
-		//final List<MyNaturalPerson> result = searchQuery.hits();
 		
-		final long startTime = System.currentTimeMillis();
-    	IndexReader reader = null;
-		try {
-	    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
-	    	reader = DirectoryReader.open(indexDirectory);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-    	IndexSearcher searcher = new IndexSearcher(reader);
-    	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
-    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
-    			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
-    			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
-    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE};
-		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
-			    new MultiFieldQueryParser(fields, new StandardAnalyzer());
-		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
-        org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = parser.parse(keyword);
-		} catch (ParseException e1) {
-			e1.printStackTrace();
-		}
-        ScoreDoc[] hits2 = null;
-		try {
-			hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-    	final ArrayList<Integer> versionIDList = new ArrayList<>();
-        for(int i = 0; i < hits2.length; i++) {
-        	Document doc = null;
-			try {
-				doc = searcher.doc(hits2[i].doc);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+			final long startTime = System.currentTimeMillis();
+
+
+			org.apache.lucene.search.Query query = null;
+
+			//final FullTextSession ftSession = Search.getFullTextSession(session);
+			final SearchSession ftSession = Search.session(session);
+//			QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyUntypedData.class)
+//					.get();
+	//
+//			SearchFactory searchFactory = ftSession.getSearchFactory();
+			//org.hibernate.Query fullTextQuery = null;
+			SearchMapping mapping = Search.mapping(session.getSessionFactory()); 
+			Backend backend = mapping.backend(); 
+			LuceneBackend luceneBackend = backend.unwrap( LuceneBackend.class ); 
+			Optional<? extends Analyzer> analyzer = luceneBackend.analyzer( "default" );
+			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+				    new MultiFieldQueryParser(new String[]{"string","givenName",
+				    		"sureName","country","zip","adressLine","legalName",
+				    		"id","identifier","mimeType","checkSum","algorithm",
+				    		"size","language"}, analyzer.get());
+			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+			SearchResult<MyUntypedData> searchResult = null;
+				try {
+					final org.apache.lucene.search.Query luceneQuery;
+					if(fuzzy) {
+						luceneQuery = parser.parse(keyword+'~');
+					}else {
+						luceneQuery = parser.parse(keyword);
+					}
+
+					searchResult = ftSession.search(MyUntypedData.class)
+					        .extension( LuceneExtension.get() ) 
+					        .where( f -> f.fromLuceneQuery( 
+					                luceneQuery ))
+					        .fetch(500);
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+luceneQuery.toString());
+				}
+				catch (ParseException e) {
+				    //handle parsing failure
+				}
+
+
+
+
+				List<? extends MyUntypedData> datatypes = searchResult.hits(); //return a list of managed objects
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());
+				
+				//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
+
+			//session.close();
+			Collection<MyUntypedData> datatypeList = new ArrayList<>();
+			/** if no results found return empty List */
+			if (datatypes.isEmpty()) {
+				return new ArrayList<PrimaryDataEntity>();
 			}
-        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
-        }
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found while searching: "+versionIDList.size()+" values");
-		
-//		SearchResult<MetaDataImplementation> searchResult = null;
-//			try {
-//				org.apache.lucene.search.Query luceneQuery = parser.parse(keyword);
-//				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Parsed Query: "+luceneQuery.toString());
-//
-//				searchResult = ftSession.search(ftSession.scope(MetaDataImplementation.class))//Searches all Indexes of that type and Sub Types!
-//				        .extension( LuceneExtension.get() ) 
-//				        .where( f -> f.fromLuceneQuery( 
-//				                luceneQuery ))
-//				        .fetch(200);
-////				fullTextQuery = ftSession.
-////				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+fullTextQuery.toString());
-//			}
-//			catch (ParseException e) {
-//			    //handle parsing failure
-//			}
+			if (datatypes.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
+				throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
+			}else {
+			//filter Collection-associated Objects for mapping
+				ArrayList<MyNaturalPerson> naturalPersons = new ArrayList<>();
+				ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
+				ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
+				//Subjects - MyUntypedData
+				for(MyUntypedData data: datatypes) {
+					if(data instanceof MyNaturalPerson) {
+						naturalPersons.add((MyNaturalPerson) data);
+					}else if(data instanceof MyCheckSumType) {
+						checksumTypes.add((MyCheckSumType)data);
+					}else {
+						datatypeList.add(data);
+					}
+				}
+				//Values getting deleted, is that a problem?
+				datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
+				if(naturalPersons.size() > 0) {
+					datatypeList.addAll(this.mapCollections(naturalPersons, MyPersons.class, "persons"));
+				}
+				if(checksumTypes.size() > 0) {
+					datatypeList.addAll(this.mapCollections(checksumTypes, MyCheckSum.class, "dataSet"));
 
+				}
+			}
 
+			final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
 
+			for (final MyUntypedData myUntypedData : datatypeList) {
+				datatypeIDList.add(myUntypedData.getId());
+			}
 
-			/*List<? extends MetaDataImplementation> datatypes = searchResult.hits(); //return a list of managed objects
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("DatatypeList Size: "+datatypes.size());*/
+			final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+			@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
+			final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
+					+ "FROM ENTITY_VERSIONS v , metadata_map m , "
+					+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+
+			versionSQLQuery.setParameterList("list", datatypeIDList);
+
+			versionIDList = versionSQLQuery.list();
+		}
+		else {
 			
-			//Checksummentypen, MyNaturalPerson, MyLEgalPerson mappen und neue Liste bauen
-			
-//		if (fuzzy) {
-//			if (this.consistsQueryParserSyntax(keyword)) {
-//				query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
-//						"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
-//			} else {
-//				query = queryBuilder
-//						.keyword().fuzzy().onFields("string", "givenName", "sureName", "country", "zip",
-//								"addressLine", "id", "identifier", "mimeType")
-//						.matching(keyword).createQuery();
-//			}
-//		} else {
-//			query = queryBuilder.keyword().wildcard().onFields("string", "givenName", "sureName", "country", "zip",
-//					"addressLine", "id", "identifier", "mimeType").matching(keyword).createQuery();
-//		}
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<MyUntypedData> hibernateQuery = ftSession.createFullTextQuery(query, UntypedData.class);
-//
-//		final List<MyUntypedData> datatypeList = hibernateQuery.list();
-
-		//session.close();
-		
-//        
-//        Collection<MyUntypedData> datatypeList = new ArrayList<>();
-//		/** if no results found return empty List */
-//		if (datatypes.isEmpty()) {
-//			return new ArrayList<PrimaryDataEntity>();
-//		}
-//		if (datatypes.size() > PrimaryDataDirectoryImplementation.MAX_NUMBER_SEARCH_RESULTS) {
-//			throw new PrimaryDataDirectoryException("find to much result please repeat query with more details");
-//		}else {
-//		//filter Collection-associated Objects for mapping
-//			ArrayList<MyNaturalPerson> naturalPersons = new ArrayList<>();
-//			ArrayList<MyCheckSumType> checksumTypes = new ArrayList<>();
-//			ArrayList<MyUntypedData> maybeSubjects = new ArrayList<>();
-//			//Subjects - MyUntypedData
-////			for(MetaDataImplementation data: datatypes) {
-////				if(data instanceof MyNaturalPerson) {
-////					naturalPersons.add((MyNaturalPerson) data);
-////				}else if(data instanceof MyCheckSumType) {
-////					checksumTypes.add((MyCheckSumType)data);
-////				}else {
-////					datatypeList.add(data);
-////				}
-////			}
-//			//Values getting deleted, is that a problem?
-//			datatypeList.addAll(this.mapCollections(maybeSubjects, MySubjects.class, "subjects"));
-//			if(naturalPersons.size() > 0) {
-//				datatypeList.addAll(this.mapCollections(naturalPersons, MyPersons.class, "persons"));
-//			}
-//			if(checksumTypes.size() > 0) {
-//
-//			}
-//		}
-//
-//		final List<Integer> datatypeIDList = new ArrayList<Integer>(datatypeList.size());
-//
-//		for (final MyUntypedData myUntypedData : datatypeList) {
-//			datatypeIDList.add(myUntypedData.getId());
-//		}
-//
-//
-//		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
-//		final Query<Integer> versionSQLQuery = session2.createSQLQuery("SELECT DISTINCT v.ID "
-//				+ "FROM ENTITY_VERSIONS v , metadata_map m , "
-//				+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
-//
-//		versionSQLQuery.setParameterList("list", datatypeIDList);
-//
-//		final List<Integer> versionIDList = versionSQLQuery.list();
-		
+			final long startTime = System.currentTimeMillis();
+	    	IndexReader reader = null;
+			try {
+		    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+		    	reader = DirectoryReader.open(indexDirectory);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+	    	IndexSearcher searcher = new IndexSearcher(reader);
+	    	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
+	    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
+	    			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
+	    			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
+	    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE};
+			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+				    new MultiFieldQueryParser(fields, new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+	        org.apache.lucene.search.Query luceneQuery = null;
+			try {
+				if(fuzzy) {
+					luceneQuery = parser.parse(keyword+'~');
+				}else {
+					luceneQuery = parser.parse(keyword);
+				}
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+luceneQuery.toString());
+			} catch (ParseException e1) {
+				e1.printStackTrace();
+			}
+	        ScoreDoc[] hits2 = null;
+			try {
+				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+	    	versionIDList = new ArrayList<>();
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits Size: "+hits2.length);
+	        for(int i = 0; i < hits2.length; i++) {
+	        	Document doc = null;
+				try {
+					doc = searcher.doc(hits2[i].doc);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
+	        }
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found while searching: "+versionIDList.size()+" values");
+		}
 		
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();

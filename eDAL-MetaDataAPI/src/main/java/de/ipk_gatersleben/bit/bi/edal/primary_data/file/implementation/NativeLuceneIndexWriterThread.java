@@ -236,7 +236,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	    doc.add(new TextField(MetaDataImplementation.TITLE,getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)),Store.YES));
 	    doc.add(new TextField(MetaDataImplementation.DESCRIPTION,getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),Store.YES));
 	    doc.add(new TextField(MetaDataImplementation.COVERAGE,getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.IDENTIFIER,getString(metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)),Store.YES));
+	    doc.add(new TextField(MetaDataImplementation.IDENTIFIER,getString(((Identifier)metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()),Store.YES));
 	    doc.add(new TextField(MetaDataImplementation.SIZE,Long.toString(((DataSize)metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
 	    doc.add(new TextField(MetaDataImplementation.LANGUAGE,getString(((EdalLanguage)metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()),Store.YES));
 	    Persons naturalPersons = (Persons)metadata.getElementValue(EnumDublinCoreElements.CREATOR);
@@ -269,9 +269,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	    }
 	    DateEvents events = (DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE);
 	    for(EdalDate date : events) {
-	    	doc.add(new LongPoint("startDate", date.getStartDate().getTimeInMillis()));
+	    	doc.add(new LongPoint(MetaDataImplementation.STARTDATE, date.getStartDate().getTimeInMillis()));
 	    	if(date instanceof EdalDateRange) {
-		    	doc.add(new LongPoint("endDate", ((EdalDateRange)date).getEndDate().getTimeInMillis()));
+		    	doc.add(new LongPoint(MetaDataImplementation.ENDDATE, ((EdalDateRange)date).getEndDate().getTimeInMillis()));
 	    	}
 	    }
 	    if(metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {

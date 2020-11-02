@@ -23,9 +23,18 @@ import javax.persistence.Id;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.lucene.document.Field.Store;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBridgeRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
 @Entity
+@Indexed
 public class MyEdalDate implements Serializable {
 
 	private static final long serialVersionUID = 6150419465225565484L;
@@ -58,6 +67,7 @@ public class MyEdalDate implements Serializable {
 	 * @return the startDate
 	 */
 	@Temporal(TemporalType.TIMESTAMP)
+    @GenericField()
 	public Calendar getStartDate() {
 		return startDate;
 	}

@@ -88,7 +88,7 @@ class H2ChunkCorruptionTest {
 	public Path mountPath = null;
 	private PrimaryDataDirectory rootDirectory;
 
-	@Test
+	//@Test
 	void generateDataTest() throws Exception {
 		rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false,

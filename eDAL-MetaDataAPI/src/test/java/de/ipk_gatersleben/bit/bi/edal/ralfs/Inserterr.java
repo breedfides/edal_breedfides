@@ -31,6 +31,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -44,6 +45,7 @@ public class Inserterr {
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData searchable = null;
 	private FileInputStream fin = null;
+	Identifier referenceIdentifier = new Identifier("referencingsomeid");
 	
 	public Inserterr(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
@@ -59,7 +61,6 @@ public class Inserterr {
 		int countNames =names.size();
 		int countWords =words.size();
 		Random random = new Random();
-		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
 		String archiveName = "";
@@ -131,11 +132,14 @@ public class Inserterr {
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("Sed ut perspiciatis"));
 			EdalLanguage lang = new EdalLanguage(Locale.US);
+			IdentifierRelation relation = new IdentifierRelation();
+			relation.add(referenceIdentifier);
 			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("titanfall"));
+			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("test"));
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
+			searchable.setElementValue(EnumDublinCoreElements.RELATION, relation);
 			entity.setMetaData(searchable);
 			log("Searchable isnerted!");
 	}

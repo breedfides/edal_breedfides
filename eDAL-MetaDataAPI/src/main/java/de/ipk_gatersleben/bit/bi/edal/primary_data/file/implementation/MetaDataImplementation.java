@@ -127,7 +127,8 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String SUBJECT = "subject";
 	public static final String RELATION = "relation";
 	public static final String MIMETYPE = "mimeType";
-	
+	public static final String STARTDATE = "startDate";
+	public static final String ENDDATE = "endDate";
 
 	private Map<EnumDublinCoreElements, MyUntypedData> myMap;
 
