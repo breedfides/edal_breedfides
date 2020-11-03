@@ -59,10 +59,26 @@ public class FullExample {
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
 	//MetaData searchable = inserter.getSearchable();
-	List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
+	//List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
 	//testSearchByDublin();
 	//testMetaDataSearch(rootDirectory, searchable);
+	PrimaryDataDirectory directory = rootDirectory
+			.createPrimaryDataDirectory("directory");
+	directory.createPrimaryDataFile("File 1");
+	directory.createPrimaryDataFile("File 2");
+	directory.createPrimaryDataFile("File 3");
+
+	directory.rename("directory_new");
+
+	directory.createPrimaryDataFile("File 4");
+	directory.createPrimaryDataFile("File 5");
+	directory.createPrimaryDataFile("File 6");
 	DataManager.shutdown();
+	rootDirectory = getRoot();
+	PrimaryDataDirectory loadedDirectory = (PrimaryDataDirectory) rootDirectory
+			.getPrimaryDataEntity("directory_new");
+	DataManager.shutdown();
+	
 		//testSearchByDublin();
     }
 

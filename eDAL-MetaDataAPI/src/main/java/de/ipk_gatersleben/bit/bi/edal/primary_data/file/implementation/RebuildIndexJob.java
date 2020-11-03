@@ -42,8 +42,7 @@ public class RebuildIndexJob implements Job {
 			ServiceProvider s = ((FileSystemImplementationProvider) DataManager.getImplProv()).getServiceProvider()
 					.getDeclaredConstructor().newInstance();
 
-			if (s.isCleaned()) {
-
+			if (s.isCleaned()) {				
 				((FileSystemImplementationProvider) DataManager.getImplProv()).getIndexThread().resetIndexThread();
 
 				s.setCleaned(false);
