@@ -94,11 +94,28 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
-	
+	Directory indexinDirectory = null;
+	StandardAnalyzer analyzer;
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
 		indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+		indexinDirectory = null;
+		try {
+			indexinDirectory = FSDirectory.open(indexPath);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		analyzer = new StandardAnalyzer();
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+	    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+	    try {
+			writer = new IndexWriter(indexinDirectory, iwc);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 
 
@@ -139,22 +156,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			final long indexStartTime = System.currentTimeMillis();
 			this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
-			Directory indexinDirectory = null;
-			try {
-				indexinDirectory = FSDirectory.open(indexPath);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			StandardAnalyzer analyzer = new StandardAnalyzer();
-		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-		    IndexWriter writer = null;
-		    try {
-				writer = new IndexWriter(indexinDirectory, iwc);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				indexedObjects++;
@@ -168,35 +169,17 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
-//					try {
-//						writer.commit();
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
+					try {
+						writer.commit();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 						flushedObjects += fetchSize;
 				}
 			}
 			results.close();
 			session.close();
-			try {
-				writer.close();
-				if(version != null)
-					//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
-				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
-					this.lastIndexedID = version.getId() ;
-				}
-				this.implementationProviderLogger.info("WRITER CLOSED ");
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			try {
-				indexinDirectory.close();
-			} catch (IOException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			}
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
 			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
@@ -327,22 +310,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
-			Directory indexinDirectory = null;
-			try {
-				indexinDirectory = FSDirectory.open(indexPath);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			StandardAnalyzer analyzer = new StandardAnalyzer();
 		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-		    IndexWriter writer = null;
-		    try {
-				writer = new IndexWriter(indexinDirectory, iwc);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				/** index each element */
@@ -363,7 +331,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			results.close();
 			session.close();
 			try {
-				writer.close();
+				writer.commit();
 				if(version != null)
 				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
 				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
@@ -371,12 +339,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				}
 			} catch (IOException e1) {
 				e1.printStackTrace();
-			}
-			try {
-				indexinDirectory.close();
-			} catch (IOException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
 			}
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;

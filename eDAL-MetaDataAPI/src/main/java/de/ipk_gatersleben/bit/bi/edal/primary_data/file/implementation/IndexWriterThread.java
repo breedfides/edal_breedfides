@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.hibernate.Session;
@@ -53,6 +54,7 @@ abstract class IndexWriterThread extends EdalThread {
 	protected Logger implementationProviderLogger = null;
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
+	protected IndexWriter writer = null;
 
 	protected boolean requestForReset = false;
 
@@ -148,6 +150,13 @@ abstract class IndexWriterThread extends EdalThread {
 				this.getLock().unlock();
 				latch.countDown();
 			}
+		}
+		try {
+			if(writer != null && writer.isOpen())
+				this.writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
