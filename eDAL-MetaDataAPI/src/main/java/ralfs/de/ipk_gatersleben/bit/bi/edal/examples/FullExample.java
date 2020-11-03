@@ -52,13 +52,14 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
-	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(rootDirectory, 2);
+	//Inserter inserter = new Inserter(rootDirectory);
+	//inserter.process(rootDirectory, 2);
 
 	/**
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
-	MetaData searchable = inserter.getSearchable();
+	//MetaData searchable = inserter.getSearchable();
+	List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
 	//testSearchByDublin();
 	//testMetaDataSearch(rootDirectory, searchable);
 	DataManager.shutdown();

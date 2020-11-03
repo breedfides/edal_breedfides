@@ -183,7 +183,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			try {
 				writer.close();
 				if(version != null)
-					this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
+					//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
 				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 					this.lastIndexedID = version.getId() ;
 				}
@@ -226,7 +226,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				indexRestObjects();
 			}
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
-			this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
+			//this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 	
@@ -352,7 +352,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			try {
 				writer.close();
 				if(version != null)
-				this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
+				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
 				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 					this.lastIndexedID = version.getId() ;
 				}
@@ -390,7 +390,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
-			this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
+			//this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 

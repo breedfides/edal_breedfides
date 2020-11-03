@@ -61,6 +61,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -460,6 +461,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	private List<Integer> searchByDataFormat(final DataFormat dataFormat, EnumDublinCoreElements element, final boolean fuzzy)
 			throws ParseException, PrimaryDataDirectoryException {
+		if(dataFormat.getMimeType().equals("")) {
+			return new ArrayList<Integer>();
+		}
 
 		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
@@ -543,6 +547,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	private List<Integer> searchByDataType(final DataType dataType, EnumDublinCoreElements element) throws ParseException, PrimaryDataDirectoryException {
 
+		if(dataType.getDataType() == null) {
+			return new ArrayList<Integer>();
+		}
+		
 		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
@@ -649,7 +657,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 		startTime = System.currentTimeMillis();
 
-		List<Integer> versionIDList = new ArrayList<Integer>();
+ 		List<Integer> versionIDList = new ArrayList<Integer>();
 		try {
 			if (data.getClass().equals(UntypedData.class)) {
 				versionIDList = this.searchByUntypedData(data, element, fuzzy);
@@ -938,6 +946,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	}
 
 	private List<Integer> searchByEdalLanguage(EdalLanguage data, EnumDublinCoreElements element, boolean fuzzy) throws PrimaryDataDirectoryException, ParseException {
+		if(data.getLanguage() == null) {
+			return new ArrayList<Integer>();
+		}
+		
 		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
@@ -1020,6 +1032,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	}
 
 	private List<Integer> searchByCheckSum(CheckSumType data, EnumDublinCoreElements element, boolean fuzzy) throws PrimaryDataDirectoryException, ParseException {
+		if(data.getAlgorithm().equals("") && data.getCheckSum().equals("")) {
+			return new ArrayList<Integer>();
+		}
+		
 		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
@@ -1055,21 +1071,32 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 				e.printStackTrace();
 			}
+			
+			TermQuery queryAlgorithm = new TermQuery(new Term(MetaDataImplementation.ALGORITHM,data.getAlgorithm()));
+			TermQuery queryCheckSum = new TermQuery(new Term(MetaDataImplementation.CHECKSUM,data.getCheckSum()));
+			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+			booleanQuery.add(queryAlgorithm, BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryCheckSum, BooleanClause.Occur.MUST);
 	    	IndexSearcher searcher = new IndexSearcher(reader);
-	    	
-	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser(MetaDataImplementation.CHECKSUM, new StandardAnalyzer());
-			String luceneString;
-			if(fuzzy) {
-				luceneString = MetaDataImplementation.ALGORITHM+":"+data.getAlgorithm()+"~ "+MetaDataImplementation.CHECKSUM+":"+data.getCheckSum()+"~";
-			}else {
-				luceneString = MetaDataImplementation.ALGORITHM+":"+data.getAlgorithm()+"~ "+MetaDataImplementation.CHECKSUM+":"+data.getCheckSum()+"~";
-			}
-	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+//	    	
+//	    	//Search Documents with Parsed Query
+//			QueryParser parser = new QueryParser(MetaDataImplementation.CHECKSUM, new StandardAnalyzer());
+//			String luceneString = "";
+//			if(fuzzy) {
+//				if(data.getAlgorithm().equals("")) {
+//					
+//				}else if(data.getCheckSum().equals("")) {
+//					
+//				}
+//				luceneString = MetaDataImplementation.ALGORITHM+":"+data.getAlgorithm()+"~ "+MetaDataImplementation.CHECKSUM+":"+data.getCheckSum()+"~";
+//			}else {
+//				luceneString = MetaDataImplementation.ALGORITHM+":"+data.getAlgorithm()+"~ "+MetaDataImplementation.CHECKSUM+":"+data.getCheckSum()+"~";
+//			}
+//	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
 	        ScoreDoc[] hits2;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+				hits2 = searcher.search(booleanQuery.build(), 10).scoreDocs;
 		        for(int i = 0; i < hits2.length; i++) {
 		        	Document doc = searcher.doc(hits2[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
@@ -2050,23 +2077,33 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
+	    	
+	    	TermQuery queryLegalName = new TermQuery(new Term(MetaDataImplementation.LEGALNAME,person.getLegalName()));
+			TermQuery queryAddress = new TermQuery(new Term(MetaDataImplementation.ADDRESSLINE,person.getAddressLine()));
+	    	TermQuery queryZip= new TermQuery(new Term(MetaDataImplementation.LEGALNAME,person.getZip()));
+			TermQuery queryCountry = new TermQuery(new Term(MetaDataImplementation.ADDRESSLINE,person.getCountry()));
+			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+			booleanQuery.add(queryLegalName, BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryAddress, BooleanClause.Occur.MUST);
+			booleanQuery.add(queryZip, BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryCountry, BooleanClause.Occur.MUST);
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser("legalName", new StandardAnalyzer());
-			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
-			String luceneString;
-			if(fuzzy) {
-				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+"~ "
-				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+"~ "+MetaDataImplementation.ZIP+
-		        		":"+person.getZip()+"~ "+MetaDataImplementation.COUNTRY+":"+person.getCountry()+"~";
-			}else {
-				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+" "
-				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
-		        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
-			}
-	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+//			QueryParser parser = new QueryParser("legalName", new StandardAnalyzer());
+//			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+//			String luceneString;
+//			if(fuzzy) {
+//				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+"~ "
+//				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+"~ "+MetaDataImplementation.ZIP+
+//		        		":"+person.getZip()+"~ "+MetaDataImplementation.COUNTRY+":"+person.getCountry()+"~";
+//			}else {
+//				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+" "
+//				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
+//		        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
+//			}
+//	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
 	        ScoreDoc[] hits2;
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+				hits2 = searcher.search(booleanQuery.build(), 10).scoreDocs;
 		        for(int i = 0; i < hits2.length; i++) {
 		        	Document doc = searcher.doc(hits2[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
