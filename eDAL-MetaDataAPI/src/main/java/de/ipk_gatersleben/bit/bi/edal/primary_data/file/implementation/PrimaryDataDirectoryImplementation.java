@@ -697,6 +697,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			throw new PrimaryDataDirectoryException("Unable to find the UntypedData values", e);
 		}
 
+		if(versionIDList.isEmpty()) {
+			return new ArrayList<PrimaryDataEntity>();
+		}
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
@@ -1071,12 +1074,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 				e.printStackTrace();
 			}
-			
-			TermQuery queryAlgorithm = new TermQuery(new Term(MetaDataImplementation.ALGORITHM,data.getAlgorithm()));
-			TermQuery queryCheckSum = new TermQuery(new Term(MetaDataImplementation.CHECKSUM,data.getCheckSum()));
+			StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
+			QueryParser queryAlgorithm = new QueryParser(MetaDataImplementation.ALGORITHM,standardAnalyzer);
+			QueryParser queryCheckSum = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
 			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-			booleanQuery.add(queryAlgorithm, BooleanClause.Occur.MUST);
-		    booleanQuery.add(queryCheckSum, BooleanClause.Occur.MUST);
+			booleanQuery.add(queryAlgorithm.parse(data.getAlgorithm()), BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryCheckSum.parse(data.getCheckSum()), BooleanClause.Occur.MUST);
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 //	    	
 //	    	//Search Documents with Parsed Query
@@ -1223,13 +1226,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			Predicate finalQuery = builder.and(predicates.toArray(new Predicate[0]));
 			dataCriteria.where(finalQuery);
 			final List<MyEdalDate> list = session.createQuery(dataCriteria).list();
-			session.close();
 			@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
 			final Query<Integer> metaDataQuery = session.createSQLQuery(
 					"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 			metaDataQuery.setParameterList("list", list);
-			return  metaDataQuery.list();
+			List<Integer> finalResult = metaDataQuery.list();
+			session.close();
+			return  finalResult;
 		}
 		else {
 			final ArrayList<Integer> versionIDList = new ArrayList<>();
@@ -2077,16 +2081,16 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
-	    	
-	    	TermQuery queryLegalName = new TermQuery(new Term(MetaDataImplementation.LEGALNAME,person.getLegalName()));
-			TermQuery queryAddress = new TermQuery(new Term(MetaDataImplementation.ADDRESSLINE,person.getAddressLine()));
-	    	TermQuery queryZip= new TermQuery(new Term(MetaDataImplementation.LEGALNAME,person.getZip()));
-			TermQuery queryCountry = new TermQuery(new Term(MetaDataImplementation.ADDRESSLINE,person.getCountry()));
+	    	StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
+	    	QueryParser queryLegalName = new QueryParser(MetaDataImplementation.LEGALNAME,standardAnalyzer);
+	    	QueryParser queryAddress = new QueryParser(MetaDataImplementation.ADDRESSLINE,standardAnalyzer);
+	    	QueryParser queryZip= new QueryParser(MetaDataImplementation.ZIP,standardAnalyzer);
+	    	QueryParser queryCountry = new QueryParser(MetaDataImplementation.COUNTRY,standardAnalyzer);
 			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-			booleanQuery.add(queryLegalName, BooleanClause.Occur.MUST);
-		    booleanQuery.add(queryAddress, BooleanClause.Occur.MUST);
-			booleanQuery.add(queryZip, BooleanClause.Occur.MUST);
-		    booleanQuery.add(queryCountry, BooleanClause.Occur.MUST);
+			booleanQuery.add(queryLegalName.parse(person.getLegalName()), BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryAddress.parse(person.getAddressLine()), BooleanClause.Occur.MUST);
+			booleanQuery.add(queryZip.parse(person.getZip()), BooleanClause.Occur.MUST);
+		    booleanQuery.add(queryCountry.parse(person.getCountry()), BooleanClause.Occur.MUST);
 	    	//Search Documents with Parsed Query
 //			QueryParser parser = new QueryParser("legalName", new StandardAnalyzer());
 //			parser.setDefaultOperator(QueryParser.AND_OPERATOR);

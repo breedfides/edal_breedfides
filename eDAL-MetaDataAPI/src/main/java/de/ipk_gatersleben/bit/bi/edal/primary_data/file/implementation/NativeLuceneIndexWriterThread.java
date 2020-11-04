@@ -434,4 +434,30 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		this.implementationProviderLogger.info("Index structure deleted, restart index calculating...");
 
 	}
+	
+	@Override
+	public void run() {
+		super.run();
+//		if(indexinDirectory != null) {
+//		try {
+//			indexinDirectory.close();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	}
+	try {
+		if(writer != null && writer.isOpen())
+			this.writer.close();
+	} catch (IOException e) {
+		try {
+			this.writer.rollback();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	}
 }

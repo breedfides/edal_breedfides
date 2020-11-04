@@ -149,6 +149,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(this.lastIndexedID);
 					oos.close();
+					fos.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -248,6 +249,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(this.lastIndexedID);
 					oos.close();
+					fos.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

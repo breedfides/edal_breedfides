@@ -92,7 +92,7 @@ class ExistingSearchTest {
 	public Path mountPath = null;
 	
 	
-	//@Test
+	@Test
     void searchByDublinCoreElementTest() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
@@ -321,9 +321,9 @@ class ExistingSearchTest {
 					,"imap.ipk-gatersleben.de","","");
 			this.configuration.setHttpPort(ExistingSearchTest.HTTP_PORT);
 			this.configuration.setHttpsPort(ExistingSearchTest.HTTPS_PORT);
-			this.configuration.setHibernateIndexing(EdalConfiguration.HIBERNATE_SEARCH_INDEXING);
+			this.configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "Keywordsearch_");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "NAT_Luc");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);
