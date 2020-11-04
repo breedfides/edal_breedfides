@@ -94,7 +94,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
-	Directory indexinDirectory = null;
 	StandardAnalyzer analyzer;
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger) {
@@ -197,6 +196,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -358,6 +358,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -55,7 +55,7 @@ abstract class IndexWriterThread extends EdalThread {
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
 	protected IndexWriter writer = null;
-
+	protected Directory indexinDirectory;
 	protected boolean requestForReset = false;
 
 	/** create Lock with fairness parameter true */
@@ -151,6 +151,14 @@ abstract class IndexWriterThread extends EdalThread {
 				latch.countDown();
 			}
 		}
+//		if(indexinDirectory != null) {
+//			try {
+//				indexinDirectory.close();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
 		try {
 			if(writer != null && writer.isOpen())
 				this.writer.close();
