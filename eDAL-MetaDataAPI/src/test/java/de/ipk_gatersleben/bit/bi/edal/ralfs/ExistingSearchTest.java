@@ -23,8 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -47,8 +49,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
@@ -72,6 +76,13 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.EdalApprovalException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewProcess;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewResult;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewStatusType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewerType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.StoreDataScript;
@@ -81,7 +92,7 @@ class ExistingSearchTest {
 	private static int HTTPS_PORT = 8443;
 	private static int HTTP_PORT = 8080;
 	private static final String ROOT_USER = "eDAL0815@ipk-gatersleben.de";
-	private static final String EMAIL = "user@nodomain.com.invalid";
+	private static final String EMAIL = "ralfs@ipk-gatersleben.de";
 	private static final String DATACITE_PREFIX = "10.5072";
 	private static final String DATACITE_PASSWORD = "";
 	private static final String DATACITE_USERNAME = "";
@@ -97,12 +108,12 @@ class ExistingSearchTest {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		Inserterr insert = new Inserterr(rootDirectory);
-		insert.process(1);
-		MetaData storedMetaData = insert.getSearchableMetaData();
-		//this.testKeywordSearch(storedMetaData, rootDirectory);
+//		Inserterr insert = new Inserterr(rootDirectory);
+//		insert.process(1);
+//		MetaData storedMetaData = insert.getSearchableMetaData();
+		this.testKeywordSearch(rootDirectory);
 		//Test Search by Title
-		this.searchbyDublin(storedMetaData, rootDirectory);
+		//this.searchbyDublin(storedMetaData, rootDirectory);
 		DataManager.shutdown();
     }
 	
@@ -129,7 +140,7 @@ class ExistingSearchTest {
 //			
 //			
 //			//Test Search by Creator
-			NaturalPerson expPerson = (NaturalPerson) 			((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
+			NaturalPerson expPerson = (NaturalPerson) ((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next();
 			log("\nLISTE VON PERSONEN ANZAHL: "+((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().size());
 			log("\nCreator\nINSERTED -> Creator: "+expPerson.toString());
 			Persons persons = new Persons();
@@ -244,36 +255,39 @@ class ExistingSearchTest {
     	DataManager.shutdown();
     }
     
-    void testKeywordSearch(MetaData storedMetaData, PrimaryDataDirectory rootDirectory) throws Exception {
+    void testKeywordSearch(PrimaryDataDirectory rootDirectory) throws Exception {
     	long start = System.currentTimeMillis();
-//    	Inserterr insert = new Inserterr(rootDirectory);
-//		insert.process(2);
-//		MetaData metaData = insert.getSearchableMetaData();
-    	String title = storedMetaData.getElementValue(EnumDublinCoreElements.TITLE).getString();
-    	String givenName = ((NaturalPerson)((Persons)storedMetaData.getElementValue(EnumDublinCoreElements.CREATOR)).getPersons().iterator().next()).getGivenName();
-    	String searched = title+" AND "+givenName;
-    	log("Searching: "+searched);
-    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Asterix", false, true);
+    	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("testing_directory", false, true);
     	long finish = System.currentTimeMillis();
     	try {
     		for(PrimaryDataEntity p : results) {
         		SortedSet<PrimaryDataEntityVersion> versions = p.getVersions();
     			log("######## Entity Versions: ########\n");
+    			log("dirName: "+p.getName());
         		for(PrimaryDataEntityVersion version : versions) {
-    			MetaData temp = version.getMetaData();
-    			log("######## Entity: ########\n");
-	    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
-	    			//if(temp.getElementValue(element) != null && element.equals(EnumDublinCoreElements.CREATOR))
-	    				log(element.toString()+": "+temp.getElementValue(element).toString());
-	    		}
+        			List<PublicReference> refs = version.getPublicReferences();
+	            	for(PublicReference ref : refs) {
+	            		log(" Reference: "+ref.toString());
+	            		log(ref.getPublicationStatus().toString());
+	            	}
+	    			MetaData temp = version.getMetaData();
+	    			log("######## Entity: ########\n");
+		    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
+		    			//if(temp.getElementValue(element) != null && element.equals(EnumDublinCoreElements.CREATOR))
+		    				log(element.toString()+": "+temp.getElementValue(element).toString());
+		    		}
         		}
+        		p.addPublicReference(PersistentIdentifier.DOI);
+        		// apply to publish all references
+        		p.getCurrentVersion().setAllReferencesPublic(new InternetAddress("applicant@mail.de"));
+        		Thread.sleep(10000);
     		}
     	}catch(Exception e) {
     		e.printStackTrace();
     	}
     	log("Size: "+results.size()+"\nTime: "+(finish-start));
     }
-    
+     
     //@Test
     void testMetaDataSearch() throws Exception {
     	PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
@@ -323,7 +337,7 @@ class ExistingSearchTest {
 			this.configuration.setHttpsPort(ExistingSearchTest.HTTPS_PORT);
 			this.configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 
-			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "NAT_Luc");
+			mountPath = Paths.get(System.getProperty("user.home"), "edaltest", "mapping4luc");
 			Files.createDirectories(mountPath);
 
 			this.configuration.setMountPath(mountPath);

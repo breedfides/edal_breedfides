@@ -162,8 +162,8 @@ class H2ChunkCorruptionTest {
 			entity.setMetaData(metadata);
 			
 			//entity.store(fin);
-			//EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
-			//Files.walkFileTree(path, edalVisitor);
+			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
+			Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
 			if(i == last) {
 				log("###############Last Entity saved: ######################");

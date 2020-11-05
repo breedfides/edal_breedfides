@@ -54,8 +54,6 @@ abstract class IndexWriterThread extends EdalThread {
 	protected Logger implementationProviderLogger = null;
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
-	protected IndexWriter writer = null;
-	protected Directory indexinDirectory;
 	protected boolean requestForReset = false;
 
 	/** create Lock with fairness parameter true */

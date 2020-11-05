@@ -131,7 +131,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
+			//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
@@ -169,7 +169,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 				indexRestObjects();
 			}
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
-			this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
+			//this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
 
@@ -231,7 +231,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.close();
 
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-			this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+ flushedObjects);
+			//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+ flushedObjects);
 
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
@@ -264,7 +264,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 			long executeIndexingFinishTime = System.currentTimeMillis()-indexRestStart;
-			this.indexLogger.info("IndexRestObejects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+ "flushedObjects: "+flushedObjects);
+			//this.indexLogger.info("IndexRestObejects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+ "flushedObjects: "+flushedObjects);
 		}
 	}
 

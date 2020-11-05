@@ -605,8 +605,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * @param dateEvents
 	 * @param element 
 	 * @return List<MyDateEvents>
+	 * @throws PrimaryDataDirectoryException 
 	 */
-	private List<Integer> searchByDateEvents(final DateEvents dateEvents, EnumDublinCoreElements element) {
+	private List<Integer> searchByDateEvents(final DateEvents dateEvents, EnumDublinCoreElements element) throws PrimaryDataDirectoryException {
 
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
@@ -624,7 +625,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			for (final EdalDate edalDate : set) {
 
 				if (edalDate instanceof EdalDateRange) {
-					result = this.searchByEDALDateRange((EdalDateRange)edalDate);
+					result = this.searchByEDALDateRange((EdalDateRange)edalDate, element);
 
 //					for (final Integer integer : idlist) {
 //						result.add(session.get(MyDateEvents.class, integer));
@@ -633,7 +634,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 				else if (edalDate instanceof EdalDate) {
 
-					result =  this.searchByEDALDate(edalDate);
+					result =  this.searchByEDALDate(edalDate, element);
 
 //					for (final Integer integer : idlist) {
 //						result.add(session.get(MyDateEvents.class, integer));
@@ -1138,8 +1139,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * 
 	 * @param edalDate
 	 * @return List<MyEDALDate>
+	 * @throws PrimaryDataDirectoryException 
 	 */
-	private List<Integer> searchByEDALDate(final EdalDate edalDate) {
+	private List<Integer> searchByEDALDate(final EdalDate edalDate, EnumDublinCoreElements element) throws PrimaryDataDirectoryException {
 		
 		
 		
@@ -1232,8 +1234,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 			metaDataQuery.setParameterList("list", list);
 			List<Integer> finalResult = metaDataQuery.list();
-			session.close();
-			return  finalResult;
+			final Query<Integer> versionSQLQuery = session
+					.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
+							+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
+							+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+
+			versionSQLQuery.setParameterList("list", finalResult);
+			versionSQLQuery.setParameter("key", element.ordinal());
+			return versionSQLQuery.list();
 		}
 		else {
 			final ArrayList<Integer> versionIDList = new ArrayList<>();
@@ -1272,9 +1280,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * Internal function to search for a {@link EdalDateRange}.
 	 * 
 	 * @param edalDateRange
+	 * @param element 
 	 * @return List<MyEDALDateRange>
 	 */
-	private List<Integer> searchByEDALDateRange(final EdalDateRange edalDateRange) {
+	private List<Integer> searchByEDALDateRange(final EdalDateRange edalDateRange, EnumDublinCoreElements element) {
 		
 		final int precissionStart = edalDateRange.getStartPrecision().ordinal();
 		final Calendar dateStart = edalDateRange.getStartDate();
@@ -1440,7 +1449,15 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					"select D.UNTYPEDDATA_ID from UNTYPEDDATA_MYEDALDATE D where D.SET_ID in (:list)");
 
 			metaDataQuery.setParameterList("list", list);
-			return metaDataQuery.list();
+			List<Integer> finalResult = metaDataQuery.list();
+			final Query<Integer> versionSQLQuery = session
+					.createSQLQuery("SELECT DISTINCT v.ID " + "FROM ENTITY_VERSIONS v , metadata_map m , "
+							+ "TABLE(id BIGINT=(:list))virtual1 WHERE m.mymap_key=:key "
+							+ "AND m.mymap_id=virtual1.id AND v.METADATA_ID =m.metadata_id ");
+
+			versionSQLQuery.setParameterList("list", finalResult);
+			versionSQLQuery.setParameter("key", element.ordinal());
+			return versionSQLQuery.list();
 		}else {
 			final ArrayList<Integer> versionIDList = new ArrayList<>();
 			IndexReader reader = null;
@@ -1827,7 +1844,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	        ScoreDoc[] hits2 = null;
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+				hits2 = searcher.search(luceneQuery, 500).scoreDocs;
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -2017,6 +2034,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				}
 			}
 		}
+		
 
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
 				.debug("Zeit (Search Entity)    : " + (System.currentTimeMillis() - startEntityQuery) + " msec");
@@ -2087,24 +2105,15 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	QueryParser queryZip= new QueryParser(MetaDataImplementation.ZIP,standardAnalyzer);
 	    	QueryParser queryCountry = new QueryParser(MetaDataImplementation.COUNTRY,standardAnalyzer);
 			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-			booleanQuery.add(queryLegalName.parse(person.getLegalName()), BooleanClause.Occur.MUST);
-		    booleanQuery.add(queryAddress.parse(person.getAddressLine()), BooleanClause.Occur.MUST);
-			booleanQuery.add(queryZip.parse(person.getZip()), BooleanClause.Occur.MUST);
-		    booleanQuery.add(queryCountry.parse(person.getCountry()), BooleanClause.Occur.MUST);
-	    	//Search Documents with Parsed Query
-//			QueryParser parser = new QueryParser("legalName", new StandardAnalyzer());
-//			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
-//			String luceneString;
-//			if(fuzzy) {
-//				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+"~ "
-//				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+"~ "+MetaDataImplementation.ZIP+
-//		        		":"+person.getZip()+"~ "+MetaDataImplementation.COUNTRY+":"+person.getCountry()+"~";
-//			}else {
-//				luceneString = MetaDataImplementation.LEGALNAME+":"+person.getLegalName()+" "
-//				+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
-//		        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
-//			}
-//	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+			if(!person.getLegalName().equals(""))
+				booleanQuery.add(queryLegalName.parse(person.getLegalName()), BooleanClause.Occur.MUST);
+			if(!person.getAddressLine().equals(""))
+				booleanQuery.add(queryAddress.parse(person.getAddressLine()), BooleanClause.Occur.MUST);
+			if(!person.getZip().equals(""))
+				booleanQuery.add(queryZip.parse(person.getZip()), BooleanClause.Occur.MUST);
+			if(!person.getCountry().equals(""))
+				booleanQuery.add(queryCountry.parse(person.getCountry()), BooleanClause.Occur.MUST);
+		    
 	        ScoreDoc[] hits2;
 			try {
 				hits2 = searcher.search(booleanQuery.build(), 10).scoreDocs;

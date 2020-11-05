@@ -14,6 +14,7 @@ package de.ipk_gatersleben.bit.bi.edal.ralfs;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
 
-
+import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -46,6 +47,7 @@ public class Inserterr {
 	private MetaData searchable = null;
 	private FileInputStream fin = null;
 	Identifier referenceIdentifier = new Identifier("referencingsomeid");
+	Path path = Paths.get("src/test/resources/testing_directory");
 	
 	public Inserterr(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
@@ -120,12 +122,12 @@ public class Inserterr {
 	}
 	
 	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
-			PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
 			log("Inserting new searchable");
-			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
-			searchable = entity.getMetaData();
+			PrimaryDataDirectory subdire = rootDirectory.createPrimaryDataDirectory("subDir2");
+			PrimaryDataFile entity = subdire.createPrimaryDataFile("searchEntity");
+			searchable = entity.getMetaData().clone();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("Asterix","Gallier","Corsair","38820","DE");
+			NaturalPerson np = new NaturalPerson("ericderwahre","Gallier","Corsair","38820","DE");
 			persons.add(np);
 			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","25709","USA"));		
@@ -136,11 +138,13 @@ public class Inserterr {
 			relation.add(referenceIdentifier);
 			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("test"));
+			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("x3reunion"));
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			searchable.setElementValue(EnumDublinCoreElements.RELATION, relation);
 			entity.setMetaData(searchable);
+			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(subdire, path, searchable, true);
+			Files.walkFileTree(path, edalVisitor);
 			log("Searchable isnerted!");
 	}
 	

@@ -95,6 +95,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
 	StandardAnalyzer analyzer;
+	protected IndexWriter writer = null;
+	protected Directory indexinDirectory;
+	
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
@@ -136,7 +139,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			final long queryStartTime = System.currentTimeMillis();
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-
+			this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
@@ -175,6 +178,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 						e.printStackTrace();
 					}
 						flushedObjects += fetchSize;
+						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+							this.lastIndexedID = version.getId() ;
+						}
 				}
 			}
 			results.close();
@@ -213,6 +219,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			if (flushedObjects != indexedObjects) {
 				indexRestObjects();
 			}
+			this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
 			//this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
@@ -297,7 +304,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			final long queryStartTime = System.currentTimeMillis();
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-
+			this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
@@ -371,6 +378,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
+			this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
 			//this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
