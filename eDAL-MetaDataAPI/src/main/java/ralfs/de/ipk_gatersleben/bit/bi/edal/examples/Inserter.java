@@ -14,6 +14,7 @@ package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
-
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -42,6 +42,7 @@ public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData searchable = null;
+	Path path = Paths.get("src/test/resources/testing_directory");
 	public Inserter(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
 	}
@@ -117,9 +118,9 @@ public class Inserter {
 		//if(result.isEmpty()) {
 			log("Inserting new searchable");
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
-			searchable = entity.getMetaData();
+			searchable = entity.getMetaData().clone();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("surename,Eric","bibo","adress.Halberstadt","zip;38820","country/DE");
+			NaturalPerson np = new NaturalPerson("Orben","Rlafs","adress.Halberstadt","zip;38820","country/DE");
 			persons.add(np);
 			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
@@ -132,6 +133,8 @@ public class Inserter {
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			entity.setMetaData(searchable);
+//			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, searchable, true);
+//			Files.walkFileTree(path, edalVisitor);
 //		}else {
 //			searchable = result.get(0).getMetaData();
 //		}

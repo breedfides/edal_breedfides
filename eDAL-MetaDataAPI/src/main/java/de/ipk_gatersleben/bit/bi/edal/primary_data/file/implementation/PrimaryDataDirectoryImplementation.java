@@ -66,7 +66,9 @@ import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -138,6 +140,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPer
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyPersons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MySubjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
 
@@ -1707,6 +1710,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException {
 		
 		List<Integer> versionIDList = new ArrayList<>();
+		Long sstart = System.currentTimeMillis();
 		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
@@ -1746,7 +1750,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					        .extension( LuceneExtension.get() ) 
 					        .where( f -> f.fromLuceneQuery( 
 					                luceneQuery ))
-					        .fetch(500);
+					        .fetch(10000);
 					((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+luceneQuery.toString());
 				}
 				catch (ParseException e) {
@@ -1844,7 +1848,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	        ScoreDoc[] hits2 = null;
 			try {
-				hits2 = searcher.search(luceneQuery, 500).scoreDocs;
+				hits2 = searcher.search(luceneQuery, 50000).scoreDocs;
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -1862,13 +1866,64 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 	        }
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found while searching: "+versionIDList.size()+" values");
+			float size = versionIDList.size();
+			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+			BooleanQuery.setMaxClauseCount(versionIDList.size());
+		    float weight = size;
+			for(int i = 0; i < size;i++) {
+				weight = size-i;
+		    	booleanQuery.add(new BoostQuery(new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(versionIDList.get(i)))),weight), BooleanClause.Occur.SHOULD);
+			}
+			try {
+				hits2 = searcher.search(booleanQuery.build(), 50000).scoreDocs;
+				int ds = 2;
+				int[] intlist = new int[versionIDList.size()];
+		        int fdf1 = versionIDList.size();
+		        int fdf2 = hits2.length;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = null;
+					try {
+						doc = searcher.doc(hits2[i].doc);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        	intlist[i] = Integer.parseInt(doc.get("versionID"));
+		        }
+		        for(int i = 0; i < intlist.length; i++) {
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Nr. "+i+": versionID: "+versionIDList.get(i)+" vs intlist: "+intlist[i]);
+		        }
+		        int fdf = 0;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 
 		final HashSet<PrimaryDataEntity> resultSet = new HashSet<PrimaryDataEntity>();
 
 		final long startEntityQuery = System.currentTimeMillis();
+		
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("TIME FOR SEARCH INDEX: "+(startEntityQuery-sstart));
 		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+			
+		CriteriaBuilder criteriaBuilder = session2.getCriteriaBuilder();
+		CriteriaQuery<PrimaryDataEntityVersionImplementation> criteriaVersions = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+		Root<PrimaryDataEntityVersionImplementation> rootVersions = criteriaVersions.from(PrimaryDataEntityVersionImplementation.class);
+		criteriaVersions.select(rootVersions);
+		criteriaVersions.where(rootVersions.get("id").in(versionIDList));
+		final List <PrimaryDataEntityVersionImplementation> listOfVersions = session2.createQuery(criteriaVersions).getResultList();
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found version with criteria: "+listOfVersions.size());
+		versionIDList = new ArrayList<Integer>();
+		for(PrimaryDataEntityVersionImplementation version : listOfVersions) {
+			if(!version.getPublicReferences().isEmpty()) {
+				versionIDList.add(version.getId());
+			}else {
+				checkParentDirectory(version, versionIDList);
+			}
+		}
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("TIME FOR SEARCH IN EDAL: "+(System.currentTimeMillis()-startEntityQuery));
 		if (!recursiveIntoSubdirectories) {
 			for (final Integer version : versionIDList) {
 				final PrimaryDataEntityVersionImplementation currentVersion = session2
@@ -2044,6 +2099,39 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
 				.info("Zeit (Search by keyword): " + (System.currentTimeMillis() - startTime) + " msec");
 		return results;
+	}
+
+	private void checkParentDirectory(PrimaryDataEntityVersionImplementation version, List<Integer> versionIDList) throws PrimaryDataDirectoryException {
+		PrimaryDataDirectory parent = version.getEntity().getParentDirectory();
+		SortedSet<PrimaryDataEntityVersion> vs = parent.getVersions();
+		List<PublicReference> publicrefs = null;
+		for(PrimaryDataEntityVersion ver : vs) {
+			publicrefs = ver.getPublicReferences();
+			if(!publicrefs.isEmpty()) {
+				for(PublicReference ref : publicrefs) {
+					if(ref.getIdentifierType().equals(PersistentIdentifier.DOI)) {
+						versionIDList.add(version.getId());
+						return;
+					}
+				}
+			}
+		}
+		while(parent.getParentDirectory() != null){
+			parent = parent.getParentDirectory();
+			vs = parent.getVersions();
+			for(PrimaryDataEntityVersion ver : vs) {
+				publicrefs = ver.getPublicReferences();
+				if(!ver.getPublicReferences().isEmpty()) {
+					for(PublicReference ref : publicrefs) {
+						if(ref.getIdentifierType().equals(PersistentIdentifier.DOI)) {
+							versionIDList.add(version.getId());
+							return;
+						}
+					}
+				}
+			}
+		}
+		
 	}
 
 	/**

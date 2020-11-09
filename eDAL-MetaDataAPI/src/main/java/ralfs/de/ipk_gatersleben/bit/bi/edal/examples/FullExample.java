@@ -55,8 +55,8 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {
 //	PrimaryDataDirectory rootDirectory = getRoot();
 //	Inserter inserter = new Inserter(rootDirectory);
-//	inserter.process(2);
-
+//	inserter.process(1);
+	testKeyword();
 	/**
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
@@ -64,39 +64,43 @@ public class FullExample {
 	//List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
 	//testSearchByDublin(rootDirectory);
 	//testMetaDataSearch(rootDirectory, searchable);
-	testKeyword();
 	DataManager.shutdown();
     }
 
 	private static void testKeyword() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
+		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("surename", false, true);
-        	log("\n#### Result Size: "+results.size()+" ####\n");
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Orben", false, true);
         	for(PrimaryDataEntity entity : results) {
-    			log("\n\n#### Entity: "+entity.toString()+" ####");
-        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-        			log(element.toString()+": "+entity.getMetaData().getElementValue(element));
-        		}
-        		SortedSet<PrimaryDataEntityVersion> versions = entity.getVersions();
-    			log("######## Entity Versions: ########\n");
-        		for(PrimaryDataEntityVersion version : versions) {
-        			List<PublicReference> refs = version.getPublicReferences();
-	            	for(PublicReference ref : refs) {
-	            		log(" Reference: "+ref.toString());
-	            		log(ref.getPublicationStatus().toString());
-	            	}
-	    			MetaData temp = version.getMetaData();
-	    			log("######## Entity: ########\n");
-		    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
-		    			//if(temp.getElementValue(element) != null && element.equals(EnumDublinCoreElements.CREATOR))
-		    				log(element.toString()+": "+temp.getElementValue(element).toString());
-		    		}
-        		}
+    			//log("\n\n#### Entity: "+entity.toString()+" ####");
+//        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+//        			log(element.toString()+": "+entity.getMetaData().getElementValue(element));
+//        		}
+//        		SortedSet<PrimaryDataEntityVersion> versions = entity.getVersions();
+//    			log("######## Entity Versions: ########\n");
+//        		for(PrimaryDataEntityVersion version : versions) {
+//        			List<PublicReference> refs = version.getPublicReferences();
+//	            	for(PublicReference ref : refs) {
+//	            		log(" Reference: "+ref.toString());
+//	            		log(ref.getPublicationStatus().toString());
+//	            	}
+//	    			MetaData temp = version.getMetaData();
+//	    			log("######## Entity: ########\n");
+//		    		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()){
+//		    			//if(temp.getElementValue(element) != null && element.equals(EnumDublinCoreElements.CREATOR))
+//		    				log(element.toString()+": "+temp.getElementValue(element).toString());
+//		    		}
+//        		}
+//        		if(((NaturalPerson)((Persons)entity.getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).iterator().next()).getGivenName().equals("Orben")){
 //        		entity.addPublicReference(PersistentIdentifier.DOI);
 //        		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
-//        		Thread.sleep(10000);
+//        		Thread.sleep(40000);
+//        			log("###########found zoe and testing_dir");
+//        		}
         	}
+        	log("\n#### Result Size: "+results.size()+" ####\n");
+        	log(" TIME: "+(System.currentTimeMillis()-start));
     	}catch(Exception e) {
     		log(e.getMessage());;
     	}
@@ -107,7 +111,7 @@ public class FullExample {
 				new InternetAddress("ralfs@ipk-gatersleben.de"),
 				new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
 				new InternetAddress("ralfs@ipk-gatersleben.de"),"imap.ipk-gatersleben.de","","");
-		configuration.setHibernateIndexing(EdalConfiguration.HIBERNATE_SEARCH_INDEXING);
+		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
