@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -46,6 +47,8 @@ import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
@@ -101,6 +104,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	StandardAnalyzer analyzer;
 	protected IndexWriter writer = null;
 	protected Directory indexinDirectory;
+	IndexSearcher searcher = null;
+	int indexedVersions = 0;
+	int flushedObjects = 0;
+	final int fetchSize = (int) Math.pow(10, 4);
 	
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer) {
@@ -128,6 +135,17 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			e1.printStackTrace();
 		}
 	    this.writer = writer;
+	    IndexReader reader = null;
+		
+		//Create IndexSearcher from IndexDirectory
+		try {
+			reader = DirectoryReader.open(indexinDirectory);
+		} catch (IOException e) {
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+			.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+			e.printStackTrace();
+		}
+		searcher = new IndexSearcher(reader);
 	}
 
 
@@ -135,6 +153,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	protected void executeIndexing() {
 
 		if (!this.sessionFactory.isClosed()) {
+			indexedVersions = 0;
+			flushedObjects = 0;
 			long executeIndexingStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
 
@@ -161,47 +181,34 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final ScrollableResults results = session.createQuery(criteria).setMaxResults(fetchSize)
 					.scroll(ScrollMode.FORWARD_ONLY);
 
-			int indexedObjects = 0;
-			int flushedObjects = 0;
-
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
 			//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
-			PrimaryDataEntityVersionImplementation publicRef = null;
+			PublicReferenceImplementation publicRef = null;
 			while (results.next()) {
-				indexedObjects++;
-				publicRef = (PrimaryDataEntityVersionImplementation) results.get(0);
-				try {
-					/** index each element */
-					this.indexVersion(writer, publicRef);
-				} catch (MetaDataException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				if (indexedObjects % fetchSize == 0) {
-					try {
-						writer.commit();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-						flushedObjects += fetchSize;
-						if (indexedObjects > 0 && publicRef.getId() > this.lastIndexedID) {
-							this.lastIndexedID = publicRef.getId() ;
-						}
-				}
+				publicRef = (PublicReferenceImplementation) results.get(0);
+				//this.indexVersion(writer, publicRef);
+				this.updateIndex(publicRef, session);
 			}
+			try {
+				writer.commit();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+				if (indexedVersions > 0 && publicRef.getId() > this.lastIndexedID) {
+					this.lastIndexedID = publicRef.getId() ;
+				}
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
 			//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
-			if (indexedObjects > 0 || flushedObjects > 0) {
+			if (indexedVersions > 0 || flushedObjects > 0) {
 				this.indexWriterThreadLogger
-						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
+						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedVersions
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
@@ -226,8 +233,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 
-			if (flushedObjects != indexedObjects) {
-				indexRestObjects();
+			if (flushedObjects != indexedVersions) {
+				//indexRestObjects();
 			}
 			//this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
@@ -246,103 +253,84 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		return null;
 	}
 	
-	private void indexVersion(IndexWriter writer,PrimaryDataEntityVersionImplementation version) throws MetaDataException, IOException {
-//		
-//		IndexReader reader = null;
-//		
-//		//Create IndexSearcher from IndexDirectory
-//		try {
-//			Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.
-//					getImplProv()).getIndexDirectory().toString(),"Master_Index"));
-//			reader = DirectoryReader.open(indexDirectory);
-//		} catch (IOException e) {
-//			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-//			.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-//			e.printStackTrace();
-//		}
-//    	IndexSearcher searcher = new IndexSearcher(reader);
-//    	
-//    	//Search Documents with Parsed Query
-//		QueryParser parser = new QueryParser(MetaDataImplementation.IDENTIFIER, new StandardAnalyzer());
-//		String luceneString;
-//		if(fuzzy) {
-//			luceneString = identifier.getID()+"~";
-//		}else {
-//			luceneString = identifier.getID();
-//		}
-//        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-//        ScoreDoc[] hits2;
-//		try {
-//			hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-//	        for(int i = 0; i < hits2.length; i++) {
-//	        	Document doc = searcher.doc(hits2[i].doc);
-//	        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
-//	        }
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-		
-		MetaData metadata = version.getMetaData();
-	    Document doc = new Document();
-	    doc.add(new TextField(MetaDataImplementation.TITLE,getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.DESCRIPTION,getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.COVERAGE,getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.IDENTIFIER,getString(((Identifier)metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.SIZE,Long.toString(((DataSize)metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
-	    doc.add(new TextField(MetaDataImplementation.LANGUAGE,getString(((EdalLanguage)metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()),Store.YES));
-	    Persons naturalPersons = (Persons)metadata.getElementValue(EnumDublinCoreElements.CREATOR);
-	    Persons persons = (Persons)metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
-	    persons.addAll(naturalPersons);
-	    LegalPerson legalPerson = (LegalPerson)metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
-	    persons.add(legalPerson);
-	    for(Person currentPerson : persons) {
-	    	if(currentPerson instanceof NaturalPerson) {
-	    	    doc.add(new TextField(MetaDataImplementation.GIVENNAME,((NaturalPerson)currentPerson).getGivenName(),Store.YES));
-	    	    doc.add(new TextField(MetaDataImplementation.SURENAME,((NaturalPerson)currentPerson).getSureName(),Store.YES));
-	    	}
-    	    doc.add(new TextField(MetaDataImplementation.ADDRESSLINE,currentPerson.getAddressLine(),Store.YES));
-    	    doc.add(new TextField(MetaDataImplementation.ZIP,currentPerson.getZip(),Store.YES));
-    	    doc.add(new TextField(MetaDataImplementation.COUNTRY,currentPerson.getCountry(),Store.YES));
-	    }
-	    doc.add(new TextField(MetaDataImplementation.LEGALNAME,getString(legalPerson.getLegalName()),Store.YES));
-	    CheckSum checkSums = (CheckSum)metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
-	    for(CheckSumType checkSum : checkSums) {
-	    	doc.add(new TextField(MetaDataImplementation.ALGORITHM,checkSum.getAlgorithm(),Store.YES));
-	    	doc.add(new TextField(MetaDataImplementation.CHECKSUM,checkSum.getCheckSum(),Store.YES));
-	    }
-	    Subjects subjects = (Subjects)metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
-	    for(UntypedData subject : subjects) {
-	    	doc.add(new TextField(MetaDataImplementation.SUBJECT,subject.getString(),Store.YES));
-	    }
-	    IdentifierRelation relations = (IdentifierRelation)metadata.getElementValue(EnumDublinCoreElements.RELATION);
-	    for(Identifier identifier : relations) {
-	    	doc.add(new TextField(MetaDataImplementation.RELATION,identifier.getID(),Store.YES));
-	    }
-	    DateEvents events = (DateEvents)metadata.getElementValue(EnumDublinCoreElements.DATE);
-	    for(EdalDate date : events) {
-	    	doc.add(new LongPoint(MetaDataImplementation.STARTDATE, date.getStartDate().getTimeInMillis()));
-	    	if(date instanceof EdalDateRange) {
-		    	doc.add(new LongPoint(MetaDataImplementation.ENDDATE, ((EdalDateRange)date).getEndDate().getTimeInMillis()));
-	    	}
-	    }
-	    if(metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
-		    doc.add(new TextField(MetaDataImplementation.MIMETYPE,"none",Store.YES));
-	    	doc.add(new TextField(MetaDataImplementation.TYPE,"none",Store.YES));
-	    }else {
-		    doc.add(new TextField(MetaDataImplementation.MIMETYPE,getString(((DataFormat)metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()),Store.YES));
-	    	doc.add(new TextField(MetaDataImplementation.TYPE,metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(),Store.YES));
-	    }
-	    doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()),Store.YES));
-	    writer.addDocument(doc);
+	private void updateIndex(PublicReferenceImplementation publicRef, Session session) {
+		String parentId = publicRef.getVersion().getPrimaryEntityId();
+		String hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
+		List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
+				.setParameter("dir", publicRef.getVersion().getEntity())
+				.list();
+		Stack<PrimaryDataFileImplementation> stack = new Stack<>();
+		for(PrimaryDataFileImplementation file : directory) {
+			if(file.isDirectory()) {
+				stack.add(file);
+			}else {
+				this.updateVersion(file, session, publicRef);
+				indexedVersions++;
+			}
+		}
+		while(!stack.isEmpty()) {
+			PrimaryDataFileImplementation dir = stack.pop();
+			
+			
+			this.updateVersion(dir, session, publicRef);
+			indexedVersions++;
+			List<PrimaryDataFileImplementation> files = session.createQuery(hql)
+					.setParameter("dir", dir)
+					.list();
+			for(PrimaryDataFileImplementation file : files) {
+				if(file.isDirectory()) {
+					stack.add(file);
+				}else {
+					this.updateVersion(file, session, publicRef);
+					indexedVersions++;
+				}
+			}
+		}
 	}
 	
-	private String getString(UntypedData data) {
-		String string = data.getString();
-		return string == null ? "" : string;
+	private void updateVersion(PrimaryDataFileImplementation file, Session session, PublicReferenceImplementation publicRef) {
+		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+		Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
+		versionCriteria.where(criteriaBuilder.equal(versionRoot.get("primaryEntityId"), file.getID()));
+		versionCriteria.orderBy(criteriaBuilder.desc(versionRoot.get("revision")));
+		List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(versionCriteria).setMaxResults(1).list();
+		QueryParser parser = new QueryParser(MetaDataImplementation.VERSIONID, new StandardAnalyzer());
+		for(PrimaryDataEntityVersionImplementation version : versions) {
+		    org.apache.lucene.search.Query luceneQuery = null;
+			try {
+				luceneQuery = parser.parse(Integer.toString(version.getId()));
+			} catch (ParseException e1) {
+				e1.printStackTrace();
+			}
+		    ScoreDoc[] hits2;
+			try {
+				hits2 = searcher.search(luceneQuery, 1).scoreDocs;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = searcher.doc(hits2[i].doc);
+		        	writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,doc.get(MetaDataImplementation.VERSIONID)));
+		        	doc.add(new TextField("entityId",publicRef.getVersion().getPrimaryEntityId(),Store.YES));
+		        	writer.addDocument(doc);
+		        	indexedVersions++;
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}		
+		}
+		if (indexedVersions % fetchSize == 0) {
+			try {
+				writer.commit();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+				flushedObjects += fetchSize;
+				if (indexedVersions > 0 && publicRef.getId() > this.lastIndexedID) {
+					this.lastIndexedID = publicRef.getId() ;
+				}
+		}
 	}
-	private String getString(String string) {
-		return string == null ? "" : string;
-	}
+
 
 	protected void indexRestObjects() {
 		long executeIndexingStart = System.currentTimeMillis();
@@ -379,17 +367,17 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				/** index each element */
 				//fullTextSession.index(results.get(0));
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
-				try {
-					this.indexVersion(writer, version);
-				} catch (MetaDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				indexedObjects++;
-				flushedObjects++;
+//				try {
+//					this.indexVersion(writer, version);
+//				} catch (MetaDataException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				indexedObjects++;
+//				flushedObjects++;
 			}
 			results.close();
 			session.close();

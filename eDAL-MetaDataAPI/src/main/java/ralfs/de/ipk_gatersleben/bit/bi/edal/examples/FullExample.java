@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -36,6 +37,15 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
@@ -74,8 +84,26 @@ public class FullExample {
 	criteria.where(criteriaBuilder.equal(root.get("id"), 202));
 	PublicReferenceImplementation impl = session.createQuery(criteria).uniqueResult();
 
+	
+	IndexReader reader = null;
+	
+	//Create IndexSearcher from IndexDirectory
+	try {
+		Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.
+				getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+		reader = DirectoryReader.open(indexDirectory);
+	} catch (IOException e) {
+		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+		.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+		e.printStackTrace();
+	}
+	IndexSearcher searcher = new IndexSearcher(reader);
+	
+	//Search Documents with Parsed Query
+	QueryParser parser = new QueryParser(MetaDataImplementation.VERSIONID, new StandardAnalyzer());
+	
 	String hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
-	List<PrimaryDataFileImplementation> directory = session.createQuery(hql)
+	List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
 			.setParameter("dir", impl.getVersion().getEntity())
 			.list();
 	Stack<PrimaryDataFileImplementation> stack = new Stack<>();
@@ -83,7 +111,26 @@ public class FullExample {
 		if(file.isDirectory()) {
 			stack.add(file);
 		}else {
-			//indexen
+			//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
+			CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+			Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
+			versionCriteria.where(criteriaBuilder.equal(versionRoot.get("primaryEntityId"), file.getID()));
+			versionCriteria.orderBy(criteriaBuilder.desc(versionRoot.get("revision")));
+			List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(versionCriteria).setMaxResults(1).list();
+			for(PrimaryDataEntityVersionImplementation version : versions) {
+		    org.apache.lucene.search.Query luceneQuery = parser.parse(Integer.toString(version.getId()));
+		    ScoreDoc[] hits2;
+			try {
+				hits2 = searcher.search(luceneQuery, 1).scoreDocs;
+		        for(int i = 0; i < hits2.length; i++) {
+		        	Document doc = searcher.doc(hits2[i].doc);
+		        	
+		        	//versionIDList.add(Integer.parseInt(doc.get("versionID")));
+		        }
+			} catch (IOException e) {
+				e.printStackTrace();
+			}		
+			}
 		}
 	}
 	while(!stack.isEmpty()) {
@@ -103,6 +150,10 @@ public class FullExample {
 		}
 	}
 	
+	
+
+	
+	
 	/**
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
@@ -111,8 +162,8 @@ public class FullExample {
 	//testSearchByDublin(rootDirectory);
 	//testMetaDataSearch(rootDirectory, searchable);
 	DataManager.shutdown();
-    }
-
+	}
+	
 	private static void testKeyword() throws Exception {
 		PrimaryDataDirectory rootDirectory = getRoot();
 		long start = System.currentTimeMillis();
