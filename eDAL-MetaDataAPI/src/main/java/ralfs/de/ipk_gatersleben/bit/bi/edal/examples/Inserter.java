@@ -42,7 +42,7 @@ public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData searchable = null;
-	Path path = Paths.get("src/test/resources/testing_directory");
+	Path path = Paths.get("src/test/resources/TEST");
 	public Inserter(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
 	}
@@ -68,27 +68,28 @@ public class Inserter {
 			}
 			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entity86.."+i);
 			MetaData metadata = entity.getMetaData().clone();
-			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
-					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
-			persons.add(np);
-			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+//			Persons persons = new Persons();
+//			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
+//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
+//			persons.add(np);
+//			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
 			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
-			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
-			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			subjects.add(new UntypedData("testsubtest2"));
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
+			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
+//			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+//			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("test-"));
+//			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+//			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			//entity.store(fin);
-			log(archiveName+i+"/"+size+" Saved");
+			log(archiveName+" |"+i+"| /"+size+" Saved");
 		}
 		insertSearchable(currentDirectory);
 		fin.close();
@@ -113,19 +114,17 @@ public class Inserter {
 	}
 	
 	private void insertSearchable(PrimaryDataDirectory rootDirectory) throws Exception {
-		PrimaryDataDirectory parentDir = rootDirectory.getParentDirectory();
-		List<PrimaryDataEntity> result = parentDir.searchByDublinCoreElement(EnumDublinCoreElements.TITLE, new UntypedData("perspiciatis"), false, true);
 		//if(result.isEmpty()) {
 			log("Inserting new searchable");
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
 			searchable = entity.getMetaData().clone();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("Orben","Rlafs","adress.Halberstadt","zip;38820","country/DE");
+			NaturalPerson np = new NaturalPerson("rockstar3","En","adress.Halberstadt","zip;38820","country/DE");
 			persons.add(np);
 			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
 			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("Sed ut perspiciatis"));
+			subjects.add(new UntypedData("snickers"));
 			EdalLanguage lang = new EdalLanguage(Locale.US);
 			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
@@ -133,8 +132,8 @@ public class Inserter {
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem"));
 			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			entity.setMetaData(searchable);
-//			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, searchable, true);
-//			Files.walkFileTree(path, edalVisitor);
+			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, searchable, true);
+			Files.walkFileTree(path, edalVisitor);
 //		}else {
 //			searchable = result.get(0).getMetaData();
 //		}

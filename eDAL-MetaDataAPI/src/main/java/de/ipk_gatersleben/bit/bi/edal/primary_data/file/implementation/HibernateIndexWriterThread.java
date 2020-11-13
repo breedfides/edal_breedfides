@@ -64,6 +64,20 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 	protected HibernateIndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
+
+		if (Files.exists(path)) {
+
+			try {
+				FileInputStream fis = new FileInputStream(path.toFile());
+				ObjectInputStream ois = new ObjectInputStream(fis);
+				this.lastIndexedID = (int) ois.readObject();
+				ois.close();
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
 	}
 
 	protected void executeIndexing() {

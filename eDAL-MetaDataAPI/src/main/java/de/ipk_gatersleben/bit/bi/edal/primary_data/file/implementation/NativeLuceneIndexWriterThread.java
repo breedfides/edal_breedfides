@@ -99,8 +99,22 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	protected Directory indexinDirectory;
 	
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger) {
+			Logger implementationProviderLogger, IndexWriter writer) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
+
+		if (Files.exists(path)) {
+
+			try {
+				FileInputStream fis = new FileInputStream(path.toFile());
+				ObjectInputStream ois = new ObjectInputStream(fis);
+				this.lastIndexedID = (int) ois.readObject();
+				ois.close();
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
 		indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
 		indexinDirectory = null;
 		try {
@@ -109,15 +123,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		analyzer = new StandardAnalyzer();
-		StandardAnalyzer analyzer = new StandardAnalyzer();
-	    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-	    try {
-			writer = new IndexWriter(indexinDirectory, iwc);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+	    this.writer = writer;
 	}
 
 
@@ -173,15 +179,25 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				if (indexedObjects % fetchSize == 0) {
 					try {
 						writer.commit();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
 						flushedObjects += fetchSize;
 						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 							this.lastIndexedID = version.getId() ;
 						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
+			}
+			try {
+				writer.commit();
+				flushedObjects += fetchSize;
+				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+					this.lastIndexedID = version.getId() ;
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			results.close();
 			session.close();
@@ -446,14 +462,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
-//		if(indexinDirectory != null) {
-//		try {
-//			indexinDirectory.close();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
 	try {
 		if(writer != null && writer.isOpen())
 			this.writer.close();

@@ -13,6 +13,7 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.util.Arrays;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,12 +25,19 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.ehcache.CacheManager;
 import org.ehcache.Status;
 import org.ehcache.config.builders.CacheManagerBuilder;
@@ -95,6 +103,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private static final String EDALDB_DBNAME = "edaldb";
 
 	private Logger logger = null;
+	
+	private BlockingQueue<PrimaryDataEntityVersionImplementation> queue = new ArrayBlockingQueue<>(1000);
+	
+	private PublicVersionIndexWriterThread publicVersionWriter;
 
 	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
 
@@ -314,12 +326,38 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			if(this.configuration.getIndexingStrategy()) {
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
 			}else {
-				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+				StandardAnalyzer analyzer = new StandardAnalyzer();
+			    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+				Path indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+				Directory indexinDirectory = null;
+				IndexWriter writer = null;
+				try {
+					indexinDirectory = FSDirectory.open(indexPath);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			    try {
+					writer = new IndexWriter(indexinDirectory, iwc);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
+				//this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
 			}
 			this.getIndexThread().start();
 		}
 	}
 
+	public BlockingQueue<PrimaryDataEntityVersionImplementation> getQueue() {
+		return queue;
+	}
+
+	public void setQueue(BlockingQueue<PrimaryDataEntityVersionImplementation> queue) {
+		this.queue = queue;
+	}
+	
 	/** {@inheritDoc} */
 	@Override
 	public MetaDataImplementation createMetaDataInstance() {
@@ -346,6 +384,14 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 */
 	private Connection getConnection() {
 		return this.connection;
+	}
+	
+	public PublicVersionIndexWriterThread getPublicVersionWriter() {
+		return publicVersionWriter;
+	}
+
+	public void setPublicVersionWriter(PublicVersionIndexWriterThread publicVersionWriter) {
+		this.publicVersionWriter = publicVersionWriter;
 	}
 
 	/**
@@ -508,7 +554,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * 
 	 * @return the sessionFactory
 	 */
-	private SessionFactory getSessionFactory() {
+	public SessionFactory getSessionFactory() {
 		return this.sessionFactory;
 	}
 

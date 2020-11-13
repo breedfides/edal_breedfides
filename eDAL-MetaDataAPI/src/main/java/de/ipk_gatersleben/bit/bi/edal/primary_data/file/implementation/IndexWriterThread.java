@@ -103,20 +103,7 @@ abstract class IndexWriterThread extends EdalThread {
 			}
 			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
 
-			Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
-
-			if (Files.exists(path)) {
-
-				try {
-					FileInputStream fis = new FileInputStream(path.toFile());
-					ObjectInputStream ois = new ObjectInputStream(fis);
-					this.lastIndexedID = (int) ois.readObject();
-					ois.close();
-				} catch (IOException | ClassNotFoundException e) {
-					e.printStackTrace();
-				}
-			}
-			this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
+			
 
 		} finally {
 			//readerProvider.close(reader);

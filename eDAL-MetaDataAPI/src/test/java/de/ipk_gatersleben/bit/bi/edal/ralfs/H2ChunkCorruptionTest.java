@@ -88,14 +88,14 @@ class H2ChunkCorruptionTest {
 	public Path mountPath = null;
 	private PrimaryDataDirectory rootDirectory;
 
-	//@Test
+	@Test
 	void generateDataTest() throws Exception {
 		rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
 		long startBeforeInsert = System.currentTimeMillis();
-    	createAndInsert(150000);
+    	createAndInsert(500);
 		long startAfterInserting = System.currentTimeMillis();
 //    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //    	IndexReader reader = DirectoryReader.open(indexDirectory);
@@ -138,39 +138,39 @@ class H2ChunkCorruptionTest {
 				archiveName = "ArchivX4"+(i/1000)+names.get(random.nextInt(countNames));
 				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName);
 			}
-			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp.."+i);
+			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entityp1.."+i);
 			MetaData metadata = entity.getMetaData().clone();
-			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
-			persons.add(np);
-			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
+//			Persons persons = new Persons();
+//			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
+//			persons.add(np);
+//			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
+//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
+//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 //			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
 //					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
 //					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
 			
 			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("Subject"+words.get(random.nextInt(countWords))));
+			subjects.add(new UntypedData("Subject"));
 //			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
 //			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+			//metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
 			//metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			
 			//entity.store(fin);
-			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
-			Files.walkFileTree(path, edalVisitor);
+//			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(currentDirectory, path, metadata, true);
+//			Files.walkFileTree(path, edalVisitor);
 			log(archiveName+"_ "+i+"/"+size+" Saved");
-			if(i == last) {
-				log("###############Last Entity saved: ######################");
-				for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
-					log(element.toString()+": "+metadata.getElementValue(element));
-				}
-			}
+//			if(i == last) {
+//				log("###############Last Entity saved: ######################");
+//				for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
+//					log(element.toString()+": "+metadata.getElementValue(element));
+//				}
+//			}
 		}
 		log("Time to insert Data: "+(System.currentTimeMillis()-start));
 		//fin.close();

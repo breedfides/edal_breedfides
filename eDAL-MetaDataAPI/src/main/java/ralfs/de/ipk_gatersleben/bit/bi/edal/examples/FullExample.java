@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.Stack;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -38,13 +39,18 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.NativeQuery;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataDirectoryImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataEntityVersionImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
@@ -52,11 +58,51 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class FullExample {
 
+
 	public static void main(String[] args) throws Exception {
-//	PrimaryDataDirectory rootDirectory = getRoot();
+	PrimaryDataDirectory rootDirectory = getRoot();
 //	Inserter inserter = new Inserter(rootDirectory);
 //	inserter.process(1);
-	testKeyword();
+	//testKeyword();
+	//Thread.sleep(10000);
+	Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
+	
+	CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+	//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
+	CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder.createQuery(PublicReferenceImplementation.class);
+	Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
+	criteria.where(criteriaBuilder.equal(root.get("id"), 202));
+	PublicReferenceImplementation impl = session.createQuery(criteria).uniqueResult();
+
+	String hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
+	List<PrimaryDataFileImplementation> directory = session.createQuery(hql)
+			.setParameter("dir", impl.getVersion().getEntity())
+			.list();
+	Stack<PrimaryDataFileImplementation> stack = new Stack<>();
+	for(PrimaryDataFileImplementation file : directory) {
+		if(file.isDirectory()) {
+			stack.add(file);
+		}else {
+			//indexen
+		}
+	}
+	while(!stack.isEmpty()) {
+		PrimaryDataFileImplementation dir = stack.pop();
+		
+		
+		//index current Version of dir
+		List<PrimaryDataFileImplementation> files = session.createQuery(hql)
+				.setParameter("dir", dir)
+				.list();
+		for(PrimaryDataFileImplementation file : files) {
+			if(file.isDirectory()) {
+				stack.add(file);
+			}else {
+				//indexen
+			}
+		}
+	}
+	
 	/**
 	 * ScrollableResults will avoid loading too many objects in memory
 	 */
@@ -71,7 +117,7 @@ public class FullExample {
 		PrimaryDataDirectory rootDirectory = getRoot();
 		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Orben", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("rockstar3 AND TEST", false, true);
         	for(PrimaryDataEntity entity : results) {
     			//log("\n\n#### Entity: "+entity.toString()+" ####");
 //        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {

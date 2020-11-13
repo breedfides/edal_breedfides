@@ -1908,22 +1908,21 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("TIME FOR SEARCH INDEX: "+(startEntityQuery-sstart));
 		final Session session2 = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
-		CriteriaBuilder criteriaBuilder = session2.getCriteriaBuilder();
-		CriteriaQuery<PrimaryDataEntityVersionImplementation> criteriaVersions = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-		Root<PrimaryDataEntityVersionImplementation> rootVersions = criteriaVersions.from(PrimaryDataEntityVersionImplementation.class);
-		criteriaVersions.select(rootVersions);
-		criteriaVersions.where(rootVersions.get("id").in(versionIDList));
-		final List <PrimaryDataEntityVersionImplementation> listOfVersions = session2.createQuery(criteriaVersions).getResultList();
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found version with criteria: "+listOfVersions.size());
-		versionIDList = new ArrayList<Integer>();
-		for(PrimaryDataEntityVersionImplementation version : listOfVersions) {
-			if(!version.getPublicReferences().isEmpty()) {
-				versionIDList.add(version.getId());
-			}else {
-				checkParentDirectory(version, versionIDList);
-			}
-		}
-		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("TIME FOR SEARCH IN EDAL: "+(System.currentTimeMillis()-startEntityQuery));
+//		CriteriaBuilder criteriaBuilder = session2.getCriteriaBuilder();
+//		CriteriaQuery<PrimaryDataEntityVersionImplementation> criteriaVersions = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//		Root<PrimaryDataEntityVersionImplementation> rootVersions = criteriaVersions.from(PrimaryDataEntityVersionImplementation.class);
+//		criteriaVersions.select(rootVersions);
+//		criteriaVersions.where(rootVersions.get("id").in(versionIDList));
+//		final List <PrimaryDataEntityVersionImplementation> listOfVersions = session2.createQuery(criteriaVersions).getResultList();
+//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found version with criteria: "+listOfVersions.size());
+//		versionIDList = new ArrayList<Integer>();
+//		for(PrimaryDataEntityVersionImplementation version : listOfVersions) {
+//			if(!version.getPublicReferences().isEmpty()) {
+//				versionIDList.add(version.getId());
+//			}else {
+//				checkParentDirectory(version, versionIDList);
+//			}
+//		}
 		if (!recursiveIntoSubdirectories) {
 			for (final Integer version : versionIDList) {
 				final PrimaryDataEntityVersionImplementation currentVersion = session2

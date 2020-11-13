@@ -949,7 +949,12 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 				transaction2.commit();
 				session2.close();
-
+				try {
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getQueue().put(publicReference.getVersion());
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				return newId;
 			} catch (final EdalException e) {
 				throw new EdalApprovalException("unable to get new ID: " + e.getMessage(), e.getCause());
