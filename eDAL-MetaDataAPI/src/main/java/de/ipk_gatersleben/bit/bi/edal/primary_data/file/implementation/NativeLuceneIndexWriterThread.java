@@ -95,12 +95,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
 	StandardAnalyzer analyzer;
-	protected IndexWriter writer = null;
 	protected Directory indexinDirectory;
+	
+	public static final String INDEX_NAME = "Master_Index";
 	
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
 		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
 		if (Files.exists(path)) {
@@ -110,12 +111,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
 				ois.close();
+				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
-		indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+		indexPath = Paths.get(indexDirectory.toString(),INDEX_NAME);
 		indexinDirectory = null;
 		try {
 			indexinDirectory = FSDirectory.open(indexPath);
@@ -123,7 +125,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-	    this.writer = writer;
 	}
 
 
@@ -218,7 +219,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
-				//fos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -381,7 +382,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
-				//fos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -422,16 +423,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		Directory directory = null;
 		IndexReader reader = null;
 		int numberDocs = 0;
-		for (File file : listOfFiles) {
-			  if (file.isDirectory()) {
-					try {					
-						directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
-						reader = DirectoryReader.open( directory );
-						numberDocs += reader.numDocs();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-			  }
+		try {					
+			directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),INDEX_NAME));
+			reader = DirectoryReader.open( directory );
+			numberDocs += reader.numDocs();
+			reader.close();
+			directory.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 		//final FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -462,18 +461,18 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
-	try {
-		if(writer != null && writer.isOpen())
-			this.writer.close();
-	} catch (IOException e) {
-		try {
-			this.writer.rollback();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
+//		try {
+//			if(writer != null && writer.isOpen())
+//				this.writer.close();
+//		} catch (IOException e) {
+//			try {
+//				this.writer.rollback();
+//			} catch (IOException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 }

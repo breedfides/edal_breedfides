@@ -36,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.hibernate.CacheMode;
@@ -62,8 +63,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class HibernateIndexWriterThread extends IndexWriterThread {
 
 	protected HibernateIndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger);
+			final Logger implementationProviderLogger, IndexWriter writer) {
+		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
 		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
 		if (Files.exists(path)) {

@@ -55,6 +55,7 @@ abstract class IndexWriterThread extends EdalThread {
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
 	protected boolean requestForReset = false;
+	IndexWriter writer = null;
 
 	/** create Lock with fairness parameter true */
 	protected final ReentrantLock lock = new ReentrantLock(true);
@@ -73,8 +74,9 @@ abstract class IndexWriterThread extends EdalThread {
 	 *            the logger of the used {@link ImplementationProvider}
 	 */
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger) {
+			final Logger implementationProviderLogger, IndexWriter writer) {
 		super();
+		this.writer = writer;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -94,7 +96,7 @@ abstract class IndexWriterThread extends EdalThread {
 				  if (file.isDirectory()) {
 						try {					
 							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
-							reader = DirectoryReader.open( directory );
+							reader = DirectoryReader.open( writer );
 							numberDocs += reader.numDocs();
 						} catch (IOException e) {
 							e.printStackTrace();

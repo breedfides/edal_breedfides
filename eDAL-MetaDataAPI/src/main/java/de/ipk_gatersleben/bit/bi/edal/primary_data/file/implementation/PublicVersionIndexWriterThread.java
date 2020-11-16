@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.security.auth.Subject;
 
@@ -92,6 +93,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 
 /**
  * IndexWriterThread class to realize manual indexing strategy
@@ -102,17 +105,18 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
 	StandardAnalyzer analyzer;
-	protected IndexWriter writer = null;
 	protected Directory indexinDirectory;
 	IndexSearcher searcher = null;
+	IndexReader reader = null;
 	int indexedVersions = 0;
 	int flushedObjects = 0;
+	public static final String INDEX_NAME = "Master_Index";
 	final int fetchSize = (int) Math.pow(10, 4);
 	
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger);
-		Path path = Paths.get(this.indexDirectory.toString(), "last_id_publicreference");
+		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
+		Path path = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
 
 		if (Files.exists(path)) {
 
@@ -121,12 +125,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
 				ois.close();
+				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
+		this.implementationProviderLogger.info("Last indexed public reference: " + this.lastIndexedID);
 		this.indexWriterThreadLogger.debug("Last indexed public reference: " + this.lastIndexedID);
-		indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+		indexPath = Paths.get(indexDirectory.toString(),INDEX_NAME);
 		indexinDirectory = null;
 		try {
 			indexinDirectory = FSDirectory.open(indexPath);
@@ -134,15 +140,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-	    this.writer = writer;
-	    IndexReader reader = null;
+		reader = null;
 		
 		//Create IndexSearcher from IndexDirectory
 		try {
-			reader = DirectoryReader.open(indexinDirectory);
+			reader = DirectoryReader.open(writer);
 		} catch (IOException e) {
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-			.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			e.printStackTrace();
 		}
 		searcher = new IndexSearcher(reader);
@@ -172,7 +175,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
 			CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder.createQuery(PublicReferenceImplementation.class);
 			Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
+			Predicate predicateId = criteriaBuilder.gt(root.get("id"), this.lastIndexedID);
+			Predicate predicateAccepted = criteriaBuilder.equal(root.get("publicationStatus"), PublicationStatus.ACCEPTED);
+			Predicate predicateType = criteriaBuilder.equal(root.get("identifierType"), PersistentIdentifier.DOI);
+			criteria.where(criteriaBuilder.and(predicateId,predicateAccepted,predicateType))
 					.orderBy(criteriaBuilder.asc(root.get("id")));
 
 			/**
@@ -186,6 +192,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long indexStartTime = System.currentTimeMillis();
 			//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
 			PublicReferenceImplementation publicRef = null;
+			session.getTransaction().begin();
 			while (results.next()) {
 				publicRef = (PublicReferenceImplementation) results.get(0);
 				//this.indexVersion(writer, publicRef);
@@ -199,7 +206,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 				if (indexedVersions > 0 && publicRef.getId() > this.lastIndexedID) {
 					this.lastIndexedID = publicRef.getId() ;
+					this.implementationProviderLogger.info("NEW indexed public reference: " + this.lastIndexedID);
 				}
+			session.getTransaction().commit();
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -219,7 +228,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
-				//fos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -242,47 +251,44 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 	}
 	
-	private List<PrimaryDataEntityVersionImplementation> collectVersions(PublicReferenceImplementation publicReference){
-		ArrayList<PrimaryDataEntityVersionImplementation> versions = new ArrayList<>();
-		versions.add(publicReference.getVersion());
-		String parentId = publicReference.getVersion().getPrimaryEntityId();
-		PrimaryDataEntityVersionImplementation v = publicReference.getVersion();
-		PrimaryDataDirectoryImplementation impl = null;
-		impl.getVersionList();
-//		v.getEntity().getVersions().iterator().next().
-		return null;
-	}
-	
 	private void updateIndex(PublicReferenceImplementation publicRef, Session session) {
-		String parentId = publicRef.getVersion().getPrimaryEntityId();
-		String hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
-		List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
-				.setParameter("dir", publicRef.getVersion().getEntity())
-				.list();
-		Stack<PrimaryDataFileImplementation> stack = new Stack<>();
-		for(PrimaryDataFileImplementation file : directory) {
-			if(file.isDirectory()) {
-				stack.add(file);
-			}else {
-				this.updateVersion(file, session, publicRef);
-				indexedVersions++;
-			}
-		}
-		while(!stack.isEmpty()) {
-			PrimaryDataFileImplementation dir = stack.pop();
-			
-			
-			this.updateVersion(dir, session, publicRef);
+		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+publicRef.getId());
+		String hql = "from PrimaryDataFileImplementation where id = :fileId";
+		PrimaryDataFileImplementation test = session.createQuery(hql,PrimaryDataFileImplementation.class).setParameter("fileId", publicRef.getVersion().getPrimaryEntityId()).uniqueResult();
+		if(!test.isDirectory()) {
+			this.updateVersion(test, session, publicRef);
 			indexedVersions++;
-			List<PrimaryDataFileImplementation> files = session.createQuery(hql)
-					.setParameter("dir", dir)
+		}
+		else {
+			hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
+			List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
+					.setParameter("dir", publicRef.getVersion().getEntity())
 					.list();
-			for(PrimaryDataFileImplementation file : files) {
+			Stack<PrimaryDataFileImplementation> stack = new Stack<>();
+			for(PrimaryDataFileImplementation file : directory) {
 				if(file.isDirectory()) {
 					stack.add(file);
 				}else {
 					this.updateVersion(file, session, publicRef);
 					indexedVersions++;
+				}
+			}
+			while(!stack.isEmpty()) {
+				PrimaryDataFileImplementation dir = stack.pop();
+				
+				
+				this.updateVersion(dir, session, publicRef);
+				indexedVersions++;
+				List<PrimaryDataFileImplementation> files = session.createQuery(hql)
+						.setParameter("dir", dir)
+						.list();
+				for(PrimaryDataFileImplementation file : files) {
+					if(file.isDirectory()) {
+						stack.add(file);
+					}else {
+						this.updateVersion(file, session, publicRef);
+						indexedVersions++;
+					}
 				}
 			}
 		}
@@ -312,6 +318,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		        	doc.add(new TextField("entityId",publicRef.getVersion().getPrimaryEntityId(),Store.YES));
 		        	writer.addDocument(doc);
 		        	indexedVersions++;
+					this.implementationProviderLogger.info("UPDATED VERSION: "+doc.get(MetaDataImplementation.VERSIONID));
 		        }
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -321,7 +328,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			try {
 				writer.commit();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 				flushedObjects += fetchSize;
@@ -333,99 +339,99 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 
 	protected void indexRestObjects() {
-		long executeIndexingStart = System.currentTimeMillis();
-
-		if (!this.sessionFactory.isClosed()) {
-			final Session session = this.sessionFactory.openSession();
-
-			session.setDefaultReadOnly(true);
-
-			//final FullTextSession fullTextSession = Search.getFullTextSession(session);
-
-//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-//			fullTextSession.setCacheMode(CacheMode.NORMAL);
-
-			final long queryStartTime = System.currentTimeMillis();
-
-			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-			//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
-			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
-					.orderBy(criteriaBuilder.asc(root.get("id")));
-
-			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
-
-			int indexedObjects = 0;
-			int flushedObjects = 0;
-
-			final long queryTime = System.currentTimeMillis() - queryStartTime;
-			final long indexStartTime = System.currentTimeMillis();
-		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-			PrimaryDataEntityVersionImplementation version = null;
-			while (results.next()) {
-				/** index each element */
-				//fullTextSession.index(results.get(0));
-				version = (PrimaryDataEntityVersionImplementation) results.get(0);
-//				try {
-//					this.indexVersion(writer, version);
-//				} catch (MetaDataException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
+//		long executeIndexingStart = System.currentTimeMillis();
+//
+//		if (!this.sessionFactory.isClosed()) {
+//			final Session session = this.sessionFactory.openSession();
+//
+//			session.setDefaultReadOnly(true);
+//
+//			//final FullTextSession fullTextSession = Search.getFullTextSession(session);
+//
+////			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
+////			fullTextSession.setCacheMode(CacheMode.NORMAL);
+//
+//			final long queryStartTime = System.currentTimeMillis();
+//
+//			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//			//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
+//			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
+//			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
+//					.orderBy(criteriaBuilder.asc(root.get("id")));
+//
+//			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
+//
+//			int indexedObjects = 0;
+//			int flushedObjects = 0;
+//
+//			final long queryTime = System.currentTimeMillis() - queryStartTime;
+//			final long indexStartTime = System.currentTimeMillis();
+//		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+//			PrimaryDataEntityVersionImplementation version = null;
+//			while (results.next()) {
+//				/** index each element */
+//				//fullTextSession.index(results.get(0));
+//				version = (PrimaryDataEntityVersionImplementation) results.get(0);
+////				try {
+////					this.indexVersion(writer, version);
+////				} catch (MetaDataException e) {
+////					// TODO Auto-generated catch block
+////					e.printStackTrace();
+////				} catch (IOException e) {
+////					// TODO Auto-generated catch block
+////					e.printStackTrace();
+////				}
+////				indexedObjects++;
+////				flushedObjects++;
+//			}
+//			results.close();
+//			session.close();
+//			try {
+//				writer.commit();
+//				if(version != null)
+//				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
+//				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+//					this.lastIndexedID = version.getId() ;
 //				}
-//				indexedObjects++;
-//				flushedObjects++;
-			}
-			results.close();
-			session.close();
-			try {
-				writer.commit();
-				if(version != null)
-				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
-				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
-					this.lastIndexedID = version.getId() ;
-				}
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-
-			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-		//	this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
-			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
-
-			if (indexedObjects > 0 || flushedObjects > 0) {
-				this.indexWriterThreadLogger
-						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
-								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-								+ df.format(new Date(queryTime)));
-			}
-
-			try {
-				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
-				ObjectOutputStream oos = new ObjectOutputStream(fos);
-				oos.writeObject(this.lastIndexedID);
-				oos.close();
-				//fos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			try {
-				Thread.sleep(Math.min(
-						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
-								NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
-						NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
-			} catch (final InterruptedException e) {
-				e.printStackTrace();
-			}
-			//this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
-			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
-			//this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
-		}
+//			} catch (IOException e1) {
+//				e1.printStackTrace();
+//			}
+//
+//			final long indexingTime = System.currentTimeMillis() - indexStartTime;
+//		//	this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
+//			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
+//
+//			if (indexedObjects > 0 || flushedObjects > 0) {
+//				this.indexWriterThreadLogger
+//						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
+//								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
+//								+ df.format(new Date(queryTime)));
+//			}
+//
+//			try {
+//				FileOutputStream fos = new FileOutputStream(
+//						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+//				ObjectOutputStream oos = new ObjectOutputStream(fos);
+//				oos.writeObject(this.lastIndexedID);
+//				oos.close();
+//				//fos.close();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//
+//			try {
+//				Thread.sleep(Math.min(
+//						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
+//								NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
+//						NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
+//			} catch (final InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//			//this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
+//			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
+//			//this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
+//		}
 	}
 
 	protected void resetIndexThread() {
@@ -450,16 +456,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		Directory directory = null;
 		IndexReader reader = null;
 		int numberDocs = 0;
-		for (File file : listOfFiles) {
-			  if (file.isDirectory()) {
-					try {					
-						directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
-						reader = DirectoryReader.open( directory );
-						numberDocs += reader.numDocs();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-			  }
+		try {					
+			directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),INDEX_NAME));
+			reader = DirectoryReader.open( directory );
+			numberDocs += reader.numDocs();
+			reader.close();
+			directory.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 		//final FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -490,26 +494,27 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
-//		if(indexinDirectory != null) {
+		if(indexinDirectory != null) {
+			try {
+				reader.close();
+				indexinDirectory.close();				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 //		try {
-//			indexinDirectory.close();
+//			if(writer != null && writer.isOpen())
+//				this.writer.close();
 //		} catch (IOException e) {
+//			try {
+//				this.writer.rollback();
+//			} catch (IOException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
-//	}
-	try {
-		if(writer != null && writer.isOpen())
-			this.writer.close();
-	} catch (IOException e) {
-		try {
-			this.writer.rollback();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
 	}
 }

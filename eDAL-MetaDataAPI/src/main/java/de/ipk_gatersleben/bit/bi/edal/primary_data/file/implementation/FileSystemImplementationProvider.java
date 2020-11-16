@@ -14,6 +14,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.util.Arrays;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -111,6 +112,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
 
 	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
+	
+	private IndexWriter writer = null;
 	
 	private boolean hibernateIndexing = false;
 
@@ -323,30 +326,30 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
 
 		if (!this.isAutoIndexing()) {
+			StandardAnalyzer analyzer = new StandardAnalyzer();
+		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+			Path indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
+			Directory indexinDirectory = null;
+			try {
+				indexinDirectory = FSDirectory.open(indexPath);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		    try {
+				writer = new IndexWriter(indexinDirectory, iwc);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			if(this.configuration.getIndexingStrategy()) {
-				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
 			}else {
-				StandardAnalyzer analyzer = new StandardAnalyzer();
-			    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-				Path indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
-				Directory indexinDirectory = null;
-				IndexWriter writer = null;
-				try {
-					indexinDirectory = FSDirectory.open(indexPath);
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			    try {
-					writer = new IndexWriter(indexinDirectory, iwc);
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
-				//this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
+				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
 			}
 			this.getIndexThread().start();
+			this.getPublicVersionWriter().start();
 		}
 	}
 
@@ -721,6 +724,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
 			this.getIndexThread().waitForFinish();
+			this.getPublicVersionWriter().waitForFinish();
 		}
 		try {
 			this.getConnection().close();
@@ -730,6 +734,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+		if(writer != null) {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				try {
+					this.writer.rollback();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
 		}
 	}
 
