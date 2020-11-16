@@ -315,7 +315,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		        for(int i = 0; i < hits2.length; i++) {
 		        	Document doc = searcher.doc(hits2[i].doc);
 		        	writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,doc.get(MetaDataImplementation.VERSIONID)));
-		        	doc.add(new TextField("entityId",publicRef.getVersion().getPrimaryEntityId(),Store.YES));
+		        	doc.add(new TextField(MetaDataImplementation.ENTITYID,publicRef.getVersion().getPrimaryEntityId(),Store.YES));
 		        	writer.addDocument(doc);
 		        	indexedVersions++;
 					this.implementationProviderLogger.info("UPDATED VERSION: "+doc.get(MetaDataImplementation.VERSIONID));
