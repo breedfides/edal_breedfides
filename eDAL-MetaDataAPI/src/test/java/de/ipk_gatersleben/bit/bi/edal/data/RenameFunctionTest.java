@@ -53,6 +53,7 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 		} catch (Exception e) {
 			Assertions.assertTrue(true);
 		}
+		DataManager.getImplProv().getLogger().info("Finished RENAMEOBJETWITHEXISTINGNAME");
 	}
 
 	@Test
@@ -72,6 +73,7 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 		} catch (Exception e) {
 			Assertions.fail("unable to rename file with an old name again");
 		}
+		DataManager.getImplProv().getLogger().info("Finished RENAMEFILEWITHOLDNAME");
 	}
 
 	@Test
@@ -93,5 +95,6 @@ public class RenameFunctionTest extends EdalDefaultTestCase {
 		} catch (Exception e) {
 			Assertions.fail("unable to create file with an old name of another file");
 		}
+		DataManager.getImplProv().getLogger().info("Finished CREATENEWFILEWITHOLDFILENAME");
 	}
 }

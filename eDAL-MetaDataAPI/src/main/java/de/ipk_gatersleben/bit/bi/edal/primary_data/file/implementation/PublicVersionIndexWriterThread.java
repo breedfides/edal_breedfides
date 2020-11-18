@@ -104,8 +104,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
+	IndexWriter writer = null;
 	StandardAnalyzer analyzer;
-	protected Directory indexinDirectory;
 	IndexSearcher searcher = null;
 	IndexReader reader = null;
 	int indexedVersions = 0;
@@ -115,40 +115,43 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
+		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		this.writer = writer;
+		int numberDocs = 0;
+		try {					
+			reader = DirectoryReader.open( writer );
+			searcher = new IndexSearcher(reader);
+			numberDocs += reader.numDocs();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
 		Path path = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
 
 		if (Files.exists(path)) {
-
+			FileInputStream fis = null;
+			ObjectInputStream ois = null;
 			try {
-				FileInputStream fis = new FileInputStream(path.toFile());
-				ObjectInputStream ois = new ObjectInputStream(fis);
+				fis = new FileInputStream(path.toFile());
+				ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
-				ois.close();
-				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
+			}finally {
+				try {
+					ois.close();
+					fis.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		this.implementationProviderLogger.info("Last indexed public reference: " + this.lastIndexedID);
 		this.indexWriterThreadLogger.debug("Last indexed public reference: " + this.lastIndexedID);
 		indexPath = Paths.get(indexDirectory.toString(),INDEX_NAME);
-		indexinDirectory = null;
-		try {
-			indexinDirectory = FSDirectory.open(indexPath);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		reader = null;
 		
 		//Create IndexSearcher from IndexDirectory
-		try {
-			reader = DirectoryReader.open(writer);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		searcher = new IndexSearcher(reader);
 	}
 
 
@@ -156,10 +159,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	protected void executeIndexing() {
 
 		if (!this.sessionFactory.isClosed()) {
+			final Session session = this.sessionFactory.openSession();
 			indexedVersions = 0;
 			flushedObjects = 0;
 			long executeIndexingStart = System.currentTimeMillis();
-			final Session session = this.sessionFactory.openSession();
 
 			session.setDefaultReadOnly(true);
 
@@ -192,7 +195,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long indexStartTime = System.currentTimeMillis();
 			//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
 			PublicReferenceImplementation publicRef = null;
-			session.getTransaction().begin();
+			//session.getTransaction().begin();
 			while (results.next()) {
 				publicRef = (PublicReferenceImplementation) results.get(0);
 				//this.indexVersion(writer, publicRef);
@@ -208,7 +211,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					this.lastIndexedID = publicRef.getId() ;
 					this.implementationProviderLogger.info("NEW indexed public reference: " + this.lastIndexedID);
 				}
-			session.getTransaction().commit();
+			//session.getTransaction().commit();
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -221,16 +224,23 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
-
+			FileOutputStream fos = null;
+			ObjectOutputStream oos = null;
 			try {
-				FileOutputStream fos = new FileOutputStream(
+				fos = new FileOutputStream(
 						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
-				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
-				oos.close();
-				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+			}finally  {
+				try {
+					oos.close();
+					fos.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
 			try {
@@ -292,6 +302,29 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 		}
+	}
+	
+	public void waitForFinish() {
+		final long time = System.currentTimeMillis();
+		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
+		this.implementationProviderLogger.info("PUBLIC VOR LOCK()");
+		this.lock.lock();
+		this.implementationProviderLogger.info("PUBLIC NACH LOCK()");
+		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
+		this.indexWriterThreadLogger.info("FINALZE indexing...");
+		this.executeIndexing();
+		this.implementationProviderLogger.info("PUBLIC NACH EXECUTEINDEXING");
+
+		/** close SessionFactory so no indexing again */
+		/** executeIndexing() runs only with open SessionFactory */
+
+		this.sessionFactory.close();
+		this.lock.unlock();
+		this.implementationProviderLogger.info("PUBLIC NACH UNLOCK()");
+		this.indexWriterThreadLogger
+				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexWriterThreadLogger.debug("unlock Lock");
 	}
 	
 	private void updateVersion(PrimaryDataFileImplementation file, Session session, PublicReferenceImplementation publicRef) {
@@ -448,20 +481,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 
 		this.implementationProviderLogger.info("Start reseting index structure...");
-
-		final Session session = this.sessionFactory.openSession();
-		session.setDefaultReadOnly(true);
-		File folder = new File(this.indexDirectory.toString());
-		File[] listOfFiles = folder.listFiles();
-		Directory directory = null;
+		
 		IndexReader reader = null;
 		int numberDocs = 0;
 		try {					
-			directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),INDEX_NAME));
-			reader = DirectoryReader.open( directory );
+			reader = DirectoryReader.open( writer );
 			numberDocs += reader.numDocs();
 			reader.close();
-			directory.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -480,7 +506,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		//this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
 
 		//readerProvider.close(reader);
-		session.close();
 
 		this.lastIndexedID = 0;
 
@@ -494,14 +519,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
-		if(indexinDirectory != null) {
-			try {
-				reader.close();
-				indexinDirectory.close();				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try {
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 //		try {
 //			if(writer != null && writer.isOpen())

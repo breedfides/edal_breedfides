@@ -33,7 +33,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
-public class EdalDefaultTestCase {
+public class EdalDefaultTestCase{
 
 	private static int HTTPS_PORT = 8443;
 	private static int HTTP_PORT = 8080;
@@ -85,6 +85,7 @@ public class EdalDefaultTestCase {
 	public void tearDown() throws Exception {
 		DataManager.shutdown();
 		EdalHelpers.cleanMountPath(mountPath);
+		Thread.sleep(5000);
 	}
 
 	/**

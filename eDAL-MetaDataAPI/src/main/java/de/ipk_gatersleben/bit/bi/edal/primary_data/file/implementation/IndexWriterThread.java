@@ -55,7 +55,6 @@ abstract class IndexWriterThread extends EdalThread {
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
 	protected boolean requestForReset = false;
-	IndexWriter writer = null;
 
 	/** create Lock with fairness parameter true */
 	protected final ReentrantLock lock = new ReentrantLock(true);
@@ -74,9 +73,8 @@ abstract class IndexWriterThread extends EdalThread {
 	 *            the logger of the used {@link ImplementationProvider}
 	 */
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger, IndexWriter writer) {
+			final Logger implementationProviderLogger) {
 		super();
-		this.writer = writer;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -84,33 +82,6 @@ abstract class IndexWriterThread extends EdalThread {
 		this.indexDirectory = indexDirectory;
 
 		this.sessionFactory = sessionFactory;
-
-		final Session session = this.sessionFactory.openSession();
-		try {			
-			File folder = new File(this.indexDirectory.toString());
-			File[] listOfFiles = folder.listFiles();
-			Directory directory = null;
-			IndexReader reader = null;
-			int numberDocs = 0;
-			for (File file : listOfFiles) {
-				  if (file.isDirectory()) {
-						try {					
-							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
-							reader = DirectoryReader.open( writer );
-							numberDocs += reader.numDocs();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-				  }
-			}
-			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
-
-			
-
-		} finally {
-			//readerProvider.close(reader);
-			session.close();
-		}
 	}
 	
 	protected abstract void executeIndexing();
@@ -128,14 +99,14 @@ abstract class IndexWriterThread extends EdalThread {
 			this.indexWriterThreadLogger.debug("Wait for Reseting the index structure: " + this.requestForReset);
 
 			if (!this.requestForReset) {
-				this.indexWriterThreadLogger.debug("try lock run method");
-				this.getLock().lock();
-				latch = new CountDownLatch(1);
-				this.indexWriterThreadLogger.debug("locked run method");
+//				this.indexWriterThreadLogger.debug("try lock run method");
+//				this.getLock().lock();
+//				latch = new CountDownLatch(1);
+//				this.indexWriterThreadLogger.debug("locked run method");
 				this.executeIndexing();
-				this.indexWriterThreadLogger.debug("unlock run method");
-				this.getLock().unlock();
-				latch.countDown();
+//				this.indexWriterThreadLogger.debug("unlock run method");
+//				this.getLock().unlock();
+//				latch.countDown();
 			}
 		}
 
@@ -150,26 +121,9 @@ abstract class IndexWriterThread extends EdalThread {
 
 	/**
 	 * wait until the indexing method is finished
+	 * @return 
 	 */
-	void waitForFinish() {
-
-		final long time = System.currentTimeMillis();
-		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
-		this.lock.lock();
-		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
-		this.indexWriterThreadLogger.info("FINALZE indexing...");
-		this.executeIndexing();
-
-		/** close SessionFactory so no indexing again */
-		/** executeIndexing() runs only with open SessionFactory */
-
-		this.sessionFactory.close();
-		this.lock.unlock();
-		this.indexWriterThreadLogger
-				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
-		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
-		this.indexWriterThreadLogger.debug("unlock Lock");
-	}
+	abstract void waitForFinish();
 
 	//final IndexAccessor readerProvider = searchFactory
 

@@ -63,8 +63,37 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class HibernateIndexWriterThread extends IndexWriterThread {
 
 	protected HibernateIndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
+			final Logger implementationProviderLogger) {
+		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		
+		final Session session = this.sessionFactory.openSession();
+		try {			
+			File folder = new File(this.indexDirectory.toString());
+			File[] listOfFiles = folder.listFiles();
+			Directory directory = null;
+			IndexReader reader = null;
+			int numberDocs = 0;
+			for (File file : listOfFiles) {
+				  if (file.isDirectory()) {
+						try {					
+							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
+							reader = DirectoryReader.open( directory );
+							numberDocs += reader.numDocs();
+							reader.close();
+							directory.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+				  }
+			}
+			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
+
+			
+
+		} finally {
+			//readerProvider.close(reader);
+			session.close();
+		}
 		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
 		if (Files.exists(path)) {
@@ -186,6 +215,29 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
 			//this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
+	}
+	
+	public void waitForFinish() {
+		final long time = System.currentTimeMillis();
+		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
+		this.implementationProviderLogger.info("NATIVELUCINDEXER VOR LOCK()");
+		this.lock.lock();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH LOCK()");
+		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
+		this.indexWriterThreadLogger.info("FINALZE indexing...");
+		this.executeIndexing();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH EXECUTEINDEXING");
+
+		/** close SessionFactory so no indexing again */
+		/** executeIndexing() runs only with open SessionFactory */
+
+		this.sessionFactory.close();
+		this.lock.unlock();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH UNLOCK()");
+		this.indexWriterThreadLogger
+				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexWriterThreadLogger.debug("unlock Lock");
 	}
 
 	protected void indexRestObjects() {

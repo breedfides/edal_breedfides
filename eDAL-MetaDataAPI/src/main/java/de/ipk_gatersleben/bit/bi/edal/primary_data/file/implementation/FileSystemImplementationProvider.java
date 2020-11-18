@@ -332,18 +332,23 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			Directory indexinDirectory = null;
 			try {
 				indexinDirectory = FSDirectory.open(indexPath);
+				indexinDirectory.close();
+				indexinDirectory = FSDirectory.open(indexPath);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		    try {
 				writer = new IndexWriter(indexinDirectory, iwc);
+				writer.close();
+			    iwc = new IndexWriterConfig(analyzer);
+				writer = new IndexWriter(indexinDirectory, iwc);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			if(this.configuration.getIndexingStrategy()) {
-				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
+				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
 			}else {
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
 				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
@@ -724,7 +729,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
 			this.getIndexThread().waitForFinish();
+			this.getLogger().info("finished waiting (NativeluceneIndexThread)");
 			this.getPublicVersionWriter().waitForFinish();
+			this.getLogger().info("finished waiting (PublicVersionIndexer)");
 		}
 		try {
 			this.getConnection().close();

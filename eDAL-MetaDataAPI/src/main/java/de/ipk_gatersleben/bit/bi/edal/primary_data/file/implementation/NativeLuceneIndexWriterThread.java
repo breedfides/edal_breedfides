@@ -95,36 +95,46 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private Path indexPath;
 	StandardAnalyzer analyzer;
-	protected Directory indexinDirectory;
-	
+	IndexWriter writer = null;
 	public static final String INDEX_NAME = "Master_Index";
 	
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger, writer);
+		super(sessionFactory, indexDirectory, implementationProviderLogger);
+		this.writer = writer;
+		int numberDocs = 0;
+		try {					
+			IndexReader reader = DirectoryReader.open( writer );
+			numberDocs += reader.numDocs();
+			reader.close();
+			reader = null;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
 		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
 		if (Files.exists(path)) {
-
+			FileInputStream fis = null;
+			ObjectInputStream ois = null;
 			try {
-				FileInputStream fis = new FileInputStream(path.toFile());
-				ObjectInputStream ois = new ObjectInputStream(fis);
+				fis = new FileInputStream(path.toFile());
+				ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
-				ois.close();
-				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
+			}finally {
+				try {
+					ois.close();
+					fis.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
 		indexPath = Paths.get(indexDirectory.toString(),INDEX_NAME);
-		indexinDirectory = null;
-		try {
-			indexinDirectory = FSDirectory.open(indexPath);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 	}
 
 
@@ -212,16 +222,23 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
-
+			FileOutputStream fos = null;
+			ObjectOutputStream oos = null;
 			try {
-				FileOutputStream fos = new FileOutputStream(
+				fos = new FileOutputStream(
 						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
-				oos.close();
-				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+			}finally {
+				try {
+					oos.close();
+					fos.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
 			try {
@@ -334,7 +351,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
-		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				/** index each element */
@@ -356,9 +372,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			session.close();
 			try {
 				writer.commit();
-				if(version != null)
-				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
-				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
+				if (version != null && version.getId() > this.lastIndexedID) {
 					this.lastIndexedID = version.getId() ;
 				}
 			} catch (IOException e1) {
@@ -376,15 +390,23 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 			}
 
+			FileOutputStream fos = null;
+			ObjectOutputStream oos = null;
 			try {
-				FileOutputStream fos = new FileOutputStream(
+				fos = new FileOutputStream(
 						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
-				oos.close();
-				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+			}finally {
+				try {
+					oos.close();
+					fos.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
 			try {
@@ -416,19 +438,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 		this.implementationProviderLogger.info("Start reseting index structure...");
 
-		final Session session = this.sessionFactory.openSession();
-		session.setDefaultReadOnly(true);
-		File folder = new File(this.indexDirectory.toString());
-		File[] listOfFiles = folder.listFiles();
-		Directory directory = null;
 		IndexReader reader = null;
 		int numberDocs = 0;
 		try {					
-			directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),INDEX_NAME));
-			reader = DirectoryReader.open( directory );
+			reader = DirectoryReader.open( writer );
 			numberDocs += reader.numDocs();
 			reader.close();
-			directory.close();
+			reader = null;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -447,7 +463,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		//this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + reader.numDocs());
 
 		//readerProvider.close(reader);
-		session.close();
 
 		this.lastIndexedID = 0;
 
@@ -457,22 +472,31 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		this.implementationProviderLogger.info("Index structure deleted, restart index calculating...");
 
 	}
+	public void waitForFinish() {
+		final long time = System.currentTimeMillis();
+		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
+		this.implementationProviderLogger.info("NATIVELUCINDEXER VOR LOCK()");
+		this.lock.lock();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH LOCK()");
+		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
+		this.indexWriterThreadLogger.info("FINALZE indexing...");
+		this.executeIndexing();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH EXECUTEINDEXING");
+
+		/** close SessionFactory so no indexing again */
+		/** executeIndexing() runs only with open SessionFactory */
+
+		this.sessionFactory.close();
+		this.lock.unlock();
+		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH UNLOCK()");
+		this.indexWriterThreadLogger
+				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
+		this.indexWriterThreadLogger.debug("unlock Lock");
+	}
 	
 	@Override
 	public void run() {
 		super.run();
-//		try {
-//			if(writer != null && writer.isOpen())
-//				this.writer.close();
-//		} catch (IOException e) {
-//			try {
-//				this.writer.rollback();
-//			} catch (IOException e1) {
-//				// TODO Auto-generated catch block
-//				e1.printStackTrace();
-//			}
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 }
