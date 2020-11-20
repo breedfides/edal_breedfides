@@ -43,7 +43,6 @@ abstract class IndexWriterThread extends EdalThread {
 	protected static final int SLEEP_RUNTIME_FACTOR = 2;
 	protected static final long MIN_THREAD_SLEEP_MILLISECONDS = 500;
 	protected static final long MAX_THREAD_SLEEP_MILLISECONDS = 2000;
-
 	protected SessionFactory sessionFactory;
 	
 	protected Logger indexLogger = null;
@@ -55,6 +54,8 @@ abstract class IndexWriterThread extends EdalThread {
 	SearchIndexingPlan indexingPlan = null;
 	SearchWorkspace workspace = null;
 	protected boolean requestForReset = false;
+	private boolean finishIndexing = false;
+	private CountDownLatch countDownLatch = null;
 
 	/** create Lock with fairness parameter true */
 	protected final ReentrantLock lock = new ReentrantLock(true);
@@ -73,8 +74,9 @@ abstract class IndexWriterThread extends EdalThread {
 	 *            the logger of the used {@link ImplementationProvider}
 	 */
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger) {
+			final Logger implementationProviderLogger, CountDownLatch countDownLatch) {
 		super();
+		this.countDownLatch = countDownLatch;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -94,8 +96,8 @@ abstract class IndexWriterThread extends EdalThread {
 	/** {@inheritDoc} */
 	@Override
 	public void run() {
-
-		while (!this.sessionFactory.isClosed()) {
+		boolean finished = false;
+		while (!finished) {
 			this.indexWriterThreadLogger.debug("Wait for Reseting the index structure: " + this.requestForReset);
 
 			if (!this.requestForReset) {
@@ -104,14 +106,34 @@ abstract class IndexWriterThread extends EdalThread {
 //				latch = new CountDownLatch(1);
 //				this.indexWriterThreadLogger.debug("locked run method");
 				this.executeIndexing();
+				if(this.finishIndexing) {
+					this.countDownLatch.countDown();
+					finished = true;
+				}
+//				this.sessionFactory.close();
 //				this.indexWriterThreadLogger.debug("unlock run method");
 //				this.getLock().unlock();
 //				latch.countDown();
 			}
 		}
+		if(this instanceof NativeLuceneIndexWriterThread) {
+			this.implementationProviderLogger.info("finished waiting (NativeluceneIndexThread)");
+		}else if(this instanceof PublicVersionIndexWriterThread) {
+			this.implementationProviderLogger.info("finished waiting (PublicVersionIndexWriter)");
+		}
 
 	}
 	
+	
+	
+	public boolean isFinishIndexing() {
+		return finishIndexing;
+	}
+
+	public void setFinishIndexing(boolean finishIndexing) {
+		this.finishIndexing = finishIndexing;
+	}
+
 	/**
 	 * @return the lock
 	 */

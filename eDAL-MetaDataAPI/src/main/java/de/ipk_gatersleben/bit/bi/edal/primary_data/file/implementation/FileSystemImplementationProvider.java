@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -105,7 +106,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	private Logger logger = null;
 	
-	private BlockingQueue<PrimaryDataEntityVersionImplementation> queue = new ArrayBlockingQueue<>(1000);
+	private CountDownLatch countDownLatch = new CountDownLatch(2);
 	
 	private PublicVersionIndexWriterThread publicVersionWriter;
 
@@ -344,26 +345,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			    iwc = new IndexWriterConfig(analyzer);
 				writer = new IndexWriter(indexinDirectory, iwc);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
+				// TODO Auto-generated catch bl ock
 				e1.printStackTrace();
 			}
 			if(this.configuration.getIndexingStrategy()) {
-				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger));
+				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
-				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
-				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, writer));
+				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
+				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
 			this.getIndexThread().start();
 			this.getPublicVersionWriter().start();
 		}
-	}
-
-	public BlockingQueue<PrimaryDataEntityVersionImplementation> getQueue() {
-		return queue;
-	}
-
-	public void setQueue(BlockingQueue<PrimaryDataEntityVersionImplementation> queue) {
-		this.queue = queue;
 	}
 	
 	/** {@inheritDoc} */
@@ -728,13 +721,25 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
-			this.getIndexThread().waitForFinish();
-			this.getLogger().info("finished waiting (NativeluceneIndexThread)");
-			this.getPublicVersionWriter().waitForFinish();
-			this.getLogger().info("finished waiting (PublicVersionIndexer)");
+			//this.getIndexThread().waitForFinish();
+			//this.getPublicVersionWriter().waitForFinish();
+			this.getIndexThread().setFinishIndexing(true);
+			this.getPublicVersionWriter().setFinishIndexing(true);
+			try {
+				this.getLogger().info("waiting for (INDEXTHREADS)");
+				this.countDownLatch.await();
+				this.getLogger().info("finished waiting for (INDEXTHREADS)");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		try {
 			this.getConnection().close();
+			if(this.getSessionFactory().isClosed()) {
+				this.getLogger().info("######### ALREADY ############ /n ################ CLOSED #################");
+			}
+
 			this.getSessionFactory().close();
 			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
 				this.getCacheManager().close();
@@ -744,14 +749,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 		if(writer != null) {
 			try {
-				writer.close();
-			} catch (IOException e) {
+				writer.close();					
+				} catch (IOException e) {
 				e.printStackTrace();
 				try {
 					this.writer.rollback();
+					writer.close();
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
+			}
+			if(writer.isOpen()) {
+				this.getLogger().info("######Writer is still open");
 			}
 		}
 	}

@@ -71,10 +71,11 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
-//	Inserter inserter = new Inserter(rootDirectory);
-//	inserter.process(1);
-	//testKeyword();
-	Thread.sleep(10000);
+	Inserter inserter = new Inserter(rootDirectory);
+	inserter.process(2000);
+//	testKeyword();
+//	Thread.sleep(10000);
+	
 //	Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 //	
 //	CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -176,7 +177,7 @@ public class FullExample {
 		PrimaryDataDirectory rootDirectory = getRoot();
 		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("rockstar3 AND TEST", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("needspace14 AND TEST", false, true);
         	for(PrimaryDataEntity entity : results) {
     			//log("\n\n#### Entity: "+entity.toString()+" ####");
 //        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {
@@ -198,8 +199,8 @@ public class FullExample {
 //		    		}
 //        		}
 //        		if(((NaturalPerson)((Persons)entity.getMetaData().getElementValue(EnumDublinCoreElements.CREATOR)).iterator().next()).getGivenName().equals("Orben")){
-//        		entity.addPublicReference(PersistentIdentifier.DOI);
-//        		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
+        		entity.addPublicReference(PersistentIdentifier.DOI);
+        		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
 //        		Thread.sleep(40000);
 //        			log("###########found zoe and testing_dir");
 //        		}

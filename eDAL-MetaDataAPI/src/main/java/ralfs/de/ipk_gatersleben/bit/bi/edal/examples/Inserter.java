@@ -119,7 +119,7 @@ public class Inserter {
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
 			searchable = entity.getMetaData().clone();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("rockstar3","En","adress.Halberstadt","zip;38820","country/DE");
+			NaturalPerson np = new NaturalPerson("needspace15","En","adress.Halberstadt","zip;38820","country/DE");
 			persons.add(np);
 			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		

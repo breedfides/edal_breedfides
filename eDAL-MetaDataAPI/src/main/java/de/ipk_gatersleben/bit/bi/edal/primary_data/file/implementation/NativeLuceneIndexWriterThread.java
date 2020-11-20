@@ -99,8 +99,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	public static final String INDEX_NAME = "Master_Index";
 	
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger);
+			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer, CountDownLatch countDownLatch2) {
+		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
 		this.writer = writer;
 		int numberDocs = 0;
 		try {					
@@ -122,11 +122,16 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
 			} catch (IOException | ClassNotFoundException e) {
+				this.implementationProviderLogger.info(e.getMessage());
 				e.printStackTrace();
 			}finally {
 				try {
-					ois.close();
-					fis.close();
+					if(ois != null) {
+						ois.close();
+					}
+					if(fis != null) {
+						fis.close();
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -230,11 +235,18 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 			} catch (IOException e) {
+				this.implementationProviderLogger.info(e.getMessage());
 				e.printStackTrace();
 			}finally {
 				try {
-					oos.close();
-					fos.close();
+					if(oos != null) {
+						oos.flush();
+						oos.close();
+					}
+					if(fos != null) {
+						fos.flush();
+						fos.close();
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -398,11 +410,18 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 			} catch (IOException e) {
+				this.implementationProviderLogger.debug(e.getMessage());
 				e.printStackTrace();
 			}finally {
 				try {
-					oos.close();
-					fos.close();
+					if(oos != null) {
+						oos.flush();
+						oos.close();
+					}
+					if(fos != null) {
+						fos.flush();
+						fos.close();
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -486,7 +505,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		/** close SessionFactory so no indexing again */
 		/** executeIndexing() runs only with open SessionFactory */
 
-		this.sessionFactory.close();
+		//this.sessionFactory.close();
 		this.lock.unlock();
 		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH UNLOCK()");
 		this.indexWriterThreadLogger
