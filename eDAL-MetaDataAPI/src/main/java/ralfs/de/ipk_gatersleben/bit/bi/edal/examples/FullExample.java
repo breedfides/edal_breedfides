@@ -72,7 +72,7 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(2000);
+	inserter.process(1);
 //	testKeyword();
 //	Thread.sleep(10000);
 	

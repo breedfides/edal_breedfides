@@ -113,8 +113,55 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	int indexedVersions = 0;
 	int flushedObjects = 0;
 	public static final String INDEX_NAME = "Master_Index";
+	private Path pathToLastId = null;
 	final int fetchSize = (int) Math.pow(10, 4);
+	FileInputStream fis = null;
+	ObjectInputStream ois = null;
+	FileOutputStream fos = null;
+	ObjectOutputStream oos = null;
 	
+	public FileInputStream getFis() {
+		return fis;
+	}
+
+	public void setFis(FileInputStream fis) {
+		this.fis = fis;
+	}
+
+	public ObjectInputStream getOis() {
+		return ois;
+	}
+
+	public void setOis(ObjectInputStream ois) {
+		this.ois = ois;
+	}
+
+	public FileOutputStream getFos() {
+		return fos;
+	}
+
+	public void setFos(FileOutputStream fos) {
+		this.fos = fos;
+	}
+
+	public ObjectOutputStream getOos() {
+		return oos;
+	}
+
+	public void setOos(ObjectOutputStream oos) {
+		this.oos = oos;
+	}
+
+	public Path getPathToLastId() {
+		return pathToLastId;
+	}
+
+	public void setPathToLastId(Path pathToLastId) {
+		this.pathToLastId = pathToLastId;
+	}
+
+
+
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer, CountDownLatch countDownLatch2) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
@@ -128,22 +175,22 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			e.printStackTrace();
 		}
 		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
-		Path path = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
+		pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
 
-		if (Files.exists(path)) {
-			FileInputStream fis = null;
-			ObjectInputStream ois = null;
+		if (Files.exists(pathToLastId)) {
 			try {
-				fis = new FileInputStream(path.toFile());
+				File tempFile = pathToLastId.toFile();
+				fis = new FileInputStream(tempFile);
 				ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
+				tempFile = null;
 			} catch (IOException | ClassNotFoundException e) {
 				this.indexWriterThreadLogger.debug(e.getMessage());
 				e.printStackTrace();
 			}finally {
 					try {
-						if(fis != null) {
-							fis.close();
+						if(ois != null) {
+							ois.close();
 						}
 						if(fis != null) {
 							fis.close();
@@ -207,15 +254,41 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				//this.indexVersion(writer, publicRef);
 				this.updateIndex(publicRef, session);
 			}
-			try {
-				writer.commit();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			if (publicRef != null && indexedVersions > 0 && publicRef.getId() > this.lastIndexedID) {
 				this.lastIndexedID = publicRef.getId() ;
 				this.implementationProviderLogger.info("NEW indexed public reference: " + this.lastIndexedID);
+				try {
+					File tempFile = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile();
+					fos = new FileOutputStream(tempFile);
+					oos = new ObjectOutputStream(fos);
+					oos.writeObject(this.lastIndexedID);
+					tempFile = null;
+				} catch (IOException e) {
+					this.indexWriterThreadLogger.debug(e.getMessage());
+					e.printStackTrace();
+				}finally  {
+						try {
+							if(oos != null) {
+								oos.flush();
+								oos.close();
+							}
+							if(fos != null) {
+								fos.flush();
+								fos.close();
+							}
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+				}
+				if(indexedVersions > 0 && indexedVersions%flushedObjects != 0) {
+					try {
+						writer.commit();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 			}
 			session.getTransaction().commit();
 			results.close();
@@ -229,31 +302,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedVersions
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
-			}
-			FileOutputStream fos = null;
-			ObjectOutputStream oos = null;
-			try {
-				fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
-				oos = new ObjectOutputStream(fos);
-				oos.writeObject(this.lastIndexedID);
-			} catch (IOException e) {
-				this.indexWriterThreadLogger.debug(e.getMessage());
-				e.printStackTrace();
-			}finally  {
-					try {
-						if(oos != null) {
-							oos.flush();
-							oos.close();
-						}
-						if(fos != null) {
-							fos.flush();
-							fos.close();
-						}
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
 			}
 
 			try {
@@ -377,13 +425,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 				flushedObjects += fetchSize;
 				if (indexedVersions > 0 && publicRef.getId() > this.lastIndexedID) {
-					FileOutputStream fos = null;
-					ObjectOutputStream oos = null;
 					try {
-						fos = new FileOutputStream(
-								Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+						File tempFile = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile();
+						fos = new FileOutputStream(tempFile);
 						oos = new ObjectOutputStream(fos);
 						oos.writeObject(this.lastIndexedID);
+						tempFile = null;
 					} catch (IOException e) {
 						this.indexWriterThreadLogger.debug(e.getMessage());
 						e.printStackTrace();

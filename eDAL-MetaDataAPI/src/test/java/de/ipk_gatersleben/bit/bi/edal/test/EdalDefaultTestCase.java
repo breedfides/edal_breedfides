@@ -85,7 +85,6 @@ public class EdalDefaultTestCase{
 	public void tearDown() throws Exception {
 		DataManager.shutdown();
 		EdalHelpers.cleanMountPath(mountPath);
-		Thread.sleep(5000);
 	}
 
 	/**

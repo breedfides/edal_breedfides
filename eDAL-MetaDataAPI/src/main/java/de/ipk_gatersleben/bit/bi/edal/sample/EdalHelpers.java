@@ -666,6 +666,7 @@ public class EdalHelpers {
 				// FileUtils.deleteDirectory(directory.toFile());
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
 			System.gc();
 			try {
 				Thread.sleep(2000);
@@ -679,6 +680,7 @@ public class EdalHelpers {
 				}
 				// FileUtils.deleteDirectory(directory.toFile());
 			} catch (IOException e1) {
+				e1.printStackTrace();
 				if (e.getCause() != null) {
 					throw new EdalException("could not delete directory: " + e.getCause());
 				}

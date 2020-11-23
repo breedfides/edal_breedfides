@@ -93,11 +93,58 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
-	private Path indexPath;
 	StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	public static final String INDEX_NAME = "Master_Index";
+	private Path pathToLastId = null;
+	FileOutputStream fos = null;
+	ObjectOutputStream oos = null;
+	FileInputStream fis = null;
+	ObjectInputStream ois = null;
 	
+	
+	public FileOutputStream getFos() {
+		return fos;
+	}
+
+	public void setFos(FileOutputStream fos) {
+		this.fos = fos;
+	}
+
+	public ObjectOutputStream getOos() {
+		return oos;
+	}
+
+	public void setOos(ObjectOutputStream oos) {
+		this.oos = oos;
+	}
+
+	public FileInputStream getFis() {
+		return fis;
+	}
+
+	public void setFis(FileInputStream fis) {
+		this.fis = fis;
+	}
+
+	public ObjectInputStream getOis() {
+		return ois;
+	}
+
+	public void setOis(ObjectInputStream ois) {
+		this.ois = ois;
+	}
+
+	public Path getPathToLastId() {
+		return pathToLastId;
+	}
+
+	public void setPathToLastId(Path pathToLastId) {
+		this.pathToLastId = pathToLastId;
+	}
+
+
+
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer, CountDownLatch countDownLatch2) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
@@ -112,15 +159,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			e.printStackTrace();
 		}
 		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
-		Path path = Paths.get(this.indexDirectory.toString(), "last_id.dat");
+		pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 
-		if (Files.exists(path)) {
-			FileInputStream fis = null;
-			ObjectInputStream ois = null;
+		if (Files.exists(pathToLastId)) {
 			try {
-				fis = new FileInputStream(path.toFile());
+				File tempFile = pathToLastId.toFile();
+				fis = new FileInputStream(tempFile);
 				ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
+				tempFile = null;
 			} catch (IOException | ClassNotFoundException e) {
 				this.implementationProviderLogger.info(e.getMessage());
 				e.printStackTrace();
@@ -132,6 +179,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					if(fis != null) {
 						fis.close();
 					}
+					
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -139,7 +187,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
-		indexPath = Paths.get(indexDirectory.toString(),INDEX_NAME);
 	}
 
 
@@ -227,29 +274,31 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
-			FileOutputStream fos = null;
-			ObjectOutputStream oos = null;
-			try {
-				fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-				oos = new ObjectOutputStream(fos);
-				oos.writeObject(this.lastIndexedID);
-			} catch (IOException e) {
-				this.implementationProviderLogger.info(e.getMessage());
-				e.printStackTrace();
-			}finally {
+
+			if(flushedObjects != 0) {
 				try {
-					if(oos != null) {
-						oos.flush();
-						oos.close();
-					}
-					if(fos != null) {
-						fos.flush();
-						fos.close();
-					}
+					File tempFile = Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile();
+					fos = new FileOutputStream(tempFile);
+					oos = new ObjectOutputStream(fos);
+					oos.writeObject(this.lastIndexedID);
+					tempFile = null;
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					this.implementationProviderLogger.info(e.getMessage());
 					e.printStackTrace();
+				}finally {
+					try {
+						if(oos != null) {
+							oos.flush();
+							oos.close();
+						}
+						if(fos != null) {
+							fos.flush();
+							fos.close();
+						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 
@@ -402,29 +451,30 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 			}
 
-			FileOutputStream fos = null;
-			ObjectOutputStream oos = null;
-			try {
-				fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
-				oos = new ObjectOutputStream(fos);
-				oos.writeObject(this.lastIndexedID);
-			} catch (IOException e) {
-				this.implementationProviderLogger.debug(e.getMessage());
-				e.printStackTrace();
-			}finally {
+			if(flushedObjects != 0) {
 				try {
-					if(oos != null) {
-						oos.flush();
-						oos.close();
-					}
-					if(fos != null) {
-						fos.flush();
-						fos.close();
-					}
+					File tempFile = Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile();
+					fos = new FileOutputStream(tempFile);
+					oos = new ObjectOutputStream(fos);
+					oos.writeObject(this.lastIndexedID);
+					tempFile = null;
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					this.implementationProviderLogger.debug(e.getMessage());
 					e.printStackTrace();
+				}finally {
+					try {
+						if(oos != null) {
+							oos.flush();
+							oos.close();
+						}
+						if(fos != null) {
+							fos.flush();
+							fos.close();
+						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 

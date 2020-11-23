@@ -15,10 +15,18 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Policy;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +62,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ALLPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ListThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.RebuildIndexThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.CheckReviewStatusThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
@@ -845,7 +856,11 @@ public class DataManager {
 		implementationprovider.getLogger().info("eDAL instance successfully closed !");
 
 		DataManager.alreadyClosed = true;
-
+		
+		waitForConnectionClose();
+		waitForSessionFactoryClose();
+		//checkLastIds();
+		//checkDb();
 	}
 
 	public static void waitForShutDown() {
@@ -910,6 +925,100 @@ public class DataManager {
 	public static void receiveTestData(OutputStream outputStream) throws IOException {
 		outputStream.write(TEST_DATA_STRING.getBytes());
 		outputStream.flush();
+	}
+	
+	public static void waitForConnectionClose() {
+		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
+		try {
+			while(!((FileSystemImplementationProvider)getImplProv()).getConnection().isClosed()) {	
+				implProvi.getLogger().info("DB STILL OPEN!");
+				Thread.sleep(1000);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static void waitForSessionFactoryClose() {
+		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
+		while(((FileSystemImplementationProvider)getImplProv()).getSessionFactory().isOpen()) {
+			try {
+				implProvi.getLogger().info("SESSIONFACTORY STILL OPEN");
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static void checkLastIds() {
+		if(!getConfiguration().getIndexingStrategy()) {
+			FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
+			if(((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOis() == null) {
+				return;
+			}
+			if(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis() == null) {
+				return;
+			}
+			if(!Files.isWritable(((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getPathToLastId())) {
+				try {
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOis().close();
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setOos(null);
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getFis().close();
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setFis(null);
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOos().close();
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setOos(null);
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getFos().close();
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setFos(null);
+					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setPathToLastId(null);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if(!Files.isWritable(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getPathToLastId())) {
+				try {
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis().close();
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setOos(null);
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getFis().close();
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setFis(null);
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOos().close();
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setOos(null);
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getFos().close();
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setFos(null);
+					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setPathToLastId(null);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	public static void checkDb() {
+		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
+		Path path = implProvi.getConfiguration().getMountPath();
+		try {
+			if(Files.exists(Paths.get(path.toString(),"edaldb.mv.db")))
+				Files.delete(Paths.get(path.toString(),"edaldb.mv.db"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			if(Files.exists(Paths.get(path.toString(),"edaldb.trace.db")))
+				Files.delete(Paths.get(path.toString(),"edaldb.trace.db"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 	}
 
 }

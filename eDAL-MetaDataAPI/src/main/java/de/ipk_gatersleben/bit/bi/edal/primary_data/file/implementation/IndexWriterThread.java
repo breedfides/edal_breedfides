@@ -61,7 +61,7 @@ abstract class IndexWriterThread extends EdalThread {
 	protected final ReentrantLock lock = new ReentrantLock(true);
 
 	/** create {@link CountDownLatch} to wait for finishing index */
-	protected CountDownLatch latch = new CountDownLatch(1);
+	protected CountDownLatch latch = null;
 	
 	/**
 	 * Constructor for IndexWriterThread

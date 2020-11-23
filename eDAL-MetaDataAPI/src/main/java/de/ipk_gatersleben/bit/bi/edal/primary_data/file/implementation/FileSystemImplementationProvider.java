@@ -351,11 +351,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			if(this.configuration.getIndexingStrategy()) {
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
-				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
-				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
+				//this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
+				//this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
-			this.getIndexThread().start();
-			this.getPublicVersionWriter().start();
+//			this.getIndexThread().start();
+//			this.getPublicVersionWriter().start();
 		}
 	}
 	
@@ -383,7 +383,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * 
 	 * @return a {@link Connection} object.
 	 */
-	private Connection getConnection() {
+	public Connection getConnection() {
 		return this.connection;
 	}
 	
@@ -721,26 +721,17 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
-			//this.getIndexThread().waitForFinish();
-			//this.getPublicVersionWriter().waitForFinish();
-			this.getIndexThread().setFinishIndexing(true);
-			this.getPublicVersionWriter().setFinishIndexing(true);
-			try {
-				this.getLogger().info("waiting for (INDEXTHREADS)");
-				this.countDownLatch.await();
-				this.getLogger().info("finished waiting for (INDEXTHREADS)");
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			this.getLogger().info("waiting for (INDEXTHREADS)");
+			//this.countDownLatch.await();
+			this.getLogger().info("finished waiting for (INDEXTHREADS)");
 		}
 		try {
-			this.getConnection().close();
 			if(this.getSessionFactory().isClosed()) {
 				this.getLogger().info("######### ALREADY ############ /n ################ CLOSED #################");
 			}
 
 			this.getSessionFactory().close();
+			this.getConnection().close();
 			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
 				this.getCacheManager().close();
 			}
