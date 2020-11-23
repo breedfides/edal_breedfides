@@ -351,11 +351,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			if(this.configuration.getIndexingStrategy()) {
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
-				//this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
-				//this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
+				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
+				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
-//			this.getIndexThread().start();
-//			this.getPublicVersionWriter().start();
+			this.getIndexThread().start();
+			this.getPublicVersionWriter().start();
 		}
 	}
 	
@@ -721,9 +721,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
-			this.getLogger().info("waiting for (INDEXTHREADS)");
-			//this.countDownLatch.await();
-			this.getLogger().info("finished waiting for (INDEXTHREADS)");
+			//this.getIndexThread().waitForFinish();
+			//this.getPublicVersionWriter().waitForFinish();
+			this.getIndexThread().setFinishIndexing(true);
+			this.getPublicVersionWriter().setFinishIndexing(true);
+			try {
+				this.getLogger().info("waiting for (INDEXTHREADS)");
+				this.countDownLatch.await();
+				this.getLogger().info("finished waiting for (INDEXTHREADS)");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		try {
 			if(this.getSessionFactory().isClosed()) {
