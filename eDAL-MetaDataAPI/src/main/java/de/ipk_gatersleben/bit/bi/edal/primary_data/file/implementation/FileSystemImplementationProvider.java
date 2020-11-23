@@ -738,9 +738,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			if(this.getSessionFactory().isClosed()) {
 				this.getLogger().info("######### ALREADY ############ /n ################ CLOSED #################");
 			}
-
-			this.getSessionFactory().close();
+			Session session = this.getSessionFactory().openSession();
+			session.createSQLQuery("SHUTDOWN COMPACT");
+			session.close();
 			this.getConnection().close();
+			this.getSessionFactory().close();
 			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
 				this.getCacheManager().close();
 			}
