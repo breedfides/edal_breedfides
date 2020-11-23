@@ -333,17 +333,17 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			Directory indexinDirectory = null;
 			try {
 				indexinDirectory = FSDirectory.open(indexPath);
-				indexinDirectory.close();
-				indexinDirectory = FSDirectory.open(indexPath);
+//				indexinDirectory.close();
+//				indexinDirectory = FSDirectory.open(indexPath);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		    try {
 				writer = new IndexWriter(indexinDirectory, iwc);
-				writer.close();
-			    iwc = new IndexWriterConfig(analyzer);
-				writer = new IndexWriter(indexinDirectory, iwc);
+//				writer.close();
+//			    iwc = new IndexWriterConfig(analyzer);
+//				writer = new IndexWriter(indexinDirectory, iwc);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch bl ock
 				e1.printStackTrace();
@@ -736,13 +736,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 		try {
 			if(this.getSessionFactory().isClosed()) {
-				this.getLogger().info("######### ALREADY ############ /n ################ CLOSED #################");
+				this.getLogger().info("######### ALREADY ############ \n ################ CLOSED #################");
 			}
-			Session session = this.getSessionFactory().openSession();
-			session.createSQLQuery("SHUTDOWN COMPACT");
-			session.close();
-			this.getConnection().close();
 			this.getSessionFactory().close();
+			this.getConnection().close();
 			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
 				this.getCacheManager().close();
 			}
