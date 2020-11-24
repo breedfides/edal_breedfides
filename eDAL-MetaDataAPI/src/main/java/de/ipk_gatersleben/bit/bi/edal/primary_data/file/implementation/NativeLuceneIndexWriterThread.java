@@ -96,7 +96,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	public static final String INDEX_NAME = "Master_Index";
-	private Path pathToLastId = Paths.get(this.indexDirectory.getParent().toString(), "lucene_last_id", "last_id.dat");;
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");;
 
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer,
