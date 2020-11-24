@@ -959,28 +959,11 @@ public class DataManager {
 	public static void checkLastIds() {
 		if(!getConfiguration().getIndexingStrategy()) {
 			FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
-			if(((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOis() == null) {
-				return;
-			}
+
 			if(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis() == null) {
 				return;
 			}
-			if(!Files.isWritable(((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getPathToLastId())) {
-				try {
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOis().close();
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setOos(null);
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getFis().close();
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setFis(null);
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getOos().close();
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setOos(null);
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).getFos().close();
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setFos(null);
-					((NativeLuceneIndexWriterThread)implProvi.getIndexThread()).setPathToLastId(null);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+
 			if(!Files.isWritable(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getPathToLastId())) {
 				try {
 					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis().close();
