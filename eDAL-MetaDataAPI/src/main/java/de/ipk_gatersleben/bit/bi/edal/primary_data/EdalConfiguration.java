@@ -1589,149 +1589,148 @@ public final class EdalConfiguration {
 	 * @throws EdalConfigurationException if unable to validate the parameter.
 	 */
 	private boolean validateSmtpSettings() throws EdalConfigurationException {
-//
-//		if (!this.getMailSmtpHost().isEmpty()) {
-//
-//			final Properties properties = new Properties();
-//			properties.put("mail.smtp.host", this.getMailSmtpHost());
-//			properties.put("mail.smtp.connectiontimeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
-//			properties.put("mail.smtp.timeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
-//			// properties.put("mail.smtp.starttls.enable", "true");
-//			properties.put("mail.smtp.ssl.trust", this.getMailSmtpHost());
-//
-//			final Session session = Session.getDefaultInstance(properties);
-//
-//			if (this.getMailSmtpLogin() == null || this.getMailSmtpLogin().isEmpty()) {
-//
-//				try {
-//					final Transport transport = session.getTransport("smtp");
-//
-//					transport.connect(this.getMailSmtpHost(), null, null);
-//
-//					transport.close();
-//
-//					EdalConfiguration.logger.info("SMTP Connection Test -> successful");
-//
-//					this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
-//
-//				} catch (final MessagingException e) {
-//					EdalConfiguration.logger.warn("SMTP Connection Test -> failed : " + e.getMessage());
-//					throw new EdalConfigurationException(
-//							"unable to connect to eMail Server, check SMTP settings : " + e.getMessage());
-//				}
-//				return true;
-//			} else {
-//				try {
-//					final Transport transport = session.getTransport("smtp");
-//
-//					transport.connect(this.getMailSmtpHost(), this.getMailSmtpLogin(), this.getMailSmtpPassword());
-//
-//					transport.close();
-//
-//					EdalConfiguration.logger.info("SMTP Connection Test -> successful");
-//
-//					this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
-//
-//				} catch (final MessagingException e) {
-//					EdalConfiguration.logger.warn("SMTP Connection Test -> failed : " + e.getMessage());
-//					throw new EdalConfigurationException(
-//							"unable to connect to eMail Server, check SMTP settings : " + e.getMessage());
-//				}
-//				return true;
-//			}
-//		} else {
-//
-//			for (String mailServerNames : EdalConfiguration.MAIL_SERVER_NAMES) {
-//
-//				try {
-//					if (!System.getenv("userdnsdomain").isEmpty()) {
-//						mailServerNames = mailServerNames + "."
-//								+ System.getenv("userdnsdomain").toLowerCase(Locale.ENGLISH);
-//
-//						/**
-//						 * generate dynamic email reply address using the mail server domain
-//						 */
-//						this.setEdalEmailAddress(this.getEdalEmailAddress() + "@"
-//								+ System.getenv("userdnsdomain").toLowerCase(Locale.ENGLISH));
-//
-//					}
-//				} catch (final NullPointerException e) {
-//					try {
-//						if (InetAddress.getLocalHost().getCanonicalHostName().contains(".")) {
-//
-//							String domain = InetAddress.getLocalHost().getCanonicalHostName().substring(
-//									InetAddress.getLocalHost().getCanonicalHostName().indexOf(".") + 1,
-//									InetAddress.getLocalHost().getCanonicalHostName().length());
-//
-//							mailServerNames = mailServerNames + "." + domain.toLowerCase(Locale.ENGLISH);
-//
-//							/**
-//							 * generate dynamic email reply address using the mail server domain
-//							 */
-//							this.setEdalEmailAddress(
-//									this.getEdalEmailAddress() + "@" + domain.toLowerCase(Locale.ENGLISH));
-//						} else {
-//							/**
-//							 * set default reply email when not automatic detection failed
-//							 */
-//							this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
-//						}
-//					} catch (UnknownHostException e1) {
-//						e1.printStackTrace();
-//					}
-//				}
-//
-//				final Properties properties = new Properties();
-//				properties.put("mail.smtp.host", mailServerNames);
-//				properties.put("mail.smtp.connectiontimeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
-//				properties.put("mail.smtp.timeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
-//				// properties.put("mail.smtp.starttls.enable", "true");
-//				properties.put("mail.smtp.ssl.trust", mailServerNames);
-//
-//				final Session session = Session.getDefaultInstance(properties);
-//
-//				try {
-//					if (!this.getMailSmtpLogin().isEmpty() && !this.getMailSmtpPassword().isEmpty()) {
-//						final Transport transport = session.getTransport("smtp");
-//
-//						transport.connect(this.getMailSmtpLogin(), this.getMailSmtpPassword());
-//
-//						transport.close();
-//
-//					} else {
-//						final Transport transport = session.getTransport("smtp");
-//
-//						transport.connect();
-//
-//						transport.close();
-//					}
-//					final Logger edalLogger = LogManager.getLogger("EDAL_SMTP_ERROR_APPENDER");
-//
-//					final SmtpAppender smtp = SmtpAppender.createAppender(null, "SMTP-APP",
-//							this.getErrorEmailAddress().getAddress(), null, null, this.getEdalEmailAddress(), null,
-//							"[eDAL ERROR]", null, mailServerNames, "0", this.getMailSmtpLogin(),
-//							this.getMailSmtpPassword(), "SMTP_DEBUG", "512", null, null, null);
-//
-//					((org.apache.logging.log4j.core.Logger) edalLogger).addAppender(smtp);
-//
-//					this.setErrorLogger(edalLogger);
-//
-//					this.setMailSmtpHost(mailServerNames);
-//
-//					EdalConfiguration.logger.info("SMTP Connection Test: " + mailServerNames + " : successful");
-//					EdalConfiguration.logger.info("e!DAL-eMail-Address: " + this.getEdalEmailAddress());
-//
-//					return true;
-//				} catch (final MessagingException e) {
-//					EdalConfiguration.logger
-//							.warn("SMTP Connection Test: " + mailServerNames + " -> failed : " + e.getMessage());
-//				}
-//			}
-//			throw new EdalConfigurationException("unable to connect to eMail Server, check SMTP settings");
-//		}
-		return true;
-	}
 
+		if (!this.getMailSmtpHost().isEmpty()) {
+
+			final Properties properties = new Properties();
+			properties.put("mail.smtp.host", this.getMailSmtpHost());
+			properties.put("mail.smtp.connectiontimeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
+			properties.put("mail.smtp.timeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
+			// properties.put("mail.smtp.starttls.enable", "true");
+			properties.put("mail.smtp.ssl.trust", this.getMailSmtpHost());
+
+			final Session session = Session.getDefaultInstance(properties);
+
+			if (this.getMailSmtpLogin() == null || this.getMailSmtpLogin().isEmpty()) {
+
+				try {
+					final Transport transport = session.getTransport("smtp");
+
+					transport.connect(this.getMailSmtpHost(), null, null);
+
+					transport.close();
+
+					EdalConfiguration.logger.info("SMTP Connection Test -> successful");
+
+					this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
+
+				} catch (final MessagingException e) {
+					EdalConfiguration.logger.warn("SMTP Connection Test -> failed : " + e.getMessage());
+					throw new EdalConfigurationException(
+							"unable to connect to eMail Server, check SMTP settings : " + e.getMessage());
+				}
+				return true;
+			} else {
+				try {
+					final Transport transport = session.getTransport("smtp");
+
+					transport.connect(this.getMailSmtpHost(), this.getMailSmtpLogin(), this.getMailSmtpPassword());
+
+					transport.close();
+
+					EdalConfiguration.logger.info("SMTP Connection Test -> successful");
+
+					this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
+
+				} catch (final MessagingException e) {
+					EdalConfiguration.logger.warn("SMTP Connection Test -> failed : " + e.getMessage());
+					throw new EdalConfigurationException(
+							"unable to connect to eMail Server, check SMTP settings : " + e.getMessage());
+				}
+				return true;
+			}
+		} else {
+
+			for (String mailServerNames : EdalConfiguration.MAIL_SERVER_NAMES) {
+
+				try {
+					if (!System.getenv("userdnsdomain").isEmpty()) {
+						mailServerNames = mailServerNames + "."
+								+ System.getenv("userdnsdomain").toLowerCase(Locale.ENGLISH);
+
+						/**
+						 * generate dynamic email reply address using the mail server domain
+						 */
+						this.setEdalEmailAddress(this.getEdalEmailAddress() + "@"
+								+ System.getenv("userdnsdomain").toLowerCase(Locale.ENGLISH));
+
+					}
+				} catch (final NullPointerException e) {
+					try {
+						if (InetAddress.getLocalHost().getCanonicalHostName().contains(".")) {
+
+							String domain = InetAddress.getLocalHost().getCanonicalHostName().substring(
+									InetAddress.getLocalHost().getCanonicalHostName().indexOf(".") + 1,
+									InetAddress.getLocalHost().getCanonicalHostName().length());
+
+							mailServerNames = mailServerNames + "." + domain.toLowerCase(Locale.ENGLISH);
+
+							/**
+							 * generate dynamic email reply address using the mail server domain
+							 */
+							this.setEdalEmailAddress(
+									this.getEdalEmailAddress() + "@" + domain.toLowerCase(Locale.ENGLISH));
+						} else {
+							/**
+							 * set default reply email when not automatic detection failed
+							 */
+							this.setEdalEmailAddress(NOREPLY_EMAIL_DEFAULT);
+						}
+					} catch (UnknownHostException e1) {
+						e1.printStackTrace();
+					}
+				}
+
+				final Properties properties = new Properties();
+				properties.put("mail.smtp.host", mailServerNames);
+				properties.put("mail.smtp.connectiontimeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
+				properties.put("mail.smtp.timeout", EdalConfiguration.SMTP_CONNECTION_TIMEOUT);
+				// properties.put("mail.smtp.starttls.enable", "true");
+				properties.put("mail.smtp.ssl.trust", mailServerNames);
+
+				final Session session = Session.getDefaultInstance(properties);
+
+				try {
+					if (!this.getMailSmtpLogin().isEmpty() && !this.getMailSmtpPassword().isEmpty()) {
+						final Transport transport = session.getTransport("smtp");
+
+						transport.connect(this.getMailSmtpLogin(), this.getMailSmtpPassword());
+
+						transport.close();
+
+					} else {
+						final Transport transport = session.getTransport("smtp");
+
+						transport.connect();
+
+						transport.close();
+					}
+					final Logger edalLogger = LogManager.getLogger("EDAL_SMTP_ERROR_APPENDER");
+
+					final SmtpAppender smtp = SmtpAppender.createAppender(null, "SMTP-APP",
+							this.getErrorEmailAddress().getAddress(), null, null, this.getEdalEmailAddress(), null,
+							"[eDAL ERROR]", null, mailServerNames, "0", this.getMailSmtpLogin(),
+							this.getMailSmtpPassword(), "SMTP_DEBUG", "512", null, null, null);
+
+					((org.apache.logging.log4j.core.Logger) edalLogger).addAppender(smtp);
+
+					this.setErrorLogger(edalLogger);
+
+					this.setMailSmtpHost(mailServerNames);
+
+					EdalConfiguration.logger.info("SMTP Connection Test: " + mailServerNames + " : successful");
+					EdalConfiguration.logger.info("e!DAL-eMail-Address: " + this.getEdalEmailAddress());
+
+					return true;
+				} catch (final MessagingException e) {
+					EdalConfiguration.logger
+							.warn("SMTP Connection Test: " + mailServerNames + " -> failed : " + e.getMessage());
+				}
+			}
+			throw new EdalConfigurationException("unable to connect to eMail Server, check SMTP settings");
+		}
+	}
+	
 	public boolean isCleanBrokenEntities() {
 		return cleanBrokenEntities;
 	}
