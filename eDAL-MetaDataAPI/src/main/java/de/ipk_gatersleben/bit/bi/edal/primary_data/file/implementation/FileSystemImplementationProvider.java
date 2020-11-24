@@ -106,7 +106,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	private Logger logger = null;
 	
-	private CountDownLatch countDownLatch = new CountDownLatch(2);
+	private CountDownLatch countDownLatch = new CountDownLatch(1);
 	
 	private PublicVersionIndexWriterThread publicVersionWriter;
 
@@ -327,35 +327,22 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
 
 		if (!this.isAutoIndexing()) {
-			StandardAnalyzer analyzer = new StandardAnalyzer();
-		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-			Path indexPath = Paths.get(indexDirectory.toString(),"Master_Index");
-			Directory indexinDirectory = null;
+			
 			try {
-				indexinDirectory = FSDirectory.open(indexPath);
-//				indexinDirectory.close();
-//				indexinDirectory = FSDirectory.open(indexPath);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				Directory indexingDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(),"Master_Index"));
+				writer = new IndexWriter(indexingDirectory, new IndexWriterConfig(new StandardAnalyzer()));
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		    try {
-				writer = new IndexWriter(indexinDirectory, iwc);
-//				writer.close();
-//			    iwc = new IndexWriterConfig(analyzer);
-//				writer = new IndexWriter(indexinDirectory, iwc);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch bl ock
-				e1.printStackTrace();
-			}
+
 			if(this.configuration.getIndexingStrategy()) {
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
-				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
+//				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
 			this.getIndexThread().start();
-			this.getPublicVersionWriter().start();
+//			this.getPublicVersionWriter().start();
 		}
 	}
 	
@@ -724,7 +711,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			//this.getIndexThread().waitForFinish();
 			//this.getPublicVersionWriter().waitForFinish();
 			this.getIndexThread().setFinishIndexing(true);
-			this.getPublicVersionWriter().setFinishIndexing(true);
+//			this.getPublicVersionWriter().setFinishIndexing(true);
 			try {
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();

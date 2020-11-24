@@ -124,13 +124,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 		}
 
-		ObjectInputStream oos = null;
-
 		if (Files.exists(this.pathToLastId)) {
 			try {
-				oos = new ObjectInputStream(new FileInputStream(this.pathToLastId.toFile()));
-				this.lastIndexedID = (int) oos.readObject();
-				oos.close();
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(this.pathToLastId.toFile()));
+				this.lastIndexedID = (int) ois.readObject();
+				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
 				this.implementationProviderLogger.info(e.getMessage());
 				e.printStackTrace();
@@ -224,10 +222,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 			}
 
-			ObjectOutputStream oos = null;
 			if (flushedObjects != 0) {
 				try {
-					oos = new ObjectOutputStream(new FileOutputStream(pathToLastId.toFile()));
+					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(pathToLastId.toFile()));
 					oos.writeObject(this.lastIndexedID);
 					oos.close();
 				} catch (IOException e) {
@@ -410,27 +407,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 			}
 
-			ObjectOutputStream oos = null;
-
 			if (flushedObjects != 0) {
 				try {
-
-					if (!Files.exists(pathToLastId)) {
-						System.out.println("DATEI GIBT ES NICHT");
-
-						Files.createFile(pathToLastId);
-
-						if (Files.exists(pathToLastId)) {
-							System.out.println("DATEI GIBT ES");
-
-						}
-					}
-
-					oos = new ObjectOutputStream(new FileOutputStream(this.pathToLastId.toFile()));
+					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.pathToLastId.toFile()));
 					oos.writeObject(this.lastIndexedID);
 					oos.close();
 				} catch (IOException e) {
-					this.implementationProviderLogger.debug(e.getMessage());
+					this.implementationProviderLogger.info(e.getMessage());
 					e.printStackTrace();
 				}
 
