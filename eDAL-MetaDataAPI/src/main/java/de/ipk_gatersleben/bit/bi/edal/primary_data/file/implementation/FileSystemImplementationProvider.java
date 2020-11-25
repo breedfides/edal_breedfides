@@ -13,6 +13,7 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.util.Arrays;
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
@@ -326,8 +327,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		/* enable statistics log of the SessionFactory */
 		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
 
-		if (!this.isAutoIndexing()) {
-			
+		if (!this.isAutoIndexing()) {			
 			try {
 				Directory indexingDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(),"Master_Index"));
 				writer = new IndexWriter(indexingDirectory, new IndexWriterConfig(new StandardAnalyzer()));
