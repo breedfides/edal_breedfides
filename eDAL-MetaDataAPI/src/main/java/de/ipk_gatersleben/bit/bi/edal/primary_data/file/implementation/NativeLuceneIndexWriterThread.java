@@ -14,6 +14,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -96,7 +97,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	public static final String INDEX_NAME = "Master_Index";
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");;
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
+	ObjectOutputStream oos = null;
 
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer,
@@ -136,6 +138,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
+		try {
+			oos = new ObjectOutputStream(new FileOutputStream(pathToLastId.toFile()));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	protected void executeIndexing() {
@@ -224,9 +235,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			if (flushedObjects != 0) {
 				try {
-					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(pathToLastId.toFile()));
 					oos.writeObject(this.lastIndexedID);
-					oos.close();
+					oos.flush();
 				} catch (IOException e) {
 					this.implementationProviderLogger.info(e.getMessage());
 					e.printStackTrace();
@@ -409,9 +419,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			if (flushedObjects != 0) {
 				try {
-					ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.pathToLastId.toFile()));
 					oos.writeObject(this.lastIndexedID);
-					oos.close();
+					oos.flush();
 				} catch (IOException e) {
 					this.implementationProviderLogger.info(e.getMessage());
 					e.printStackTrace();
@@ -513,5 +522,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
+		try {
+			oos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		oos = null;
 	}
 }
