@@ -106,7 +106,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	private Logger logger = null;
 	
-	private CountDownLatch countDownLatch = new CountDownLatch(1);
+	private CountDownLatch countDownLatch = null;
 	
 	private PublicVersionIndexWriterThread publicVersionWriter;
 
@@ -338,11 +338,12 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			if(this.configuration.getIndexingStrategy()) {
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
+				this.countDownLatch = new CountDownLatch(2);
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
-//				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
+				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
 			this.getIndexThread().start();
-//			this.getPublicVersionWriter().start();
+			this.getPublicVersionWriter().start();
 		}
 	}
 	
@@ -711,7 +712,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			//this.getIndexThread().waitForFinish();
 			//this.getPublicVersionWriter().waitForFinish();
 			this.getIndexThread().setFinishIndexing(true);
-//			this.getPublicVersionWriter().setFinishIndexing(true);
+			this.getPublicVersionWriter().setFinishIndexing(true);
 			try {
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();

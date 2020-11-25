@@ -73,6 +73,8 @@ public class FullExample {
 	PrimaryDataDirectory rootDirectory = getRoot();
 	Inserter inserter = new Inserter(rootDirectory);
 	inserter.process(1);
+	
+	
 //	testKeyword();
 //	Thread.sleep(10000);
 	
