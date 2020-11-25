@@ -21,10 +21,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.util.ExecutorServices;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -96,8 +99,7 @@ abstract class IndexWriterThread extends EdalThread {
 	/** {@inheritDoc} */
 	@Override
 	public void run() {
-		boolean finished = false;
-		while (!finished) {
+		while (!this.finishIndexing) {
 			this.indexWriterThreadLogger.debug("Wait for Reseting the index structure: " + this.requestForReset);
 
 			if (!this.requestForReset) {
@@ -106,10 +108,6 @@ abstract class IndexWriterThread extends EdalThread {
 //				latch = new CountDownLatch(1);
 //				this.indexWriterThreadLogger.debug("locked run method");
 				this.executeIndexing();
-				if(this.finishIndexing) {
-					this.countDownLatch.countDown();
-					finished = true;
-				}
 //				this.sessionFactory.close();
 //				this.indexWriterThreadLogger.debug("unlock run method");
 //				this.getLock().unlock();
@@ -121,7 +119,7 @@ abstract class IndexWriterThread extends EdalThread {
 		}else if(this instanceof PublicVersionIndexWriterThread) {
 			this.implementationProviderLogger.info("finished waiting (PublicVersionIndexWriter)");
 		}
-
+		this.countDownLatch.countDown();
 	}
 	
 	

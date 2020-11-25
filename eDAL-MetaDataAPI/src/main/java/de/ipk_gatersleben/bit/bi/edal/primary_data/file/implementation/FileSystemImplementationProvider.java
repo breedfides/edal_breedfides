@@ -717,6 +717,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
 				this.getLogger().info("finished waiting for (INDEXTHREADS)");
+				while(this.getIndexThread().isAlive() || this.getPublicVersionWriter().isAlive()) {
+					this.getLogger().info("\n######### THREADS STILL ############ \n ################ ALIVE #################");
+					Thread.sleep(1000);
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -724,7 +728,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 		try {
 			if(this.getSessionFactory().isClosed()) {
-				this.getLogger().info("######### ALREADY ############ \n ################ CLOSED #################");
+				this.getLogger().info("\n######### ALREADY ############ \n ################ CLOSED #################");
 			}
 			this.getSessionFactory().close();
 			this.getConnection().close();
