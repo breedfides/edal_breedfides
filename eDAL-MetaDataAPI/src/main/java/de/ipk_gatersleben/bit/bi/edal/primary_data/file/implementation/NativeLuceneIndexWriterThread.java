@@ -201,7 +201,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				}
 				if (indexedObjects % fetchSize == 0) {
 					try {
-						writer.commit();
+						if(!writer.isOpen()) {
+							this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
+						}else {
+							writer.commit();
+						}
 						flushedObjects += fetchSize;
 						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 							this.lastIndexedID = version.getId();
@@ -331,7 +335,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}
 		doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
-		writer.addDocument(doc);
+		if(!writer.isOpen()) {
+			this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
+		}else {
+			writer.addDocument(doc);
+		}
 	}
 
 	private String getString(UntypedData data) {
@@ -395,7 +403,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			results.close();
 			session.close();
 			try {
-				writer.commit();
+				if(!writer.isOpen()) {
+					this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
+				}else {
+					writer.commit();
+				}
 				if (version != null && version.getId() > this.lastIndexedID) {
 					this.lastIndexedID = version.getId();
 				}
@@ -534,6 +546,16 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			    locked = false;
 			} catch (IOException e) {
 				this.implementationProviderLogger.info("\n################################# "+Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toString()+" STILL LOCKED");
+			    locked = true;
+			}
+		}
+		locked = true;
+		while(locked) {
+			try {
+			    org.apache.commons.io.FileUtils.touch(Paths.get(this.pathToLastId.toString()).toFile());
+			    locked = false;
+			} catch (IOException e) {
+				this.implementationProviderLogger.info("\n################################# "+this.pathToLastId.toString()+" STILL LOCKED");
 			    locked = true;
 			}
 		}

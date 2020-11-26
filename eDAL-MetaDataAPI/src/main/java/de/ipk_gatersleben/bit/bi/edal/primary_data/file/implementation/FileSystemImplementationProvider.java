@@ -728,9 +728,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 							e1.printStackTrace();
 						}
 					}
-					if(writer.isOpen()) {
-						this.getLogger().info("######Writer is still open");
-					}
+					writer = null;
 				}
 				this.getLogger().info("finished waiting for (INDEXTHREADS)");
 				while(this.getPublicVersionWriter().isAlive()) {
