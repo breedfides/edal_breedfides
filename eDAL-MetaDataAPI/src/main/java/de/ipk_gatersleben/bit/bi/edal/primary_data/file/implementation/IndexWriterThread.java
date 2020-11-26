@@ -58,7 +58,6 @@ abstract class IndexWriterThread extends EdalThread {
 	SearchWorkspace workspace = null;
 	protected boolean requestForReset = false;
 	private boolean finishIndexing = false;
-	private CountDownLatch countDownLatch = null;
 
 	/** create Lock with fairness parameter true */
 	protected final ReentrantLock lock = new ReentrantLock(true);
@@ -79,7 +78,7 @@ abstract class IndexWriterThread extends EdalThread {
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger, CountDownLatch countDownLatch) {
 		super();
-		this.countDownLatch = countDownLatch;
+		this.latch = countDownLatch;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -113,13 +112,8 @@ abstract class IndexWriterThread extends EdalThread {
 //				this.getLock().unlock();
 //				latch.countDown();
 			}
-		}
-		if(this instanceof NativeLuceneIndexWriterThread) {
-			this.implementationProviderLogger.info("finished waiting (NativeluceneIndexThread)");
-		}else if(this instanceof PublicVersionIndexWriterThread) {
-			this.implementationProviderLogger.info("finished waiting (PublicVersionIndexWriter)");
-		}
-		this.countDownLatch.countDown();
+		}		
+		//Latch has to be countdown in Implementations (PublicVersionIndexWriterThread/NativeLuceneIndexWriterThread)
 	}
 	
 	

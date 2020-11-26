@@ -339,7 +339,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
 				this.countDownLatch = new CountDownLatch(2);
-				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer,this.countDownLatch));
+				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer));
 				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
 			this.getIndexThread().start();
@@ -716,9 +716,29 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			try {
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
+				if(writer != null) {
+					try {
+						writer.close();					
+						} catch (IOException e) {
+						e.printStackTrace();
+						try {
+							this.writer.rollback();
+							writer.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+					if(writer.isOpen()) {
+						this.getLogger().info("######Writer is still open");
+					}
+				}
 				this.getLogger().info("finished waiting for (INDEXTHREADS)");
-				while(this.getIndexThread().isAlive() || this.getPublicVersionWriter().isAlive()) {
-					this.getLogger().info("\n######### THREADS STILL ############ \n ################ ALIVE #################");
+				while(this.getPublicVersionWriter().isAlive()) {
+					this.getLogger().info("\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
+					Thread.sleep(1000);
+				}
+				while(this.getIndexThread().isAlive()) {
+					this.getLogger().info("\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
 					Thread.sleep(1000);
 				}
 			} catch (InterruptedException e) {
@@ -737,22 +757,6 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}
-		if(writer != null) {
-			try {
-				writer.close();					
-				} catch (IOException e) {
-				e.printStackTrace();
-				try {
-					this.writer.rollback();
-					writer.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-			if(writer.isOpen()) {
-				this.getLogger().info("######Writer is still open");
-			}
 		}
 	}
 

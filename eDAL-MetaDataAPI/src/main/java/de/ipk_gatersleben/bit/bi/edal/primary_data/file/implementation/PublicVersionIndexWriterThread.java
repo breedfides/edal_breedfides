@@ -607,6 +607,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		this.implementationProviderLogger.info("finished (PublicVersionIndexWriter), now counting Down Latch");
+		this.latch.countDown();
 //		try {
 //			if(writer != null && writer.isOpen())
 //				this.writer.close();

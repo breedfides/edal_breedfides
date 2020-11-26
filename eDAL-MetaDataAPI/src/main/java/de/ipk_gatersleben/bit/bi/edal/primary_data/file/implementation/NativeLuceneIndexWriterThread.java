@@ -96,13 +96,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	StandardAnalyzer analyzer;
 	IndexWriter writer = null;
-	public static final String INDEX_NAME = "Master_Index";
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 	ObjectOutputStream oos = null;
 
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer,
-			CountDownLatch countDownLatch2) {
+			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
 		this.writer = writer;
 		int numberDocs = 0;
@@ -529,5 +527,17 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			e.printStackTrace();
 		}
 		oos = null;
+		boolean locked = true;
+		while(locked) {
+			try {
+			    org.apache.commons.io.FileUtils.touch(Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toFile());
+			    locked = false;
+			} catch (IOException e) {
+				this.implementationProviderLogger.info("\n################################# "+Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toString()+" STILL LOCKED");
+			    locked = true;
+			}
+		}
+		this.implementationProviderLogger.info("finished (NativeluceneIndexThread), now Counting Down Latch");
+		this.latch.countDown();
 	}
 }
