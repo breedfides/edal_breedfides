@@ -65,6 +65,8 @@ abstract class IndexWriterThread extends EdalThread {
 	/** create {@link CountDownLatch} to wait for finishing index */
 	protected CountDownLatch latch = null;
 	
+	protected CountDownLatch countDownLatch = null;
+	
 	/**
 	 * Constructor for IndexWriterThread
 	 * 
@@ -78,7 +80,7 @@ abstract class IndexWriterThread extends EdalThread {
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger, CountDownLatch countDownLatch) {
 		super();
-		this.latch = countDownLatch;
+		this.countDownLatch = countDownLatch;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -98,19 +100,18 @@ abstract class IndexWriterThread extends EdalThread {
 	/** {@inheritDoc} */
 	@Override
 	public void run() {
-		while (!this.finishIndexing) {
+		while (!this.finishIndexing && !this.sessionFactory.isClosed()) {
 			this.indexWriterThreadLogger.debug("Wait for Reseting the index structure: " + this.requestForReset);
 
 			if (!this.requestForReset) {
-//				this.indexWriterThreadLogger.debug("try lock run method");
-//				this.getLock().lock();
-//				latch = new CountDownLatch(1);
-//				this.indexWriterThreadLogger.debug("locked run method");
+				this.indexWriterThreadLogger.debug("try lock run method");
+				this.getLock().lock();
+				latch = new CountDownLatch(1);
+				this.indexWriterThreadLogger.debug("locked run method");
 				this.executeIndexing();
-//				this.sessionFactory.close();
-//				this.indexWriterThreadLogger.debug("unlock run method");
-//				this.getLock().unlock();
-//				latch.countDown();
+				this.indexWriterThreadLogger.debug("unlock run method");
+				this.getLock().unlock();
+				latch.countDown();
 			}
 		}		
 		//Latch has to be countdown in Implementations (PublicVersionIndexWriterThread/NativeLuceneIndexWriterThread)

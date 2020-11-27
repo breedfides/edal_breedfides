@@ -709,13 +709,24 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
-			//this.getIndexThread().waitForFinish();
-			//this.getPublicVersionWriter().waitForFinish();
-			this.getIndexThread().setFinishIndexing(true);
-			this.getPublicVersionWriter().setFinishIndexing(true);
+			this.getIndexThread().waitForFinish();
+			this.getPublicVersionWriter().waitForFinish();
 			try {
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
+				this.getLogger().info("finished waiting for (INDEXTHREADS)");
+				while(this.getPublicVersionWriter().isAlive()) {
+					this.getLogger().info("\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
+					Thread.sleep(1000);
+				}
+				while(this.getIndexThread().isAlive()) {
+					this.getLogger().info("\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
+					Thread.sleep(1000);
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}finally {
 				if(writer != null) {
 					try {
 						writer.close();					
@@ -730,18 +741,6 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 					}
 					writer = null;
 				}
-				this.getLogger().info("finished waiting for (INDEXTHREADS)");
-				while(this.getPublicVersionWriter().isAlive()) {
-					this.getLogger().info("\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
-					Thread.sleep(1000);
-				}
-				while(this.getIndexThread().isAlive()) {
-					this.getLogger().info("\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
-					Thread.sleep(1000);
-				}
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 		try {

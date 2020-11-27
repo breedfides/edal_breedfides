@@ -149,7 +149,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	protected void executeIndexing() {
 
-		if (!this.sessionFactory.isClosed()) {
+		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 			long executeIndexingStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
 
@@ -193,10 +193,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					/** index each element */
-					this.indexVersion(writer, version);
+					if(!this.indexVersion(writer, version)) {
+						this.implementationProviderLogger.info("\n************** TRYING AGAIN **************");
+						Thread.sleep(30);
+						this.indexVersion(writer, version);
+					}
 				} catch (MetaDataException e) {
 					e.printStackTrace();
-				} catch (IOException e) {
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
@@ -267,8 +272,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
-	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version)
-			throws MetaDataException, IOException {
+	private boolean indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version)
+			throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
 		doc.add(new TextField(MetaDataImplementation.TITLE,
@@ -338,8 +343,20 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if(!writer.isOpen()) {
 			this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
 		}else {
-			writer.addDocument(doc);
+				try {
+				    org.apache.commons.io.FileUtils.touch(Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toFile());
+				} catch (Exception e) {
+					this.implementationProviderLogger.info("\n************** "+e.getMessage()+"**************");
+					return false;
+				}
+			try {
+				writer.addDocument(doc);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		return true;
 	}
 
 	private String getString(UntypedData data) {
@@ -354,7 +371,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	protected void indexRestObjects() {
 		long executeIndexingStart = System.currentTimeMillis();
 
-		if (!this.sessionFactory.isClosed()) {
+		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 			final Session session = this.sessionFactory.openSession();
 
 			session.setDefaultReadOnly(true);
@@ -389,11 +406,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				// fullTextSession.index(results.get(0));
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
-					this.indexVersion(writer, version);
+					if(!this.indexVersion(writer, version)) {
+						this.implementationProviderLogger.info("\n************** TRYING AGAIN **************");
+						Thread.sleep(30);
+						this.indexVersion(writer, version);
+					}
 				} catch (MetaDataException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (IOException e) {
+				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -521,6 +542,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		/** executeIndexing() runs only with open SessionFactory */
 
 		// this.sessionFactory.close();
+		this.setFinishIndexing(true);
 		this.lock.unlock();
 		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH UNLOCK()");
 		this.indexWriterThreadLogger
@@ -560,6 +582,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 		}
 		this.implementationProviderLogger.info("finished (NativeluceneIndexThread), now Counting Down Latch");
-		this.latch.countDown();
+		this.countDownLatch.countDown();
 	}
 }

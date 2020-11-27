@@ -212,7 +212,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	protected void executeIndexing() {
 
-		if (!this.sessionFactory.isClosed()) {
+		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 			final Session session = this.sessionFactory.openSession();
 			indexedVersions = 0;
 			flushedObjects = 0;
@@ -378,6 +378,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		/** executeIndexing() runs only with open SessionFactory */
 
 		//this.sessionFactory.close();
+		this.setFinishIndexing(true);
 		this.lock.unlock();
 		this.implementationProviderLogger.info("PUBLIC NACH UNLOCK()");
 		this.indexWriterThreadLogger
@@ -608,7 +609,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			e.printStackTrace();
 		}
 		this.implementationProviderLogger.info("finished (PublicVersionIndexWriter), now counting Down Latch");
-		this.latch.countDown();
+		this.countDownLatch.countDown();
 //		try {
 //			if(writer != null && writer.isOpen())
 //				this.writer.close();
