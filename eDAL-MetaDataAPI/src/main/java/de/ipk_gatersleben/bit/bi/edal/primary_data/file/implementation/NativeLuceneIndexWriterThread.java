@@ -193,15 +193,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					/** index each element */
-					if(!this.indexVersion(writer, version)) {
-						this.implementationProviderLogger.info("\n************** TRYING AGAIN **************");
-						Thread.sleep(30);
-						this.indexVersion(writer, version);
-					}
+					this.indexVersion(writer, version);
 				} catch (MetaDataException e) {
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
@@ -272,7 +265,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
-	private boolean indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version)
+	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version)
 			throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
@@ -343,12 +336,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if(!writer.isOpen()) {
 			this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
 		}else {
-				try {
-				    org.apache.commons.io.FileUtils.touch(Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toFile());
-				} catch (Exception e) {
-					this.implementationProviderLogger.info("\n************** "+e.getMessage()+"**************");
-					return false;
-				}
 			try {
 				writer.addDocument(doc);
 			} catch (IOException e) {
@@ -356,7 +343,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-		return true;
 	}
 
 	private String getString(UntypedData data) {
@@ -406,15 +392,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				// fullTextSession.index(results.get(0));
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
-					if(!this.indexVersion(writer, version)) {
-						this.implementationProviderLogger.info("\n************** TRYING AGAIN **************");
-						Thread.sleep(30);
-						this.indexVersion(writer, version);
-					}
+					this.indexVersion(writer, version);
 				} catch (MetaDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}

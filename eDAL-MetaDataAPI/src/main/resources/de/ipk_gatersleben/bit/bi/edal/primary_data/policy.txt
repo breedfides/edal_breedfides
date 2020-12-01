@@ -14,5 +14,6 @@ grant {
    	permission java.net.SocketPermission "*:389", "connect";
     permission java.net.SocketPermission "*:636", "connect";   
     permission java.util.PropertyPermission "java.runtime.version", "read";
+    permission java.io.FilePermission "${user.home}${/}edaltest${/}-", "read, write, delete";
 };
 
