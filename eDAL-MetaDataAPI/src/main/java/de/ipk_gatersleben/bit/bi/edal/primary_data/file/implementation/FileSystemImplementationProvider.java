@@ -336,12 +336,17 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 
 			if(this.configuration.getIndexingStrategy()) {
+				
+/////////////////////////////// wieso wird das countDownLatch hier nicht initialisiert? /////////////////////////////////////
+				
 				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
 			}else {
 				this.countDownLatch = new CountDownLatch(2);
 				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer));
+/////////////////// wieso benötigst du hier zweimal den coutndownlatch ???? //////////////////////////////////////////////////				
 				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
 			}
+/////////////////////////////// sollte der Start der Threads nicht in die if-else Anweisung mit rein? Je nachdem welcher Fall eintritt!? /////////////////////////////////////
 			this.getIndexThread().start();
 			this.getPublicVersionWriter().start();
 		}
@@ -715,6 +720,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getLogger().info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
 				this.getLogger().info("finished waiting for (INDEXTHREADS)");
+				
+/////////////////////////////// Kann das hier jetzt weg mit dem Thread.sleep? Wir sollten hier für den Fall eine entsprechende Exception werfen  /////////////////////////////////////
+				
 				while(this.getPublicVersionWriter().isAlive()) {
 					this.getLogger().info("\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
 					Thread.sleep(1000);
@@ -744,6 +752,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 		}
 		try {
+/////////////////////// Kann das überhaupt passieren ??? Wie kann die SesscionFactory noch geschlossen werden ???? ///////////////////////			
 			if(this.getSessionFactory().isClosed()) {
 				this.getLogger().info("\n######### ALREADY ############ \n ################ CLOSED #################");
 			}

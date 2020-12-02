@@ -123,7 +123,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-
 		if (Files.exists(this.pathToLastId)) {
 			try {
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(this.pathToLastId.toFile()));
@@ -158,14 +157,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			/** high value fetch objects faster, but more memory is needed */
 			final int fetchSize = (int) Math.pow(10, 4);
 
-//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-//			fullTextSession.setCacheMode(CacheMode.NORMAL);
-
 			final long queryStartTime = System.currentTimeMillis();
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-			// this.implementationProviderLogger.info("Starting execute Index task:
-			// lastIndexedID: " + lastIndexedID);
+
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria
@@ -185,8 +180,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
-			// this.implementationProviderLogger.info("Indexing Path: ___: " +
-			// indexPath.toString());
+
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				indexedObjects++;
@@ -199,9 +193,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				}
 				if (indexedObjects % fetchSize == 0) {
 					try {
-						if(!writer.isOpen()) {
+						if (!writer.isOpen()) {
 							this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-						}else {
+						} else {
 							writer.commit();
 						}
 						flushedObjects += fetchSize;
@@ -209,6 +203,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 							this.lastIndexedID = version.getId();
 						}
 					} catch (IOException e) {
+/////////////////////////// Bitte entsprechendes Exception-Handling einbauen und StackTrace entfernen ///////////////////////////////////////		
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
@@ -232,6 +227,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
+///////////////////////////////////// Bitte diesen Block zum schreiben des ObjectStream in eine seperate, private Funktion kaspeln, um Code Redundanzen zu vermeiden //////////////////// 
 
 			if (flushedObjects != 0) {
 				try {
@@ -243,6 +239,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				}
 
 			}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 
 			try {
 				Thread.sleep(Math.min(
@@ -333,12 +330,16 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}
 		doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
-		if(!writer.isOpen()) {
+		if (!writer.isOpen()) {
+/////////////////////////// Das hier darf doch eigentlich nicht passieren oder ?? ///////////////////////////////////////		
+
 			this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-		}else {
+			
+		} else {
 			try {
 				writer.addDocument(doc);
 			} catch (IOException e) {
+/////////////////////////// Bitte entsprechendes Exception-Handling einbauen und StackTrace entfernen ///////////////////////////////////////		
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -362,11 +363,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			session.setDefaultReadOnly(true);
 
-			// final FullTextSession fullTextSession = Search.getFullTextSession(session);
-
-//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-//			fullTextSession.setCacheMode(CacheMode.NORMAL);
-
 			final long queryStartTime = System.currentTimeMillis();
 
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -389,12 +385,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				/** index each element */
-				// fullTextSession.index(results.get(0));
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					this.indexVersion(writer, version);
 				} catch (MetaDataException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				indexedObjects++;
@@ -403,9 +397,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			results.close();
 			session.close();
 			try {
-				if(!writer.isOpen()) {
+				if (!writer.isOpen()) {
 					this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-				}else {
+				} else {
 					writer.commit();
 				}
 				if (version != null && version.getId() > this.lastIndexedID) {
@@ -426,7 +420,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 			}
-
+////////////////////////////// siehe Kommnetar oben //////////////////////////////
 			if (flushedObjects != 0) {
 				try {
 					oos.writeObject(this.lastIndexedID);
@@ -476,26 +470,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			reader = DirectoryReader.open(writer);
 			numberDocs += reader.numDocs();
 			reader.close();
+/////////////////////////// ich denke das setzen auf "null" kann weg  ///////////////////////////////////////		
 			reader = null;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
-		// final FullTextSession fullTextSession = Search.getFullTextSession(session);
-
-//		fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-//		fullTextSession.setCacheMode(CacheMode.NORMAL);
-
-		// fullTextSession.flushToIndexes();
-//
-//		final SearchFactory searchFactory = Search.getFullTextSession(session).getSearchFactory();
-//		final IndexReaderAccessor readerProvider = searchFactory.getIndexReaderAccessor();
-//		final IndexReader reader = readerProvider.open(MyUntypedData.class);
-
-		// this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " +
-		// reader.numDocs());
-
-		// readerProvider.close(reader);
 
 		this.lastIndexedID = 0;
 
@@ -510,6 +490,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		final long time = System.currentTimeMillis();
 		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
 		this.implementationProviderLogger.info("NATIVELUCINDEXER VOR LOCK()");
+		
+/////////////////////// wird er Lock benötigt oder nicht ????? /////////////////////////////////////		
 		this.lock.lock();
 		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH LOCK()");
 		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
@@ -517,6 +499,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		this.executeIndexing();
 		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH EXECUTEINDEXING");
 
+/////////////////////////// Muss die SessionFactory hier geschlossen werden oder nicht? Wennn nicht dann Code weg hier... ///////////////////////////////////////		
+		
 		/** close SessionFactory so no indexing again */
 		/** executeIndexing() runs only with open SessionFactory */
 
@@ -539,25 +523,33 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+/////////////////////////// Ich denke auch hier kann das null Setzen weg ///////////////////////////////////////		
 		oos = null;
+		
+/////////////////////////// Wofür ist diese Section mit den touch() nötig ? ///////////////////////////////////////		
+		
 		boolean locked = true;
-		while(locked) {
+		while (locked) {
 			try {
-			    org.apache.commons.io.FileUtils.touch(Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toFile());
-			    locked = false;
+				org.apache.commons.io.FileUtils.touch(
+						Paths.get(indexDirectory.toString(), "Master_Index", IndexWriter.WRITE_LOCK_NAME).toFile());
+				locked = false;
 			} catch (IOException e) {
-				this.implementationProviderLogger.info("\n################################# "+Paths.get(indexDirectory.toString(),"Master_Index",IndexWriter.WRITE_LOCK_NAME).toString()+" STILL LOCKED");
-			    locked = true;
+				this.implementationProviderLogger.info("\n################################# "
+						+ Paths.get(indexDirectory.toString(), "Master_Index", IndexWriter.WRITE_LOCK_NAME).toString()
+						+ " STILL LOCKED");
+				locked = true;
 			}
 		}
 		locked = true;
-		while(locked) {
+		while (locked) {
 			try {
-			    org.apache.commons.io.FileUtils.touch(Paths.get(this.pathToLastId.toString()).toFile());
-			    locked = false;
+				org.apache.commons.io.FileUtils.touch(Paths.get(this.pathToLastId.toString()).toFile());
+				locked = false;
 			} catch (IOException e) {
-				this.implementationProviderLogger.info("\n################################# "+this.pathToLastId.toString()+" STILL LOCKED");
-			    locked = true;
+				this.implementationProviderLogger
+						.info("\n################################# " + this.pathToLastId.toString() + " STILL LOCKED");
+				locked = true;
 			}
 		}
 		this.implementationProviderLogger.info("finished (NativeluceneIndexThread), now Counting Down Latch");

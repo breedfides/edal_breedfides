@@ -140,6 +140,8 @@ abstract class IndexWriterThread extends EdalThread {
 	 */
 	abstract void waitForFinish();
 
+/////////////////////////////// wenn das nicht mehr benötigt wird, dann weg damit //////////////////////////////////////////	
+	
 	//final IndexAccessor readerProvider = searchFactory
 
 	//final IndexReader reader = readerProvider.open(MyUntypedData.class);

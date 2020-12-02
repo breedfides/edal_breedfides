@@ -115,6 +115,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String INDEX_NAME = "Master_Index";
 	private Path pathToLastId = null;
 	final int fetchSize = (int) Math.pow(10, 4);
+	
+//////////////////////// ich denke das hier kann weg.... siehe Kommentare im NativeIndexThread	////////////////////////////
 	FileInputStream fis = null;
 	ObjectInputStream ois = null;
 	FileOutputStream fos = null;
