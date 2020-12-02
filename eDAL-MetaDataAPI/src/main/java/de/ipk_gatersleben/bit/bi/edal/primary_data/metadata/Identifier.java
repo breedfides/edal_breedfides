@@ -13,8 +13,8 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 
 /**
- * Unique identifier, which is ensures to be global uniqueness defined at <a
- * href="http://www.iso.ch/cate/d2229.html" target="_blank">ISO/IEC
+ * Unique identifier, which is ensures to be global uniqueness defined at
+ * <a href="http://www.iso.ch/cate/d2229.html" target="_blank">ISO/IEC
  * 11578:1996</a>.
  * 
  * @author lange
@@ -23,7 +23,16 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 public class Identifier extends UntypedData {
 
 	public static final String UNKNOWN_ID = "Unknown_ID";
-	
+	public String type;
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 	/**
 	 * the generated serial ID
 	 */
@@ -42,8 +51,7 @@ public class Identifier extends UntypedData {
 	/**
 	 * Constructor for Identifier with specified id.
 	 * 
-	 * @param id
-	 *            the id to set.
+	 * @param id the id to set.
 	 */
 	public Identifier(String id) {
 		this.id = id;

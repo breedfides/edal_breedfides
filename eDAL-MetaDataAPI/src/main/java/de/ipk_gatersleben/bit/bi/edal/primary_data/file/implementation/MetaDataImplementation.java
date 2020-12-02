@@ -228,7 +228,13 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 
 			return MetaData.UNKNOWN;
 		} else if (myUntypedData.getClass().equals(MyIdentifier.class)) {
-
+			
+			MyIdentifier p = (MyIdentifier) myUntypedData;
+			
+			Identifier i = new Identifier(p.getIdentifier());
+			
+			i.setType(p.getType());
+			
 			return new Identifier(((MyIdentifier) myUntypedData).getIdentifier());
 		} else if (myUntypedData.getClass().equals(MyIdentifierRelation.class)) {
 

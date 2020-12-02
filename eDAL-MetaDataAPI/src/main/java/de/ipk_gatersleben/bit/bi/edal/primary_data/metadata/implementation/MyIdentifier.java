@@ -37,6 +37,7 @@ public final class MyIdentifier extends MyUntypedData {
 	private static final long serialVersionUID = -460725495792281812L;
 
 	private String identifier;
+	private String type;
 
 	/**
 	 * Default constructor for {@link MyIdentifier} is necessary for
@@ -48,8 +49,7 @@ public final class MyIdentifier extends MyUntypedData {
 	/**
 	 * Constructor for {@link MyIdentifier} from a {@link Identifier} object.
 	 * 
-	 * @param id
-	 *            a {@link Identifier} object.
+	 * @param id a {@link Identifier} object.
 	 */
 	public MyIdentifier(Identifier id) {
 		super();
@@ -60,8 +60,7 @@ public final class MyIdentifier extends MyUntypedData {
 	 * Copy constructor to convert public {@link Identifier} to private
 	 * {@link MyIdentifier}.
 	 * 
-	 * @param edal
-	 *            the EDAL public {@link UntypedData} object to be cloned
+	 * @param edal the EDAL public {@link UntypedData} object to be cloned
 	 */
 	public MyIdentifier(final UntypedData edal) {
 
@@ -70,6 +69,7 @@ public final class MyIdentifier extends MyUntypedData {
 		if (edal instanceof Identifier) {
 			Identifier i = (Identifier) edal;
 			this.setIdentifier(i.getID());
+			this.setType(i.getType());
 		}
 	}
 
@@ -86,8 +86,7 @@ public final class MyIdentifier extends MyUntypedData {
 	/**
 	 * Setter for the field <code>identifier</code>.
 	 * 
-	 * @param identifier
-	 *            the identifier to set
+	 * @param identifier the identifier to set
 	 */
 	public final void setIdentifier(String identifier) {
 		this.identifier = identifier;
@@ -106,5 +105,14 @@ public final class MyIdentifier extends MyUntypedData {
 	@Override
 	public String toString() {
 		return "MyIdentifier [identifier=" + identifier + "]";
+	}
+
+	@Field(index = Index.YES, store = Store.YES)
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 }

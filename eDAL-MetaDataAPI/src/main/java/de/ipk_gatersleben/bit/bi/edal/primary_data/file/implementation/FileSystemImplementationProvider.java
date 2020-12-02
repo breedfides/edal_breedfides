@@ -45,6 +45,7 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.stat.Statistics;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
 import org.hibernate.tool.schema.TargetType;
 
@@ -284,12 +285,18 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getLogger().error("Found existing, but not compatible database schema in path '"
 						+ configuration.getMountPath() + "' (" + e.getMessage() + ") ");
 				this.getLogger().error("Please delete path or specify another mount path !");
-				System.exit(0);
+//				System.exit(0);
 				// System.out.println("run schema update");
 				// new SchemaUpdate((MetadataImplementor)
 				// metadata.buildMetadata()).execute(true, true);
 				// System.exit(0);
+				SchemaUpdate su = new SchemaUpdate();
+				
+				EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
 
+				su.execute(targetTypes, metadata.buildMetadata());
+				System.exit(0);
+				
 			}
 		}
 
