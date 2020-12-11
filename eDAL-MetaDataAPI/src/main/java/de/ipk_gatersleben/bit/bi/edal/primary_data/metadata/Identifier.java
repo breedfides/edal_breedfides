@@ -23,13 +23,14 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 public class Identifier extends UntypedData {
 
 	public static final String UNKNOWN_ID = "Unknown_ID";
-	public String type;
+	public EnumIdentifierType type;
+	private EnumIdentifierRelationType relationType;
 
-	public String getType() {
+	public EnumIdentifierType getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(EnumIdentifierType type) {
 		this.type = type;
 	}
 
@@ -55,6 +56,19 @@ public class Identifier extends UntypedData {
 	 */
 	public Identifier(String id) {
 		this.id = id;
+	}
+	
+	/**
+	 * Constructor for Identifier with specified id, type and relationType
+	 * 
+	 * @param id the id to set.
+	 * @param type the type to set
+	 * @param relationtype the relationType
+	 */
+	public Identifier(String id, EnumIdentifierType type, EnumIdentifierRelationType relationType) {
+		this.id = id;
+		this.type = type;
+		this.relationType = relationType;
 	}
 
 	/** {@inheritDoc} */
@@ -119,6 +133,14 @@ public class Identifier extends UntypedData {
 		int result = 1;
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		return result;
+	}
+
+	public EnumIdentifierRelationType getRelationType() {
+		return relationType;
+	}
+
+	public void setRelationType(EnumIdentifierRelationType relationType) {
+		this.relationType = relationType;
 	}
 
 }

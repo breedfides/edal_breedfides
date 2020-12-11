@@ -34,6 +34,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -54,6 +55,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlDes
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlDescriptions;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlFormats;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRelatedIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRelatedIdentifiers;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlResource;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlResourceType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRightsList;
@@ -141,12 +144,39 @@ public class DataCiteXmlMapper {
 			this.setSubjects(resource);
 			this.setResourceType(resource);
 			this.setRights(resource);
+			this.setRelatedIdentifier(resource);
 //			this.setVersion(resource);
 		} catch (final DataCiteMappingException e) {
 			throw new EdalPublicationMetaDataException("unable to map metadata to DataCite XML", e);
 		}
 
 		return resource;
+	}
+
+	private void setRelatedIdentifier(XmlResource resource) {
+		
+		XmlRelatedIdentifiers relatedIdentifiers = new XmlRelatedIdentifiers();
+		
+		
+		try {
+
+			IdentifierRelation ir= this.getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+				for (Identifier id : ir.getRelations()) {
+					
+					XmlRelatedIdentifier relatedIdentifer = new XmlRelatedIdentifier();
+//					relatedIdentifer.setRelatedIdentifierType(id.getType());
+					
+				}
+			} catch (MetaDataException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			
+		
+		
+		XmlRelatedIdentifier identifier = new XmlRelatedIdentifier();
+		
 	}
 
 	/**

@@ -69,7 +69,7 @@ public final class MyIdentifierRelation extends MyUntypedData {
 			List<MyIdentifier> myRelation = new LinkedList<MyIdentifier>();
 
 			for (Identifier id : relation.getRelations()) {
-				myRelation.add(new MyIdentifier(id));
+				myRelation.add(new MyIdentifier(id, id.getType(),id.getRelationType()));
 			}
 			this.setRelations(myRelation);
 		}

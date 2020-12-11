@@ -20,6 +20,8 @@ import org.hibernate.search.annotations.Index;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Store;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierRelationType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
@@ -37,7 +39,8 @@ public final class MyIdentifier extends MyUntypedData {
 	private static final long serialVersionUID = -460725495792281812L;
 
 	private String identifier;
-	private String type;
+	private EnumIdentifierType type;
+	private EnumIdentifierRelationType relationType;
 
 	/**
 	 * Default constructor for {@link MyIdentifier} is necessary for
@@ -57,6 +60,21 @@ public final class MyIdentifier extends MyUntypedData {
 	}
 
 	/**
+	 * Constructor for {@link MyIdentifier} from a {@link Identifier} object.
+	 * 
+	 * @param id           a {@link Identifier} object.
+	 * @param type         the {@link EnumIdentifierType} of the id
+	 * @param relationType the {@link EnumIdentifierRelationType} of the id
+	 * 
+	 */
+	public MyIdentifier(Identifier id, EnumIdentifierType type, EnumIdentifierRelationType relationType) {
+		super();
+		this.setIdentifier(id.getID());
+		this.setType(type);
+		this.setRelationType(relationType);
+	}
+
+	/**
 	 * Copy constructor to convert public {@link Identifier} to private
 	 * {@link MyIdentifier}.
 	 * 
@@ -70,6 +88,7 @@ public final class MyIdentifier extends MyUntypedData {
 			Identifier i = (Identifier) edal;
 			this.setIdentifier(i.getID());
 			this.setType(i.getType());
+			this.setRelationType(i.getRelationType());
 		}
 	}
 
@@ -108,11 +127,19 @@ public final class MyIdentifier extends MyUntypedData {
 	}
 
 	@Field(index = Index.YES, store = Store.YES)
-	public String getType() {
+	public EnumIdentifierType getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(EnumIdentifierType type) {
 		this.type = type;
+	}
+
+	public EnumIdentifierRelationType getRelationType() {
+		return relationType;
+	}
+
+	public void setRelationType(EnumIdentifierRelationType relationType) {
+		this.relationType = relationType;
 	}
 }

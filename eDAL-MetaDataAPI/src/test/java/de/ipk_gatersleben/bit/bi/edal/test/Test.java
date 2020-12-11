@@ -43,6 +43,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierRelationType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
@@ -77,7 +81,19 @@ public class Test {
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
 
 	
-//		DataManager.shutdown();
+		PrimaryDataFile file = rootDirectory.createPrimaryDataFile("TestFile.txt");
+		
+		MetaData metadata = file.getMetaData().clone();
+		
+		IdentifierRelation idr = new IdentifierRelation();
+		
+		idr.add(new Identifier("meineID",EnumIdentifierType.DOI,EnumIdentifierRelationType.IsSupplementTo));
+		
+		metadata.setElementValue(EnumDublinCoreElements.RELATION, idr);
+		
+		file.setMetaData(metadata);
+		
+		DataManager.shutdown();
 
 	}
 }
