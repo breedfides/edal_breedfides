@@ -70,109 +70,112 @@ public class FullExample {
 
 
 	public static void main(String[] args) throws Exception {
-	PrimaryDataDirectory rootDirectory = getRoot();
-	Inserter inserter = new Inserter(rootDirectory);
-	inserter.process(1);
-	
-	
-//	testKeyword();
-//	Thread.sleep(10000);
-	
-//	Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
-//	
-//	CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//	//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
-//	CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder.createQuery(PublicReferenceImplementation.class);
-//	Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
-//	criteria.where(criteriaBuilder.equal(root.get("id"), 1));
-//	PublicReferenceImplementation impl = session.createQuery(criteria).uniqueResult();
-//
-//	
-//	IndexReader reader = null;
-//	
-//	//Create IndexSearcher from IndexDirectory
-//	try {
-//		Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.
-//				getImplProv()).getIndexDirectory().toString(),"Master_Index"));
-//		reader = DirectoryReader.open(indexDirectory);
-//	} catch (IOException e) {
-//		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-//		.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-//		e.printStackTrace();
-//	}
-//	//to be sure it's not a File
-//	String hql = "from PrimaryDataFileImplementation where id = :fileId";
-//	PrimaryDataFileImplementation test = session.createQuery(hql,PrimaryDataFileImplementation.class).setParameter("fileId", impl.getVersion().getPrimaryEntityId()).uniqueResult();
-//	if(!test.isDirectory()) {
-//		//index
-//		int o = 1;
-//	}else {
-//		
-//		
-//		IndexSearcher searcher = new IndexSearcher(reader);	
-//		//Search Documents with Parsed Query
-//		QueryParser parser = new QueryParser(MetaDataImplementation.VERSIONID, new StandardAnalyzer());
-//		
-//		hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
-//		List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
-//				.setParameter("dir", impl.getVersion().getEntity())
-//				.list();
-//		Stack<PrimaryDataFileImplementation> stack = new Stack<>();
-//		for(PrimaryDataFileImplementation file : directory) {
-//			if(file.isDirectory()) {
-//				stack.add(file);
-//			}else {
-//				//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
-//				CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-//				Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
-//				versionCriteria.where(criteriaBuilder.equal(versionRoot.get("primaryEntityId"), file.getID()));
-//				versionCriteria.orderBy(criteriaBuilder.desc(versionRoot.get("revision")));
-//				List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(versionCriteria).setMaxResults(1).list();
-//				for(PrimaryDataEntityVersionImplementation version : versions) {
-//			    org.apache.lucene.search.Query luceneQuery = parser.parse(Integer.toString(version.getId()));
-//			    ScoreDoc[] hits2;
-//				try {
-//					hits2 = searcher.search(luceneQuery, 1).scoreDocs;
-//			        for(int i = 0; i < hits2.length; i++) {
-//			        	Document doc = searcher.doc(hits2[i].doc);
-//			        	
-//			        	//versionIDList.add(Integer.parseInt(doc.get("versionID")));
-//			        }
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}		
-//				}
-//			}
+		PrimaryDataDirectory root = getRoot();
+		Inserter inserter = new Inserter(root);
+		inserter.insertOne();
+//			
+//		testKeyword();
+//		Thread.sleep(50000);
+			
+		DataManager.shutdown();
+			
+//		Thread.sleep(5000);
+//		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
+	//	
+//		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//		//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
+//		CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder.createQuery(PublicReferenceImplementation.class);
+//		Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
+//		criteria.where(criteriaBuilder.equal(root.get("id"), 1));
+//		PublicReferenceImplementation impl = session.createQuery(criteria).uniqueResult();
+	//
+	//	
+//		IndexReader reader = null;
+	//	
+//		//Create IndexSearcher from IndexDirectory
+//		try {
+//			Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.
+//					getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+//			reader = DirectoryReader.open(indexDirectory);
+//		} catch (IOException e) {
+//			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+//			.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
+//			e.printStackTrace();
 //		}
-//		while(!stack.isEmpty()) {
-//			PrimaryDataFileImplementation dir = stack.pop();
+//		//to be sure it's not a File
+//		String hql = "from PrimaryDataFileImplementation where id = :fileId";
+//		PrimaryDataFileImplementation test = session.createQuery(hql,PrimaryDataFileImplementation.class).setParameter("fileId", impl.getVersion().getPrimaryEntityId()).uniqueResult();
+//		if(!test.isDirectory()) {
+//			//index
+//			int o = 1;
+//		}else {
 //			
 //			
-//			//index current Version of dir
-//			List<PrimaryDataFileImplementation> files = session.createQuery(hql)
-//					.setParameter("dir", dir)
+//			IndexSearcher searcher = new IndexSearcher(reader);	
+//			//Search Documents with Parsed Query
+//			QueryParser parser = new QueryParser(MetaDataImplementation.VERSIONID, new StandardAnalyzer());
+//			
+//			hql = "from PrimaryDataFileImplementation s where s.parentDirectory = :dir";
+//			List<PrimaryDataFileImplementation> directory = session.createQuery(hql,PrimaryDataFileImplementation.class)
+//					.setParameter("dir", impl.getVersion().getEntity())
 //					.list();
-//			for(PrimaryDataFileImplementation file : files) {
+//			Stack<PrimaryDataFileImplementation> stack = new Stack<>();
+//			for(PrimaryDataFileImplementation file : directory) {
 //				if(file.isDirectory()) {
 //					stack.add(file);
 //				}else {
-//					//indexen
+//					//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
+//					CriteriaQuery<PrimaryDataEntityVersionImplementation> versionCriteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//					Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria.from(PrimaryDataEntityVersionImplementation.class);
+//					versionCriteria.where(criteriaBuilder.equal(versionRoot.get("primaryEntityId"), file.getID()));
+//					versionCriteria.orderBy(criteriaBuilder.desc(versionRoot.get("revision")));
+//					List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(versionCriteria).setMaxResults(1).list();
+//					for(PrimaryDataEntityVersionImplementation version : versions) {
+//				    org.apache.lucene.search.Query luceneQuery = parser.parse(Integer.toString(version.getId()));
+//				    ScoreDoc[] hits2;
+//					try {
+//						hits2 = searcher.search(luceneQuery, 1).scoreDocs;
+//				        for(int i = 0; i < hits2.length; i++) {
+//				        	Document doc = searcher.doc(hits2[i].doc);
+//				        	
+//				        	//versionIDList.add(Integer.parseInt(doc.get("versionID")));
+//				        }
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}		
+//					}
+//				}
+//			}
+//			while(!stack.isEmpty()) {
+//				PrimaryDataFileImplementation dir = stack.pop();
+//				
+//				
+//				//index current Version of dir
+//				List<PrimaryDataFileImplementation> files = session.createQuery(hql)
+//						.setParameter("dir", dir)
+//						.list();
+//				for(PrimaryDataFileImplementation file : files) {
+//					if(file.isDirectory()) {
+//						stack.add(file);
+//					}else {
+//						//indexen
+//					}
 //				}
 //			}
 //		}
-//	}
-	
+		
 
-	
-	
-	/**
-	 * ScrollableResults will avoid loading too many objects in memory
-	 */
-	//MetaData searchable = inserter.getSearchable();
-	//List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
-	//testSearchByDublin(rootDirectory);
-	//testMetaDataSearch(rootDirectory, searchable);
-	DataManager.shutdown();
+		
+		
+		/**
+		 * ScrollableResults will avoid loading too many objects in memory
+		 */
+		//MetaData searchable = inserter.getSearchable();
+		//List<PrimaryDataEntity> en = rootDirectory.searchByMetaData(DataManager.getImplProv().createMetaDataInstance(), false, false);
+		//testSearchByDublin(rootDirectory);
+		//testMetaDataSearch(rootDirectory, searchable);
+		//DataManager.shutdown();
+		//testKeyword();
 	}
 	
 	private static void testKeyword() throws Exception {

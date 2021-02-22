@@ -14,6 +14,7 @@ package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,78 +24,81 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 
 public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
-	private MetaData searchable = null;
-	Path path = Paths.get("src/test/resources/TEST");
+	private MetaData metadata = null;
+	Path path = Paths.get("src/test/resources/Example_Folder");
 	public Inserter(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
 	}
 
 	public void process(int size) throws Exception {
-		ArrayList<String> names = getList("src/test/resources/names.txt");
-		ArrayList<String> words = getList("src/test/resources/words.txt");
-		Path pathToRessource = Paths.get("src/test/resources/_TEST.zip");
-		FileInputStream fin = new FileInputStream(pathToRessource.toFile());
-		Locale[] locals = Locale.getAvailableLocales();
-		int length = locals.length-1;
-		int countNames =names.size();
-		int countWords =words.size();
-		Random random = new Random();
-		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
-		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
 		String archiveName = "";
 		for(int i = 0; i < size; i++) {
 			if(i%10000 == 0) {
-				archiveName = "Lib000."+(i/10000);
-				currentDirectory = rootDirectory.createPrimaryDataDirectory(archiveName+names.get(random.nextInt(countNames)));
+				currentDirectory = rootDirectory.createPrimaryDataDirectory(new StringBuilder("FolderXK.").append(i/10000).toString());
 			}
-			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile("Entity86.."+i);
+			PrimaryDataFile entity = currentDirectory.createPrimaryDataFile(new StringBuilder("FileXKK.").append(i).toString());
 			MetaData metadata = entity.getMetaData().clone();
-//			Persons persons = new Persons();
-//			NaturalPerson np = new NaturalPerson(names.get(random.nextInt(countNames)),
-//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords)));
-//			persons.add(np);
-//			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson(
-//					names.get(random.nextInt(countNames)),words.get(random.nextInt(countWords)),
-//					words.get(random.nextInt(countWords)),words.get(random.nextInt(countWords))));
-			
-			Subjects subjects = new Subjects();
-			subjects.add(new UntypedData("testsubtest2"));
-			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			EdalLanguage lang = new EdalLanguage(locals[random.nextInt(length)]);
 //			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 //			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("test-"));
-//			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
+			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Test_BA_Fuzzy"));
 //			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
-			//entity.store(fin);
+//			entity.store(fin);
 			log(archiveName+" |"+i+"| /"+size+" Saved");
 		}
-		insertSearchable(currentDirectory);
-		fin.close();
+		//insertSearchable(currentDirectory);
 	}
 	
+	public void insertOne() throws PrimaryDataDirectoryException, CloneNotSupportedException, MetaDataException, PrimaryDataEntityVersionException, IOException, InterruptedException, PrimaryDataEntityException, AddressException, PublicReferenceException {
+		log("Inserting new searchable");
+		metadata = rootDirectory.getMetaData().clone();
+		Persons persons = new Persons();
+		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
+				"38820", "halberstadt", "Deutschland");
+		persons.add(np);
+		metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+		Subjects subjects = new Subjects();
+		subjects.add(new UntypedData("Lucene"));
+		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
+		metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IPK","Gatersleben","06466","Deutschland"));		
+		metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("Information-Retrieval"));
+		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Zu den Aufgaben der Arbeit gehört zum"
+				+ " einen der Entwurf und die Realisierung  von Information-Retrieval-Funktionen für eine Nutzerfreundliche"
+				+ " Suche der heterogenen Daten in E!DAL. Zum anderen der Entwurf von Schnittstellen zur Verwendung der"
+				+ " entwickelten Suchfunktionen. Die Realisierung der Suche teilt sich in die Implementierung einer geeigneten"
+				+ " Indexstruktur und in die Erweiterung bestehender Suchfunktionen auf. Die Realisierung muss schließlich anhand"
+				+ " geeigneter Kriterien bewertet werden."));
+		//searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("Test_Referenz"));
+		MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, metadata, true);
+		Files.walkFileTree(path, edalVisitor);
+	}
 	
 	public String getSubfileTitle(PrimaryDataDirectory root) throws Exception {
 		ArrayList<String> names = getList("src/test/resources/names.txt");
@@ -117,22 +121,22 @@ public class Inserter {
 		//if(result.isEmpty()) {
 			log("Inserting new searchable");
 			PrimaryDataFile entity = rootDirectory.createPrimaryDataFile("searchEntity");
-			searchable = entity.getMetaData().clone();
+			metadata = entity.getMetaData().clone();
 			Persons persons = new Persons();
-			NaturalPerson np = new NaturalPerson("needspace15","En","adress.Halberstadt","zip;38820","country/DE");
+			NaturalPerson np = new NaturalPerson("needspace180","En","adress.Halberstadt","zip;38820","country/DE");
 			persons.add(np);
-			searchable.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-			searchable.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
+			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
+			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,new LegalPerson("IBM","DC","543771","USA"));		
 			Subjects subjects = new Subjects();
 			subjects.add(new UntypedData("snickers"));
+			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			EdalLanguage lang = new EdalLanguage(Locale.US);
-			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("title_perspiciatis"));
-			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem"));
-			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
-			entity.setMetaData(searchable);
-			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, searchable, true);
+			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
+			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("title_perspiciatis"));
+			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem"));
+			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
+			entity.setMetaData(metadata);
+			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, metadata, true);
 			Files.walkFileTree(path, edalVisitor);
 //		}else {
 //			searchable = result.get(0).getMetaData();
@@ -140,7 +144,7 @@ public class Inserter {
 	}
 	
 	public MetaData getSearchable() {
-		return searchable;
+		return metadata;
 	}
 	
 	

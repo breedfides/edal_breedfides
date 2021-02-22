@@ -101,22 +101,23 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
  * 
  * @author arendd
  */
-public class FileSystemImplementationProvider implements ImplementationProvider {
+public class FileSystemImplementationProvider
+		implements ImplementationProvider {
 
 	private static final String EDALDB_DBNAME = "edaldb";
 
 	private Logger logger = null;
-	
+
 	private CountDownLatch countDownLatch = null;
-	
+
 	private PublicVersionIndexWriterThread publicVersionWriter;
 
 	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
 
 	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
-	
+
 	private IndexWriter writer = null;
-	
+
 	private boolean hibernateIndexing = false;
 
 	public boolean isHibernateIndexing() {
@@ -142,14 +143,17 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	public Path getIndexDirectory() {
 		return this.indexDirectory;
 	}
-	
-	public FileSystemImplementationProvider(EdalConfiguration configuration) {
+
+	public FileSystemImplementationProvider(
+			EdalConfiguration configuration) {
 
 		this.configuration = configuration;
 
 		try {
-			this.setDatabaseUsername(this.getConfiguration().getDatabaseUsername());
-			this.setDatabasePassword(this.getConfiguration().getDatabasePassword());
+			this.setDatabaseUsername(this.getConfiguration()
+					.getDatabaseUsername());
+			this.setDatabasePassword(this.getConfiguration()
+					.getDatabasePassword());
 		} catch (EdalConfigurationException e) {
 			// should never happen, because of the validation function
 			e.printStackTrace();
@@ -163,62 +167,85 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			try {
 				Class.forName("org.h2.Driver");
 				this.setConnection(DriverManager.getConnection(
-						"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE",
-						this.getDatabaseUsername(), this.getDatabasePassword()));
+						"jdbc:h2:split:30:" + this.getMountPath()
+								+ ";DB_CLOSE_ON_EXIT=FALSE",
+						this.getDatabaseUsername(),
+						this.getDatabasePassword()));
 
-				this.getLogger().info("Database connection established");
+				this.getLogger()
+						.info("Database connection established");
 			} catch (final ClassNotFoundException e) {
-				this.getLogger().error("Could not find driver for H2 connection !");
+				this.getLogger().error(
+						"Could not find driver for H2 connection !");
 				System.exit(0);
 			}
 
 		} catch (final SQLException se) {
 
 			if (se.getErrorCode() == SQL_ERROR_DATABASE_IN_USE) {
-				this.getLogger().warn("Database still in use -> close and restart please !");
+				this.getLogger().warn(
+						"Database still in use -> close and restart please !");
 				System.exit(0);
 			}
 			if (se.getErrorCode() == SQL_ERROR_DATABASE_NOT_FOUND) {
-				this.getLogger().info("No database found -> creating new database...");
+				this.getLogger().info(
+						"No database found -> creating new database...");
 				try {
-					this.setConnection(DriverManager.getConnection(
-							"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE",
-							this.getDatabaseUsername(), this.getDatabasePassword()));
+					this.setConnection(DriverManager
+							.getConnection("jdbc:h2:split:30:"
+									+ this.getMountPath()
+									+ ";DB_CLOSE_ON_EXIT=FALSE",
+									this.getDatabaseUsername(),
+									this.getDatabasePassword()));
 
 				} catch (final SQLException e) {
-					this.getLogger().error("Could not start H2 connection !");
+					this.getLogger().error(
+							"Could not start H2 connection !");
 					System.exit(0);
 				}
 			}
 		}
 
-		this.indexDirectory = Paths.get(this.getMountPath().toString(), "lucene");
+		this.indexDirectory = Paths
+				.get(this.getMountPath().toString(), "lucene");
 
 		final Configuration config = new Configuration();
 
-		config.configure(FileSystemImplementationProvider.class.getResource("hibernate.cfg.xml"));
+		config.configure(FileSystemImplementationProvider.class
+				.getResource("hibernate.cfg.xml"));
 
-		XmlConfiguration xmlconfig = new XmlConfiguration(getClass().getResource("ehcache.cfg.xml"));
+		XmlConfiguration xmlconfig = new XmlConfiguration(
+				getClass().getResource("ehcache.cfg.xml"));
 
-		CacheManager ehcacheManager = CacheManagerBuilder.newCacheManager(xmlconfig);
+		CacheManager ehcacheManager = CacheManagerBuilder
+				.newCacheManager(xmlconfig);
 
 		ehcacheManager.init();
 
 		this.setCacheManager(ehcacheManager);
 
 		config.setProperty("hibernate.connection.url",
-				"jdbc:h2:split:30:" + this.getMountPath() + ";DB_CLOSE_ON_EXIT=FALSE");
-		config.setProperty("hibernate.connection.username", this.getDatabaseUsername());
-		config.setProperty("hibernate.connection.password", this.getDatabasePassword());
-		//config.setProperty("hibernate.search.backend.exclusive_index_use", "false");
-		config.setProperty("hibernate.search.backend.directory.root", this.indexDirectory.toString());
+				"jdbc:h2:split:30:" + this.getMountPath()
+						+ ";DB_CLOSE_ON_EXIT=FALSE");
+		config.setProperty("hibernate.connection.username",
+				this.getDatabaseUsername());
+		config.setProperty("hibernate.connection.password",
+				this.getDatabasePassword());
+		// config.setProperty("hibernate.search.backend.exclusive_index_use", "false");
+		config.setProperty(
+				"hibernate.search.backend.directory.root",
+				this.indexDirectory.toString());
 
 		if (!this.isAutoIndexing()) {
-			config.setProperty("hibernate.search.automatic_indexing.strategy", "none");
+			config.setProperty(
+					"hibernate.search.automatic_indexing.strategy",
+					"none");
 		}
 
 		Boolean exists = false;
-		try (ResultSet result = this.getConnection().createStatement().executeQuery("SELECT count(*) FROM ENTITIES ")) {
+		try (ResultSet result = this.getConnection()
+				.createStatement().executeQuery(
+						"SELECT count(*) FROM ENTITIES ")) {
 			result.last();
 			final int resultSize = result.getInt("COUNT(*)");
 			if (resultSize > 0) {
@@ -229,24 +256,40 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			exists = false;
 		}
 
-		List<Class<?>> annotatedHibernateClasses = Arrays.asList(RootImplementation.class,
-				PrincipalImplementation.class, PrimaryDataDirectoryImplementation.class,
-				PrimaryDataFileImplementation.class, PrimaryDataEntityVersionImplementation.class,
-				MetaDataImplementation.class, EdalPermissionImplementation.class, SupportedPrincipals.class,
-				PublicReferenceImplementation.class, TicketImplementation.class, ReviewersImplementation.class,
-				ReviewStatusImplementation.class, UrlImplementation.class, DoiImplementation.class, MyDataFormat.class,
-				MyDataSize.class, MyDataType.class, MyDirectoryMetaData.class, MyEmptyMetaData.class,
-				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
-				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
-				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
-				MyDateEvents.class, MyORCID.class);
+		List<Class<?>> annotatedHibernateClasses = Arrays.asList(
+				RootImplementation.class,
+				PrincipalImplementation.class,
+				PrimaryDataDirectoryImplementation.class,
+				PrimaryDataFileImplementation.class,
+				PrimaryDataEntityVersionImplementation.class,
+				MetaDataImplementation.class,
+				EdalPermissionImplementation.class,
+				SupportedPrincipals.class,
+				PublicReferenceImplementation.class,
+				TicketImplementation.class,
+				ReviewersImplementation.class,
+				ReviewStatusImplementation.class,
+				UrlImplementation.class, DoiImplementation.class,
+				MyDataFormat.class, MyDataSize.class,
+				MyDataType.class, MyDirectoryMetaData.class,
+				MyEmptyMetaData.class, MyIdentifier.class,
+				MyIdentifierRelation.class, MyPersons.class,
+				MyPerson.class, MyNaturalPerson.class,
+				MyLegalPerson.class, MyUnknownMetaData.class,
+				MyUntypedData.class, MySubjects.class,
+				MyCheckSumType.class, MyCheckSum.class,
+				MyEdalLanguage.class, MyEdalDate.class,
+				MyEdalDateRange.class, MyDateEvents.class,
+				MyORCID.class);
 
 		if (!exists) {
 
 			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
-					.applySettings(config.getProperties()).build();
+					.applySettings(config.getProperties())
+					.build();
 
-			MetadataSources metadata = new MetadataSources(standardRegistry);
+			MetadataSources metadata = new MetadataSources(
+					standardRegistry);
 
 			for (Class<?> annotatedClass : annotatedHibernateClasses) {
 				metadata.addAnnotatedClass(annotatedClass);
@@ -255,17 +298,21 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			SchemaExport export = new SchemaExport();
 			export.setDelimiter(";");
 			export.setFormat(true);
-			EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
+			EnumSet<TargetType> targetTypes = EnumSet
+					.of(TargetType.DATABASE);
 
-			export.createOnly(targetTypes, metadata.buildMetadata());
+			export.createOnly(targetTypes,
+					metadata.buildMetadata());
 
 			try {
 				Metadata meta = metadata.buildMetadata();
-				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
+				this.setSessionFactory(
+						meta.getSessionFactoryBuilder().build());
 			} catch (HibernateException e) {
 				e.printStackTrace();
 				logger.error("Lucene Index damaged", e);
-				logger.info("Lucene Index damaged -> clean up index directory to rebuild the index !");
+				logger.info(
+						"Lucene Index damaged -> clean up index directory to rebuild the index !");
 				System.exit(0);
 			}
 			// /*
@@ -285,21 +332,26 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			// /* ********************************************************** */
 		} else {
 			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
-					.applySettings(config.getProperties()).build();
+					.applySettings(config.getProperties())
+					.build();
 
-			MetadataSources metadata = new MetadataSources(standardRegistry);
+			MetadataSources metadata = new MetadataSources(
+					standardRegistry);
 
 			for (Class<?> annotatedClass : annotatedHibernateClasses) {
 				metadata.addAnnotatedClass(annotatedClass);
 			}
 
 			try {
-				Metadata meta = metadata.getMetadataBuilder().build();
-				this.setSessionFactory(meta.getSessionFactoryBuilder().build());
+				Metadata meta = metadata.getMetadataBuilder()
+						.build();
+				this.setSessionFactory(
+						meta.getSessionFactoryBuilder().build());
 			} catch (HibernateException e) {
 				e.printStackTrace();
 				logger.error("Lucene Index damaged", e);
-				logger.info("Lucene Index damaged -> clean up index directory to rebuild the index !");
+				logger.info(
+						"Lucene Index damaged -> clean up index directory to rebuild the index !");
 				System.exit(0);
 			}
 			/* validate database schema */
@@ -308,13 +360,17 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 				sv.validate(metadata.buildMetadata());
 
-				this.getLogger().info("Database Schema Validation : successful");
+				this.getLogger().info(
+						"Database Schema Validation : successful");
 
 			} catch (final HibernateException e) {
 				e.printStackTrace();
-				this.getLogger().error("Found existing, but not compatible database schema in path '"
-						+ configuration.getMountPath() + "' (" + e.getMessage() + ") ");
-				this.getLogger().error("Please delete path or specify another mount path !");
+				this.getLogger().error(
+						"Found existing, but not compatible database schema in path '"
+								+ configuration.getMountPath()
+								+ "' (" + e.getMessage() + ") ");
+				this.getLogger().error(
+						"Please delete path or specify another mount path !");
 				System.exit(0);
 				// System.out.println("run schema update");
 				// new SchemaUpdate((MetadataImplementor)
@@ -325,33 +381,60 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		}
 
 		/* enable statistics log of the SessionFactory */
-		this.getSessionFactory().getStatistics().setStatisticsEnabled(true);
+		this.getSessionFactory().getStatistics()
+				.setStatisticsEnabled(true);
 
-		if (!this.isAutoIndexing()) {			
-			try {
-				Directory indexingDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(),"Master_Index"));
-				writer = new IndexWriter(indexingDirectory, new IndexWriterConfig(new StandardAnalyzer()));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		if (!this.isAutoIndexing()) {
+			List<IndexWriterThread> indexWriterThreads = new ArrayList<>();
+			if (this.configuration
+					.isHibernateSearchIndexingEnabled()) {
 
-			if(this.configuration.getIndexingStrategy()) {
-				
-/////////////////////////////// wieso wird das countDownLatch hier nicht initialisiert? /////////////////////////////////////
-				
-				this.setIndexThread(new HibernateIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger, this.countDownLatch));
-			}else {
-				this.countDownLatch = new CountDownLatch(2);
-				this.setIndexThread(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer));
-/////////////////// wieso benötigst du hier zweimal den coutndownlatch ???? //////////////////////////////////////////////////				
-				this.setPublicVersionWriter(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory, this.logger,this.countDownLatch, writer, this.countDownLatch));
+				indexWriterThreads
+						.add(new HibernateIndexWriterThread(
+								this.getSessionFactory(),
+								this.indexDirectory,
+								this.logger));
+				this.countDownLatch = new CountDownLatch(
+						indexWriterThreads.size());
+				indexWriterThreads.get(0)
+						.setCountDownLatch(this.countDownLatch);
+				this.setIndexThread(indexWriterThreads.get(0));
+				this.getIndexThread().start();
+			} else {
+				try {
+					Directory indexingDirectory = FSDirectory
+							.open(Paths.get(indexDirectory.toString(), "Master_Index"));
+					writer = new IndexWriter(indexingDirectory,
+							new IndexWriterConfig(new StandardAnalyzer()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				indexWriterThreads
+						.add(new NativeLuceneIndexWriterThread(
+								this.getSessionFactory(),
+								this.indexDirectory, this.logger,
+								writer));
+				indexWriterThreads
+						.add(new PublicVersionIndexWriterThread(
+								this.getSessionFactory(),
+								this.indexDirectory, this.logger,
+								writer));
+				this.countDownLatch = new CountDownLatch(
+						indexWriterThreads.size());
+				indexWriterThreads.get(0)
+						.setCountDownLatch(this.countDownLatch);
+				indexWriterThreads.get(1)
+						.setCountDownLatch(this.countDownLatch);
+				this.setIndexThread(indexWriterThreads.get(0));
+				this.setPublicVersionWriter(
+						(PublicVersionIndexWriterThread) indexWriterThreads
+								.get(1));
+				this.getIndexThread().start();
+				this.getPublicVersionWriter().start();
 			}
-/////////////////////////////// sollte der Start der Threads nicht in die if-else Anweisung mit rein? Je nachdem welcher Fall eintritt!? /////////////////////////////////////
-			this.getIndexThread().start();
-			this.getPublicVersionWriter().start();
 		}
 	}
-	
+
 	/** {@inheritDoc} */
 	@Override
 	public MetaDataImplementation createMetaDataInstance() {
@@ -379,12 +462,13 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	public Connection getConnection() {
 		return this.connection;
 	}
-	
+
 	public PublicVersionIndexWriterThread getPublicVersionWriter() {
 		return publicVersionWriter;
 	}
 
-	public void setPublicVersionWriter(PublicVersionIndexWriterThread publicVersionWriter) {
+	public void setPublicVersionWriter(
+			PublicVersionIndexWriterThread publicVersionWriter) {
 		this.publicVersionWriter = publicVersionWriter;
 	}
 
@@ -394,7 +478,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * @return the dataPath
 	 */
 	public Path getDataPath() {
-		return Paths.get(this.getConfiguration().getDataPath().toString(),
+		return Paths.get(
+				this.getConfiguration().getDataPath().toString(),
 				FileSystemImplementationProvider.EDALDB_DBNAME);
 	}
 
@@ -435,7 +520,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * @return the current MountPath.
 	 */
 	public Path getMountPath() {
-		return Paths.get(this.getConfiguration().getMountPath().toString(),
+		return Paths.get(
+				this.getConfiguration().getMountPath()
+						.toString(),
 				FileSystemImplementationProvider.EDALDB_DBNAME);
 	}
 
@@ -455,42 +542,58 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	/** {@inheritDoc} */
 	@Override
-	public PrimaryDataEntity reloadPrimaryDataEntityByID(final String uuid, final long versionNumber)
+	public PrimaryDataEntity reloadPrimaryDataEntityByID(
+			final String uuid, final long versionNumber)
 			throws EdalException {
 
-		final Session session = this.getSessionFactory().openSession();
+		final Session session = this.getSessionFactory()
+				.openSession();
 
 		CriteriaBuilder builder = session.getCriteriaBuilder();
 
 		CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
-				.createQuery(PrimaryDataFileImplementation.class);
-		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+				.createQuery(
+						PrimaryDataFileImplementation.class);
+		Root<PrimaryDataFileImplementation> fileRoot = fileCriteria
+				.from(PrimaryDataFileImplementation.class);
 
-		fileCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+		fileCriteria.where(builder.and(
+				builder.equal(fileRoot.type(),
+						PrimaryDataFileImplementation.class),
 				builder.equal(fileRoot.get("ID"), uuid)));
 
-		final PrimaryDataFile file = session.createQuery(fileCriteria).uniqueResult();
+		final PrimaryDataFile file = session
+				.createQuery(fileCriteria).uniqueResult();
 
 		if (file == null) {
 
 			CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
-					.createQuery(PrimaryDataDirectoryImplementation.class);
+					.createQuery(
+							PrimaryDataDirectoryImplementation.class);
 			Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
 					.from(PrimaryDataDirectoryImplementation.class);
 
-			directoryCriteria
-					.where(builder.and(builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
-							builder.equal(directoryRoot.get("ID"), uuid)));
+			directoryCriteria.where(builder.and(builder.equal(
+					directoryRoot.type(),
+					PrimaryDataDirectoryImplementation.class),
+					builder.equal(directoryRoot.get("ID"),
+							uuid)));
 
-			final PrimaryDataDirectory directory = session.createQuery(directoryCriteria).uniqueResult();
+			final PrimaryDataDirectory directory = session
+					.createQuery(directoryCriteria)
+					.uniqueResult();
 
 			if (directory == null) {
 				session.close();
-				throw new EdalException("found no entity with ID '" + uuid + "'");
+				throw new EdalException(
+						"found no entity with ID '" + uuid
+								+ "'");
 			} else {
 				PrimaryDataEntityVersion version;
 				try {
-					version = directory.getVersionByRevisionNumber(versionNumber);
+					version = directory
+							.getVersionByRevisionNumber(
+									versionNumber);
 				} catch (PrimaryDataEntityVersionException e) {
 					session.close();
 					throw new EdalException(e.getMessage(), e);
@@ -500,7 +603,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 					directory.switchCurrentVersion(version);
 				} catch (PrimaryDataEntityVersionException e) {
 					session.close();
-					throw new EdalException("unable to switch the version with the number " + versionNumber, e);
+					throw new EdalException(
+							"unable to switch the version with the number "
+									+ versionNumber,
+							e);
 				}
 			}
 			session.close();
@@ -509,7 +615,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 			PrimaryDataEntityVersion version;
 			try {
-				version = file.getVersionByRevisionNumber(versionNumber);
+				version = file.getVersionByRevisionNumber(
+						versionNumber);
 			} catch (PrimaryDataEntityVersionException e) {
 				session.close();
 				throw new EdalException(e.getMessage(), e);
@@ -519,7 +626,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				file.switchCurrentVersion(version);
 			} catch (PrimaryDataEntityVersionException e) {
 				session.close();
-				throw new EdalException("unable to switch the version with the number " + versionNumber, e);
+				throw new EdalException(
+						"unable to switch the version with the number "
+								+ versionNumber,
+						e);
 			}
 			session.close();
 			return file;
@@ -540,7 +650,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * @return new Session
 	 */
 	public Session getSession() {
-			return this.getSessionFactory().openSession();
+		return this.getSessionFactory().openSession();
 	}
 
 	/**
@@ -572,30 +682,39 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	/** {@inheritDoc} */
 	@Override
-	public PrimaryDataDirectory mount(final List<Class<? extends Principal>> supportedPrincipals)
+	public PrimaryDataDirectory mount(
+			final List<Class<? extends Principal>> supportedPrincipals)
 			throws PrimaryDataDirectoryException {
 
-		final Session session = this.getSessionFactory().openSession();
+		final Session session = this.getSessionFactory()
+				.openSession();
 
 		CriteriaBuilder builder = session.getCriteriaBuilder();
 
 		CriteriaQuery<PrimaryDataDirectoryImplementation> rootDirectoryCriteria = builder
-				.createQuery(PrimaryDataDirectoryImplementation.class);
+				.createQuery(
+						PrimaryDataDirectoryImplementation.class);
 		Root<PrimaryDataDirectoryImplementation> rootDirectoryRoot = rootDirectoryCriteria
 				.from(PrimaryDataDirectoryImplementation.class);
 
-		rootDirectoryCriteria
-				.where(builder.and(builder.equal(rootDirectoryRoot.type(), PrimaryDataDirectoryImplementation.class),
-						builder.isNull((rootDirectoryRoot.get("parentDirectory")))));
+		rootDirectoryCriteria.where(builder.and(builder.equal(
+				rootDirectoryRoot.type(),
+				PrimaryDataDirectoryImplementation.class),
+				builder.isNull((rootDirectoryRoot
+						.get("parentDirectory")))));
 
-		if (session.createQuery(rootDirectoryCriteria).uniqueResult() == null) {
+		if (session.createQuery(rootDirectoryCriteria)
+				.uniqueResult() == null) {
 
 			session.close();
 
-			DataManager.getImplProv().getLogger().info("Creating new RootDirectory...");
+			DataManager.getImplProv().getLogger()
+					.info("Creating new RootDirectory...");
 
-			final Session sess = this.getSessionFactory().openSession();
-			final Transaction transaction = sess.beginTransaction();
+			final Session sess = this.getSessionFactory()
+					.openSession();
+			final Transaction transaction = sess
+					.beginTransaction();
 
 			for (final Class<? extends Principal> clazz : supportedPrincipals) {
 				sess.save(new SupportedPrincipals(clazz));
@@ -605,13 +724,20 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			PrimaryDataDirectory newRootDirectory = null;
 
 			try {
-				final Constructor<? extends PrimaryDataDirectory> constructor = DataManager.getImplProv()
-						.getPrimaryDataDirectoryProvider().getConstructor(PrimaryDataDirectory.class, String.class);
+				final Constructor<? extends PrimaryDataDirectory> constructor = DataManager
+						.getImplProv()
+						.getPrimaryDataDirectoryProvider()
+						.getConstructor(
+								PrimaryDataDirectory.class,
+								String.class);
 
-				newRootDirectory = constructor.newInstance(null, PrimaryDataDirectory.PATH_SEPARATOR);
+				newRootDirectory = constructor.newInstance(null,
+						PrimaryDataDirectory.PATH_SEPARATOR);
 			} catch (final Exception e) {
 				throw new PrimaryDataDirectoryException(
-						"Can not instantiate the constructor to mount implementation: " + e.getMessage(), e);
+						"Can not instantiate the constructor to mount implementation: "
+								+ e.getMessage(),
+						e);
 			}
 
 			return newRootDirectory;
@@ -619,31 +745,39 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 		else {
 
-			CriteriaQuery<SupportedPrincipals> principalCriteria = builder.createQuery(SupportedPrincipals.class);
-			Root<SupportedPrincipals> principalRoot = principalCriteria.from(SupportedPrincipals.class);
+			CriteriaQuery<SupportedPrincipals> principalCriteria = builder
+					.createQuery(SupportedPrincipals.class);
+			Root<SupportedPrincipals> principalRoot = principalCriteria
+					.from(SupportedPrincipals.class);
 
 			principalCriteria.select(principalRoot);
 
-			final List<SupportedPrincipals> privatePrincipals = session.createQuery(principalCriteria).list();
+			final List<SupportedPrincipals> privatePrincipals = session
+					.createQuery(principalCriteria).list();
 
 			final List<SupportedPrincipals> publicPrincipals = new ArrayList<SupportedPrincipals>(
 					supportedPrincipals.size());
 
 			for (final Class<? extends Principal> clazz : supportedPrincipals) {
-				publicPrincipals.add(new SupportedPrincipals(clazz));
+				publicPrincipals
+						.add(new SupportedPrincipals(clazz));
 			}
-			if (privatePrincipals.containsAll(publicPrincipals)) {
-				DataManager.getImplProv().getLogger().info("All principals are supported !");
-			} else {
+			if (privatePrincipals
+					.containsAll(publicPrincipals)) {
 				DataManager.getImplProv().getLogger()
-						.warn("Not all principals are supported , please define new list and connect again !");
+						.info("All principals are supported !");
+			} else {
+				DataManager.getImplProv().getLogger().warn(
+						"Not all principals are supported , please define new list and connect again !");
 				throw new PrimaryDataDirectoryException(
 						"Not all principals are supported , please define new list and connect again !");
 			}
 
-			DataManager.getImplProv().getLogger().info("Getting existing RootDirectory...");
+			DataManager.getImplProv().getLogger()
+					.info("Getting existing RootDirectory...");
 
-			final PrimaryDataDirectoryImplementation existingRootDirectory = session.createQuery(rootDirectoryCriteria)
+			final PrimaryDataDirectoryImplementation existingRootDirectory = session
+					.createQuery(rootDirectoryCriteria)
 					.uniqueResult();
 
 			session.close();
@@ -658,13 +792,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	/**
 	 * Private setter for the autoIndexing
 	 * 
-	 * @param autoIndexing
-	 *            the autoIndexing to set
+	 * @param autoIndexing the autoIndexing to set
 	 */
 	private void setAutoIndexing(final boolean autoIndexing) {
 		this.autoIndexing = autoIndexing;
 	}
-	
 
 	private void setConnection(final Connection connection) {
 		this.connection = connection;
@@ -673,40 +805,40 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	/**
 	 * Private setter for the database password.
 	 * 
-	 * @param databasePassword
-	 *            the database password to set
+	 * @param databasePassword the database password to set
 	 */
-	private void setDatabasePassword(final String databasePassword) {
+	private void setDatabasePassword(
+			final String databasePassword) {
 		this.databasePassword = databasePassword;
 	}
 
 	/**
 	 * Private setter for the database user
 	 * 
-	 * @param databaseUsername
-	 *            the database username to set
+	 * @param databaseUsername the database username to set
 	 */
-	private void setDatabaseUsername(final String databaseUsername) {
+	private void setDatabaseUsername(
+			final String databaseUsername) {
 		this.databaseUsername = databaseUsername;
 	}
 
 	/**
 	 * Private setter for the indexingThread
 	 * 
-	 * @param indexThread
-	 *            the indexThread to set
+	 * @param indexThread the indexThread to set
 	 */
-	private void setIndexThread(final IndexWriterThread indexThread) {
+	private void setIndexThread(
+			final IndexWriterThread indexThread) {
 		this.indexThread = indexThread;
 	}
 
 	/**
 	 * Private setter for the {@link SessionFactory}
 	 * 
-	 * @param sessionFactory
-	 *            the sessionFactory to set
+	 * @param sessionFactory the sessionFactory to set
 	 */
-	private void setSessionFactory(final SessionFactory sessionFactory) {
+	private void setSessionFactory(
+			final SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 
@@ -717,28 +849,32 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			this.getIndexThread().waitForFinish();
 			this.getPublicVersionWriter().waitForFinish();
 			try {
-				this.getLogger().info("waiting for (INDEXTHREADS)");
+				this.getLogger()
+						.info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
-				this.getLogger().info("finished waiting for (INDEXTHREADS)");
-				
+				this.getLogger().info(
+						"finished waiting for (INDEXTHREADS)");
+
 /////////////////////////////// Kann das hier jetzt weg mit dem Thread.sleep? Wir sollten hier für den Fall eine entsprechende Exception werfen  /////////////////////////////////////
-				
-				while(this.getPublicVersionWriter().isAlive()) {
-					this.getLogger().info("\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
+
+				while (this.getPublicVersionWriter().isAlive()) {
+					this.getLogger().info(
+							"\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
 					Thread.sleep(1000);
 				}
-				while(this.getIndexThread().isAlive()) {
-					this.getLogger().info("\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
+				while (this.getIndexThread().isAlive()) {
+					this.getLogger().info(
+							"\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
 					Thread.sleep(1000);
 				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}finally {
-				if(writer != null) {
+			} finally {
+				if (writer != null) {
 					try {
-						writer.close();					
-						} catch (IOException e) {
+						writer.close();
+					} catch (IOException e) {
 						e.printStackTrace();
 						try {
 							this.writer.rollback();
@@ -752,13 +888,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			}
 		}
 		try {
-/////////////////////// Kann das überhaupt passieren ??? Wie kann die SesscionFactory noch geschlossen werden ???? ///////////////////////			
-			if(this.getSessionFactory().isClosed()) {
-				this.getLogger().info("\n######### ALREADY ############ \n ################ CLOSED #################");
-			}
 			this.getSessionFactory().close();
 			this.getConnection().close();
-			if (!this.getCacheManager().getStatus().equals(Status.UNINITIALIZED)) {
+			if (!this.getCacheManager().getStatus()
+					.equals(Status.UNINITIALIZED)) {
 				this.getCacheManager().close();
 			}
 		} catch (SQLException e) {

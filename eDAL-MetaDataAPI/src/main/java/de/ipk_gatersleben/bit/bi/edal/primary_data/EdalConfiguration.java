@@ -501,9 +501,10 @@ public final class EdalConfiguration {
 	}
 	
 
-	public boolean getIndexingStrategy() {
+	public boolean isHibernateSearchIndexingEnabled() {
 		return this.indexingStrategy;
 	}
+	
 
 	/**
 	 * Add a supported Principal to the list of principals.

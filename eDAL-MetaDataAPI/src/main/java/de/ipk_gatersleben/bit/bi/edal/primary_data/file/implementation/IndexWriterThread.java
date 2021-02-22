@@ -78,9 +78,8 @@ abstract class IndexWriterThread extends EdalThread {
 	 *            the logger of the used {@link ImplementationProvider}
 	 */
 	protected IndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger, CountDownLatch countDownLatch) {
+			final Logger implementationProviderLogger) {
 		super();
-		this.countDownLatch = countDownLatch;
 		this.indexLogger = LogManager.getLogger("index-thread");
 		this.indexWriterThreadLogger = LogManager.getLogger("IndexWriterThread");
 		this.implementationProviderLogger = implementationProviderLogger;
@@ -138,7 +137,24 @@ abstract class IndexWriterThread extends EdalThread {
 	 * wait until the indexing method is finished
 	 * @return 
 	 */
-	abstract void waitForFinish();
+	public void waitForFinish() {
+		final long time = System.currentTimeMillis();
+		this.lock.lock();
+		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
+		this.indexWriterThreadLogger.info("FINALZE indexing...");
+		this.executeIndexing();
+		this.setFinishIndexing(true);
+		this.lock.unlock();
+		this.indexWriterThreadLogger.debug("Index is finished after waiting : "
+				+ (System.currentTimeMillis() - time + " ms"));
+		this.indexLogger.info("Index is finished after waiting : "
+				+ (System.currentTimeMillis() - time + " ms"));
+	}
+
+	public void setCountDownLatch(
+			CountDownLatch countDownLatch) {
+		this.countDownLatch = countDownLatch;
+	}
 
 /////////////////////////////// wenn das nicht mehr benötigt wird, dann weg damit //////////////////////////////////////////	
 	

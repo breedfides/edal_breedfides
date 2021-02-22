@@ -63,8 +63,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class HibernateIndexWriterThread extends IndexWriterThread {
 
 	protected HibernateIndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
-			final Logger implementationProviderLogger, CountDownLatch countDownLatch) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
+			final Logger implementationProviderLogger) {
+		super(sessionFactory, indexDirectory, implementationProviderLogger);
 		
 		final Session session = this.sessionFactory.openSession();
 		try {			
@@ -73,20 +73,20 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			Directory directory = null;
 			IndexReader reader = null;
 			int numberDocs = 0;
-			for (File file : listOfFiles) {
-				  if (file.isDirectory()) {
-						try {					
-							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
-							reader = DirectoryReader.open( directory );
-							numberDocs += reader.numDocs();
-							reader.close();
-							directory.close();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-				  }
-			}
-			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
+//			for (File file : listOfFiles) {
+//				  if (file.isDirectory()) {
+//						try {					
+//							directory = FSDirectory.open(Paths.get(this.indexDirectory.toString(),file.getName()));
+//							reader = DirectoryReader.open( directory );
+//							numberDocs += reader.numDocs();
+//							reader.close();
+//							directory.close();
+//						} catch (IOException e) {
+//							e.printStackTrace();
+//						}
+//				  }
+//			}
+//			this.implementationProviderLogger.info("Number of docs after index rebuild: " + numberDocs);
 
 			
 

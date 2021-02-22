@@ -956,33 +956,6 @@ public class DataManager {
 		}
 	}
 	
-	public static void checkLastIds() {
-		if(!getConfiguration().getIndexingStrategy()) {
-			FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
-
-			if(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis() == null) {
-				return;
-			}
-
-			if(!Files.isWritable(((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getPathToLastId())) {
-				try {
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOis().close();
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setOos(null);
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getFis().close();
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setFis(null);
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getOos().close();
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setOos(null);
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).getFos().close();
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setFos(null);
-					((PublicVersionIndexWriterThread)implProvi.getPublicVersionWriter()).setPathToLastId(null);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-	
 	public static void checkDb() {
 		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider)getImplProv());
 		Path path = implProvi.getConfiguration().getMountPath();

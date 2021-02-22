@@ -468,7 +468,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			return new ArrayList<Integer>();
 		}
 
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
 			//org.apache.lucene.search.Query query = null;
@@ -554,7 +554,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			return new ArrayList<Integer>();
 		}
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
 			final SearchSession ftSession = Search.session(session);
@@ -891,7 +891,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	private List<Integer> searchByDataSize(DataSize data, EnumDublinCoreElements element, boolean fuzzy) throws PrimaryDataDirectoryException, ParseException {
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
@@ -957,7 +957,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			return new ArrayList<Integer>();
 		}
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
 			final SearchSession ftSession = Search.session(session);
@@ -1043,7 +1043,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			return new ArrayList<Integer>();
 		}
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
 			final SearchSession ftSession = Search.session(session);
@@ -1151,7 +1151,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final int precission = edalDate.getStartPrecision().ordinal();
 		final Calendar date = edalDate.getStartDate();
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
@@ -1294,7 +1294,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final int precissionEnd = edalDateRange.getEndPrecision().ordinal();
 		final Calendar dateEnd = edalDateRange.getEndDate();
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 	
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 	
@@ -1510,7 +1510,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	private List<Integer> searchByIdentifier(final Identifier identifier, EnumDublinCoreElements element, final boolean fuzzy)
 			throws ParseException, PrimaryDataDirectoryException {
 
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
 	
@@ -1624,7 +1624,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				return new ArrayList<Integer>();
 			}	
 			else{
-				if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+				if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 	
 				final String id = identifierRelation.getRelations().iterator().next().getID();
 				
@@ -1714,7 +1714,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final long startTime = System.currentTimeMillis();
 
 
@@ -2146,7 +2146,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	private List<Integer> searchByLegalPerson(final LegalPerson person, EnumDublinCoreElements element, final boolean fuzzy)
 			throws ParseException, PrimaryDataDirectoryException {
 
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			final SearchSession ftSession = Search.session(session);
 			SearchResult<MyLegalPerson> searchQuery = null;
@@ -2291,7 +2291,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	private List<Integer> searchByNaturalPerson(final NaturalPerson person,EnumDublinCoreElements element , final boolean fuzzy)
 			throws ParseException, PrimaryDataDirectoryException {
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()){
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()){
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			final SearchSession ftSession = Search.session(session);
 			SearchResult<MyNaturalPerson> searchQuery = null;
@@ -2476,7 +2476,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	private List<Integer> searchByUntypedData(final UntypedData data,EnumDublinCoreElements element, final boolean fuzzy) throws ParseException, PrimaryDataDirectoryException {
 
-		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getIndexingStrategy()) {
+		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 			
 			final SearchSession ftSession = Search.session(session);

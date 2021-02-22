@@ -97,11 +97,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
-	ObjectOutputStream oos = null;
 
-	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger, CountDownLatch countDownLatch, IndexWriter writer) {
-		super(sessionFactory, indexDirectory, implementationProviderLogger, countDownLatch);
+	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory, Logger implementationProviderLogger,
+			IndexWriter writer) {
+		super(sessionFactory, indexDirectory, implementationProviderLogger);
 		this.writer = writer;
 		int numberDocs = 0;
 		try {
@@ -120,30 +119,24 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			try {
 				Files.createDirectories(parent);
 			} catch (IOException e) {
-				e.printStackTrace();
+				this.indexWriterThreadLogger.debug("Error while creating Index Directory" + e.getMessage());
 			}
 		}
 		if (Files.exists(this.pathToLastId)) {
+
 			try {
-				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(this.pathToLastId.toFile()));
+				FileInputStream fis = new FileInputStream(this.pathToLastId.toFile());
+				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
 				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
-				this.implementationProviderLogger.info(e.getMessage());
 				e.printStackTrace();
 			}
-
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
-		try {
-			oos = new ObjectOutputStream(new FileOutputStream(pathToLastId.toFile()));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+
+		
 	}
 
 	protected void executeIndexing() {
@@ -151,28 +144,20 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 			long executeIndexingStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
-
 			session.setDefaultReadOnly(true);
-
 			/** high value fetch objects faster, but more memory is needed */
 			final int fetchSize = (int) Math.pow(10, 4);
-
 			final long queryStartTime = System.currentTimeMillis();
-
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
-			Root<PrimaryDataEntityVersionImplementation> root = criteria
-					.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
-					.orderBy(criteriaBuilder.asc(root.get("id")));
+			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
+			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
 
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
-			final ScrollableResults results = session.createQuery(criteria).setMaxResults(fetchSize)
-					.scroll(ScrollMode.FORWARD_ONLY);
+			final ScrollableResults results = session.createQuery(criteria).setMaxResults(fetchSize).scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;
 			int flushedObjects = 0;
@@ -188,24 +173,19 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				try {
 					/** index each element */
 					this.indexVersion(writer, version);
+					this.implementationProviderLogger.info("Indexed Version: " + version.getId());
 				} catch (MetaDataException e) {
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
 					try {
-						if (!writer.isOpen()) {
-							this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-						} else {
-							writer.commit();
-						}
+						writer.commit();
 						flushedObjects += fetchSize;
 						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 							this.lastIndexedID = version.getId();
 						}
 					} catch (IOException e) {
-/////////////////////////// Bitte entsprechendes Exception-Handling einbauen und StackTrace entfernen ///////////////////////////////////////		
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
 					}
 				}
 			}
@@ -222,25 +202,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
 			if (indexedObjects > 0 || flushedObjects > 0) {
-				this.indexWriterThreadLogger
-						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
-								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-								+ df.format(new Date(queryTime)));
+				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
+						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
 			}
-///////////////////////////////////// Bitte diesen Block zum schreiben des ObjectStream in eine seperate, private Funktion kaspeln, um Code Redundanzen zu vermeiden //////////////////// 
-
-			if (flushedObjects != 0) {
-				try {
-					oos.writeObject(this.lastIndexedID);
-					oos.flush();
-				} catch (IOException e) {
-					this.implementationProviderLogger.info(e.getMessage());
-					e.printStackTrace();
-				}
-
-			}
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
-
+			updateLastIndexedID(flushedObjects);
 			try {
 				Thread.sleep(Math.min(
 						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
@@ -262,25 +227,33 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
-	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version)
-			throws MetaDataException {
+	private void updateLastIndexedID(int flushedObjects) {
+		if (flushedObjects != 0) {
+			try {
+				FileOutputStream fos = new FileOutputStream(
+						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.writeObject(this.lastIndexedID);
+				oos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
-		doc.add(new TextField(MetaDataImplementation.TITLE,
-				getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.DESCRIPTION,
-				getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.COVERAGE,
-				getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
+				Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()),
-				Store.YES));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.SIZE,
-				Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),
-				Store.YES));
-		doc.add(new TextField(MetaDataImplementation.LANGUAGE, getString(
-				((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()),
-				Store.YES));
+				Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
+				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
 		Persons naturalPersons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		persons.addAll(naturalPersons);
@@ -288,10 +261,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		persons.add(legalPerson);
 		for (Person currentPerson : persons) {
 			if (currentPerson instanceof NaturalPerson) {
-				doc.add(new TextField(MetaDataImplementation.GIVENNAME, ((NaturalPerson) currentPerson).getGivenName(),
-						Store.YES));
-				doc.add(new TextField(MetaDataImplementation.SURENAME, ((NaturalPerson) currentPerson).getSureName(),
-						Store.YES));
+				doc.add(new TextField(MetaDataImplementation.GIVENNAME, ((NaturalPerson) currentPerson).getGivenName(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.SURENAME, ((NaturalPerson) currentPerson).getSureName(), Store.YES));
 			}
 			doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, currentPerson.getAddressLine(), Store.YES));
 			doc.add(new TextField(MetaDataImplementation.ZIP, currentPerson.getZip(), Store.YES));
@@ -313,7 +284,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
-			doc.add(new LongPoint(MetaDataImplementation.STARTDATE, date.getStartDate().getTimeInMillis()));
+			doc.add(new LongPoint(MetaDataImplementation.STARTDATE,
+					date.getStartDate().getTimeInMillis()));
 			if (date instanceof EdalDateRange) {
 				doc.add(new LongPoint(MetaDataImplementation.ENDDATE,
 						((EdalDateRange) date).getEndDate().getTimeInMillis()));
@@ -324,25 +296,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			doc.add(new TextField(MetaDataImplementation.TYPE, "none", Store.YES));
 		} else {
 			doc.add(new TextField(MetaDataImplementation.MIMETYPE,
-					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()),
-					Store.YES));
-			doc.add(new TextField(MetaDataImplementation.TYPE,
-					metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
+					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}
 		doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
-		if (!writer.isOpen()) {
-/////////////////////////// Das hier darf doch eigentlich nicht passieren oder ?? ///////////////////////////////////////		
-
-			this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-			
-		} else {
-			try {
-				writer.addDocument(doc);
-			} catch (IOException e) {
-/////////////////////////// Bitte entsprechendes Exception-Handling einbauen und StackTrace entfernen ///////////////////////////////////////		
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try {
+			writer.addDocument(doc);
+		} catch (IOException e) {
+			this.indexWriterThreadLogger.debug("Error when adding Document to IndexWriter" + e.getMessage());
 		}
 	}
 
@@ -370,10 +331,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// lastIndexedID: " + lastIndexedID);
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
-			Root<PrimaryDataEntityVersionImplementation> root = criteria
-					.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
-					.orderBy(criteriaBuilder.asc(root.get("id")));
+			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
+			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
 
 			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
 
@@ -415,22 +374,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
 			if (indexedObjects > 0 || flushedObjects > 0) {
-				this.indexWriterThreadLogger
-						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
-								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-								+ df.format(new Date(queryTime)));
+				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
+						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
 			}
-////////////////////////////// siehe Kommnetar oben //////////////////////////////
-			if (flushedObjects != 0) {
-				try {
-					oos.writeObject(this.lastIndexedID);
-					oos.flush();
-				} catch (IOException e) {
-					this.implementationProviderLogger.info(e.getMessage());
-					e.printStackTrace();
-				}
 
-			}
+			updateLastIndexedID(flushedObjects);
 
 			try {
 				Thread.sleep(Math.min(
@@ -470,8 +418,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			reader = DirectoryReader.open(writer);
 			numberDocs += reader.numDocs();
 			reader.close();
-/////////////////////////// ich denke das setzen auf "null" kann weg  ///////////////////////////////////////		
-			reader = null;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -486,72 +432,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	}
 
-	public void waitForFinish() {
-		final long time = System.currentTimeMillis();
-		this.indexWriterThreadLogger.debug("Wait for finish current indexing...");
-		this.implementationProviderLogger.info("NATIVELUCINDEXER VOR LOCK()");
-		
-/////////////////////// wird er Lock benötigt oder nicht ????? /////////////////////////////////////		
-		this.lock.lock();
-		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH LOCK()");
-		this.indexWriterThreadLogger.debug("Got lock for last indexing...");
-		this.indexWriterThreadLogger.info("FINALZE indexing...");
-		this.executeIndexing();
-		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH EXECUTEINDEXING");
-
-/////////////////////////// Muss die SessionFactory hier geschlossen werden oder nicht? Wennn nicht dann Code weg hier... ///////////////////////////////////////		
-		
-		/** close SessionFactory so no indexing again */
-		/** executeIndexing() runs only with open SessionFactory */
-
-		// this.sessionFactory.close();
-		this.setFinishIndexing(true);
-		this.lock.unlock();
-		this.implementationProviderLogger.info("NATIVELUCINDEXER NACH UNLOCK()");
-		this.indexWriterThreadLogger
-				.debug("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
-		this.indexLogger.info("Index is finished after waiting : " + (System.currentTimeMillis() - time + " ms"));
-		this.indexWriterThreadLogger.debug("unlock Lock");
-	}
 
 	@Override
 	public void run() {
 		super.run();
-		try {
-			oos.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-/////////////////////////// Ich denke auch hier kann das null Setzen weg ///////////////////////////////////////		
-		oos = null;
-		
-/////////////////////////// Wofür ist diese Section mit den touch() nötig ? ///////////////////////////////////////		
-		
-		boolean locked = true;
-		while (locked) {
-			try {
-				org.apache.commons.io.FileUtils.touch(
-						Paths.get(indexDirectory.toString(), "Master_Index", IndexWriter.WRITE_LOCK_NAME).toFile());
-				locked = false;
-			} catch (IOException e) {
-				this.implementationProviderLogger.info("\n################################# "
-						+ Paths.get(indexDirectory.toString(), "Master_Index", IndexWriter.WRITE_LOCK_NAME).toString()
-						+ " STILL LOCKED");
-				locked = true;
-			}
-		}
-		locked = true;
-		while (locked) {
-			try {
-				org.apache.commons.io.FileUtils.touch(Paths.get(this.pathToLastId.toString()).toFile());
-				locked = false;
-			} catch (IOException e) {
-				this.implementationProviderLogger
-						.info("\n################################# " + this.pathToLastId.toString() + " STILL LOCKED");
-				locked = true;
-			}
-		}
 		this.implementationProviderLogger.info("finished (NativeluceneIndexThread), now Counting Down Latch");
 		this.countDownLatch.countDown();
 	}
