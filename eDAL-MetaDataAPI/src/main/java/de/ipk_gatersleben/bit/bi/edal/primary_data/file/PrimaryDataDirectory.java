@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -372,6 +373,12 @@ public abstract class PrimaryDataDirectory extends PrimaryDataEntity {
 		return Collections.unmodifiableList(
 				this.searchByDublinCoreElementImpl(element, data, fuzzy, recursiveIntoSubdirectories));
 	}
+	
+	public List<PrimaryDataEntity> searchByKeyword(String keyword, boolean fuzzy, String entityType){
+		return Collections.unmodifiableList(this.searchByKeywordImpl(keyword, fuzzy, entityType));
+	}
+	
+	protected abstract List<? extends PrimaryDataEntity> searchByKeywordImpl(String keyword, boolean fuzzy, String entityType);
 
 	/**
 	 * Abstract function for implementation of

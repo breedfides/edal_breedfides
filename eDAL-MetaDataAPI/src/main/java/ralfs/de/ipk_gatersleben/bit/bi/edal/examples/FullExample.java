@@ -71,11 +71,17 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 		PrimaryDataDirectory root = getRoot();
-		Inserter inserter = new Inserter(root);
-		inserter.insertOne();
+//		Inserter inserter = new Inserter(root);
+//		inserter.insertOne();
+//		Thread.sleep(5000);
+////		Thread.sleep(2000);
 //			
-//		testKeyword();
-//		Thread.sleep(50000);
+//		testKeyword(root);
+		Thread.sleep(5000);
+		log("start Search");
+		long start = System.currentTimeMillis();
+		List<PrimaryDataEntity> entities = root.searchByKeyword("Eric", false, "rootDirectory");
+		log("Finsihed in: "+(System.currentTimeMillis()-start));
 			
 		DataManager.shutdown();
 			
@@ -178,11 +184,10 @@ public class FullExample {
 		//testKeyword();
 	}
 	
-	private static void testKeyword() throws Exception {
-		PrimaryDataDirectory rootDirectory = getRoot();
+	private static void testKeyword(PrimaryDataDirectory rootDirectory) throws Exception {
 		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("needspace14 AND TEST", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Eric AND Example_Folder2", false, true);
         	for(PrimaryDataEntity entity : results) {
     			//log("\n\n#### Entity: "+entity.toString()+" ####");
 //        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {

@@ -51,7 +51,7 @@ public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData metadata = null;
-	Path path = Paths.get("src/test/resources/Example_Folder");
+	Path path = Paths.get("src/test/resources/Example_Folder2");
 	public Inserter(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
 	}
@@ -81,7 +81,7 @@ public class Inserter {
 		metadata = rootDirectory.getMetaData().clone();
 		Persons persons = new Persons();
 		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
-				"38820", "halberstadt", "Deutschland");
+				"38855", "Wernigerode", "Deutschland");
 		persons.add(np);
 		metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 		Subjects subjects = new Subjects();

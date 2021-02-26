@@ -300,8 +300,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}
 		doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
+		
 		try {
 			writer.addDocument(doc);
+			this.implementationProviderLogger.info("Indexed new Version: "+version.getId());
 		} catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Error when adding Document to IndexWriter" + e.getMessage());
 		}

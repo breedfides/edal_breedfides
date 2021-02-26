@@ -301,6 +301,95 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 		return false;
 	}
+	
+	public List<? extends PrimaryDataEntity> searchByKeywordImpl(String keyword, boolean fuzzy, String entityType){
+		final long startTime = System.currentTimeMillis();
+    	IndexReader reader = null;
+		try {
+	    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+	    	reader = DirectoryReader.open(indexDirectory);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		Analyzer standardAnalyzer = new StandardAnalyzer();
+    	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
+    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
+    			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
+    			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
+    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE};
+		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+			    new MultiFieldQueryParser(fields, standardAnalyzer);
+		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+        org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = fuzzy ? parser.parse(keyword+'~') : parser.parse(keyword);
+		} catch (ParseException e2) {
+			e2.printStackTrace();
+		}
+		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
+		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
+		try {
+			booleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)).toString()), Occur.FILTER);
+		} catch (ParseException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+    	IndexSearcher searcher = new IndexSearcher(reader);
+        ScoreDoc[] hits2 = null;
+        BooleanQuery booleanQuery2 = booleanQuery.build();
+		try {
+			hits2 = searcher.search(booleanQuery2, 50000).scoreDocs;
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		HashSet<PrimaryDataEntity> entities = new HashSet<>();
+		
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+		
+        for(int i = 0; i < hits2.length; i++) {
+        	Document doc = null;
+			try {
+				doc = searcher.doc(hits2[i].doc);
+				CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+						.createQuery(PrimaryDataFileImplementation.class);
+
+				Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+
+				fileCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
+				final PrimaryDataFileImplementation primaryDataFile = session.createQuery(fileCriteria)
+						.setCacheable(false)
+						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
+				if(primaryDataFile != null) {
+					entities.add(primaryDataFile);
+				}else {
+					CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+							.createQuery(PrimaryDataDirectoryImplementation.class);
+
+					Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+							.from(PrimaryDataDirectoryImplementation.class);
+					directoryCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataDirectoryImplementation.class),
+							builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
+
+
+					final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
+							.setCacheable(false)
+							.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
+					if(primaryDataDirectory != null) {
+						entities.add(primaryDataDirectory);
+					}
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
+		return results;
+	}
 
 	/** {@inheritDoc} */
 	@Override
@@ -2526,6 +2615,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				    				MetaDataImplementation.SUBJECT},
 				    		new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+			
 			String luceneString;
 			if(fuzzy) {
 				luceneString = data.getString()+"~";

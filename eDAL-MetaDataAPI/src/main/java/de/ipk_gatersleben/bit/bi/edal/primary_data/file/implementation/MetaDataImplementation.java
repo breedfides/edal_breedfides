@@ -129,7 +129,14 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String MIMETYPE = "mimeType";
 	public static final String STARTDATE = "startDate";
 	public static final String ENDDATE = "endDate";
+	
+	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";
+	//to map a Document to it's corresponding DataEntity
+	public static final String PRIMARYENTITYID = "associatedPrimaryEntityID";
+	
+	//to distinguish publicReferenceEntities and single Files/Folders
+	public static final String ENTITYTYPE = "entityType";
 
 	private Map<EnumDublinCoreElements, MyUntypedData> myMap;
 
