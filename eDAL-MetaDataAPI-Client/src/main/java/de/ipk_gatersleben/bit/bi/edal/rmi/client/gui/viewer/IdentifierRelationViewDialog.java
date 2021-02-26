@@ -106,7 +106,7 @@ public class IdentifierRelationViewDialog extends MetadataViewDialog {
 		if (strs != null) {
 			for (Identifier idenstr : strs) {
 				List<String> rowlist = new ArrayList<String>();
-				rowlist.add(idenstr.getID());
+				rowlist.add(idenstr.getIdentifier());
 				datalist.add(rowlist);
 			}
 		}

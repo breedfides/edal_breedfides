@@ -12,6 +12,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
+
 /**
  * Unique identifier, which is ensures to be global uniqueness defined at
  * <a href="http://www.iso.ch/cate/d2229.html" target="_blank">ISO/IEC
@@ -23,22 +26,13 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata;
 public class Identifier extends UntypedData {
 
 	public static final String UNKNOWN_ID = "Unknown_ID";
-	public EnumIdentifierType type;
-	private EnumIdentifierRelationType relationType;
-
-	public EnumIdentifierType getType() {
-		return type;
-	}
-
-	public void setType(EnumIdentifierType type) {
-		this.type = type;
-	}
-
 	/**
 	 * the generated serial ID
 	 */
 	private static final long serialVersionUID = 3380495549321758121L;
-	private final String id;
+	private RelatedIdentifierType relatedIdentifierType;
+	private RelationType relationType;
+	private final String identifier;
 
 	/**
 	 * Constructor for Identifier.
@@ -46,28 +40,19 @@ public class Identifier extends UntypedData {
 	 * Set the id to "Unkown_ID".
 	 */
 	public Identifier() {
-		this.id = UNKNOWN_ID;
+		this.identifier = UNKNOWN_ID;
 	}
 
-	/**
-	 * Constructor for Identifier with specified id.
-	 * 
-	 * @param id the id to set.
-	 */
-	public Identifier(String id) {
-		this.id = id;
-	}
-	
 	/**
 	 * Constructor for Identifier with specified id, type and relationType
 	 * 
 	 * @param id the id to set.
-	 * @param type the type to set
+	 * @param relatedIdentifierType the type to set
 	 * @param relationtype the relationType
 	 */
-	public Identifier(String id, EnumIdentifierType type, EnumIdentifierRelationType relationType) {
-		this.id = id;
-		this.type = type;
+	public Identifier(String id, RelatedIdentifierType relatedIdentifierType, RelationType relationType) {
+		this.identifier = id;
+		this.relatedIdentifierType = relatedIdentifierType;
 		this.relationType = relationType;
 	}
 
@@ -77,33 +62,18 @@ public class Identifier extends UntypedData {
 
 		if (datatype instanceof Identifier) {
 
-			Identifier identifier = (Identifier) datatype;
+			Identifier id = (Identifier) datatype;
 
-			if (id.compareTo(identifier.id) == 0) {
-				return super.compareTo(identifier);
+			if (identifier.compareTo(id.identifier) == 0) {
+				return super.compareTo(id);
 			} else {
-				return id.compareTo(identifier.id);
+				return identifier.compareTo(id.identifier);
 			}
 		} else {
 			return super.compareTo(datatype);
 		}
 	}
-
-	/**
-	 * Getter for the id.
-	 * 
-	 * @return the id.
-	 */
-	public final String getID() {
-		return this.id;
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public String toString() {
-		return this.id;
-	}
-
+	
 	/** {@inheritDoc} */
 	@Override
 	public boolean equals(Object obj) {
@@ -117,30 +87,53 @@ public class Identifier extends UntypedData {
 			return false;
 		}
 		Identifier other = (Identifier) obj;
-		if (id == null) {
-			if (other.id != null) {
+		if (identifier == null) {
+			if (other.identifier != null) {
 				return false;
 			}
-		} else if (!id.equals(other.id)) {
+		} else if (!identifier.equals(other.identifier)) {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Getter for the identifier.
+	 * 
+	 * @return the identifier.
+	 */
+	public final String getIdentifier() {
+		return this.identifier;
+	}
+
+	public RelationType getRelationType() {
+		return relationType;
+	}
+
+	public RelatedIdentifierType getRelatedIdentifierType() {
+		return relatedIdentifierType;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
 		return result;
 	}
 
-	public EnumIdentifierRelationType getRelationType() {
-		return relationType;
+	public void setRelationType(RelationType relationType) {
+		this.relationType = relationType;
 	}
 
-	public void setRelationType(EnumIdentifierRelationType relationType) {
-		this.relationType = relationType;
+	public void setRelatedIdentifierType(RelatedIdentifierType relatedIdentiferType) {
+		this.relatedIdentifierType = relatedIdentiferType;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public String toString() {
+		return this.identifier;
 	}
 
 }

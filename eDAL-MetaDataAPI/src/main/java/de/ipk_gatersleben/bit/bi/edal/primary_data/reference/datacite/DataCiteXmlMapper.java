@@ -66,6 +66,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlSub
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitle;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitles;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DescriptionType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceTypeGeneral;
 
 /**
@@ -155,7 +157,7 @@ public class DataCiteXmlMapper {
 
 	private void setRelatedIdentifier(XmlResource resource) {
 		
-		XmlRelatedIdentifiers relatedIdentifiers = new XmlRelatedIdentifiers();
+		XmlRelatedIdentifiers xmlRelatedIdentifiers = new XmlRelatedIdentifiers();
 		
 		
 		try {
@@ -163,19 +165,26 @@ public class DataCiteXmlMapper {
 			IdentifierRelation ir= this.getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
 				for (Identifier id : ir.getRelations()) {
 					
-					XmlRelatedIdentifier relatedIdentifer = new XmlRelatedIdentifier();
-//					relatedIdentifer.setRelatedIdentifierType(id.getType());
+					XmlRelatedIdentifier xmlRelatedIdentifer = new XmlRelatedIdentifier(id.getIdentifier());
 					
+					xmlRelatedIdentifer.setRelatedIdentifierType(RelatedIdentifierType.fromValue(id.getRelatedIdentifierType().toString()));
+					xmlRelatedIdentifer.setRelationType(RelationType.fromValue(id.getRelationType().toString()));
+//					xmlRelatedIdentifer.setRelatedMetadataScheme("metadataschema");
+//					xmlRelatedIdentifer.setSchemeType("schemaType");
+//					xmlRelatedIdentifer.setSchemeURI("schemURI");
+					
+					
+					xmlRelatedIdentifiers.addRelatedIdentifier(xmlRelatedIdentifer);
+										
 				}
+				
 			} catch (MetaDataException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
 			
+		resource.setRelatedIdentifiers(xmlRelatedIdentifiers);
 		
-		
-		XmlRelatedIdentifier identifier = new XmlRelatedIdentifier();
 		
 	}
 
@@ -216,7 +225,7 @@ public class DataCiteXmlMapper {
 
 			Identifier id = this.getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER);
 
-			if (!id.getID().equals(Identifier.UNKNOWN_ID.toString())) {
+			if (!id.getIdentifier().equals(Identifier.UNKNOWN_ID.toString())) {
 				alternateIdentifiers.addAlternateIdentifier(new XmlAlternateIdentifier(
 						(Identifier) this.getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER)));
 				resource.setAlternateIdentifiers(alternateIdentifiers);
@@ -669,7 +678,7 @@ public class DataCiteXmlMapper {
 
 		final StringWriter stringWriter = new StringWriter();
 
-		final URL dataCiteMetadataSchema = DataCiteXmlMapper.class.getResource("schema-4/metadata.xsd");
+		final URL dataCiteMetadataSchema = DataCiteXmlMapper.class.getResource("schema-4.3/metadata.xsd");
 
 		try {
 			this.createXmlMarshaller().marshal(resource, stringWriter);
@@ -684,6 +693,8 @@ public class DataCiteXmlMapper {
 
 		final Document doc = XmlFunctions.parse(stringWriter.toString());
 
+		
+		System.out.println(stringWriter.toString());
 		try {
 			XmlFunctions.validate(dataCiteMetadataSchema, doc);
 		} catch (final SAXException e) {

@@ -175,7 +175,7 @@ public class IdentifierRelationDialog extends MetaDataEditDialog {
 		if (strs != null) {
 			for (Identifier idenstr : strs) {
 				Vector<String> v = new Vector<String>();
-				v.addElement(idenstr.getID());
+				v.addElement(idenstr.getIdentifier());
 				vector.addElement(v);
 			}
 		}

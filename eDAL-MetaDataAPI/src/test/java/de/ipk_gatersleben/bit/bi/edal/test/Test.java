@@ -43,23 +43,24 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierRelationType;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumIdentifierType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.ORCID;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 @SuppressWarnings("unused")
 public class Test {
 	private static final String ROOT_USER = "eDAL0815@ipk-gatersleben.de";
-	private static final String EMAIL = "user@nodomain.com.invalid";
+	private static final String EMAIL = "arendd@ipk-gatersleben.de";
 
 	private static final String DATACITE_PREFIX = "10.5072";
 	private static final String DATACITE_PASSWORD = "";
@@ -75,25 +76,38 @@ public class Test {
 
 	public static void main(final String[] args) throws Exception {
 
-		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX, new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(ROOT_USER));
+		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX,
+				new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(EMAIL),
+				new InternetAddress(ROOT_USER),"imap.ipk-gatersleben.de","","");
 		configuration.setUseSSL(true);
 
-		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
+		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(true, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
 
-	
 		PrimaryDataFile file = rootDirectory.createPrimaryDataFile("TestFile.txt");
-		
+
 		MetaData metadata = file.getMetaData().clone();
-		
+
 		IdentifierRelation idr = new IdentifierRelation();
-		
-		idr.add(new Identifier("meineID",EnumIdentifierType.DOI,EnumIdentifierRelationType.IsSupplementTo));
-		
+
+		idr.add(new Identifier("meineID", RelatedIdentifierType.DOI, RelationType.IsSupplementTo));
+
 		metadata.setElementValue(EnumDublinCoreElements.RELATION, idr);
+		
+		Persons creators = new Persons();
+		creators.add(new NaturalPerson("Daniel", "Arend", "Adresse", "zip", "Land"));
+		
+		metadata.setElementValue(EnumDublinCoreElements.CREATOR, creators);
+		metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, new LegalPerson("IPK", "Gatersleben", "Post", "Land"));
 		
 		file.setMetaData(metadata);
 		
-		DataManager.shutdown();
+		file.addPublicReference(PersistentIdentifier.DOI);
+		
+		file.getCurrentVersion().setAllReferencesPublic(new InternetAddress(EMAIL));
+
+//		DataManager.shutdown();
 
 	}
 }

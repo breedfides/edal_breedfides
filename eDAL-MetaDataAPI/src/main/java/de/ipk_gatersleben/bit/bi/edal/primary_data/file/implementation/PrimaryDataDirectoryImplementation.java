@@ -1045,10 +1045,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		QueryBuilder queryBuilder = ftSession.getSearchFactory().buildQueryBuilder().forEntity(MyIdentifier.class)
 				.get();
 		if (fuzzy) {
-			query = queryBuilder.keyword().wildcard().onField("identifier").matching("*" + identifier.getID() + "*")
+			query = queryBuilder.keyword().wildcard().onField("identifier").matching("*" + identifier.getIdentifier() + "*")
 					.createQuery();
 		} else {
-			query = queryBuilder.keyword().onField("identifier").matching(identifier.getID()).createQuery();
+			query = queryBuilder.keyword().onField("identifier").matching(identifier.getIdentifier()).createQuery();
 		}
 
 		@SuppressWarnings(PrimaryDataDirectoryImplementation.SUPPRESS_UNCHECKED_WARNING)
