@@ -1,6 +1,6 @@
 package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 /**
- * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -71,11 +71,11 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 		PrimaryDataDirectory root = getRoot();
-		Inserter inserter = new Inserter(root);
-		inserter.insertOne();
+//		Inserter inserter = new Inserter(root);
+//		inserter.insertOne();
 //	
-		testKeyword(root);
-		Thread.sleep(19000);
+//		testKeyword(root);
+//		Thread.sleep(19000);
 //		log("start Search");
 //		long start = System.currentTimeMillis();
 		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Eric", false, "singleData");
