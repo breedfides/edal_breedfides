@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -36,35 +36,6 @@ import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
  */
 public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 
-	/**
-	 * Test what happens when the user try to connect subject, that has a
-	 * {@link Principal}, which is not in the supported principals -> should get
-	 * a {@link PrimaryDataDirectoryException}.
-	 */
-	@Test
-	public final void testUnsupportedPrincipals() throws Exception {
-
-		List<Class<? extends Principal>> principals = new ArrayList<Class<? extends Principal>>(
-				Arrays.asList(SamplePrincipal.class));
-
-		EdalConfiguration configuration1 = this.configuration;
-
-		configuration1.setSupportedPrincipals(principals);
-
-		try {
-			DataManager.getRootDirectory(
-					EdalHelpers.getFileSystemImplementationProvider(false,
-							configuration1), EdalHelpers
-							.authenticateWinOrUnixOrMacUser());
-
-			Assertions.fail("You should not be able to connect because of missing principal");
-
-		} catch (PrimaryDataDirectoryException e) {
-			Assertions.assertTrue(true,e.getMessage());
-		}
-
-//		DataManager.shutdown();
-	}
 
 	/**
 	 * Test what happens when the user try to connect with a sub list of the
@@ -77,7 +48,7 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 
 		configuration1
 				.setSupportedPrincipals(EdalConfiguration.DEFAULT_SUPPORTED_PRINCIPALS);
-
+		
 		DataManager.getRootDirectory(EdalHelpers
 				.getFileSystemImplementationProvider(true, configuration1),
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
@@ -99,34 +70,9 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 		} catch (PrimaryDataDirectoryException e) {
 			Assertions.fail("Can not connect to eDAL :" + e.getMessage());
 		}
-//		DataManager.shutdown();
 	}
 
-	/**
-	 * Test what happens when the user try to connect with a empty list of
-	 * supported principals -> should get a
-	 * {@link PrimaryDataDirectoryException}.
-	 */
-	@Test
-	public final void testEmptySupportedPrincipals() throws Exception {
-
-		List<Class<? extends Principal>> principals = new ArrayList<Class<? extends Principal>>();
-
-		EdalConfiguration configuration1 = this.configuration;
-		configuration1.setSupportedPrincipals(principals);
-
-		try {
-			DataManager.getRootDirectory(EdalHelpers
-					.getFileSystemImplementationProvider(true, configuration1),
-					EdalHelpers.authenticateWinOrUnixOrMacUser());
-
-			Assertions.fail("You should not be able to connect with an empty list");
-		} catch (PrimaryDataDirectoryException e) {
-			Assertions.assertTrue(true, e.getMessage());
-		}
-		/* no shutdown necessary */
-		// DataManager.shutdown();
-	}
+	
 
 	/**
 	 * Test what happens when the user try to connect with a list of supported
@@ -171,7 +117,6 @@ public class SupportedPrincipalsTest extends EdalDefaultTestCase {
 			Assertions.assertTrue(true,e.getMessage());
 		}
 
-//		DataManager.shutdown();
 	}
 
 }

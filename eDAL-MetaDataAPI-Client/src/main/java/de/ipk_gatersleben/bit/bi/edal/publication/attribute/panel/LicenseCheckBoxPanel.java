@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -665,7 +665,7 @@ public class LicenseCheckBoxPanel extends JPanel implements HyperlinkListener, I
 		if (!this.licenceCheckBox1.isSelected() && !this.licenceCheckBox2.isSelected()
 				&& !this.licenceCheckBox3.isSelected() && !this.licenceCheckBox4.isSelected()
 				&& !this.licenceCheckBox5.isSelected() && !this.licenceCheckBox6.isSelected()
-				&& !this.licenceCheckBox6.isSelected()) {
+				&& !this.licenceCheckBox7.isSelected()) {
 			return false;
 		} else {
 			return true;
