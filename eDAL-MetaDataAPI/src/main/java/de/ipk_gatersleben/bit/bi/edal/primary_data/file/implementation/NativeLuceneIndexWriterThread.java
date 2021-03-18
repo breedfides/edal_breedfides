@@ -94,7 +94,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
-	StandardAnalyzer analyzer;
+	//StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
 

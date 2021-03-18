@@ -374,11 +374,6 @@ public abstract class PrimaryDataDirectory extends PrimaryDataEntity {
 				this.searchByDublinCoreElementImpl(element, data, fuzzy, recursiveIntoSubdirectories));
 	}
 	
-	public List<PrimaryDataEntity> searchByKeyword(String keyword, boolean fuzzy, String entityType){
-		return Collections.unmodifiableList(this.searchByKeywordImpl(keyword, fuzzy, entityType));
-	}
-	
-	protected abstract List<? extends PrimaryDataEntity> searchByKeywordImpl(String keyword, boolean fuzzy, String entityType);
 
 	/**
 	 * Abstract function for implementation of

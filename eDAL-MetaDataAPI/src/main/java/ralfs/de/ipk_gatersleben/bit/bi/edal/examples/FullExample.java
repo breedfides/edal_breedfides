@@ -71,18 +71,19 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 		PrimaryDataDirectory root = getRoot();
-//		Inserter inserter = new Inserter(root);
-//		inserter.insertOne();
-//		Thread.sleep(5000);
-////		Thread.sleep(2000);
-//			
-//		testKeyword(root);
-		Thread.sleep(5000);
-		log("start Search");
-		long start = System.currentTimeMillis();
-		List<PrimaryDataEntity> entities = root.searchByKeyword("Eric", false, "rootDirectory");
-		log("Finsihed in: "+(System.currentTimeMillis()-start));
-			
+		Inserter inserter = new Inserter(root);
+		inserter.insertOne();
+//	
+		testKeyword(root);
+		Thread.sleep(19000);
+//		log("start Search");
+//		long start = System.currentTimeMillis();
+		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Eric", false, "singleData");
+		for(PrimaryDataEntity entity : results) {
+			log(entity.getID());
+		}
+//		log("Finsihed in: "+(System.currentTimeMillis()-start));
+		Thread.sleep(60000);	
 		DataManager.shutdown();
 			
 //		Thread.sleep(5000);
@@ -187,7 +188,7 @@ public class FullExample {
 	private static void testKeyword(PrimaryDataDirectory rootDirectory) throws Exception {
 		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Eric AND Example_Folder2", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Torben AND Beispiel_Titel14", false, true);
         	for(PrimaryDataEntity entity : results) {
     			//log("\n\n#### Entity: "+entity.toString()+" ####");
 //        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {

@@ -146,7 +146,8 @@ public class EdalHttpServer {
 		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		jerseyServlet.setInitOrder(1);
 		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
-				"de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageRest,de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageTest");
+				"de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageRest,de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageTest,"
+				+ "de.ipk_gatersleben.bit.bi.edal.primary_data.rest.EdalMessageSearchByKeyword");
 
 //		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
 //		contextHandlerCollection.addHandler(edalContextHandler);
@@ -154,7 +155,7 @@ public class EdalHttpServer {
 //		contextHandlerCollection.addHandler(resourceHandler);
 //		contextHandlerCollection.addHandler(requestLogHandler);
 
-//		handlerCollection.addHandler(restHandler);
+		handlerCollection.addHandler(restHandler);
 		handlerCollection.addHandler(edalContextHandler);
 		handlerCollection.addHandler(resourceHandler);
 		handlerCollection.addHandler(requestLogHandler);

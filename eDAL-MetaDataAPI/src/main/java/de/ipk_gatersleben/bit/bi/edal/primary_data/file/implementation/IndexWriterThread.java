@@ -135,7 +135,7 @@ abstract class IndexWriterThread extends EdalThread {
 
 	/**
 	 * wait until the indexing method is finished
-	 * @return 
+	 * 
 	 */
 	public void waitForFinish() {
 		final long time = System.currentTimeMillis();

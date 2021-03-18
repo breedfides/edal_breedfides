@@ -12,19 +12,24 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.rest;
 
+import java.util.ArrayList;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
+
+import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.TextDataBase;
+
 import javax.ws.rs.Produces;
 
 @Path("test")
 public class EdalMessageTest {
 
 	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public String getMessage() {
-
-		return "My Test Message\n";
+	@Produces(MediaType.APPLICATION_JSON)
+	public ArrayList<String> getMessage() {
+		TextDataBase db = new TextDataBase();
+		return db.getData();
 	}
 
 }
