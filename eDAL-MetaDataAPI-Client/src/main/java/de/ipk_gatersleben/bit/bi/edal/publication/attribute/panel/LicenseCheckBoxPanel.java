@@ -665,7 +665,7 @@ public class LicenseCheckBoxPanel extends JPanel implements HyperlinkListener, I
 		if (!this.licenceCheckBox1.isSelected() && !this.licenceCheckBox2.isSelected()
 				&& !this.licenceCheckBox3.isSelected() && !this.licenceCheckBox4.isSelected()
 				&& !this.licenceCheckBox5.isSelected() && !this.licenceCheckBox6.isSelected()
-				&& !this.licenceCheckBox6.isSelected()) {
+				&& !this.licenceCheckBox7.isSelected()) {
 			return false;
 		} else {
 			return true;
