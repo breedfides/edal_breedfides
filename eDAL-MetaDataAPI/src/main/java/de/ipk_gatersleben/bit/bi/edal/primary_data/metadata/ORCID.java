@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -27,6 +27,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 
+import javax.swing.JOptionPane;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -63,10 +64,8 @@ public class ORCID implements Serializable {
 	 * Default constructor that check if the format and the checksum of the ORCID is
 	 * valid
 	 * 
-	 * @param orcid
-	 *            the ORCID String
-	 * @throws ORCIDException
-	 *             if the given ORCID is not valid
+	 * @param orcid the ORCID String
+	 * @throws ORCIDException if the given ORCID is not valid
 	 */
 	public ORCID(String orcid) throws ORCIDException {
 
@@ -170,10 +169,13 @@ public class ORCID implements Serializable {
 		private ORCIDRestConnector() throws ORCIDException {
 
 			if (!searchedForProxy) {
+
 				proxyAddress = EdalConfiguration.guessProxySettings();
 				searchedForProxy = true;
+
 			}
 			if (proxyAddress != null) {
+
 				System.setProperty("http.proxyHost", proxyAddress.getHostName());
 				System.setProperty("http.proxyPort", String.valueOf(proxyAddress.getPort()));
 				System.setProperty("https.proxyHost", proxyAddress.getHostName());
@@ -190,6 +192,10 @@ public class ORCID implements Serializable {
 							proxyAddress.getHostName() + ":" + proxyAddress.getPort());
 				}
 				clientConfig.connectorProvider(new ApacheConnectorProvider());
+
+			} else {
+
+				clientConfig = new ClientConfig();
 
 			}
 
@@ -319,8 +325,7 @@ public class ORCID implements Serializable {
 					} else {
 						return new ArrayList<ORCID>(0);
 					}
-				}
-				else {
+				} else {
 					client.close();
 				}
 			} catch (ParserConfigurationException | SAXException | IOException e) {
@@ -362,8 +367,7 @@ public class ORCID implements Serializable {
 				} catch (Exception e) {
 					throw new ORCIDException("no orcid registered", e);
 				}
-			}
-			else {
+			} else {
 				client.close();
 			}
 		}
@@ -404,7 +408,7 @@ public class ORCID implements Serializable {
 				} catch (Exception e) {
 					throw new ORCIDException("no orcid registered", e);
 				}
-			}else {
+			} else {
 				client.close();
 			}
 			return null;
