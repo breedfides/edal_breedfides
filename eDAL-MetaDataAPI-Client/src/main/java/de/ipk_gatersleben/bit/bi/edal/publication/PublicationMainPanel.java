@@ -36,6 +36,7 @@ import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.SubjectPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.NonFreeTextPanelMouseAdapter;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.NonFreeTextPanelMouseAdapter.PanelType;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.TextAreaCheckFocusListener;
+import de.ipk_gatersleben.bit.bi.edal.publication.listener.TextAreaSaveListener;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.TextAreaValueChangedFocusListener;
 
 public class PublicationMainPanel extends JPanel {
@@ -417,20 +418,26 @@ public class PublicationMainPanel extends JPanel {
 	}
 
 	public PublicationMainPanel(boolean showPublisherField, boolean showResourceTypeField) {
-
+		
 		/* set ValueChangedListener */
-
+		
 		titleField.addFocusListener(
 				new TextAreaValueChangedFocusListener(PropertyLoader.TITLE_LABEL, titleField, DEFAULT_TITLE_STRING));
+		
+		titleField.addFocusListener(new TextAreaSaveListener());
 
 		descriptionField.addFocusListener(new TextAreaValueChangedFocusListener(PropertyLoader.DESCRIPTION_LABEL,
 				descriptionField, DEFAULT_DESCRIPTION_STRING));
+		
+		descriptionField.addFocusListener(new TextAreaSaveListener());
 
 		publisherField.addFocusListener(new TextAreaCheckFocusListener(PropertyLoader.PUBLISHER_LABEL, publisherField,
 				DEFAULT_PUBLISHER_STRING));
 
 		/* end ValueChangedListener */
 
+		loadUserValues();
+		
 		/* set other Listeners */
 
 		authorsField.addMouseListener(openAuthorPanelListener);
@@ -521,6 +528,24 @@ public class PublicationMainPanel extends JPanel {
 		this.setLayout(new GridLayout(1, 1));
 		this.add(mainPanel);
 
+	}
+
+	private void loadUserValues() {
+
+			final String title = PropertyLoader.userValues.getProperty("TITLE");
+
+			if (title == null || title.isEmpty()) {
+			} else {
+				titleField.setText(title);
+			}
+			
+			final String description = PropertyLoader.userValues.getProperty("DESCRIPTION");
+
+			if (description == null || description.isEmpty()) {
+			} else {
+				descriptionField.setText(description);
+			}
+			
 	}
 
 	public void disableAll() {
