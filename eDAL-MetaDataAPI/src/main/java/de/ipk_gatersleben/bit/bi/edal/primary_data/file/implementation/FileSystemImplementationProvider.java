@@ -421,10 +421,8 @@ public class FileSystemImplementationProvider
 								writer));
 				this.countDownLatch = new CountDownLatch(
 						indexWriterThreads.size());
-				indexWriterThreads.get(0)
-						.setCountDownLatch(this.countDownLatch);
-				indexWriterThreads.get(1)
-						.setCountDownLatch(this.countDownLatch);
+				indexWriterThreads.get(0).setCountDownLatch(this.countDownLatch);
+				indexWriterThreads.get(1).setCountDownLatch(this.countDownLatch);
 				this.setIndexThread(indexWriterThreads.get(0));
 				this.setPublicVersionWriter(
 						(PublicVersionIndexWriterThread) indexWriterThreads
@@ -847,26 +845,15 @@ public class FileSystemImplementationProvider
 	public void shutdown() {
 		if (!this.isAutoIndexing()) {
 			this.getIndexThread().waitForFinish();
-			this.getPublicVersionWriter().waitForFinish();
+			if(!this.configuration.isHibernateSearchIndexingEnabled()) {
+				this.getPublicVersionWriter().waitForFinish();
+			}
 			try {
 				this.getLogger()
 						.info("waiting for (INDEXTHREADS)");
 				this.countDownLatch.await();
 				this.getLogger().info(
 						"finished waiting for (INDEXTHREADS)");
-
-/////////////////////////////// Kann das hier jetzt weg mit dem Thread.sleep? Wir sollten hier für den Fall eine entsprechende Exception werfen  /////////////////////////////////////
-
-				while (this.getPublicVersionWriter().isAlive()) {
-					this.getLogger().info(
-							"\n######### PublicVersionIndexWriterThread still ############ \n ################ ALIVE #################");
-					Thread.sleep(1000);
-				}
-				while (this.getIndexThread().isAlive()) {
-					this.getLogger().info(
-							"\n######### NativeLuceneIndexWriter still ############ \n ################ ALIVE #################");
-					Thread.sleep(1000);
-				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -118,7 +118,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.setDefaultReadOnly(true);
 
 			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = (int) Math.pow(10, 4);
+			final int fetchSize = (int) Math.pow(10, 5);
 
 //			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 //			fullTextSession.setCacheMode(CacheMode.NORMAL);
@@ -153,14 +153,14 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 				/** index each element */
 				MyUntypedData data = (MyUntypedData) results.get(0);
 				indexingPlan.addOrUpdate((results.get(0)));
+				this.indexLogger.info("Indexed UntypedData_ID: "+data.getId());
 
 				if (indexedObjects % fetchSize == 0) {
 
 					try {
 						/** apply changes to indexes */
+						this.indexLogger.info("Flush ");
 						workspace.flush();
-						/** free memory since the queue is processed */
-						//fullTextSession.clear();
 						flushedObjects += fetchSize;
 					} catch (Exception e) {
 						throw new Error("Unable to read/write index files");
@@ -393,5 +393,24 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 		this.indexWriterThreadLogger.debug("Index structure deleted, restart index calculating...");
 		this.implementationProviderLogger.info("Index structure deleted, restart index calculating...");
 
+	}
+	@Override
+	public void run() {
+		super.run();
+		this.implementationProviderLogger.info("finished (HibernateIndexWriterThread), now counting Down Latch");
+		this.countDownLatch.countDown();
+//		try {
+//			if(writer != null && writer.isOpen())
+//				this.writer.close();
+//		} catch (IOException e) {
+//			try {
+//				this.writer.rollback();
+//			} catch (IOException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 }

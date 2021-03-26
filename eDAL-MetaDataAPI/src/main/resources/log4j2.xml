@@ -67,7 +67,7 @@
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>
-		<Logger name="index-thread" level="INFO" additivity="false">
+		<Logger name="index-thread" level="DEBUG" additivity="false">
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileIndexing" />
 		</Logger>

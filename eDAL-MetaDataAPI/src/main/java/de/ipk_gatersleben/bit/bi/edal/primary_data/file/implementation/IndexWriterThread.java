@@ -145,9 +145,9 @@ abstract class IndexWriterThread extends EdalThread {
 		this.executeIndexing();
 		this.setFinishIndexing(true);
 		this.lock.unlock();
-		this.indexWriterThreadLogger.debug("Index is finished after waiting : "
+		this.indexWriterThreadLogger.debug("Indexing thread worked: "
 				+ (System.currentTimeMillis() - time + " ms"));
-		this.indexLogger.info("Index is finished after waiting : "
+		this.indexLogger.info("Indexing thread worked: "
 				+ (System.currentTimeMillis() - time + " ms"));
 	}
 

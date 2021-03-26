@@ -129,6 +129,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.lastIndexedID = (int) ois.readObject();
 				ois.close();
+				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -145,6 +146,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			long executeIndexingStart = System.currentTimeMillis();
 			final Session session = this.sessionFactory.openSession();
 			session.setDefaultReadOnly(true);
+			
+			/** caching not neededm, also disabled to prevent memory leaks */
+			session.setCacheMode(CacheMode.IGNORE);
+			
 			/** high value fetch objects faster, but more memory is needed */
 			final int fetchSize = (int) Math.pow(10, 4);
 			final long queryStartTime = System.currentTimeMillis();
@@ -153,7 +158,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
-
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
@@ -168,18 +172,20 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
-				indexedObjects++;
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					/** index each element */
 					this.indexVersion(writer, version);
-					this.implementationProviderLogger.info("Indexed Version: " + version.getId());
+					indexedObjects++;
+					this.implementationProviderLogger.info("(exec)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+fetchSize);
 				} catch (MetaDataException e) {
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
 					try {
+						this.implementationProviderLogger.info("(exec)NativeLuceneIndexer_Commit() ");
 						writer.commit();
+						session.clear();
 						flushedObjects += fetchSize;
 						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
 							this.lastIndexedID = version.getId();
@@ -189,11 +195,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					}
 				}
 			}
-			flushedObjects += fetchSize;
-			if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
-				this.lastIndexedID = version.getId();
-			}
-
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
@@ -214,13 +215,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
-
 			if (flushedObjects != indexedObjects) {
 				indexRestObjects();
 			}
 			// this.implementationProviderLogger.info("Finished execute Index task:
 			// lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
+			this.indexLogger.debug("NativeLuceneIndexWriterThread time: "+executeIndexingFinishTime);
 			// this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+"
 			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
 			// "+flushedObjects);
@@ -235,6 +236,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -304,10 +306,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		
 		try {
 			writer.addDocument(doc);
-			this.implementationProviderLogger.info("Indexed new Version: "+version.getId());
 		} catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Error when adding Document to IndexWriter" + e.getMessage());
 		}
+		doc = null;
 	}
 
 	private String getString(UntypedData data) {
@@ -336,7 +338,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
 			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
-
 			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;
@@ -350,6 +351,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					this.indexVersion(writer, version);
+					this.implementationProviderLogger.info("(rest)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+0);
 				} catch (MetaDataException e) {
 					e.printStackTrace();
 				}
@@ -362,7 +364,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				if (!writer.isOpen()) {
 					this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
 				} else {
-					writer.commit();
+					writer.flush();
 				}
 				if (version != null && version.getId() > this.lastIndexedID) {
 					this.lastIndexedID = version.getId();
@@ -394,6 +396,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// this.implementationProviderLogger.info("Finished execute Index task:
 			// lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
+			this.indexLogger.debug("NativeLuceneIndexWriterThread indexRest time: "+executeIndexingFinishTime);
 			// this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+"
 			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
 			// "+flushedObjects);

@@ -117,11 +117,21 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	int indexedVersions = 0;
 	int flushedObjects = 0;
 	Directory index;
+	boolean waitForIndexCompletion = false;
 	
+	public boolean isWaitForIndexCompletion() {
+		return waitForIndexCompletion;
+	}
+
+
+	public void setWaitForIndexCompletion(boolean waitForIndexCompletion) {
+		this.waitForIndexCompletion = waitForIndexCompletion;
+	}
+
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
-	final int fetchSize = (int) Math.pow(10, 4);
+	final int fetchSize = (int) Math.pow(10, 1);
 
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
@@ -159,97 +169,111 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	protected void executeIndexing() {
 
+		long indexingTime = 1;
+		long executeIndexingStart = 1;
 		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
-			IndexReader newReader = null;
-			try {
-				newReader = DirectoryReader.openIfChanged(directoryReader);
-				if(newReader != null) {
-					reader.close();
-					reader = newReader;
-					searcher = new IndexSearcher(reader);
-				}
-			} catch (IOException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			}
-			final Session session = this.sessionFactory.openSession();
-			indexedVersions = 0;
-			flushedObjects = 0;
-			long executeIndexingStart = System.currentTimeMillis();
-
-			session.setDefaultReadOnly(true);
+			if(!this.waitForIndexCompletion) {
 			
-
-			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = (int) Math.pow(10, 4);
-
-//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-//			fullTextSession.setCacheMode(CacheMode.NORMAL);
-
-			final long queryStartTime = System.currentTimeMillis();
-
-			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-			CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder
-					.createQuery(PublicReferenceImplementation.class);
-			Root<PublicReferenceImplementation> root = criteria
-					.from(PublicReferenceImplementation.class);
-			
-			Predicate predicateId = criteriaBuilder.gt(root.get("id"),
-					this.lastIndexedID);
-			Predicate predicateAccepted = criteriaBuilder.equal(
-					root.get("publicationStatus"), PublicationStatus.ACCEPTED);
-			Predicate predicateType = criteriaBuilder.equal(
-					root.get("identifierType"), PersistentIdentifier.DOI);
-			
-			criteria.where(criteriaBuilder.and(predicateId, predicateAccepted,
-					predicateType))
-					.orderBy(criteriaBuilder.asc(root.get("id")));
-			session.getTransaction().begin();
-			/**
-			 * ScrollableResults will avoid loading too many objects in memory
-			 */
-			final ScrollableResults results = session
-					.createQuery(criteria)
-					.setMaxResults(fetchSize)
-					.scroll(ScrollMode.FORWARD_ONLY);
-
-			final long queryTime = System.currentTimeMillis() - queryStartTime;
-
-			final long indexStartTime = System.currentTimeMillis();
-			//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
-			PublicReferenceImplementation publicRef = null;
-			while (results.next()) {
-				publicRef = (PublicReferenceImplementation) results.get(0);
-				this.updateIndex(publicRef, session);
-			}
-			results.close();
-			session.close();
-			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-			//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
-			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
-
-			if (indexedVersions > 0 || flushedObjects > 0) {
+				IndexReader newReader = null;
 				try {
-					this.writer.commit();
-				} catch (IOException e1) {
+					newReader = DirectoryReader.openIfChanged(directoryReader);
+					if(newReader != null) {
+						reader.close();
+						reader = newReader;
+						searcher = new IndexSearcher(reader);
+					}
+				} catch (IOException e2) {
 					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					e2.printStackTrace();
 				}
-				this.indexWriterThreadLogger
-				.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedVersions
-						+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-						+ df.format(new Date(queryTime)));
+				final Session session = this.sessionFactory.openSession();
+				session.setDefaultReadOnly(true);
+				session.setCacheMode(CacheMode.IGNORE);
+				indexedVersions = 0;
+				flushedObjects = 0;
+				executeIndexingStart = System.currentTimeMillis();
+	
+				
+	
+				/** high value fetch objects faster, but more memory is needed */
+				final int fetchSize = (int) Math.pow(10, 4);
+	
+	//			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
+	//			fullTextSession.setCacheMode(CacheMode.NORMAL);
+	
+				final long queryStartTime = System.currentTimeMillis();
+	
+				CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+				CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder
+						.createQuery(PublicReferenceImplementation.class);
+				Root<PublicReferenceImplementation> root = criteria
+						.from(PublicReferenceImplementation.class);
+				
+				Predicate predicateId = criteriaBuilder.gt(root.get("id"),
+						this.lastIndexedID);
+				Predicate predicateAccepted = criteriaBuilder.equal(
+						root.get("publicationStatus"), PublicationStatus.ACCEPTED);
+				Predicate predicateType = criteriaBuilder.equal(
+						root.get("identifierType"), PersistentIdentifier.DOI);
+				
+				criteria.where(criteriaBuilder.and(predicateId, predicateAccepted,
+						predicateType))
+						.orderBy(criteriaBuilder.asc(root.get("id")));
+				//session.getTransaction().begin();
+				/**
+				 * ScrollableResults will avoid loading too many objects in memory
+				 */
+				final ScrollableResults results = session
+						.createQuery(criteria)
+						.setMaxResults(fetchSize)
+						.scroll(ScrollMode.FORWARD_ONLY);
+	
+				final long queryTime = System.currentTimeMillis() - queryStartTime;
+	
+				final long indexStartTime = System.currentTimeMillis();
+				//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
+				PublicReferenceImplementation publicRef = null;
+				while (results.next()) {
+					publicRef = (PublicReferenceImplementation) results.get(0);
+					this.updateIndex(publicRef, session);
+				}
+				results.close();
+				//session.getTransaction().commit();
+				session.close();
+				indexingTime = System.currentTimeMillis() - indexStartTime;
+				//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
+				DateFormat df = new SimpleDateFormat("mm:ss:SSS");
+	
+				if (indexedVersions > 0 || flushedObjects > 0) {
+					try {
+						this.writer.commit();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					this.indexWriterThreadLogger
+					.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedVersions
+							+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
+							+ df.format(new Date(queryTime)));
+					try {
+						FileOutputStream fos = new FileOutputStream(
+								Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+						ObjectOutputStream oos = new ObjectOutputStream(fos);
+						oos.writeObject(this.lastIndexedID);
+						oos.close();
+						fos.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 				try {
-					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(this.lastIndexedID);
-					oos.close();
+					if(newReader != null)
+						newReader.close();
 				} catch (IOException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-
 			try {
 				Thread.sleep(Math.min(
 						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
@@ -258,19 +282,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
-
-			if (flushedObjects != indexedVersions) {
-				//indexRestObjects();
-			}
-			try {
-				if(newReader != null)
-					newReader.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			//this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
 			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
+			this.indexLogger.debug("PublicVersionIndexWriteThread time: "+executeIndexingFinishTime);
 			//this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
 		}
 	}
@@ -357,6 +371,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			return;
 		}
 		try {
+			//Notiz: Es sollte geprüft werden, ob ein Dokument bereits die nötigen Felder besitzt und daher nicht nochmal indiziert werden muss!
 			for (int i = 0; i < hits2.length; i++) {
 				Document doc = searcher.doc(hits2[i].doc);
 				writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,
@@ -370,8 +385,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				writer.addDocument(doc);
 				indexedVersions++;
 				this.implementationProviderLogger
-				.info("IndexedversionNO: "+indexedVersions+"VersionId: "+version.getId());
-				if(indexedVersions % 200 == 0) {
+				.info("(public)IndexedversionNO: "+version.getId());
+				if(indexedVersions % 50 == 0) {
+					this.implementationProviderLogger
+					.info("(public)session clear()");
 					session.clear();
 				}
 //				this.implementationProviderLogger
@@ -383,7 +400,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			e.printStackTrace();
 		}		
 		//}
-		if (indexedVersions % fetchSize == 0) {
+		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
 			} catch (IOException e) {
@@ -397,6 +414,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						ObjectOutputStream oos = new ObjectOutputStream(fos);
 						oos.writeObject(this.lastIndexedID);
 						oos.close();
+						fos.close();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

@@ -78,12 +78,12 @@ public class FullExample {
 //		Thread.sleep(19000);
 //		log("start Search");
 //		long start = System.currentTimeMillis();
-		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Eric", false, "singleData");
-		for(PrimaryDataEntity entity : results) {
-			log(entity.getID());
-		}
+//		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Eric", false, "singleData");
+//		for(PrimaryDataEntity entity : results) {
+//			log(entity.getID());
+//		}
 //		log("Finsihed in: "+(System.currentTimeMillis()-start));
-		Thread.sleep(60000);	
+		Thread.sleep(5500000);	
 		DataManager.shutdown();
 			
 //		Thread.sleep(5000);
