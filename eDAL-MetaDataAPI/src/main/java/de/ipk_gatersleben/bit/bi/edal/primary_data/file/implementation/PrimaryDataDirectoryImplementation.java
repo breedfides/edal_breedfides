@@ -1713,12 +1713,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		
 		List<Integer> versionIDList = new ArrayList<>();
 		Long sstart = System.currentTimeMillis();
-		
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		
 		if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 			final long startTime = System.currentTimeMillis();
-
 
 			org.apache.lucene.search.Query query = null;
 
@@ -1819,7 +1817,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			versionIDList = versionSQLQuery.list();
 		}
 		else {
-			
+			BooleanQuery.setMaxClauseCount(10000);
 			final long startTime = System.currentTimeMillis();
 	    	IndexReader reader = null;
 			try {
@@ -1868,38 +1866,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 	        }
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Found while searching: "+versionIDList.size()+" values");
-			float size = versionIDList.size();
-			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-			BooleanQuery.setMaxClauseCount(versionIDList.size());
-		    float weight = size;
-			for(int i = 0; i < size;i++) {
-				weight = size-i;
-		    	booleanQuery.add(new BoostQuery(new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(versionIDList.get(i)))),weight), BooleanClause.Occur.SHOULD);
-			}
-			try {
-				hits2 = searcher.search(booleanQuery.build(), 50000).scoreDocs;
-				int ds = 2;
-				int[] intlist = new int[versionIDList.size()];
-		        int fdf1 = versionIDList.size();
-		        int fdf2 = hits2.length;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = null;
-					try {
-						doc = searcher.doc(hits2[i].doc);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-		        	intlist[i] = Integer.parseInt(doc.get("versionID"));
-		        }
-		        for(int i = 0; i < intlist.length; i++) {
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Nr. "+i+": versionID: "+versionIDList.get(i)+" vs intlist: "+intlist[i]);
-		        }
-		        int fdf = 0;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 		}
 		
 

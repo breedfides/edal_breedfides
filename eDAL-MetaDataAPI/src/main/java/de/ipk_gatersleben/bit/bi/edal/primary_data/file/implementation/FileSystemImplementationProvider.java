@@ -39,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.ehcache.CacheManager;
@@ -404,8 +405,10 @@ public class FileSystemImplementationProvider
 				try {
 					Directory indexingDirectory = FSDirectory
 							.open(Paths.get(indexDirectory.toString(), "Master_Index"));
-					writer = new IndexWriter(indexingDirectory,
-							new IndexWriterConfig(new StandardAnalyzer()));
+					TieredMergePolicy pol = new TieredMergePolicy();
+					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer());
+					writerConfig.setMergePolicy(pol);
+					writer = new IndexWriter(indexingDirectory, writerConfig);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

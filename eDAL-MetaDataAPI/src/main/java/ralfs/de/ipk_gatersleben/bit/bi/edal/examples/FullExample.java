@@ -32,8 +32,11 @@ import java.util.Stack;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.ParameterExpression;
 import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.Logger;
@@ -71,11 +74,20 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {
 		PrimaryDataDirectory root = getRoot();
+//		final CriteriaBuilder builder = session.getCriteriaBuilder();
+//		CriteriaQuery<?> query = builder.createQuery(PrimaryDataEntityVersionImplementation.class);
+//		Root<PrimaryDataEntityVersionImplementation> queryRoot = query.from(PrimaryDataEntityVersionImplementation.class);
+//		Join<PrimaryDataFileImplementation,PrimaryDataEntityVersionImplementation> join = queryRoot.join("versionList");
+//		ParameterExpression<PrimaryDataEntityVersionImplementation> set = builder.parameter(PrimaryDataEntityVersionImplementation.class);
+//		query.where(builder.equal(join.get("parentDirectory"), "5c6a8522-012f-41b3-9866-39bd32e10250"));
+//		TypedQuery<?> tq = session.createQuery(query);
+//		List<?> resultList = tq.setParameter(set, datatypeList).getResultList();
+		
 //		Inserter inserter = new Inserter(root);
 //		inserter.insertOne();
 //	
+//		Thread.sleep(10000);
 //		testKeyword(root);
-//		Thread.sleep(19000);
 //		log("start Search");
 //		long start = System.currentTimeMillis();
 //		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Eric", false, "singleData");
@@ -83,7 +95,10 @@ public class FullExample {
 //			log(entity.getID());
 //		}
 //		log("Finsihed in: "+(System.currentTimeMillis()-start));
-		Thread.sleep(5500000);	
+		Thread.sleep(50000000);	
+		//Thread.sleep(60000);
+//		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Torben", false, "singleData");
+//		log("public data: "+results.size());
 		DataManager.shutdown();
 			
 //		Thread.sleep(5000);
@@ -188,7 +203,7 @@ public class FullExample {
 	private static void testKeyword(PrimaryDataDirectory rootDirectory) throws Exception {
 		long start = System.currentTimeMillis();
     	try {
-        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Torben AND Beispiel_Titel14", false, true);
+        	List<PrimaryDataEntity> results =  rootDirectory.searchByKeyword("Torben AND Beispiel_Titel", false, true);
         	for(PrimaryDataEntity entity : results) {
     			//log("\n\n#### Entity: "+entity.toString()+" ####");
 //        		for(EnumDublinCoreElements element : EnumDublinCoreElements.values()) {

@@ -51,7 +51,7 @@ public class Inserter {
 	
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData metadata = null;
-	Path path = Paths.get("src/test/resources/Beispiel_Titel14");
+	Path path = Paths.get("src/test/resources/Beispiel_Titel");
 	public Inserter(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
 		this.rootDirectory = root;
 	}

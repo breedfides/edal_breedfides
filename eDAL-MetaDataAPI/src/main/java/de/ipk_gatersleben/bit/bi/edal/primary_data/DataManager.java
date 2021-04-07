@@ -1044,7 +1044,7 @@ public class DataManager {
         ScoreDoc[] hits2 = null;
         //BooleanQuery booleanQuery2 = booleanQuery.build();
 		try {
-			hits2 = searcher.search(luceneQuery, 50000).scoreDocs;
+			hits2 = searcher.search(booleanQuery.build(), 50000).scoreDocs;
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

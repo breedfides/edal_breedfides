@@ -28,6 +28,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.util.ExecutorServices;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -41,6 +45,26 @@ import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
 abstract class IndexWriterThread extends EdalThread {
 	protected static final int SLEEP_RUNTIME_FACTOR = 2;
@@ -116,7 +140,88 @@ abstract class IndexWriterThread extends EdalThread {
 		//Latch has to be countdown in Implementations (PublicVersionIndexWriterThread/NativeLuceneIndexWriterThread)
 	}
 	
+	protected void createDocAndInsert(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
+		Document doc = this.createDoc(writer, version);
+		try {
+			writer.addDocument(doc);
+		} catch (IOException e) {
+			this.indexWriterThreadLogger.debug("Error when adding Document to IndexWriter" + e.getMessage());
+		}
+		doc = null;
+	}
 	
+	protected Document createDoc(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
+		MetaData metadata = version.getMetaData();
+		Document doc = new Document();
+		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
+				Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.SIZE,
+				Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
+				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
+		Persons naturalPersons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
+		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
+		persons.addAll(naturalPersons);
+		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
+		persons.add(legalPerson);
+		for (Person currentPerson : persons) {
+			if (currentPerson instanceof NaturalPerson) {
+				doc.add(new TextField(MetaDataImplementation.GIVENNAME, ((NaturalPerson) currentPerson).getGivenName(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.SURENAME, ((NaturalPerson) currentPerson).getSureName(), Store.YES));
+			}
+			doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, currentPerson.getAddressLine(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.ZIP, currentPerson.getZip(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.COUNTRY, currentPerson.getCountry(), Store.YES));
+		}
+		doc.add(new TextField(MetaDataImplementation.LEGALNAME, getString(legalPerson.getLegalName()), Store.YES));
+		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
+		for (CheckSumType checkSum : checkSums) {
+			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
+		}
+		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
+		for (UntypedData subject : subjects) {
+			doc.add(new TextField(MetaDataImplementation.SUBJECT, subject.getString(), Store.YES));
+		}
+		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
+		for (Identifier identifier : relations) {
+			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getID(), Store.YES));
+		}
+		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
+		for (EdalDate date : events) {
+			doc.add(new LongPoint(MetaDataImplementation.STARTDATE,
+					date.getStartDate().getTimeInMillis()));
+			if (date instanceof EdalDateRange) {
+				doc.add(new LongPoint(MetaDataImplementation.ENDDATE,
+						((EdalDateRange) date).getEndDate().getTimeInMillis()));
+			}
+		}
+		if (metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
+			doc.add(new TextField(MetaDataImplementation.MIMETYPE, "none", Store.YES));
+			doc.add(new TextField(MetaDataImplementation.TYPE, "none", Store.YES));
+		} else {
+			doc.add(new TextField(MetaDataImplementation.MIMETYPE,
+					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
+		}
+		doc.add(new TextField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
+		return doc;
+	}
+	
+	
+	private String getString(UntypedData data) {
+		String string = data.getString();
+		return string == null ? "" : string;
+	}
+
+	private String getString(String string) {
+		return string == null ? "" : string;
+	}
 	
 	public boolean isFinishIndexing() {
 		return finishIndexing;
