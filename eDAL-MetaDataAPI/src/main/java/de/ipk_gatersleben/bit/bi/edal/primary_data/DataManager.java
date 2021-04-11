@@ -1003,7 +1003,7 @@ public class DataManager {
 		
 	}
 	
-	static public List<PrimaryDataEntity> searchByKeyword(String keyword, boolean fuzzy, String entityType){
+	static public ArrayList<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType){
 		final long startTime = System.currentTimeMillis();
     	IndexReader reader = null;
 		try {
@@ -1029,7 +1029,8 @@ public class DataManager {
 			e2.printStackTrace();
 		}
 		if(luceneQuery == null) {
-			return new ArrayList<PrimaryDataEntity>();
+			//return new ArrayList<PrimaryDataEntity>();
+			return new ArrayList<Integer>();
 		}
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
@@ -1053,47 +1054,55 @@ public class DataManager {
 		HashSet<PrimaryDataEntity> entities = new HashSet<>();
 		
 		final CriteriaBuilder builder = session.getCriteriaBuilder();
-		
+		ArrayList<Integer> ids = new ArrayList<>();
         for(int i = 0; i < hits2.length; i++) {
         	Document doc = null;
 			try {
 				doc = searcher.doc(hits2[i].doc);
-				CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
-						.createQuery(PrimaryDataFileImplementation.class);
-
-				Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
-
-				fileCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
-						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
-				final PrimaryDataFileImplementation primaryDataFile = session.createQuery(fileCriteria)
-						.setCacheable(false)
-						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
-				if(primaryDataFile != null) {
-					entities.add(primaryDataFile);
-				}else {
-					CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
-							.createQuery(PrimaryDataDirectoryImplementation.class);
-
-					Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
-							.from(PrimaryDataDirectoryImplementation.class);
-					directoryCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataDirectoryImplementation.class),
-							builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
-
-
-					final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
-							.setCacheable(false)
-							.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
-					if(primaryDataDirectory != null) {
-						entities.add(primaryDataDirectory);
-					}
-				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+        	ids.add(Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+//			try {
+//				doc = searcher.doc(hits2[i].doc);
+//				CriteriaQuery<PrimaryDataFileImplementation> fileCriteria = builder
+//						.createQuery(PrimaryDataFileImplementation.class);
+//
+//				Root<PrimaryDataFileImplementation> fileRoot = fileCriteria.from(PrimaryDataFileImplementation.class);
+//
+//				fileCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
+//						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
+//				final PrimaryDataFileImplementation primaryDataFile = session.createQuery(fileCriteria)
+//						.setCacheable(false)
+//						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
+//				if(primaryDataFile != null) {
+//					entities.add(primaryDataFile);
+//				}else {
+//					CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+//							.createQuery(PrimaryDataDirectoryImplementation.class);
+//
+//					Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+//							.from(PrimaryDataDirectoryImplementation.class);
+//					directoryCriteria.where(builder.and(builder.equal(fileRoot.type(), PrimaryDataDirectoryImplementation.class),
+//							builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), doc.get(MetaDataImplementation.PRIMARYENTITYID))));
+//
+//
+//					final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
+//							.setCacheable(false)
+//							.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
+//					if(primaryDataDirectory != null) {
+//						entities.add(primaryDataDirectory);
+//					}
+//				}
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
         }
-		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
-		return Collections.unmodifiableList(results);
+//		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
+//		return Collections.unmodifiableList(results);
+        return ids;
 	}
 
 }

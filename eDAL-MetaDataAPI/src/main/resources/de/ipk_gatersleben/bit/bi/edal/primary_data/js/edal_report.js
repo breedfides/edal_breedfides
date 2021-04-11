@@ -9,9 +9,11 @@ let EdalReport = new function() {
     this.stateEntriesShown = 0;
     this.stateShowAllMarkers = false;
     this.allYears = [];
+    this.initReportData = null;
+
 
     this.init = function(reportData, mapData) {
-        this.reportData = reportData;
+        this.initReportData = this.reportData = reportData;
         this.mapData = mapData;
         this.reportDataKeyed = _.keyBy(reportData, 'doi');
         this.allYears = _.uniq(_.map(reportData, 'year')).sort().reverse();
@@ -96,7 +98,7 @@ let EdalReport = new function() {
                     width: "120px",
                     className: "text-center",
                 },
-                { 
+                {
                     title: "Download volume",
                     data: "downloads",
                     width: "170px",
@@ -176,8 +178,8 @@ let EdalReport = new function() {
                 }
             }
         });
-        
-        
+
+
         $(document).on('keyup', '#edal-report-search', function(event) {
             event.preventDefault();
             let searchword = $(this).val();
@@ -185,18 +187,40 @@ let EdalReport = new function() {
                 searchword = null;
             }
             self.searchFilter = searchword;
-
+            self.datatable.destroy();
             if (self.yearFilter !== null) {
                 if (searchword === null) {
-                    self.datatable.search('').columns(5).search(self.yearFilter).draw();
+                    //self.datatable.search('').columns(5).search(self.yearFilter).draw();
+                    self.reportData = self.initReportData;
+                    console.log("Data:")
+                    console.log(self.reportData);
+                    self.renderDatatable();
                 } else {
-                    self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
+                    //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
+                    //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
+                    $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
+                        self.reportData = data;
+                    });
+                    console.log("Data:")
+                    console.log(self.reportData);
+                    self.renderDatatable();
                 }
             } else {
                 if (searchword === null) {
-                    self.datatable.search('').columns().search('').draw();
+                    //self.datatable.search('').columns().search('').draw();
+                    self.reportData = self.initReportData;
+                    console.log("Data:")
+                    console.log(self.reportData);
+                    self.renderDatatable();
                 } else {
-                    self.datatable.search(searchword).draw();
+                    //self.datatable.search(searchword).draw();
+                    //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
+                    $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
+                        self.reportData = data;
+                    });
+                    console.log("Data:")
+                    console.log(self.reportData);
+                    self.renderDatatable();
                 }
             }
         });
@@ -224,7 +248,7 @@ let EdalReport = new function() {
                 $(this).text('Show');
             }
         });
-        
+
     };
 
     this.showAllMarkers = function() {
@@ -234,7 +258,7 @@ let EdalReport = new function() {
         const icon = {
             url: markerImg,
         };
-        _.forEach(this.mapData, function(loc) {           
+        _.forEach(this.mapData, function(loc) {
             let marker = new google.maps.Marker({
                 position: {lat: loc.lat, lng: loc.long},
                 icon: icon,

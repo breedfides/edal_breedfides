@@ -108,6 +108,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  * @author arendd
  */
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
+	public static final String PUBLICID = "PublicReference";
+	public static final String PUBLICREFERENCE = "rootDirectory";
+	public static final String INDIVIDUALFILE = "singleData";
 	int indexedSingleData = 0;
 	int counterValue = 0;
 	IndexWriter writer = null;
@@ -117,7 +120,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	int indexedVersions = 0;
 	int flushedObjects = 0;
 	Directory index;
-	final String testName = "testx8";
+	final String testName = "testx44";
 	
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
@@ -162,6 +165,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		long executeIndexingStart = 1;
 		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 			
+			/** open new Indexreader and Indexsearcher, if the index changed since last executeIndexing() call **/
+		
 			IndexReader newReader = null;
 			try {
 				newReader = DirectoryReader.openIfChanged(directoryReader);
@@ -190,23 +195,25 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 			final long queryStartTime = System.currentTimeMillis();
 			
+			/** Load all new PublicReferences */
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 			CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder
 					.createQuery(PublicReferenceImplementation.class);
 			Root<PublicReferenceImplementation> root = criteria
-					.from(PublicReferenceImplementation.class);
-			
+					.from(PublicReferenceImplementation.class);			
 			Predicate predicateId = criteriaBuilder.gt(root.get("id"),
 					this.lastIndexedID);
 			Predicate predicateAccepted = criteriaBuilder.equal(
 					root.get("publicationStatus"), PublicationStatus.ACCEPTED);
 			Predicate predicateType = criteriaBuilder.equal(
-					root.get("identifierType"), PersistentIdentifier.DOI);
-			
+					root.get("identifierType"), PersistentIdentifier.DOI);		
 			criteria.where(criteriaBuilder.and(predicateId, predicateAccepted,
 					predicateType))
 					.orderBy(criteriaBuilder.asc(root.get("id")));
+			
+			/** Transaction is needed for ScrollableResults */
 			session.getTransaction().begin();
+			
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
@@ -218,10 +225,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
-			//this.implementationProviderLogger.info("Indexing Path: ___: " + indexPath.toString());
 			PublicReferenceImplementation publicRef = null;
 			while (results.next()) {
 				publicRef = (PublicReferenceImplementation) results.get(0);
+				/** index all associated Files/Directories */
 				updateIndex(publicRef, session);
 				this.lastIndexedID = publicRef.getId();
 			}
@@ -295,17 +302,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			while (!stack.isEmpty()) {
 				PrimaryDataFileImplementation dir = stack.pop();
 				if(parentDirFile.equals(dir)) {
-					this.updateVersions(dir, session, pubRef,true);
+					this.updateVersions(dir, session, pubRef,PublicVersionIndexWriterThread.PUBLICREFERENCE);
 				}else {
-					this.updateVersions(dir, session, pubRef, false);
+					this.updateVersions(dir, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 				}
 				long dirStart = System.currentTimeMillis();
 				hql = "from PrimaryDataFileImplementation s "
 						+ "where s.parentDirectory.id = :id order by s.id";
 				ScrollableResults results = session.createQuery(hql).setParameter("id", dir.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
-//				List<PrimaryDataFileImplementation> files = 
-//						session.createQuery(hql)
-//						.setParameter("id", dir.getID()).list();
 				int count = 0;
 				PrimaryDataFileImplementation tempFile = null;
 				while(results.next()) {
@@ -313,7 +317,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					if (tempFile.isDirectory()) {
 						stack.add(tempFile);
 					} else {
-						this.updateVersions(tempFile, session, pubRef, false);
+						this.updateVersions(tempFile, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 					}
 					count++;
 				}
@@ -329,7 +333,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						if (tempFile.isDirectory()) {
 							stack.add(tempFile);
 						} else {
-							this.updateVersions(tempFile, session, pubRef, false);
+							this.updateVersions(tempFile, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 						}
 						count++;
 					}
@@ -338,11 +342,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 		} else {
-			this.updateVersions(parentDirFile, session, pubRef, false);
+			this.updateVersions(parentDirFile, session, pubRef, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		}
 	}
 	
-	private void updateVersions(PrimaryDataFileImplementation file, Session session, PublicReferenceImplementation pubRef, boolean isRootDirectory) {
+	private void updateVersions(PrimaryDataFileImplementation file, Session session, PublicReferenceImplementation pubRef, String entityType) {
 		//String hql = "from PrimaryDataEntityVersionImplementation where primaryEntityId = :id";
 		//List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(hql,PrimaryDataEntityVersionImplementation.class).setParameter("id", file.getID()).getResultList();
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -389,35 +393,25 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
 		}
-//		if(hits2 == null || hits2.length == 0) {
-//			return;
-//		}
 		try {
 			//Notiz: Es sollte geprüft werden, ob ein Dokument bereits die nötigen Felder besitzt und daher nicht nochmal indiziert werden muss!
-			for (int i = 0; i < hits2.length; i++) {
-				Document doc = searcher.doc(hits2[i].doc);
-				doc.removeField(MetaDataImplementation.ENTITYID);
-				doc.add(new TextField(MetaDataImplementation.ENTITYID,
-						pubRef.getVersion().getPrimaryEntityId(), Store.YES));
-				doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,
-						isRootDirectory ? "rootDirectory" : "singleData", Store.YES));
-				doc.add(new TextField("TESTFELD",
-						this.testName, Store.YES));
-				writer.addDocument(doc);
-				indexedVersions++;
-				if(isRootDirectory) {
-					this.implementationProviderLogger
-					.info("(public) current PublicReference: "+doc.get(MetaDataImplementation.ENTITYID)+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
-				}else {
-					this.indexedSingleData++;
-					this.implementationProviderLogger
-					.info("(public) current PublicReference: "+pubRef.getId()+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
-				}
+			Document doc = searcher.doc(hits2[0].doc);
+			doc.removeField(MetaDataImplementation.ENTITYID);
+			doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,
+					entityType, Store.YES));
+			doc.add(new TextField(MetaDataImplementation.ENTITYID,
+					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
+			doc.add(new TextField(PublicVersionIndexWriterThread.PUBLICID,
+					String.valueOf(pubRef.getId()), Store.YES));
+			writer.addDocument(doc);
+			indexedVersions++;
+			this.indexedSingleData++;
+			this.implementationProviderLogger
+			.info("(public) current PublicReference: "+pubRef.getId()+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
 
 //				this.implementationProviderLogger
 //						.info("UPDATED VERSION: " + doc.get(MetaDataImplementation.TITLE)
 //								+ " ID:" + doc.get(MetaDataImplementation.VERSIONID));
-	        }
 		} catch (IOException e) {
 			e.printStackTrace();
 		}		

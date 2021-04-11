@@ -13,6 +13,8 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.rest;
  */
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.ws.rs.GET;
@@ -20,8 +22,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 
+import org.hibernate.Session;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.GenerateLocations;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.TextDataBase;
 
 import javax.ws.rs.Produces;
@@ -32,24 +43,37 @@ public class EdalMessageSearchByKeyword {
 	@GET
 	@Path("/{keyword}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<String> keywordSearch(@PathParam("keyword") String keyword) {
-		List<PrimaryDataEntity> results = DataManager.searchByKeyword(keyword, false, "singleData");
-		ArrayList<String> ids = new ArrayList<>();
-		for(PrimaryDataEntity entity : results) {
-			ids.add(entity.getID());
+	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
+		ArrayList<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		JSONArray finalArray = new JSONArray();
+		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
+		for(Integer id : ids) {
+			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
+			JSONObject obj = new JSONObject();
+			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+			try {
+				obj.put("doi", reference.getAssignedID());
+			} catch (PublicReferenceException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obj.put("title", reference.getVersion().getMetaData().toString());
+			obj.put("downloads", "0");
+			obj.put("accesses", "0");
+			HashSet<String> iplist = new HashSet<>();
+			iplist.add("154.43.48.254");
+			obj.put("locations",
+					GenerateLocations.generateGpsLocationsToJson(iplist));
+
+			finalArray.add(obj);
 		}
-		return ids;
+		return finalArray;
 	}
 	@GET
 	@Path("/{keyword}/fuzzy")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<String> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
-		List<PrimaryDataEntity> results = DataManager.searchByKeyword(keyword, true, "singleData");
-		ArrayList<String> ids = new ArrayList<>();
-		for(PrimaryDataEntity entity : results) {
-			ids.add(entity.getID());
-		}
-		return ids;
+	public ArrayList<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
+		return DataManager.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 
 }

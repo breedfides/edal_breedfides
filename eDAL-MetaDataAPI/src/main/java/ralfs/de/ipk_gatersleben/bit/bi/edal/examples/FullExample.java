@@ -82,7 +82,7 @@ public class FullExample {
 //		query.where(builder.equal(join.get("parentDirectory"), "5c6a8522-012f-41b3-9866-39bd32e10250"));
 //		TypedQuery<?> tq = session.createQuery(query);
 //		List<?> resultList = tq.setParameter(set, datatypeList).getResultList();
-		
+		//log(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().getStaticServerAddress());
 //		Inserter inserter = new Inserter(root);
 //		inserter.insertOne();
 //	

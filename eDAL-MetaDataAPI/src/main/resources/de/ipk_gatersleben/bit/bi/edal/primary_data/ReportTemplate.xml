@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="en">
   <head>
-    
+
     <title>$title - $repositoryNameShort</title>
 
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
-    
+
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
-    	
+
 	#if( $MatomoTemplate)
 		$MatomoTemplate
-	#end    
-    
+	#end
+
   </head>
 
   <body>
-    <div id="grid-container"> 
+    <div id="grid-container">
         #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplateReport.xml")
         <div id="controls" class="pt-2 pb-2">
             <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
@@ -37,7 +37,7 @@
                         <a id="edal-report-export-csv" class="btn btn-outline-light btn-sm" href="#" role="button">CSV</a>&nbsp;
                         <a id="edal-report-export-clipboard" class="btn btn-outline-light btn-sm" href="#" role="button">Copy to clipboard</a>&nbsp;
                     </div>
-                    
+
                       <div id="edal-report-export-container">
                         <span class="mr-2">Show all on map:</span>
                         <a id="edal-report-show-map-all-locations" class="btn btn-outline-light btn-sm" href="#" role="button">Show</a>&nbsp;
@@ -48,7 +48,7 @@
                     <input id="edal-report-search" type="text" class="form-control form-control-sm" style="min-width:350px;" placeholder="Search..." />
                 </div>
             </div>
-        </div> 
+        </div>
 
         <div id="grid-container-table-and-map">
             <div id="edal-report-table-container" class="px-3" style="overflow-y: hidden;">
@@ -65,7 +65,7 @@
             </div>
         </footer>
     </div>
-    
+
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
     <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
@@ -75,7 +75,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
 
 
-    <!-------------------------------------
+    <!-----------------------------------
     -------- Edal Report Javascript -------
     -------------------------------------->
     <script src="$serverURL/JS/edal_report.js"></script>
@@ -84,7 +84,7 @@
         var reportData = $json;
         var mapData = $jsonall;
     </script>
-    
+
     <script>
     EdalReport.init(reportData, mapData);
 
