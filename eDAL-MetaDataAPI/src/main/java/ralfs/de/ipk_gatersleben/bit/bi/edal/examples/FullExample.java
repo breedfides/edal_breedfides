@@ -95,7 +95,7 @@ public class FullExample {
 //			log(entity.getID());
 //		}
 //		log("Finsihed in: "+(System.currentTimeMillis()-start));
-		Thread.sleep(50000000);	
+		Thread.sleep(90000000);	
 		//Thread.sleep(60000);
 //		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Torben", false, "singleData");
 //		log("public data: "+results.size());

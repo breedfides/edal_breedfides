@@ -405,7 +405,7 @@ public class FileSystemImplementationProvider
 				try {
 					Directory indexingDirectory = FSDirectory
 							.open(Paths.get(indexDirectory.toString(), "Master_Index"));
-					TieredMergePolicy pol = new TieredMergePolicy();
+					TieredMergePolicy pol = new TieredMergePolicy();					
 					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer());
 					writerConfig.setMergePolicy(pol);
 					writer = new IndexWriter(indexingDirectory, writerConfig);

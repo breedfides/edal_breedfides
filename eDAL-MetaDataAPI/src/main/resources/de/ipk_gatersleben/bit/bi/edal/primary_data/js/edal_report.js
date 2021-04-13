@@ -187,23 +187,24 @@ let EdalReport = new function() {
                 searchword = null;
             }
             self.searchFilter = searchword;
-            self.datatable.destroy();
             if (self.yearFilter !== null) {
                 if (searchword === null) {
                     //self.datatable.search('').columns(5).search(self.yearFilter).draw();
                     self.reportData = self.initReportData;
                     console.log("Data:")
                     console.log(self.reportData);
+                    self.datatable.destroy();
                     self.renderDatatable();
                 } else {
                     //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
                     //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
                     $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
                         self.reportData = data;
+                        console.log("Data:")
+                        console.log(self.reportData);
+                        self.datatable.destroy();
+                        self.renderDatatable();
                     });
-                    console.log("Data:")
-                    console.log(self.reportData);
-                    self.renderDatatable();
                 }
             } else {
                 if (searchword === null) {
@@ -211,16 +212,18 @@ let EdalReport = new function() {
                     self.reportData = self.initReportData;
                     console.log("Data:")
                     console.log(self.reportData);
+                    self.datatable.destroy();
                     self.renderDatatable();
                 } else {
                     //self.datatable.search(searchword).draw();
                     //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
                     $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
                         self.reportData = data;
+                        console.log("Data:")
+                        console.log(self.reportData);
+                        self.datatable.destroy();
+                        self.renderDatatable();
                     });
-                    console.log("Data:")
-                    console.log(self.reportData);
-                    self.renderDatatable();
                 }
             }
         });

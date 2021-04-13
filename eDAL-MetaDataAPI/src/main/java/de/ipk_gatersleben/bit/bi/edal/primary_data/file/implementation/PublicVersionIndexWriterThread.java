@@ -67,6 +67,7 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.NativeQuery;
 import org.hibernate.search.backend.lucene.lowlevel.index.impl.IndexAccessor;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
@@ -125,7 +126,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
-	final int fetchSize = (int) Math.pow(10, 1);
+	final int fetchSize = (int) Math.pow(10, 6);
 
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
@@ -189,18 +190,18 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			indexedVersions = 0;
 			flushedObjects = 0;
 			executeIndexingStart = System.currentTimeMillis();
-
 			/** high value fetch objects faster, but more memory is needed */
 			final int fetchSize = (int) Math.pow(10, 4);
 
 			final long queryStartTime = System.currentTimeMillis();
 			
-			/** Load all new PublicReferences */
+			/** Load all new PublicReference.IDs */
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-			CriteriaQuery<PublicReferenceImplementation> criteria = criteriaBuilder
-					.createQuery(PublicReferenceImplementation.class);
+			CriteriaQuery<Integer> criteria = criteriaBuilder
+					.createQuery(Integer.class);
 			Root<PublicReferenceImplementation> root = criteria
-					.from(PublicReferenceImplementation.class);			
+					.from(PublicReferenceImplementation.class);
+			criteria.select(root.get("id"));
 			Predicate predicateId = criteriaBuilder.gt(root.get("id"),
 					this.lastIndexedID);
 			Predicate predicateAccepted = criteriaBuilder.equal(
@@ -225,12 +226,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 
 			final long indexStartTime = System.currentTimeMillis();
-			PublicReferenceImplementation publicRef = null;
+			Integer publicRef = null;
 			while (results.next()) {
-				publicRef = (PublicReferenceImplementation) results.get(0);
+				publicRef = (Integer) results.get(0);
 				/** index all associated Files/Directories */
 				updateIndex(publicRef, session);
-				this.lastIndexedID = publicRef.getId();
+				this.lastIndexedID = publicRef;
 			}
 			results.close();
 			session.getTransaction().commit();
@@ -283,9 +284,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 	}
 	
-	private void updateIndex(PublicReferenceImplementation pubRef, Session session) {
-		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+pubRef.getId());
-		final int directoryFetchSize = 100;
+	private void updateIndex(Integer pubRef, Session session) {
+		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+pubRef);
+		final int directoryFetchSize = 10000;
 
 		String hql = "from PrimaryDataFileImplementation"
 				+ " where id = :fileId";	
@@ -294,46 +295,52 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //				.setParameter("fileId",
 //						pubRef.getVersion().getPrimaryEntityId())
 //				.uniqueResult();
-		PrimaryDataFileImplementation parentDirFile = session.get(PrimaryDataFileImplementation.class, pubRef.getVersion().getPrimaryEntityId());
+		NativeQuery<Object[]> nativeQuery = session.createNativeQuery("SELECT entities.id, entities.type FROM PUBLICREFERENCES p, entity_versions ev, entities\r\n" + 
+				"where p.id =:publicID and ev.id = p.version_id and entities.id = ev.primaryentityid");
+		nativeQuery.setParameter("publicID", pubRef);
+		Object[] typeId = nativeQuery.getSingleResult();
+		String parentDirFile = (String)typeId[0];
 		
-		Stack<PrimaryDataFileImplementation> stack = new Stack<>();
-		if (parentDirFile.isDirectory()) {
+		Stack<String> stack = new Stack<>();
+		if (((Character)typeId[1]).equals('D')) {
 			stack.add(parentDirFile);
 			while (!stack.isEmpty()) {
-				PrimaryDataFileImplementation dir = stack.pop();
+				String dir = stack.pop();
 				if(parentDirFile.equals(dir)) {
 					this.updateVersions(dir, session, pubRef,PublicVersionIndexWriterThread.PUBLICREFERENCE);
 				}else {
 					this.updateVersions(dir, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 				}
 				long dirStart = System.currentTimeMillis();
-				hql = "from PrimaryDataFileImplementation s "
-						+ "where s.parentDirectory.id = :id order by s.id";
-				ScrollableResults results = session.createQuery(hql).setParameter("id", dir.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
+				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n" + 
+						"where parentdirectory_id =:parentdir\r\n" + 
+						"order by id");
+				ScrollableResults results = nativeQuery.setParameter("parentdir", dir).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
 				int count = 0;
-				PrimaryDataFileImplementation tempFile = null;
+				String tempFileId = null;
 				while(results.next()) {
-					tempFile = (PrimaryDataFileImplementation)results.get(0);
-					if (tempFile.isDirectory()) {
-						stack.add(tempFile);
+					tempFileId = (String) results.get(0);
+					if (((Character)results.get(1)).equals('D')) {
+						stack.add(tempFileId);
 					} else {
-						this.updateVersions(tempFile, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
+						this.updateVersions(tempFileId, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 					}
 					count++;
 				}
 				results.close();
 				session.clear();
-				hql = "from PrimaryDataFileImplementation s "
-						+ "where s.parentDirectory.id = :id AND s.id > :lastid order by s.id";
+				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n" + 
+						"where parentdirectory_id =:parentdir and id >:last\r\n" + 
+						"order by id");
 				while(count == directoryFetchSize) {
-					count = 0;
-					results = session.createQuery(hql).setParameter("id", dir.getID()).setParameter("lastid", tempFile.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
+					count = 0;				
+					results = nativeQuery.setParameter("parentdir", dir).setParameter("last", tempFileId).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
 					while(results.next()) {
-						tempFile = (PrimaryDataFileImplementation)results.get(0);
-						if (tempFile.isDirectory()) {
-							stack.add(tempFile);
+						tempFileId = (String) results.get(0);
+						if (((Character)results.get(1)).equals('D')) {
+							stack.add(tempFileId);
 						} else {
-							this.updateVersions(tempFile, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
+							this.updateVersions(tempFileId, session, pubRef, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 						}
 						count++;
 					}
@@ -346,21 +353,26 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 	}
 	
-	private void updateVersions(PrimaryDataFileImplementation file, Session session, PublicReferenceImplementation pubRef, String entityType) {
+	private void updateVersions(String file, Session session, Integer pubRef, String entityType) {
 		//String hql = "from PrimaryDataEntityVersionImplementation where primaryEntityId = :id";
 		//List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(hql,PrimaryDataEntityVersionImplementation.class).setParameter("id", file.getID()).getResultList();
-		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-		CriteriaQuery<Integer> versionCriteria = 
-				criteriaBuilder
-				.createQuery(Integer.class);
-		Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria
-				.from(PrimaryDataEntityVersionImplementation.class);
-		versionCriteria.select(versionRoot.get("id"));
-		versionCriteria.where(criteriaBuilder.equal(
-				versionRoot.get("primaryEntityId"), file.getID()));
-		versionCriteria.orderBy(criteriaBuilder.desc(
-				versionRoot.get("revision")));
-		Integer version = session.createQuery(versionCriteria).setMaxResults(1).getSingleResult();
+//		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+//		CriteriaQuery<Integer> versionCriteria = 
+//				criteriaBuilder
+//				.createQuery(Integer.class);
+//		Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria
+//				.from(PrimaryDataEntityVersionImplementation.class);
+//		versionCriteria.select(versionRoot.get("id"));
+//		versionCriteria.where(criteriaBuilder.equal(
+//				versionRoot.get("primaryEntityId"), file.getID()));
+//		versionCriteria.orderBy(criteriaBuilder.desc(
+//				versionRoot.get("revision")));
+//		Integer version = session.createQuery(versionCriteria).setMaxResults(1).getSingleResult();
+		
+		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n" + 
+				"where primaryentityid =:file and revision = "
+				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
+		Integer version = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
 	    ScoreDoc[] hits2 = null;
 		try {
 			Term term = new Term(MetaDataImplementation.VERSIONID,
@@ -396,18 +408,18 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		try {
 			//Notiz: Es sollte geprüft werden, ob ein Dokument bereits die nötigen Felder besitzt und daher nicht nochmal indiziert werden muss!
 			Document doc = searcher.doc(hits2[0].doc);
-			doc.removeField(MetaDataImplementation.ENTITYID);
+//			doc.removeField(MetaDataImplementation.ENTITYID);
 			doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,
 					entityType, Store.YES));
-			doc.add(new TextField(MetaDataImplementation.ENTITYID,
-					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
+//			doc.add(new TextField(MetaDataImplementation.ENTITYID,
+//					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
 			doc.add(new TextField(PublicVersionIndexWriterThread.PUBLICID,
-					String.valueOf(pubRef.getId()), Store.YES));
+					String.valueOf(pubRef), Store.YES));
 			writer.addDocument(doc);
 			indexedVersions++;
 			this.indexedSingleData++;
 			this.implementationProviderLogger
-			.info("(public) current PublicReference: "+pubRef.getId()+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
+			.info("(public) current PublicReference: "+pubRef+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
 
 //				this.implementationProviderLogger
 //						.info("UPDATED VERSION: " + doc.get(MetaDataImplementation.TITLE)
@@ -423,7 +435,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 				flushedObjects += fetchSize;
-				if (indexedVersions > 0 && pubRef.getId() > this.lastIndexedID) {
+				if (indexedVersions > 0 && pubRef > this.lastIndexedID) {
 					try {
 						FileOutputStream fos = new FileOutputStream(
 								Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
