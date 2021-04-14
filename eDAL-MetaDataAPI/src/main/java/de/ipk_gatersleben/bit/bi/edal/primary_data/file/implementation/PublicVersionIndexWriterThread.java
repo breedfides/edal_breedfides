@@ -121,12 +121,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	int indexedVersions = 0;
 	int flushedObjects = 0;
 	Directory index;
-	final String testName = "testx44";
+	/** high value fetch objects faster, but more memory is needed */
+	final int fetchSize = (int) Math.pow(10, 5);
+	final int directoryFetchSize = (int) Math.pow(10, 5);
 	
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
-	final int fetchSize = (int) Math.pow(10, 6);
 
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
@@ -190,8 +191,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			indexedVersions = 0;
 			flushedObjects = 0;
 			executeIndexingStart = System.currentTimeMillis();
-			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = (int) Math.pow(10, 4);
 
 			final long queryStartTime = System.currentTimeMillis();
 			
@@ -285,16 +284,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 	
 	private void updateIndex(Integer pubRef, Session session) {
-		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+pubRef);
-		final int directoryFetchSize = 10000;
-
-		String hql = "from PrimaryDataFileImplementation"
-				+ " where id = :fileId";	
-//		PrimaryDataFileImplementation parentDirFile = session
-//				.createQuery(hql, PrimaryDataFileImplementation.class)
-//				.setParameter("fileId",
-//						pubRef.getVersion().getPrimaryEntityId())
-//				.uniqueResult();
+		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+pubRef);		
+		//Alternative way to fetch the PrimaryDataFileImplementation associated with the publicReference (requieres entire publicReference)
+		//PrimaryDataFileImplementation parentDirFile = session.get(PrimaryDataFileImplementation.class, pubRef.getVersion().getPrimaryEntityId());
+		
 		NativeQuery<Object[]> nativeQuery = session.createNativeQuery("SELECT entities.id, entities.type FROM PUBLICREFERENCES p, entity_versions ev, entities\r\n" + 
 				"where p.id =:publicID and ev.id = p.version_id and entities.id = ev.primaryentityid");
 		nativeQuery.setParameter("publicID", pubRef);
@@ -316,6 +309,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						"where parentdirectory_id =:parentdir\r\n" + 
 						"order by id");
 				ScrollableResults results = nativeQuery.setParameter("parentdir", dir).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
+//				String hql = "from PrimaryDataFileImplementation s "
+//						+ "where s.parentDirectory.id = :id order by s.id";
+//				ScrollableResults results = session.createQuery(hql).setParameter("id", dir.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
 				int count = 0;
 				String tempFileId = null;
 				while(results.next()) {
@@ -332,9 +328,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n" + 
 						"where parentdirectory_id =:parentdir and id >:last\r\n" + 
 						"order by id");
+//				hql = "from PrimaryDataFileImplementation s "
+//						+ "where s.parentDirectory.id = :id AND s.id > :lastid order by s.id";
 				while(count == directoryFetchSize) {
 					count = 0;				
 					results = nativeQuery.setParameter("parentdir", dir).setParameter("last", tempFileId).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
+					//results = session.createQuery(hql).setParameter("id", dir.getID()).setParameter("lastid", tempFile.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
 					while(results.next()) {
 						tempFileId = (String) results.get(0);
 						if (((Character)results.get(1)).equals('D')) {
@@ -367,8 +366,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //				versionRoot.get("primaryEntityId"), file.getID()));
 //		versionCriteria.orderBy(criteriaBuilder.desc(
 //				versionRoot.get("revision")));
-//		Integer version = session.createQuery(versionCriteria).setMaxResults(1).getSingleResult();
-		
+//		Integer version = session.createQuery(versionCriteria).setMaxResults(1).getSingleResult();		
 		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n" + 
 				"where primaryentityid =:file and revision = "
 				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
@@ -408,7 +406,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		try {
 			//Notiz: Es sollte geprüft werden, ob ein Dokument bereits die nötigen Felder besitzt und daher nicht nochmal indiziert werden muss!
 			Document doc = searcher.doc(hits2[0].doc);
-//			doc.removeField(MetaDataImplementation.ENTITYID);
+			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,
 					entityType, Store.YES));
 //			doc.add(new TextField(MetaDataImplementation.ENTITYID,

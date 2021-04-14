@@ -26,11 +26,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -101,8 +97,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	//StandardAnalyzer analyzer;
 	IndexWriter writer = null;
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
-	HashMap<String, TextField> fieldMap = new HashMap<>();
-	Document doc = new Document();
+	/** high value fetch objects faster, but more memory is needed */
+	final int fetchSize = (int) Math.pow(10, 5);
+
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory, Logger implementationProviderLogger,
 			IndexWriter writer) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
@@ -141,7 +138,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 		}
 		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
-		prepareMap();
+
+
+		
 	}
 
 	protected void executeIndexing() {
@@ -154,8 +153,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			/** caching not neededm, also disabled to prevent memory leaks */
 			session.setCacheMode(CacheMode.IGNORE);
 			
-			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = (int) Math.pow(10, 4);
 			final long queryStartTime = System.currentTimeMillis();
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
@@ -181,7 +178,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					/** index each element */
 					this.indexVersion(writer, version);
 					indexedObjects++;
-					//this.implementationProviderLogger.info("(exec)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+fetchSize);
+					this.implementationProviderLogger.info("(exec)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+fetchSize);
 				} catch (MetaDataException e) {
 					e.printStackTrace();
 				}
@@ -253,88 +250,47 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
-	private void prepareMap() {
-		fieldMap.put(MetaDataImplementation.TITLE, new TextField(MetaDataImplementation.TITLE, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.DESCRIPTION, new TextField(MetaDataImplementation.DESCRIPTION, "null",Store.YES));	
-		fieldMap.put(MetaDataImplementation.COVERAGE, new TextField(MetaDataImplementation.COVERAGE,"null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.IDENTIFIER, new TextField(MetaDataImplementation.IDENTIFIER,"null", Store.YES));
-		fieldMap.put(MetaDataImplementation.SIZE, new TextField(MetaDataImplementation.SIZE, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.LANGUAGE, new TextField(MetaDataImplementation.LANGUAGE, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.GIVENNAME, new TextField(MetaDataImplementation.GIVENNAME, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.SURENAME, new TextField(MetaDataImplementation.SURENAME, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.ADDRESSLINE, new TextField(MetaDataImplementation.ADDRESSLINE, null, Store.YES));	
-		fieldMap.put(MetaDataImplementation.ZIP, new TextField(MetaDataImplementation.ZIP, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.COUNTRY, new TextField(MetaDataImplementation.COUNTRY, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.LEGALNAME, new TextField(MetaDataImplementation.LEGALNAME, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.ALGORITHM, new TextField(MetaDataImplementation.CHECKSUM, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.CHECKSUM, new TextField(MetaDataImplementation.ALGORITHM, "null", Store.YES));	
-		fieldMap.put(MetaDataImplementation.SUBJECT, new TextField(MetaDataImplementation.SUBJECT, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.RELATION, new TextField(MetaDataImplementation.RELATION, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.STARTDATE, new TextField(MetaDataImplementation.STARTDATE, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.ENDDATE, new TextField(MetaDataImplementation.ENDDATE, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.MIMETYPE, new TextField(MetaDataImplementation.MIMETYPE, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.TYPE, new TextField(MetaDataImplementation.TYPE, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.VERSIONID, new TextField(MetaDataImplementation.VERSIONID, "null", Store.YES));
-		fieldMap.put(MetaDataImplementation.PRIMARYENTITYID, new TextField(MetaDataImplementation.PRIMARYENTITYID, "null", Store.YES));
-		for (Map.Entry<String, TextField> entry : fieldMap.entrySet()) {
-	        doc.add(entry.getValue());
-		}
-	}	
 	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
 		MetaData metadata = version.getMetaData();
-		fieldMap.get(MetaDataImplementation.TITLE).setStringValue(getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)));
-		fieldMap.get(MetaDataImplementation.DESCRIPTION).setStringValue(getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)));
-		fieldMap.get(MetaDataImplementation.COVERAGE).setStringValue(getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)));
-		fieldMap.get(MetaDataImplementation.IDENTIFIER).setStringValue(getString(metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)));
-		fieldMap.get(MetaDataImplementation.SIZE).setStringValue(Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()));
-		fieldMap.get(MetaDataImplementation.LANGUAGE).setStringValue(getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()));
+		Document doc = new Document();
+		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
+				Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.SIZE,
+				Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
+				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
 		Persons naturalPersons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		persons.addAll(naturalPersons);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		persons.add(legalPerson);
-		StringJoiner givenNames = new StringJoiner(" ");
-		StringJoiner sureNames = new StringJoiner(" ");
-		StringJoiner addresslines = new StringJoiner(" ");
-		StringJoiner zips = new StringJoiner(" ");
-		StringJoiner countries = new StringJoiner(" ");
 		for (Person currentPerson : persons) {
 			if (currentPerson instanceof NaturalPerson) {
-				givenNames.add(((NaturalPerson) currentPerson).getGivenName());
-				sureNames.add(((NaturalPerson) currentPerson).getSureName());
+				doc.add(new TextField(MetaDataImplementation.GIVENNAME, ((NaturalPerson) currentPerson).getGivenName(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.SURENAME, ((NaturalPerson) currentPerson).getSureName(), Store.YES));
 			}
-			addresslines.add(currentPerson.getAddressLine());
-			zips.add( currentPerson.getZip());
-			countries.add(currentPerson.getCountry());
+			doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, currentPerson.getAddressLine(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.ZIP, currentPerson.getZip(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.COUNTRY, currentPerson.getCountry(), Store.YES));
 		}
-		fieldMap.get(MetaDataImplementation.GIVENNAME).setStringValue(givenNames.toString());
-		fieldMap.get(MetaDataImplementation.SURENAME).setStringValue(sureNames.toString());
-		fieldMap.get(MetaDataImplementation.ADDRESSLINE).setStringValue(addresslines.toString());
-		fieldMap.get(MetaDataImplementation.ZIP).setStringValue(zips.toString());
-		fieldMap.get(MetaDataImplementation.COUNTRY).setStringValue(countries.toString());
-		fieldMap.get(MetaDataImplementation.LEGALNAME).setStringValue(getString(legalPerson.getLegalName()));
-		StringJoiner algorithms = new StringJoiner(" ");
-		StringJoiner checksums = new StringJoiner(" ");
+		doc.add(new TextField(MetaDataImplementation.LEGALNAME, getString(legalPerson.getLegalName()), Store.YES));
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
 		for (CheckSumType checkSum : checkSums) {
-			algorithms.add(checkSum.getAlgorithm());
-			checksums.add(checkSum.getCheckSum());
+			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
 		}
-		fieldMap.get(MetaDataImplementation.ALGORITHM).setStringValue(algorithms.toString());
-		fieldMap.get(MetaDataImplementation.CHECKSUM).setStringValue(checksums.toString());
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
-		StringJoiner subjectList = new StringJoiner(" ");
 		for (UntypedData subject : subjects) {
-			subjectList.add(subject.getString());
+			doc.add(new TextField(MetaDataImplementation.SUBJECT, subject.getString(), Store.YES));
 		}
-		fieldMap.get(MetaDataImplementation.SUBJECT).setStringValue(subjectList.toString());
 		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
-		StringJoiner relationList = new StringJoiner(" ");
 		for (Identifier identifier : relations) {
-			relationList.add(identifier.getID());
+			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getID(), Store.YES));
 		}
-		fieldMap.get(MetaDataImplementation.RELATION).setStringValue(relationList.toString());
-		fieldMap.get(MetaDataImplementation.TITLE).setStringValue(getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)));
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
 			doc.add(new LongPoint(MetaDataImplementation.STARTDATE,
