@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -268,25 +269,49 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		persons.addAll(naturalPersons);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		persons.add(legalPerson);
+		/** 
+		 * StringJoiner to combine multiple Values into one large String to store the text in one field per categopry
+		 * Not used for Relations and dates, because these values occur rarely more than once per Version/Document
+		 *  */
+		StringJoiner givenNames = new StringJoiner(" ");
+		StringJoiner sureNames = new StringJoiner(" ");
+		StringJoiner addresslines = new StringJoiner(" ");
+		StringJoiner zips = new StringJoiner(" ");
+		StringJoiner countries = new StringJoiner(" ");
 		for (Person currentPerson : persons) {
 			if (currentPerson instanceof NaturalPerson) {
-				doc.add(new TextField(MetaDataImplementation.GIVENNAME, ((NaturalPerson) currentPerson).getGivenName(), Store.YES));
-				doc.add(new TextField(MetaDataImplementation.SURENAME, ((NaturalPerson) currentPerson).getSureName(), Store.YES));
+				givenNames.add(((NaturalPerson) currentPerson).getGivenName());
+				sureNames.add(((NaturalPerson) currentPerson).getSureName());
 			}
-			doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, currentPerson.getAddressLine(), Store.YES));
-			doc.add(new TextField(MetaDataImplementation.ZIP, currentPerson.getZip(), Store.YES));
-			doc.add(new TextField(MetaDataImplementation.COUNTRY, currentPerson.getCountry(), Store.YES));
+			addresslines.add(currentPerson.getAddressLine());
+			zips.add( currentPerson.getZip());
+			countries.add(currentPerson.getCountry());
 		}
+		doc.add(new TextField(MetaDataImplementation.GIVENNAME, givenNames.toString(), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.SURENAME, sureNames.toString(), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, addresslines.toString(), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.ZIP, zips.toString(), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COUNTRY, countries.toString(), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.LEGALNAME, getString(legalPerson.getLegalName()), Store.YES));
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
-		for (CheckSumType checkSum : checkSums) {
+		StringJoiner algorithms = new StringJoiner(" ");
+		StringJoiner checksums = new StringJoiner(" ");
+		if(checkSums.size() > 1) {
+			for (CheckSumType checkSum : checkSums) {
+				algorithms.add(checkSum.getAlgorithm());
+				checksums.add(checkSum.getCheckSum());
+			}
+		}else if(checkSums.size() == 1) {
+			CheckSumType checkSum = checkSums.iterator().next();
 			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.YES));
 			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
 		}
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
+		StringJoiner subjectList = new StringJoiner(" ");
 		for (UntypedData subject : subjects) {
-			doc.add(new TextField(MetaDataImplementation.SUBJECT, subject.getString(), Store.YES));
+			subjectList.add(subject.getString());
 		}
+		doc.add(new TextField(MetaDataImplementation.SUBJECT, subjectList.toString(), Store.YES));
 		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
 		for (Identifier identifier : relations) {
 			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getID(), Store.YES));

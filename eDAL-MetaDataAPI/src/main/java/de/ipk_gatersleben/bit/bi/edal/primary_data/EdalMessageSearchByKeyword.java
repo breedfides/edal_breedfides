@@ -1,4 +1,4 @@
-package de.ipk_gatersleben.bit.bi.edal.primary_data.rest;
+package de.ipk_gatersleben.bit.bi.edal.primary_data;
 /**
  * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -26,8 +26,6 @@ import org.hibernate.Session;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.GenerateLocations;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
@@ -58,13 +56,11 @@ public class EdalMessageSearchByKeyword {
 				e.printStackTrace();
 			}
 			obj.put("title", reference.getVersion().getMetaData().toString());
-			obj.put("downloads", "0");
-			obj.put("accesses", "0");
-			HashSet<String> iplist = new HashSet<>();
-			iplist.add("154.43.48.254");
+			String internalID = reference.getInternalID();
+			obj.put("downloads", String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
+			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));
 			obj.put("locations",
-					GenerateLocations.generateGpsLocationsToJson(iplist));
-
+					GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
 			finalArray.add(obj);
 		}
 		return finalArray;

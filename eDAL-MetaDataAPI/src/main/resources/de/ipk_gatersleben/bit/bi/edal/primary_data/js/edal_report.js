@@ -179,8 +179,15 @@ let EdalReport = new function() {
             }
         });
 
+        function delay(fn, ms) {
+          let timer = 0
+          return function(...args) {
+            clearTimeout(timer)
+            timer = setTimeout(fn.bind(this, ...args), ms || 0)
+          }
+        }
 
-        $(document).on('keyup', '#edal-report-search', function(event) {
+        $(document).on('keyup', '#edal-report-search', delay(function(event) {
             event.preventDefault();
             let searchword = $(this).val();
             if (searchword === '') {
@@ -226,7 +233,7 @@ let EdalReport = new function() {
                     });
                 }
             }
-        });
+        }, 300));
 
         $(document).on('click', '#edal-report-export-csv', function(event) {
             event.preventDefault();

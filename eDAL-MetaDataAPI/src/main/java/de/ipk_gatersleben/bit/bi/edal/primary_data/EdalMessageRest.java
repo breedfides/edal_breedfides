@@ -10,25 +10,28 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package de.ipk_gatersleben.bit.bi.edal.primary_data.rest;
+package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.util.ArrayList;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 
 import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.TextDataBase;
 
 import javax.ws.rs.Produces;
 
-@Path("test")
-public class EdalMessageTest {
+@Path("message")
+public class EdalMessageRest {
 
 	@GET
+	@Path("/{msg}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<String> getMessage() {
-		TextDataBase db = new TextDataBase();
+	public ArrayList<String> getMessage(@PathParam("msg") String msg) {
+		TextDataBase db  = new TextDataBase();
+		db.append(msg);
 		return db.getData();
 	}
 

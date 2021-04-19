@@ -118,6 +118,9 @@ public class FileSystemImplementationProvider
 	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
 
 	private IndexWriter writer = null;
+	public IndexWriter getWriter() {
+		return writer;
+	}
 
 	private boolean hibernateIndexing = false;
 

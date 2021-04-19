@@ -56,6 +56,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.tika.io.IOUtils;
@@ -404,7 +405,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
 		}
 		try {
-			//Notiz: Es sollte geprüft werden, ob ein Dokument bereits die nötigen Felder besitzt und daher nicht nochmal indiziert werden muss!
+			Term term = new Term(MetaDataImplementation.VERSIONID,
+					Integer.toString(version));
+			long hitVal = searcher.search(new TermQuery(term), 1).totalHits.value;
+			Relation relation = searcher.search(new TermQuery(term), 1).totalHits.relation;
+			if(hitVal > 1) {
+				int alarm = 1;
+			}
 			Document doc = searcher.doc(hits2[0].doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,

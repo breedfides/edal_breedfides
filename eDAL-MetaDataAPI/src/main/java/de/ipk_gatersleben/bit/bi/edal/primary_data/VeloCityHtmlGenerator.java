@@ -96,6 +96,12 @@ class VeloCityHtmlGenerator {
 	private static final String STRING_SERVER_URL = "serverURL";
 	private static final String STRING_CITATION_ENTITY = "citation_entity";
 	private static final String DOWNLOAD_SERVER_URL = "downloadURL";
+	
+	public static final Map<String, HashSet<String>> ipMap = new HashMap<String, HashSet<String>>();
+
+	public static final Map<String, Long> downloadedVolume = new HashMap<String, Long>();
+
+	public static final Map<String, Long> uniqueAccessNumbers = new HashMap<String, Long>();
 
 	/**
 	 * Default constructor to load all VeloCity properties.
@@ -1213,12 +1219,6 @@ class VeloCityHtmlGenerator {
 		JSONArray finalArray = new JSONArray();
 
 		final Map<String, HashSet<String>> accessMap = new HashMap<String, HashSet<String>>();
-
-		final Map<String, HashSet<String>> ipMap = new HashMap<String, HashSet<String>>();
-
-		final Map<String, Long> downloadedVolume = new HashMap<String, Long>();
-
-		final Map<String, Long> uniqueAccessNumbers = new HashMap<String, Long>();
 
 		final Map<String, String[]> accessStatistic = new TreeMap<String, String[]>();
 

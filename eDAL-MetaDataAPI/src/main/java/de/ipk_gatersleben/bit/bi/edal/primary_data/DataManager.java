@@ -1026,10 +1026,10 @@ public class DataManager {
 		try {
 			luceneQuery = fuzzy ? parser.parse(keyword+'~') : parser.parse(keyword);
 		} catch (ParseException e2) {
-			e2.printStackTrace();
+			((FileSystemImplementationProvider)getImplProv()).getLogger().info("Not able to Parse: \n"+keyword);
+			return new ArrayList<Integer>();
 		}
 		if(luceneQuery == null) {
-			//return new ArrayList<PrimaryDataEntity>();
 			return new ArrayList<Integer>();
 		}
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();

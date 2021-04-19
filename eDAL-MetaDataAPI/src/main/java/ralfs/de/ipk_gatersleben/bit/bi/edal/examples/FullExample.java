@@ -54,6 +54,7 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.apache.lucene.store.Directory;
 import org.hibernate.query.NativeQuery;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
@@ -72,8 +73,12 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class FullExample {
 
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {		
 		PrimaryDataDirectory root = getRoot();
+//		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+//		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
+//		IndexSearcher searcher = new IndexSearcher(reader);
+		
 //		final CriteriaBuilder builder = session.getCriteriaBuilder();
 //		CriteriaQuery<?> query = builder.createQuery(PrimaryDataEntityVersionImplementation.class);
 //		Root<PrimaryDataEntityVersionImplementation> queryRoot = query.from(PrimaryDataEntityVersionImplementation.class);
