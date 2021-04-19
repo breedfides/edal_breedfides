@@ -28,7 +28,7 @@ import javafx.application.Platform;
 
 public class PublicationModulTest {
 
-	private static final String SERVER = "localhost";
+	private static final String SERVER = "doi.ipk-gatersleben.de";
 
 	private static final int PORT = 1099;
 
@@ -48,37 +48,17 @@ public class PublicationModulTest {
 
 		Platform.setImplicitExit(false);
 
-		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
-
-		EdalServer.startServer(configuration, EdalServer.DEFAULT_REGISTRY_PORT, EdalServer.DEFAULT_DATA_PORT, false,
-				false);
+//		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
+//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+//
+//		EdalServer.startServer(configuration, EdalServer.DEFAULT_REGISTRY_PORT, EdalServer.DEFAULT_DATA_PORT, false,
+//				false);
 
 		/* test connect to eDAL server */
 		PropertyLoader.initialize("ipk_properties.txt");
 
-		Boolean retry = true;
-
-		while (retry) {
-			try {
-				Authentication testAuthentication = new Authentication(EdalHelpers.authenticateSampleUser());
-				clientDataManager = new ClientDataManager(SERVER, PORT, testAuthentication);
-				clientDataManager.getRootDirectory();
-				retry = false;
-			} catch (Exception e) {
-
-				ServerErrorDialog errorDialog = new ServerErrorDialog(null, e.getMessage(), SERVER, PORT);
-
-				errorDialog.showDialog();
-
-				if (errorDialog.getReturnValue() == 1) {
-					retry = true;
-				} else {
-					System.exit(0);
-				}
-			}
-		}
+//		}
 
 //		Subject subject = null;
 //		try {
@@ -116,14 +96,15 @@ public class PublicationModulTest {
 		Platform.setImplicitExit(true);
 
 		Subject s = new Subject();
-		s.getPrincipals().add(new SamplePrincipal("arendd@ipk-gatersleben.de"));
+		s.getPrincipals().add(new SamplePrincipal("daar86@googlemail.com"));
 
-		Authentication testAuthentication = new Authentication(s);
-		clientDataManager = new ClientDataManager(SERVER, PORT, testAuthentication);
+	//	Authentication testAuthentication = new Authentication(s);
+		
+//		clientDataManager = new ClientDataManager(SERVER, PORT, testAuthentication);
 
-		PublicationFrame.rootDirectory = clientDataManager.getRootDirectory();
+	//	PublicationFrame.rootDirectory = clientDataManager.getRootDirectory();
 
-		PublicationModulTest.setCurrentFrame(new PublicationFrame(clientDataManager, false, false));
+		PublicationModulTest.setCurrentFrame(new PublicationFrame(null, false, false));
 		// PublicationModulTest.setCurrentFrame(new PublicationFrame("arendd",
 		// clientDataManager));
 	}

@@ -32,6 +32,7 @@ import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.LanguagePanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.LicenseCheckBoxPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.ResourcePanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.PublisherPanel;
+import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.RelatedIdentifierPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.SubjectPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.NonFreeTextPanelMouseAdapter;
 import de.ipk_gatersleben.bit.bi.edal.publication.listener.NonFreeTextPanelMouseAdapter.PanelType;
@@ -60,6 +61,7 @@ public class PublicationMainPanel extends JPanel {
 	}
 
 	private static final long serialVersionUID = -894068063132047509L;
+
 	public static final String DEFAULT_UPLOAD_PATH_STRING = PropertyLoader.loadUploadPathString();
 	public static final String DEFAULT_TITLE_STRING = PropertyLoader.props.getProperty("DEFAULT_TITLE_STRING");
 	public static final String DEFAULT_LANGUAGE_STRING = PropertyLoader.loadLanguageString();
@@ -69,19 +71,22 @@ public class PublicationMainPanel extends JPanel {
 			.getProperty("DEFAULT_DESCRIPTION_STRING");
 	public static final String DEFAULT_AUTHORS_STRING = PropertyLoader.loadAuthorsString();
 	public static final String DEFAULT_SUBJECTS_STRING = PropertyLoader.loadSubjectsString();
-
+	public static final String DEFAULT_RELATED_IDENTIFIER_PATH_STRING = PropertyLoader
+			.loadRelatedIdentifierPathString();
 	public static final String DEFAULT_EMBARGO_STRING = PropertyLoader.props.getProperty("DEFAULT_EMBARGO_STRING");
+
 	public static AttributeTextArea uploadPathField = new AttributeTextArea(DEFAULT_UPLOAD_PATH_STRING, false, true);
 	public static AttributeTextArea titleField = new AttributeTextArea(DEFAULT_TITLE_STRING, true, true);
 	public static AttributeTextArea descriptionField = new AttributeTextArea(DEFAULT_DESCRIPTION_STRING, true, false);
 	public static AttributeTextArea authorsField = new AttributeTextArea(DEFAULT_AUTHORS_STRING, false, true);
 	public static AttributeTextArea subjectsField = new AttributeTextArea(DEFAULT_SUBJECTS_STRING, false, true);
 	public static AttributeTextArea languageField = new AttributeTextArea(DEFAULT_LANGUAGE_STRING, false, true);
-
 	public static AttributeTextArea resourceField = new AttributeTextArea(DEFAULT_RESOURCE_STRING, false, true);
 	public static AttributeTextArea publisherField = new AttributeTextArea(DEFAULT_PUBLISHER_STRING, false, true);
-
 	public static AttributeTextArea embargoField = new AttributeTextArea(DEFAULT_EMBARGO_STRING, false, true);
+	public static AttributeTextArea relatedIdentifierPathField = new AttributeTextArea(
+			DEFAULT_RELATED_IDENTIFIER_PATH_STRING, false, true);
+
 	public static AuthorsPanel authorPanel;
 	public static LanguagePanel languagePanel;
 	public static SubjectPanel subjectPanel;
@@ -97,6 +102,7 @@ public class PublicationMainPanel extends JPanel {
 	private static NonFreeTextPanelMouseAdapter openPublisherPanelListener;
 	private static NonFreeTextPanelMouseAdapter openEmbargoPanelListener;
 	private static NonFreeTextPanelMouseAdapter openResourcePanelListener;
+	private static NonFreeTextPanelMouseAdapter openRelatedIdentifierPanelListener;
 
 	static BlockedFieldMouseAdapter blockedFieldMouseAdapter = new BlockedFieldMouseAdapter();
 
@@ -118,11 +124,14 @@ public class PublicationMainPanel extends JPanel {
 		openPublisherPanelListener = new NonFreeTextPanelMouseAdapter(PanelType.PUBLISHER_PANEL);
 		openEmbargoPanelListener = new NonFreeTextPanelMouseAdapter(PanelType.EMBARGO_PANEL);
 		openResourcePanelListener = new NonFreeTextPanelMouseAdapter(PanelType.RESOURCE_PANEL);
+		openRelatedIdentifierPanelListener = new NonFreeTextPanelMouseAdapter(PanelType.RELATED_IDENTIFIER_PANEL);
+
 	}
 	public static AttributeSplitPane titleAuthorSplitPanel = null;
 	public static AttributeSplitPane authorDescriptionSplitPanel = null;
 	public static AttributeSplitPane descriptionSubjectsSplitPanel = null;
-	public static AttributeSplitPane subjectsPublisherPanel = null;
+	public static AttributeSplitPane subjectsRelatedIdentiferPanel = null;
+	public static AttributeSplitPane relatedIdentifierPublisherPanel = null;
 
 	public static JPanel embargoLanguageResourceLicensePanel = null;
 	public static JPanel languageResourcePanel = null;
@@ -237,6 +246,7 @@ public class PublicationMainPanel extends JPanel {
 		descriptionField.setEnabled(true);
 
 		uploadPathField.setFocusable(true);
+		relatedIdentifierPathField.setFocusable(true);
 
 		boolean hasLanguageListener = false;
 
@@ -329,6 +339,19 @@ public class PublicationMainPanel extends JPanel {
 			embargoField.setEnabled(true);
 		}
 
+		boolean hasRelatedIdentifierPathListener = false;
+
+		for (MouseListener iterable_element : relatedIdentifierPathField.getMouseListeners()) {
+			if (iterable_element.equals(openRelatedIdentifierPanelListener)) {
+				hasUploadPathListener = true;
+			}
+		}
+
+		if (!hasUploadPathListener) {
+			relatedIdentifierPathField.addMouseListener(openRelatedIdentifierPanelListener);
+			relatedIdentifierPathField.setEnabled(true);
+		}
+
 		licensePanel.setEnabled(true);
 	}
 
@@ -418,17 +441,17 @@ public class PublicationMainPanel extends JPanel {
 	}
 
 	public PublicationMainPanel(boolean showPublisherField, boolean showResourceTypeField) {
-		
+
 		/* set ValueChangedListener */
-		
+
 		titleField.addFocusListener(
 				new TextAreaValueChangedFocusListener(PropertyLoader.TITLE_LABEL, titleField, DEFAULT_TITLE_STRING));
-		
+
 		titleField.addFocusListener(new TextAreaSaveListener());
 
 		descriptionField.addFocusListener(new TextAreaValueChangedFocusListener(PropertyLoader.DESCRIPTION_LABEL,
 				descriptionField, DEFAULT_DESCRIPTION_STRING));
-		
+
 		descriptionField.addFocusListener(new TextAreaSaveListener());
 
 		publisherField.addFocusListener(new TextAreaCheckFocusListener(PropertyLoader.PUBLISHER_LABEL, publisherField,
@@ -437,7 +460,7 @@ public class PublicationMainPanel extends JPanel {
 		/* end ValueChangedListener */
 
 		loadUserValues();
-		
+
 		/* set other Listeners */
 
 		authorsField.addMouseListener(openAuthorPanelListener);
@@ -447,6 +470,7 @@ public class PublicationMainPanel extends JPanel {
 		publisherField.addMouseListener(openPublisherPanelListener);
 		embargoField.addMouseListener(openEmbargoPanelListener);
 		resourceField.addMouseListener(openResourcePanelListener);
+		relatedIdentifierPathField.addMouseListener(openRelatedIdentifierPanelListener);
 
 		/* end other Listeners */
 
@@ -480,16 +504,22 @@ public class PublicationMainPanel extends JPanel {
 		AttributeLabelAttributePanel licenseCheckboxAttributePanel = new AttributeLabelAttributePanel(
 				PropertyLoader.LICENSE_LABEL, licensePanel, PropertyLoader.LICENSE_PANEL_HEIGHT);
 
+		AttributeLableAttributeTextAreaPanel relatedIdentifierAttributePanel = new AttributeLableAttributeTextAreaPanel(
+				PropertyLoader.RELATED_IDENTIFIER_LABEL, relatedIdentifierPathField,
+				PropertyLoader.RELATED_IDENTIFIER_PANEL_HEIGHT);
+
+		titleAttributePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
 		embargoAttributePanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY));
 		languageAttributePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, Color.GRAY));
 		uploadAttributePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
 		licenseCheckboxAttributePanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY));
 		resourceAttributePanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY));
+//		relatedIdentifierAttributePanel.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Color.GRAY));
 
 		mainPanel = new JPanel();
 		mainPanel.setLayout(new BorderLayout());
 
-		titleAttributePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+		mainPanel.add(uploadAttributePanel, BorderLayout.NORTH);
 
 		titleAuthorSplitPanel = new AttributeSplitPane(titleAttributePanel, authorsAttributePanel);
 		titleAuthorSplitPanel.setResizeWeight(0.0);
@@ -497,15 +527,18 @@ public class PublicationMainPanel extends JPanel {
 		authorDescriptionSplitPanel.setResizeWeight(0.9);
 		descriptionSubjectsSplitPanel = new AttributeSplitPane(authorDescriptionSplitPanel, subjectsAttributePanel);
 		descriptionSubjectsSplitPanel.setResizeWeight(0.9);
-		subjectsPublisherPanel = new AttributeSplitPane(descriptionSubjectsSplitPanel, publisherAttributePanel);
-		subjectsPublisherPanel.setResizeWeight(0.6);
+		subjectsRelatedIdentiferPanel = new AttributeSplitPane(descriptionSubjectsSplitPanel,
+				relatedIdentifierAttributePanel);
+		subjectsRelatedIdentiferPanel.setResizeWeight(0.6);
 
-		mainPanel.add(uploadAttributePanel, BorderLayout.NORTH);
+		relatedIdentifierPublisherPanel = new AttributeSplitPane(subjectsRelatedIdentiferPanel,
+				publisherAttributePanel);
+		relatedIdentifierPublisherPanel.setResizeWeight(0.6);
 
 		if (showPublisherField) {
-			mainPanel.add(subjectsPublisherPanel, BorderLayout.CENTER);
+			mainPanel.add(relatedIdentifierPublisherPanel, BorderLayout.CENTER);
 		} else {
-			mainPanel.add(descriptionSubjectsSplitPanel, BorderLayout.CENTER);
+			mainPanel.add(subjectsRelatedIdentiferPanel, BorderLayout.CENTER);
 		}
 
 		embargoLanguageResourceLicensePanel = new JPanel(new BorderLayout());
@@ -522,6 +555,8 @@ public class PublicationMainPanel extends JPanel {
 
 		mainPanel.add(embargoLanguageResourceLicensePanel, BorderLayout.SOUTH);
 
+//		mainPanel.add(relatedIdentifierPanel,BorderLayout.SOUTH);
+
 		JScrollPane scrollableMainPane = new JScrollPane(mainPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollableMainPane.setPreferredSize(new Dimension(400, 400));
@@ -532,20 +567,20 @@ public class PublicationMainPanel extends JPanel {
 
 	private void loadUserValues() {
 
-			final String title = PropertyLoader.userValues.getProperty("TITLE");
+		final String title = PropertyLoader.userValues.getProperty("TITLE");
 
-			if (title == null || title.isEmpty()) {
-			} else {
-				titleField.setText(title);
-			}
-			
-			final String description = PropertyLoader.userValues.getProperty("DESCRIPTION");
+		if (title == null || title.isEmpty()) {
+		} else {
+			titleField.setText(title);
+		}
 
-			if (description == null || description.isEmpty()) {
-			} else {
-				descriptionField.setText(description);
-			}
-			
+		final String description = PropertyLoader.userValues.getProperty("DESCRIPTION");
+
+		if (description == null || description.isEmpty()) {
+		} else {
+			descriptionField.setText(description);
+		}
+
 	}
 
 	public void disableAll() {

@@ -73,7 +73,8 @@ public class PublicationFrame extends JFrame {
 	public PublicationFrame(ClientDataManager clientDataManager, boolean showPublisherField, boolean showResourceField)
 			throws Exception {
 
-		PublicationFrame.loggedUser = clientDataManager.getAuthentication().getName();
+//		PublicationFrame.loggedUser = clientDataManager.getAuthentication().getName();
+		PublicationFrame.loggedUser = "daar86@gmail.com";
 
 		checkLoggedUserForCorrectEmailAddress(PublicationFrame.loggedUser);
 

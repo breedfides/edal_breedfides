@@ -8,17 +8,19 @@ LICENSE_TOOLTIP = Please refer for license information to http://creativecommons
 PUBLISHER_TOOLTIP = The name of the entity that archives, publishes, prints, distributes, releases, or produces the resource. 
 EMBARGO_TOOLTIP = Optional
 RESOURCE_TOOLTIP = The resource type of the dataset
+RELATED_IDENTIFIER_TOOLTIP	= A set of related identifiers (optional)
 
-TITLE_LABEL  		= <html>Title <font color=red>*</font></html>
-UPLOAD_LABEL 		= <html>Upload Path <font color=red>*</font></html>
-DESCRIPTION_LABEL 	= <html>Description <font color=red>*</font></html>
-AUTHORS_LABEL 		= <html>Authors <font color=red>*</font></html>
-SUBJECTS_LABEL 		= <html>Keywords <font color=red>*</font></html>
-LANGUAGE_LABEL 		= Language
-LICENSE_LABEL 		= <html>License <mark><small><a>(details)</a></small></mark><br/><br/><font color=green>valid for open <br/>access policy</font></html>
-PUBLISHER_LABEL 	= Publisher
-EMBARGO_LABEL 		= Embargo Date
-RESOURCE_LABEL		= Resource Type
+TITLE_LABEL  				= <html>Title <font color=red>*</font></html>
+UPLOAD_LABEL 				= <html>Upload Path <font color=red>*</font></html>
+DESCRIPTION_LABEL 			= <html>Description <font color=red>*</font></html>
+AUTHORS_LABEL 				= <html>Authors <font color=red>*</font></html>
+SUBJECTS_LABEL 				= <html>Keywords <font color=red>*</font></html>
+LANGUAGE_LABEL 				= Language
+LICENSE_LABEL 				= <html>License <mark><small><a>(details)</a></small></mark><br/><br/><font color=green>valid for open <br/>access policy</font></html>
+PUBLISHER_LABEL 			= Publisher
+EMBARGO_LABEL 				= Embargo Date
+RESOURCE_LABEL				= Resource Type
+RELATED_IDENTIFIER_LABEL	= Related IDs
 
 DEFAULT_UPLOAD_PATH_STRING = Please enter file or directory
 DEFAULT_TITLE_STRING = Please enter a publication title
@@ -29,6 +31,7 @@ DEFAULT_AUTHORS_STRING = Please set at least one creator
 DEFAULT_SUBJECTS_STRING = Please set at least one keyword
 DEFAULT_EMBARGO_STRING = Please set optional embargo date
 DEFAULT_RESOURCE_STRING = Dataset
+DEFAULT_RELATED_IDENTIFIER_PATH_STRING = Please enter a CSV file with related IDs
 
 DEFAULT_AUTHOR_VALUE_ADDRESS = Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3
 DEFAULT_AUTHOR_VALUE_ZIP = 06466

@@ -140,11 +140,11 @@ public class PublisherPanel extends JPanel implements ActionListener {
 
 			PublicationMainPanel.releaseAllBlockedFields();
 
-			PublicationMainPanel.subjectsPublisherPanel.setRightComponent(null);
+			PublicationMainPanel.subjectsRelatedIdentiferPanel.setRightComponent(null);
 
 			PropertyLoader.PUBLISHER_LABEL.setForeground(PropertyLoader.LABEL_COLOR);
 
-			PublicationMainPanel.subjectsPublisherPanel.setRightComponent(new AttributeLableAttributeTextAreaPanel(PropertyLoader.PUBLISHER_LABEL, PublicationMainPanel.publisherField, (PropertyLoader.PUBLISHER_PANEL_HEIGHT)));
+			PublicationMainPanel.subjectsRelatedIdentiferPanel.setRightComponent(new AttributeLableAttributeTextAreaPanel(PropertyLoader.PUBLISHER_LABEL, PublicationMainPanel.publisherField, (PropertyLoader.PUBLISHER_PANEL_HEIGHT)));
 
 			PublicationFrame.updateUI();
 //			PublicationModul.getFrame().requestFocusInWindow();

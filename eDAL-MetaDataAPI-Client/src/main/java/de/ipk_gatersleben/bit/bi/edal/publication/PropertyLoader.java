@@ -120,11 +120,14 @@ public class PropertyLoader {
 	public static final int DESCRIPTION_PANEL_HEIGHT = 4 * DEFAULT_FONT_SIZE;
 
 	public static final int TWO_LINE_HEIGHT = 2 * DEFAULT_FONT_SIZE;
+	
+	public static final int RELATED_IDENTIFIER_PANEL_HEIGHT = 2 * DEFAULT_FONT_SIZE;
 
 	public static final Dimension MINIMUM_DIM_PUBLICATION_FRAME = new Dimension(1024, 800);
 
 	public static final int ATTRIBUTE_PANEL_WIDTH = 680;
 	public static final int ATTRIBUTE_LABEL_WIDTH = 120;
+
 
 	public static String INSTITUTE_URL = "https://www.ipk-gatersleben.de";
 
@@ -135,7 +138,7 @@ public class PropertyLoader {
 	public static List<String> RESOURCE_TYPES = null;
 
 	public static AttributeLabel UPLOADPATH_LABEL, TITLE_LABEL, DESCRIPTION_LABEL, AUTHORS_LABEL, SUBJECTS_LABEL,
-			LANGUAGE_LABEL, LICENSE_LABEL, PUBLISHER_LABEL, EMBARGO_LABEL, RESOURCE_LABEL;
+			LANGUAGE_LABEL, LICENSE_LABEL, PUBLISHER_LABEL, EMBARGO_LABEL, RESOURCE_LABEL, RELATED_IDENTIFIER_LABEL;
 
 	private static void initGraphicComponents() {
 		UPLOADPATH_LABEL = new AttributeLabel(PropertyLoader.props.getProperty("UPLOAD_LABEL"),
@@ -158,6 +161,8 @@ public class PropertyLoader {
 				PropertyLoader.props.getProperty("EMBARGO_TOOLTIP"));
 		RESOURCE_LABEL = new AttributeLabel(PropertyLoader.props.getProperty("RESOURCE_LABEL"),
 				PropertyLoader.props.getProperty("RESOURCE_TOOLTIP"));
+		RELATED_IDENTIFIER_LABEL = new AttributeLabel(PropertyLoader.props.getProperty("RELATED_IDENTIFIER_LABEL"),
+				PropertyLoader.props.getProperty("RELATED_IDENTIFIER_TOOLTIP"));
 	}
 
 	private static void loadEdalLogos() {
@@ -409,6 +414,19 @@ public class PropertyLoader {
 		} else {
 			setUserValue("UPLOAD_PATH", PropertyLoader.props.getProperty("DEFAULT_UPLOAD_PATH_STRING"));
 			return PropertyLoader.props.getProperty("DEFAULT_UPLOAD_PATH_STRING");
+		}
+	}
+
+	public static String loadRelatedIdentifierPathString() {
+		String relatedIdentifierPath = PropertyLoader.userValues.getProperty("RELATED_IDENTIFIER_PATH");
+
+		if (relatedIdentifierPath == null || relatedIdentifierPath.isEmpty()) {
+			return PropertyLoader.props.getProperty("DEFAULT_RELATED_IDENTIFIER_PATH_STRING");
+		} else if (Files.exists(Paths.get(relatedIdentifierPath))) {
+			return relatedIdentifierPath;
+		} else {
+			setUserValue("RELATED_IDENTIFIER_PATH", PropertyLoader.props.getProperty("DEFAULT_RELATED_IDENTIFIER_PATH_STRING"));
+			return PropertyLoader.props.getProperty("DEFAULT_RELATED_IDENTIFIER_PATH_STRING");
 		}
 	}
 }
