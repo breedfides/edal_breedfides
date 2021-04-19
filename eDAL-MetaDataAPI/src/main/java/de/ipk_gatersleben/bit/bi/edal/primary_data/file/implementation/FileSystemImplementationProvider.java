@@ -281,21 +281,28 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getLogger().info("Database Schema Validation : successful");
 
 			} catch (final HibernateException e) {
+				
 				e.printStackTrace();
 				this.getLogger().error("Found existing, but not compatible database schema in path '"
 						+ configuration.getMountPath() + "' (" + e.getMessage() + ") ");
 				this.getLogger().error("Please delete path or specify another mount path !");
-//				System.exit(0);
-				// System.out.println("run schema update");
-				// new SchemaUpdate((MetadataImplementor)
-				// metadata.buildMetadata()).execute(true, true);
-				// System.exit(0);
-				SchemaUpdate su = new SchemaUpdate();
-				
-				EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
-
-				su.execute(targetTypes, metadata.buildMetadata());
 				System.exit(0);
+					
+//				this.getLogger().warn("Running Schema-Update");
+//
+//				SchemaUpdate su = new SchemaUpdate();
+//				
+//				EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE);
+//
+//				su.setHaltOnError(true);
+//				
+//				su.execute(targetTypes, metadata.buildMetadata());
+//				
+//				while (su.getExceptions().iterator().hasNext()) {
+//					System.out.println(su.getExceptions().iterator().next());
+//				}
+//				
+//				System.exit(0);
 				
 			}
 		}
