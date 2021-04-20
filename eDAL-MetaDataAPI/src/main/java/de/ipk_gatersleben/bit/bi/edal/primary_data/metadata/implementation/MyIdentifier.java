@@ -14,6 +14,8 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Index;
@@ -119,7 +121,7 @@ public final class MyIdentifier extends MyUntypedData {
 		return "MyIdentifier [identifier=" + identifier + "]";
 	}
 
-	@Field(index = Index.YES, store = Store.YES)
+	@Enumerated(EnumType.STRING)
 	public RelatedIdentifierType getRelatedIdentifierType() {
 		return relatedIdentifierType;
 	}
@@ -127,7 +129,7 @@ public final class MyIdentifier extends MyUntypedData {
 	public void setRelatedIdentifierType(RelatedIdentifierType relatedIdentifierType) {
 		this.relatedIdentifierType = relatedIdentifierType;
 	}
-
+	@Enumerated(EnumType.STRING)
 	public RelationType getRelationType() {
 		return relationType;
 	}
