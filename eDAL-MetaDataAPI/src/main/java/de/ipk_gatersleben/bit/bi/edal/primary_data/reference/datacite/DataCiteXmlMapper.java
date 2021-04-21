@@ -83,11 +83,9 @@ public class DataCiteXmlMapper {
 	private PrimaryDataEntityVersion version;
 
 	/**
-	 * Constructor to set the {@link MetaData} for this
-	 * {@link DataCiteXmlMapper}.
+	 * Constructor to set the {@link MetaData} for this {@link DataCiteXmlMapper}.
 	 * 
-	 * @param version
-	 *            the {@link PrimaryDataEntityVersion} to create DataCite xml.
+	 * @param version the {@link PrimaryDataEntityVersion} to create DataCite xml.
 	 */
 	public DataCiteXmlMapper(final PrimaryDataEntityVersion version) {
 		this.setVersion(version);
@@ -97,8 +95,8 @@ public class DataCiteXmlMapper {
 	 * Generate a JAXB-{@link Marshaller} for a {@link XmlResource} object.
 	 * 
 	 * @return the generated JAXB-{@link Marshaller}.
-	 * @throws EdalPublicationMetaDataException
-	 *             if unable to initialize {@link Marshaller}.
+	 * @throws EdalPublicationMetaDataException if unable to initialize
+	 *                                          {@link Marshaller}.
 	 */
 	public Marshaller createXmlMarshaller() throws EdalPublicationMetaDataException {
 
@@ -119,12 +117,12 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Create a {@link XmlResource} from the given {@link MetaData} and validate
-	 * the Document against the DataCite Schema before return.
+	 * Create a {@link XmlResource} from the given {@link MetaData} and validate the
+	 * Document against the DataCite Schema before return.
 	 * 
 	 * @return the valid {@link XmlResource}.
-	 * @throws EdalPublicationMetaDataException
-	 *             if unable to create {@link XmlResource}.
+	 * @throws EdalPublicationMetaDataException if unable to create
+	 *                                          {@link XmlResource}.
 	 */
 	public XmlResource createXmlResource() throws EdalPublicationMetaDataException {
 
@@ -156,36 +154,35 @@ public class DataCiteXmlMapper {
 	}
 
 	private void setRelatedIdentifier(XmlResource resource) {
-		
+
 		XmlRelatedIdentifiers xmlRelatedIdentifiers = new XmlRelatedIdentifiers();
-		
-		
+
 		try {
 
-			IdentifierRelation ir= this.getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+			IdentifierRelation ir = (IdentifierRelation)this.getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+
+			if (!ir.getRelations().isEmpty()) {
+
 				for (Identifier id : ir.getRelations()) {
-					
+
 					XmlRelatedIdentifier xmlRelatedIdentifer = new XmlRelatedIdentifier(id.getIdentifier());
-					
-					xmlRelatedIdentifer.setRelatedIdentifierType(RelatedIdentifierType.fromValue(id.getRelatedIdentifierType().toString()));
+
+					xmlRelatedIdentifer.setRelatedIdentifierType(
+							RelatedIdentifierType.fromValue(id.getRelatedIdentifierType().toString()));
 					xmlRelatedIdentifer.setRelationType(RelationType.fromValue(id.getRelationType().toString()));
 //					xmlRelatedIdentifer.setRelatedMetadataScheme("metadataschema");
 //					xmlRelatedIdentifer.setSchemeType("schemaType");
 //					xmlRelatedIdentifer.setSchemeURI("schemURI");
-					
-					
-					xmlRelatedIdentifiers.addRelatedIdentifier(xmlRelatedIdentifer);
-										
-				}
-				
-			} catch (MetaDataException e) {
-				e.printStackTrace();
-			}
 
-			
-		resource.setRelatedIdentifiers(xmlRelatedIdentifiers);
-		
-		
+					xmlRelatedIdentifiers.addRelatedIdentifier(xmlRelatedIdentifer);
+
+				}
+				resource.setRelatedIdentifiers(xmlRelatedIdentifiers);
+			}
+		} catch (MetaDataException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/**
@@ -212,10 +209,8 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link XmlAlternateIdentifiers} of the given
 	 * {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlAlternateIdentifiers}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set AlternativeIdentifiers.
+	 * @param resource to set the {@link XmlAlternateIdentifiers}.
+	 * @throws DataCiteMappingException if unable to set AlternativeIdentifiers.
 	 */
 	private void setAlternativeIdentifiers(final XmlResource resource) throws DataCiteMappingException {
 
@@ -243,10 +238,8 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link XmlContributors} of the given
 	 * {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlContributors}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Contributors.
+	 * @param resource to set the {@link XmlContributors}.
+	 * @throws DataCiteMappingException if unable to set Contributors.
 	 */
 	private void setContributors(final XmlResource resource) throws DataCiteMappingException {
 
@@ -271,13 +264,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlCreators} of the given
-	 * {@link XmlResource}.
+	 * Internal setter for the {@link XmlCreators} of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlCreators}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Creators.
+	 * @param resource to set the {@link XmlCreators}.
+	 * @throws DataCiteMappingException if unable to set Creators.
 	 */
 	private void setCreators(final XmlResource resource) throws DataCiteMappingException {
 
@@ -300,13 +290,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlDates} of the given {@link XmlResource}
-	 * .
+	 * Internal setter for the {@link XmlDates} of the given {@link XmlResource} .
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlDates}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Dates.
+	 * @param resource to set the {@link XmlDates}.
+	 * @throws DataCiteMappingException if unable to set Dates.
 	 */
 	private void setDates(final XmlResource resource) throws DataCiteMappingException {
 
@@ -326,10 +313,8 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link XmlDescriptions} of the given
 	 * {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlDescriptions}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Descriptions.
+	 * @param resource to set the {@link XmlDescriptions}.
+	 * @throws DataCiteMappingException if unable to set Descriptions.
 	 */
 	private void setDescriptions(final XmlResource resource) throws DataCiteMappingException {
 
@@ -352,13 +337,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlFormats} of the given
-	 * {@link XmlResource}.
+	 * Internal setter for the {@link XmlFormats} of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlFormats}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Formats.
+	 * @param resource to set the {@link XmlFormats}.
+	 * @throws DataCiteMappingException if unable to set Formats.
 	 */
 	private void setFormats(final XmlResource resource) throws DataCiteMappingException {
 
@@ -389,8 +371,7 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link XmlIdentifier} of the given
 	 * {@link XmlIdentifier}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlFormats}.
+	 * @param resource to set the {@link XmlFormats}.
 	 */
 	private void setIdentifier(final XmlResource resource) {
 		final XmlIdentifier identifier = new XmlIdentifier("10.1000/100");
@@ -400,10 +381,8 @@ public class DataCiteXmlMapper {
 	/**
 	 * Internal setter for the language of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the language.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Language.
+	 * @param resource to set the language.
+	 * @throws DataCiteMappingException if unable to set Language.
 	 */
 	private void setLanguage(final XmlResource resource) throws DataCiteMappingException {
 
@@ -421,8 +400,7 @@ public class DataCiteXmlMapper {
 	/**
 	 * Internal setter for the publicationYear of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the publicationYear.
+	 * @param resource to set the publicationYear.
 	 */
 	private void setPublicationYear(final XmlResource resource) {
 		resource.setPublicationYear(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
@@ -431,10 +409,8 @@ public class DataCiteXmlMapper {
 	/**
 	 * Internal setter for the publisher of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the publisher.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Publisher.
+	 * @param resource to set the publisher.
+	 * @throws DataCiteMappingException if unable to set Publisher.
 	 */
 	private void setPublisher(final XmlResource resource) throws DataCiteMappingException {
 
@@ -506,10 +482,8 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link XmlResourceType} of the given
 	 * {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlResourceType}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set ResourceType.
+	 * @param resource to set the {@link XmlResourceType}.
+	 * @throws DataCiteMappingException if unable to set ResourceType.
 	 */
 	private void setResourceType(final XmlResource resource) throws DataCiteMappingException {
 
@@ -542,17 +516,15 @@ public class DataCiteXmlMapper {
 	/**
 	 * Internal setter for the rights of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the rights.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Rights.
+	 * @param resource to set the rights.
+	 * @throws DataCiteMappingException if unable to set Rights.
 	 */
 	private void setRights(final XmlResource resource) throws DataCiteMappingException {
 
 		try {
 
-			if (this.getMetaData().getElementValue(EnumDublinCoreElements.RIGHTS) != null
-					&& !this.getMetaData().getElementValue(EnumDublinCoreElements.RIGHTS).getString().equals(UntypedData.EMPTY)) {
+			if (this.getMetaData().getElementValue(EnumDublinCoreElements.RIGHTS) != null && !this.getMetaData()
+					.getElementValue(EnumDublinCoreElements.RIGHTS).getString().equals(UntypedData.EMPTY)) {
 				resource.setRightsList(
 						new XmlRightsList(this.getMetaData().getElementValue(EnumDublinCoreElements.RIGHTS)));
 			}
@@ -564,13 +536,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlSizes} of the given {@link XmlResource}
-	 * .
+	 * Internal setter for the {@link XmlSizes} of the given {@link XmlResource} .
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlSizes}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Sizes.
+	 * @param resource to set the {@link XmlSizes}.
+	 * @throws DataCiteMappingException if unable to set Sizes.
 	 */
 	private void setSizes(final XmlResource resource) throws DataCiteMappingException {
 
@@ -588,13 +557,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlSubjects} of the given
-	 * {@link XmlResource}.
+	 * Internal setter for the {@link XmlSubjects} of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlSubjects}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Subjects.
+	 * @param resource to set the {@link XmlSubjects}.
+	 * @throws DataCiteMappingException if unable to set Subjects.
 	 */
 	private void setSubjects(final XmlResource resource) throws DataCiteMappingException {
 
@@ -621,13 +587,10 @@ public class DataCiteXmlMapper {
 	}
 
 	/**
-	 * Internal setter for the {@link XmlTitles} of the given
-	 * {@link XmlResource}.
+	 * Internal setter for the {@link XmlTitles} of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the {@link XmlTitles}.
-	 * @throws DataCiteMappingException
-	 *             if unable to set Titles.
+	 * @param resource to set the {@link XmlTitles}.
+	 * @throws DataCiteMappingException if unable to set Titles.
 	 */
 	private void setTitles(final XmlResource resource) throws DataCiteMappingException {
 
@@ -648,8 +611,7 @@ public class DataCiteXmlMapper {
 	 * Internal setter for the {@link PrimaryDataEntityVersion} of the given
 	 * {@link XmlResource}.
 	 * 
-	 * @param version
-	 *            the {@link PrimaryDataEntityVersion} to set.
+	 * @param version the {@link PrimaryDataEntityVersion} to set.
 	 */
 	private void setVersion(final PrimaryDataEntityVersion version) {
 		this.version = version;
@@ -658,21 +620,17 @@ public class DataCiteXmlMapper {
 	/**
 	 * Internal setter for the version of the given {@link XmlResource}.
 	 * 
-	 * @param resource
-	 *            to set the version.
+	 * @param resource to set the version.
 	 */
 	private void setVersion(final XmlResource resource) {
 		resource.setVersion(this.version.getRevisionDate().getTime().toString());
 	}
 
 	/**
-	 * Validate the {@link MetaData} schema of the generated {@link XmlResource}
-	 * .
+	 * Validate the {@link MetaData} schema of the generated {@link XmlResource} .
 	 * 
-	 * @param resource
-	 *            the {@link XmlResource} to check.
-	 * @throws EdalPublicationMetaDataException
-	 *             if validation failed.
+	 * @param resource the {@link XmlResource} to check.
+	 * @throws EdalPublicationMetaDataException if validation failed.
 	 */
 	public void validateSchema(final XmlResource resource) throws EdalPublicationMetaDataException {
 
@@ -693,7 +651,6 @@ public class DataCiteXmlMapper {
 
 		final Document doc = XmlFunctions.parse(stringWriter.toString());
 
-		
 		System.out.println(stringWriter.toString());
 		try {
 			XmlFunctions.validate(dataCiteMetadataSchema, doc);

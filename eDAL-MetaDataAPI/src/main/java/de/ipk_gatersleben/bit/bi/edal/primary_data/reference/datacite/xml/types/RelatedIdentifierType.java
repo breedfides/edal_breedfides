@@ -81,7 +81,12 @@ public enum RelatedIdentifierType {
 	/**
 	 * Constant URN
 	 */
-	URN("URN");
+	URN("URN"),
+	/**
+	 * Constant UNKOWN
+	 */
+	UNKNOWN("UNKNOWN");
+	
 
 	/**
 	 * Field value.

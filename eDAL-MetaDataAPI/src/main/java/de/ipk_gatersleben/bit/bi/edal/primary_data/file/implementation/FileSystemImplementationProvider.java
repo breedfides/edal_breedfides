@@ -390,7 +390,7 @@ public class FileSystemImplementationProvider
 //				su.execute(targetTypes, metadata.buildMetadata());
 //				
 //				while (su.getExceptions().iterator().hasNext()) {
-//					System.out.println(su.getExceptions().iterator().next());
+//					((Exception)su.getExceptions().iterator().next()).printStackTrace();
 //				}
 //				
 //				System.exit(0);

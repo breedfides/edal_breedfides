@@ -35,12 +35,14 @@ public class Identifier extends UntypedData {
 	private final String identifier;
 
 	/**
-	 * Constructor for Identifier.
+	 * Constructor for Identifier
 	 * 
-	 * Set the id to "Unkown_ID".
+	 * Set the ID and Relation to "Unkown"
 	 */
 	public Identifier() {
 		this.identifier = UNKNOWN_ID;
+		this.relatedIdentifierType = RelatedIdentifierType.UNKNOWN;
+		this.relationType = RelationType.UNKNOWN;
 	}
 
 	/**
@@ -48,7 +50,7 @@ public class Identifier extends UntypedData {
 	 * 
 	 * @param id the id to set.
 	 * @param relatedIdentifierType the type to set
-	 * @param relationtype the relationType
+	 * @param relationType the relationType
 	 */
 	public Identifier(String id, RelatedIdentifierType relatedIdentifierType, RelationType relationType) {
 		this.identifier = id;

@@ -14,6 +14,8 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 import org.hibernate.search.engine.backend.types.Projectable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
@@ -51,21 +53,6 @@ public final class MyIdentifier extends MyUntypedData {
 	 * PojoInstantiator of <em>HIBERNATE</em>.
 	 */
 	public MyIdentifier() {
-	}
-
-	/**
-	 * Constructor for {@link MyIdentifier} from a {@link Identifier} object.
-	 * 
-	 * @param identifier           a {@link Identifier} object.
-	 * @param relatedIdentifierType         the {@link RelatedIdentifierType} of the id
-	 * @param relationType the {@link EnumIdentifierRelationType} of the id
-	 * 
-	 */
-	public MyIdentifier(Identifier identifier, RelatedIdentifierType relatedIdentifierType, RelationType relationType) {
-		super();
-		this.setIdentifier(identifier.getIdentifier());
-		this.setRelatedIdentifierType(relatedIdentifierType);
-		this.setRelationType(relationType);
 	}
 
 	/**
@@ -124,6 +111,7 @@ public final class MyIdentifier extends MyUntypedData {
 	}
 
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@Enumerated(EnumType.STRING)
 	public RelatedIdentifierType getRelatedIdentifierType() {
 		return relatedIdentifierType;
 	}
@@ -131,7 +119,9 @@ public final class MyIdentifier extends MyUntypedData {
 	public void setRelatedIdentifierType(RelatedIdentifierType relatedIdentifierType) {
 		this.relatedIdentifierType = relatedIdentifierType;
 	}
+	
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	@Enumerated(EnumType.STRING)
 	public RelationType getRelationType() {
 		return relationType;
 	}

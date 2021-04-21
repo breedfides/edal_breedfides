@@ -106,7 +106,11 @@ public enum RelationType {
 	/**
 	 * Constant ISMETADATAFOR
 	 */
-	IsMetadataFor("IsMetadataFor");
+	IsMetadataFor("IsMetadataFor"),
+	/**
+	 * Constant UNKOWN
+	 */
+	UNKNOWN("UNKNOWN");
 
 	/**
 	 * Field value.
