@@ -52,21 +52,6 @@ public final class MyIdentifier extends MyUntypedData {
 	}
 
 	/**
-	 * Constructor for {@link MyIdentifier} from a {@link Identifier} object.
-	 * 
-	 * @param identifier           a {@link Identifier} object.
-	 * @param relatedIdentifierType         the {@link RelatedIdentifierType} of the id
-	 * @param relationType the {@link EnumIdentifierRelationType} of the id
-	 * 
-	 */
-	public MyIdentifier(Identifier identifier, RelatedIdentifierType relatedIdentifierType, RelationType relationType) {
-		super();
-		this.setIdentifier(identifier.getIdentifier());
-		this.setRelatedIdentifierType(relatedIdentifierType);
-		this.setRelationType(relationType);
-	}
-
-	/**
 	 * Copy constructor to convert public {@link Identifier} to private
 	 * {@link MyIdentifier}.
 	 * 

@@ -56,8 +56,7 @@ public final class MyIdentifierRelation extends MyUntypedData {
 	 * Copy constructor to convert public {@link IdentifierRelation} to private
 	 * {@link MyIdentifierRelation}.
 	 * 
-	 * @param edal
-	 *            the EDAL public {@link UntypedData} object to be cloned
+	 * @param edal the EDAL public {@link UntypedData} object to be cloned
 	 */
 	public MyIdentifierRelation(final UntypedData edal) {
 
@@ -69,7 +68,7 @@ public final class MyIdentifierRelation extends MyUntypedData {
 			List<MyIdentifier> myRelation = new LinkedList<MyIdentifier>();
 
 			for (Identifier id : relation.getRelations()) {
-				myRelation.add(new MyIdentifier(id, id.getRelatedIdentifierType(),id.getRelationType()));
+				myRelation.add(new MyIdentifier(id));
 			}
 			this.setRelations(myRelation);
 		}
@@ -90,8 +89,7 @@ public final class MyIdentifierRelation extends MyUntypedData {
 	/**
 	 * Setter for the field <code>relations</code>.
 	 * 
-	 * @param relations
-	 *            a {@link List} object.
+	 * @param relations a {@link List} object.
 	 */
 	public void setRelations(List<MyIdentifier> relations) {
 		this.relations = relations;
@@ -107,11 +105,14 @@ public final class MyIdentifierRelation extends MyUntypedData {
 
 		IdentifierRelation identifierRelation = new IdentifierRelation();
 
-		for (MyIdentifier myid : this.getRelations()) {
-			identifierRelation.add(myid.toIdentifier());
-		}
-		identifierRelation.setString(this.getString());
+		if (!this.getRelations().isEmpty()) {
 
+			for (MyIdentifier myid : this.getRelations()) {
+				identifierRelation.add(myid.toIdentifier());
+			}
+			identifierRelation.setString(this.getString());
+		}
 		return identifierRelation;
+
 	}
 }
