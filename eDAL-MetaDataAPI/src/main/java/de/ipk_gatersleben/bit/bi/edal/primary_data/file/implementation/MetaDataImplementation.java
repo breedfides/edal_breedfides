@@ -112,6 +112,8 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String DESCRIPTION = "description";
 	public static final String COVERAGE = "coverage";
 	public static final String IDENTIFIER = "identifier";
+	public static final String RELATEDIDENTIFIERTYPE = "relatedIdentifierType";
+	public static final String RELATIONTYPE = "relationType";
 	public static final String SIZE = "size";
 	public static final String TYPE = "type";
 	public static final String LANGUAGE = "language";
@@ -258,8 +260,10 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 
 			return MetaData.UNKNOWN;
 		} else if (myUntypedData.getClass().equals(MyIdentifier.class)) {
-
-			return new Identifier(((MyIdentifier) myUntypedData).getIdentifier());
+			
+			MyIdentifier p = (MyIdentifier) myUntypedData;
+			
+			return new Identifier(p.getIdentifier(),p.getRelatedIdentifierType(),p.getRelationType());
 		} else if (myUntypedData.getClass().equals(MyIdentifierRelation.class)) {
 
 			return ((MyIdentifierRelation) myUntypedData).toIdentifierRelation();

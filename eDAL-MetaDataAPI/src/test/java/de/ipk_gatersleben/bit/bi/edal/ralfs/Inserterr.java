@@ -46,7 +46,6 @@ public class Inserterr {
 	private PrimaryDataDirectory rootDirectory;
 	private MetaData searchable = null;
 	private FileInputStream fin = null;
-	Identifier referenceIdentifier = new Identifier("referencingsomeid");
 	Path path = Paths.get("src/test/resources/testing_directory");
 	
 	public Inserterr(PrimaryDataDirectory root) throws PrimaryDataDirectoryException {
@@ -90,7 +89,6 @@ public class Inserterr {
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(words.get(random.nextInt(countWords))));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(words.get(random.nextInt(countWords))));
-			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			entity.store(fin);
 			log(archiveName+i+"/"+size+" Saved");
@@ -135,12 +133,10 @@ public class Inserterr {
 			subjects.add(new UntypedData("Sed ut perspiciatis"));
 			EdalLanguage lang = new EdalLanguage(Locale.US);
 			IdentifierRelation relation = new IdentifierRelation();
-			relation.add(referenceIdentifier);
 			searchable.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			searchable.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			searchable.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("x3reunion"));
 			searchable.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem ipsum dolor sit amet, consectetur adipiscing elit"));
-			searchable.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			searchable.setElementValue(EnumDublinCoreElements.RELATION, relation);
 			entity.setMetaData(searchable);
 			EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(subdire, path, searchable, true);

@@ -34,6 +34,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
@@ -54,6 +55,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlDes
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlDescriptions;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlFormats;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRelatedIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRelatedIdentifiers;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlResource;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlResourceType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlRightsList;
@@ -63,6 +66,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlSub
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitle;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.XmlTitles;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DescriptionType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.ResourceTypeGeneral;
 
 /**
@@ -141,12 +146,46 @@ public class DataCiteXmlMapper {
 			this.setSubjects(resource);
 			this.setResourceType(resource);
 			this.setRights(resource);
+			this.setRelatedIdentifier(resource);
 //			this.setVersion(resource);
 		} catch (final DataCiteMappingException e) {
 			throw new EdalPublicationMetaDataException("unable to map metadata to DataCite XML", e);
 		}
 
 		return resource;
+	}
+
+	private void setRelatedIdentifier(XmlResource resource) {
+		
+		XmlRelatedIdentifiers xmlRelatedIdentifiers = new XmlRelatedIdentifiers();
+		
+		
+		try {
+
+			IdentifierRelation ir= this.getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
+				for (Identifier id : ir.getRelations()) {
+					
+					XmlRelatedIdentifier xmlRelatedIdentifer = new XmlRelatedIdentifier(id.getIdentifier());
+					
+					xmlRelatedIdentifer.setRelatedIdentifierType(RelatedIdentifierType.fromValue(id.getRelatedIdentifierType().toString()));
+					xmlRelatedIdentifer.setRelationType(RelationType.fromValue(id.getRelationType().toString()));
+//					xmlRelatedIdentifer.setRelatedMetadataScheme("metadataschema");
+//					xmlRelatedIdentifer.setSchemeType("schemaType");
+//					xmlRelatedIdentifer.setSchemeURI("schemURI");
+					
+					
+					xmlRelatedIdentifiers.addRelatedIdentifier(xmlRelatedIdentifer);
+										
+				}
+				
+			} catch (MetaDataException e) {
+				e.printStackTrace();
+			}
+
+			
+		resource.setRelatedIdentifiers(xmlRelatedIdentifiers);
+		
+		
 	}
 
 	/**
@@ -186,7 +225,7 @@ public class DataCiteXmlMapper {
 
 			Identifier id = this.getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER);
 
-			if (!id.getID().equals(Identifier.UNKNOWN_ID.toString())) {
+			if (!id.getIdentifier().equals(Identifier.UNKNOWN_ID.toString())) {
 				alternateIdentifiers.addAlternateIdentifier(new XmlAlternateIdentifier(
 						(Identifier) this.getMetaData().getElementValue(EnumDublinCoreElements.IDENTIFIER)));
 				resource.setAlternateIdentifiers(alternateIdentifiers);
@@ -639,7 +678,7 @@ public class DataCiteXmlMapper {
 
 		final StringWriter stringWriter = new StringWriter();
 
-		final URL dataCiteMetadataSchema = DataCiteXmlMapper.class.getResource("schema-4/metadata.xsd");
+		final URL dataCiteMetadataSchema = DataCiteXmlMapper.class.getResource("schema-4.3/metadata.xsd");
 
 		try {
 			this.createXmlMarshaller().marshal(resource, stringWriter);
@@ -654,6 +693,8 @@ public class DataCiteXmlMapper {
 
 		final Document doc = XmlFunctions.parse(stringWriter.toString());
 
+		
+		System.out.println(stringWriter.toString());
 		try {
 			XmlFunctions.validate(dataCiteMetadataSchema, doc);
 		} catch (final SAXException e) {

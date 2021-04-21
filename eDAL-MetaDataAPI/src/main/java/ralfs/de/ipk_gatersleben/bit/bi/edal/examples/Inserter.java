@@ -134,7 +134,6 @@ public class Inserter {
 			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData("title_perspiciatis"));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData("Lorem"));
-			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, new Identifier("reference"));
 			entity.setMetaData(metadata);
 			MyFileVisitor edalVisitor = new MyFileVisitor(rootDirectory, path, metadata, true);
 			Files.walkFileTree(path, edalVisitor);

@@ -128,7 +128,6 @@ class H2ChunkCorruptionTest {
 		int countNames =names.size();
 		int countWords =words.size();
 		Random random = new Random();
-		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		PrimaryDataDirectory currentDirectory = null;
 		String archiveName = "";

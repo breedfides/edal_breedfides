@@ -14,6 +14,7 @@ package de.ipk_gatersleben.bit.bi.edal.rmi.client.gui.editor;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
 
 /**
  * The <code>IdentifierEditor</code> wrappers class <code>TextDialog</code> as a
@@ -61,7 +62,7 @@ public class IdentifierEditor extends AbstractMetaDataEditor {
 	 */
 	public UntypedData getValue() {
 
-		return new Identifier(_text);
+		return new Identifier(_text,null,null);
 
 	}
 	

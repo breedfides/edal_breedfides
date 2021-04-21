@@ -24,6 +24,8 @@ import javax.security.auth.Subject;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.*;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.*;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
@@ -131,7 +133,7 @@ public class EdalExample {
 					fileMetaData.setElementValue(
 							EnumDublinCoreElements.IDENTIFIER, new Identifier(
 									UUID.randomUUID().toString()
-											.substring(0, 8)));
+											.substring(0, 8),RelatedIdentifierType.DOI,RelationType.IsNewVersionOf));
 					fileMetaData.setElementValue(EnumDublinCoreElements.TYPE,
 							new DataType(EnumDCMIDataType.SOFTWARE));
 					fileMetaData.setElementValue(

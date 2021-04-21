@@ -86,7 +86,7 @@ public class IdentifierRelationDialog extends MetaDataEditDialog {
 
 		int row = dm.getRowCount();
 		for (int i = 0; i < row; i++) {
-			idlist.add(new Identifier(dm.getValueAt(i, 0).toString()));
+			idlist.add(new Identifier(dm.getValueAt(i, 0).toString(),null,null));
 		}
 
 		return idlist;
@@ -175,7 +175,7 @@ public class IdentifierRelationDialog extends MetaDataEditDialog {
 		if (strs != null) {
 			for (Identifier idenstr : strs) {
 				Vector<String> v = new Vector<String>();
-				v.addElement(idenstr.getID());
+				v.addElement(idenstr.getIdentifier());
 				vector.addElement(v);
 			}
 		}

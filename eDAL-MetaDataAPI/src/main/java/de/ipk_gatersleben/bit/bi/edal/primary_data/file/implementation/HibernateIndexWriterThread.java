@@ -118,7 +118,7 @@ public class HibernateIndexWriterThread extends IndexWriterThread {
 			session.setDefaultReadOnly(true);
 
 			/** high value fetch objects faster, but more memory is needed */
-			final int fetchSize = (int) Math.pow(10, 5);
+			final int fetchSize = (int) Math.pow(10, 6);
 
 //			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
 //			fullTextSession.setCacheMode(CacheMode.NORMAL);

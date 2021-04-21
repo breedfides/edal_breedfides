@@ -33,6 +33,8 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 
 /**
  * JUnit test to check if the implementation of the compareTo() function of the
@@ -212,17 +214,17 @@ public class CompareableTest {
 	public void testIdentifierRelationCompareTo() {
 
 		IdentifierRelation myRelation = new IdentifierRelation();
-		myRelation.add(new Identifier("ID_123"));
-		myRelation.add(new Identifier("ID_123"));
+		myRelation.add(new Identifier("ID_123", RelatedIdentifierType.DOI, RelationType.IsPartOf));
+		myRelation.add(new Identifier("ID_123", RelatedIdentifierType.DOI, RelationType.IsPartOf));
 
 		Assertions.assertEquals(1, myRelation.size());
 
-		myRelation.add(new Identifier("ID_12345"));
+		myRelation.add(new Identifier("ID_12345", RelatedIdentifierType.DOI, RelationType.IsPartOf));
 
 		Assertions.assertEquals(2, myRelation.size());
 
 		IdentifierRelation yourRelation = new IdentifierRelation();
-		yourRelation.add(new Identifier("ID_321"));
+		myRelation.add(new Identifier("ID_321", RelatedIdentifierType.DOI, RelationType.IsPartOf));
 
 		Assertions.assertTrue(myRelation.compareTo(yourRelation) != 0, FAIL);
 
@@ -230,8 +232,8 @@ public class CompareableTest {
 
 		Assertions.assertTrue(myRelation.compareTo(myRelation) == 0, FAIL);
 
-		Identifier myIdentifier = new Identifier("myID");
-		Identifier yourIdentifier = new Identifier("yourID");
+		Identifier myIdentifier = new Identifier("my_ID", RelatedIdentifierType.DOI, RelationType.IsPartOf);
+		Identifier yourIdentifier = new Identifier("your_ID", RelatedIdentifierType.DOI, RelationType.IsPartOf);
 
 		Assertions.assertTrue(myIdentifier.compareTo(yourIdentifier) < 0, FAIL);
 

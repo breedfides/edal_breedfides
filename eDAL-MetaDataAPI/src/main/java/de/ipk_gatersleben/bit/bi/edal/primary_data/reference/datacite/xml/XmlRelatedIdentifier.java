@@ -16,6 +16,7 @@ import java.io.Serializable;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
@@ -47,9 +48,9 @@ public class XmlRelatedIdentifier implements Serializable {
 	private RelationType relationType;
 
 	/**
-	 * Field relatedMetaDataSchema
+	 * Field relatedMetadataScheme
 	 */
-	private String relatedMetaDataSchema;
+	private String relatedMetadataScheme;
 
 	/**
 	 * Field schemeURI
@@ -57,9 +58,9 @@ public class XmlRelatedIdentifier implements Serializable {
 	private String schemeURI;
 
 	/**
-	 * Field schemaType
+	 * Field schemeType
 	 */
-	private String schemaType;
+	private String schemeType;
 
 	public XmlRelatedIdentifier() {
 		super();
@@ -76,6 +77,7 @@ public class XmlRelatedIdentifier implements Serializable {
 	 * 
 	 * @return the value of field 'Content'.
 	 */
+	@XmlValue
 	public String getContent() {
 		return this.content;
 	}
@@ -95,6 +97,7 @@ public class XmlRelatedIdentifier implements Serializable {
 	 * 
 	 * @return the value of field 'RelationType'.
 	 */
+	@XmlAttribute(required = true)
 	public RelationType getRelationType() {
 		return this.relationType;
 	}
@@ -132,23 +135,25 @@ public class XmlRelatedIdentifier implements Serializable {
 	}
 
 	/**
-	 * @return the relatedMetaDataSchema
+	 * @return the relatedMetadataScheme
 	 */
-	public String getRelatedMetaDataSchema() {
-		return relatedMetaDataSchema;
+	@XmlAttribute
+	public String getRelatedMetadataScheme() {
+		return relatedMetadataScheme;
 	}
 
 	/**
-	 * @param relatedMetaDataSchema
-	 *            the relatedMetaDataSchema to set
+	 * @param relatedMetadataScheme
+	 *            the relatedMetadataScheme to set
 	 */
-	public void setRelatedMetaDataSchema(String relatedMetaDataSchema) {
-		this.relatedMetaDataSchema = relatedMetaDataSchema;
+	public void setRelatedMetadataScheme(String relatedMetadataScheme) {
+		this.relatedMetadataScheme = relatedMetadataScheme;
 	}
 
 	/**
 	 * @return the schemeURI
 	 */
+	@XmlAttribute
 	public String getSchemeURI() {
 		return schemeURI;
 	}
@@ -162,17 +167,18 @@ public class XmlRelatedIdentifier implements Serializable {
 	}
 
 	/**
-	 * @return the schemaType
+	 * @return the schemeType
 	 */
-	public String getSchemaType() {
-		return schemaType;
+	@XmlAttribute
+	public String getSchemeType() {
+		return schemeType;
 	}
 
 	/**
-	 * @param schemaType
-	 *            the schemaType to set
+	 * @param schemeType
+	 *            the schemeType to set
 	 */
-	public void setSchemaType(String schemaType) {
-		this.schemaType = schemaType;
+	public void setSchemeType(String schemeType) {
+		this.schemeType = schemeType;
 	}
 }

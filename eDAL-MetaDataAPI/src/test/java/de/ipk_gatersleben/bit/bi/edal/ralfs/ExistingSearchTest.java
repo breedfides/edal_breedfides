@@ -195,8 +195,8 @@ class ExistingSearchTest {
 			//RELATION
 			IdentifierRelation relation = storedMetaData.getElementValue(EnumDublinCoreElements.RELATION);
 			results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
-			String searchedRelation = relation.getRelations().iterator().next().getID();
-			String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getID();
+			String searchedRelation = relation.getRelations().iterator().next().getIdentifier();
+			String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getIdentifier();
 			Assertions.assertEquals(searchedRelation, foundRelation);
 			
 			//CHecksum

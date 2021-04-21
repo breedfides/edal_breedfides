@@ -96,8 +96,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	//StandardAnalyzer analyzer;
+	protected Boolean lastIDChanged = false;
 	IndexWriter writer = null;
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id.dat");
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat");
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(10, 5);
 
@@ -206,8 +207,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			if (indexedObjects > 0 || flushedObjects > 0) {
 				try {
-					this.lastIndexedID = version.getId();
 					writer.commit();
+					this.lastIndexedID = version.getId();
 				} catch (IOException e) {
 					this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
 				}
@@ -240,7 +241,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if (indexedObjects != 0) {
 			try {
 				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id.dat").toFile());
+						Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.lastIndexedID);
 				oos.close();
@@ -259,7 +260,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				Store.YES));
 		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getID()), Store.YES));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.YES));
+		
+		doc.add(new TextField(MetaDataImplementation.RELATEDIDENTIFIERTYPE,
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.RELATIONTYPE,
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.YES));
+		
 		doc.add(new TextField(MetaDataImplementation.SIZE,
 				Long.toString(((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
@@ -314,7 +321,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new TextField(MetaDataImplementation.SUBJECT, subjectList.toString(), Store.YES));
 		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
 		for (Identifier identifier : relations) {
-			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getID(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getIdentifier(), Store.YES));
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
@@ -468,6 +475,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		this.indexWriterThreadLogger.debug("Index structure deleted, restart index calculating...");
 		this.implementationProviderLogger.info("Index structure deleted, restart index calculating...");
 
+	}
+	
+	protected void commitRequired() {
+		this.lastIDChanged = true;
 	}
 
 

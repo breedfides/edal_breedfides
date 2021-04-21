@@ -85,7 +85,7 @@ public class XmlAlternateIdentifier implements Serializable {
 	 *            to convert into a {@link XmlAlternateIdentifier}.
 	 */
 	public XmlAlternateIdentifier(Identifier identifier) {
-		this(identifier.getID());
+		this(identifier.getIdentifier());
 		setAlternateIdentifierType("test");
 	}
 

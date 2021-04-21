@@ -26,6 +26,8 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelatedIdentifierType;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.RelationType;
 
 /**
  * Internal representation of {@link Identifier} for persistence with
@@ -41,6 +43,8 @@ public final class MyIdentifier extends MyUntypedData {
 	private static final long serialVersionUID = -460725495792281812L;
 
 	private String identifier;
+	private RelatedIdentifierType relatedIdentifierType;
+	private RelationType relationType;
 
 	/**
 	 * Default constructor for {@link MyIdentifier} is necessary for
@@ -52,28 +56,33 @@ public final class MyIdentifier extends MyUntypedData {
 	/**
 	 * Constructor for {@link MyIdentifier} from a {@link Identifier} object.
 	 * 
-	 * @param id
-	 *            a {@link Identifier} object.
+	 * @param identifier           a {@link Identifier} object.
+	 * @param relatedIdentifierType         the {@link RelatedIdentifierType} of the id
+	 * @param relationType the {@link EnumIdentifierRelationType} of the id
+	 * 
 	 */
-	public MyIdentifier(Identifier id) {
+	public MyIdentifier(Identifier identifier, RelatedIdentifierType relatedIdentifierType, RelationType relationType) {
 		super();
-		this.setIdentifier(id.getID());
+		this.setIdentifier(identifier.getIdentifier());
+		this.setRelatedIdentifierType(relatedIdentifierType);
+		this.setRelationType(relationType);
 	}
 
 	/**
 	 * Copy constructor to convert public {@link Identifier} to private
 	 * {@link MyIdentifier}.
 	 * 
-	 * @param edal
-	 *            the EDAL public {@link UntypedData} object to be cloned
+	 * @param edal the EDAL public {@link UntypedData} object to be cloned
 	 */
 	public MyIdentifier(final UntypedData edal) {
 
 		super(edal);
 
 		if (edal instanceof Identifier) {
-			Identifier i = (Identifier) edal;
-			this.setIdentifier(i.getID());
+			Identifier id = (Identifier) edal;
+			this.setIdentifier(id.getIdentifier());
+			this.setRelatedIdentifierType(id.getRelatedIdentifierType());
+			this.setRelationType(id.getRelationType());
 		}
 	}
 
@@ -82,7 +91,6 @@ public final class MyIdentifier extends MyUntypedData {
 	 * 
 	 * @return the identifier
 	 */
-	//@Field(index = Index.YES, store = Store.YES)
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public final String getIdentifier() {
 		return identifier;
@@ -91,8 +99,7 @@ public final class MyIdentifier extends MyUntypedData {
 	/**
 	 * Setter for the field <code>identifier</code>.
 	 * 
-	 * @param identifier
-	 *            the identifier to set
+	 * @param identifier the identifier to set
 	 */
 	public final void setIdentifier(String identifier) {
 		this.identifier = identifier;
@@ -104,12 +111,32 @@ public final class MyIdentifier extends MyUntypedData {
 	 * @return a {@link Identifier} object.
 	 */
 	public final Identifier toIdentifier() {
-		return new Identifier(this.getIdentifier());
+		
+		Identifier identifier = new Identifier(this.getIdentifier(),this.getRelatedIdentifierType(),this.getRelationType());
+		
+		return identifier;
 	}
 
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
 		return "MyIdentifier [identifier=" + identifier + "]";
+	}
+
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	public RelatedIdentifierType getRelatedIdentifierType() {
+		return relatedIdentifierType;
+	}
+
+	public void setRelatedIdentifierType(RelatedIdentifierType relatedIdentifierType) {
+		this.relatedIdentifierType = relatedIdentifierType;
+	}
+	@FullTextField(analyzer = "default",projectable = Projectable.YES)
+	public RelationType getRelationType() {
+		return relationType;
+	}
+
+	public void setRelationType(RelationType relationType) {
+		this.relationType = relationType;
 	}
 }

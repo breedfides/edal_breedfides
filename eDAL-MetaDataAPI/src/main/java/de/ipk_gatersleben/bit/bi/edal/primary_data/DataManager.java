@@ -1018,7 +1018,8 @@ public class DataManager {
     			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
     			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
     			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
-    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE};
+    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE,
+    			MetaDataImplementation.RELATIONTYPE, MetaDataImplementation.RELATEDIDENTIFIERTYPE};
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(fields, standardAnalyzer);
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);

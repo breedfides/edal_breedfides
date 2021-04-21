@@ -1507,7 +1507,6 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 * @return List<MyIdentifier>
 	 * @throws ParseException
 	 *             If unable to parse query string with <em>LUCENE<em>.
-	 * @throws PrimaryDataDirectoryException 
 	 */
 	private List<Integer> searchByIdentifier(final Identifier identifier, EnumDublinCoreElements element, final boolean fuzzy)
 			throws ParseException, PrimaryDataDirectoryException {
@@ -1520,17 +1519,18 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			SearchResult<MyIdentifier> searchQuery = null;
 			if(fuzzy) {
 				searchQuery = ftSession.search( MyIdentifier.class ) 
-		        .where( f -> f.match() 
-		                .field( "identifier" )
-		                .matching( identifier.getID() )
-		                .fuzzy())
-		        .fetch( 200 ); 
+		        .where( f -> f.bool()
+		        .must(f.match().field( "identifier" ).matching( identifier.getIdentifier() ).fuzzy())
+		        .must(f.match().field("relatedIdentifierType").matching(identifier.getRelatedIdentifierType()).fuzzy())
+		        .must(f.match().field("relationType").matching(identifier.getRelationType()).fuzzy())
+		        ).fetch( 200 ); 
 			}else {
 				searchQuery = ftSession.search( MyIdentifier.class ) 
-		        .where( f -> f.match() 
-		                .field( "identifier" )
-		                .matching( identifier.getID() ) )
-		        .fetch( 200 ); 
+				        .where( f -> f.bool()
+				        .must(f.match().field( "identifier" ).matching( identifier.getIdentifier() ))
+				        .must(f.match().field("relatedIdentifierType").matching(identifier.getRelatedIdentifierType()))
+				        .must(f.match().field("relationType").matching(identifier.getRelationType()))
+				        ).fetch( 200 ); 
 			}
 			final List<MyIdentifier> untypedDataList = searchQuery.hits();
 			session.close();
@@ -1555,9 +1555,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			QueryParser parser = new QueryParser(MetaDataImplementation.IDENTIFIER, new StandardAnalyzer());
 			String luceneString;
 			if(fuzzy) {
-				luceneString = identifier.getID()+"~";
+				luceneString = identifier.getIdentifier()+"~";
 			}else {
-				luceneString = identifier.getID();
+				luceneString = identifier.getIdentifier();
 			}
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
 	        ScoreDoc[] hits2;
@@ -1628,23 +1628,24 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			else{
 				if(((FileSystemImplementationProvider)DataManager.getImplProv()).getConfiguration().isHibernateSearchIndexingEnabled()) {
 	
-				final String id = identifierRelation.getRelations().iterator().next().getID();
+				final Identifier identifier = identifierRelation.getRelations().iterator().next();
 				
 				final SearchSession ftSession = Search.session(session);
 				SearchResult<MyIdentifier> searchQuery = null;
 				if(fuzzy) {
 					searchQuery = ftSession.search( MyIdentifier.class ) 
-			        .where( f -> f.match() 
-			                .field( "identifier" )
-			                .matching(id)
-			                .fuzzy())
-			        .fetch( 200 ); 
+			        .where( f -> f.bool()
+			        .must(f.match().field( "identifier" ).matching( identifier.getIdentifier() ).fuzzy())
+			        .must(f.match().field("relatedIdentifierType").matching(identifier.getRelatedIdentifierType()).fuzzy())
+			        .must(f.match().field("relationType").matching(identifier.getRelationType()).fuzzy())
+			        ).fetch( 200 ); 
 				}else {
 					searchQuery = ftSession.search( MyIdentifier.class ) 
-			        .where( f -> f.match() 
-			                .field( "identifier" )
-			                .matching(id) )
-			        .fetch( 200 ); 
+					        .where( f -> f.bool()
+					        .must(f.match().field( "identifier" ).matching( identifier.getIdentifier() ))
+					        .must(f.match().field("relatedIdentifierType").matching(identifier.getRelatedIdentifierType()))
+					        .must(f.match().field("relationType").matching(identifier.getRelationType()))
+					        ).fetch( 200 ); 
 				}
 				final List<MyIdentifier> myIdentifierList = searchQuery.hits();
 	
@@ -1686,9 +1687,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					QueryParser parser = new QueryParser(MetaDataImplementation.RELATION, new StandardAnalyzer());
 					String luceneString;
 					if(fuzzy) {
-						luceneString = id.getID()+"~";
+						luceneString = id.getIdentifier()+"~";
 					}else {
-						luceneString = id.getID();
+						luceneString = id.getIdentifier();
 					}
 			        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
 			        ScoreDoc[] hits2;

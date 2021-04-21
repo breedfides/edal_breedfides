@@ -43,12 +43,13 @@ public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 	}
 
 	public enum PanelType {
-		AUTHOR_PANEL, PUBLISHER_PANEL, LANGUAGE_PANEL, SUBJECT_PANEL, UPLOAD_PANEL, EMBARGO_PANEL, RESOURCE_PANEL;
+		AUTHOR_PANEL, PUBLISHER_PANEL, LANGUAGE_PANEL, SUBJECT_PANEL, UPLOAD_PANEL, EMBARGO_PANEL, RESOURCE_PANEL,
+		RELATED_IDENTIFIER_PANEL;
 	}
 
 	private enum ARCHIVE_TYPES {
-		ZIP(".zip"), ZIPX(".zipx"), TAR(".tar"), TARGZ(".tar.gz"), SEVENZ(".7z"), RAR(".rar"), TGZ(".tgz"), ARJ(
-				".arj"), BZIP(".bzip"), BZIP2("bzip2"), BZ(".bz"), BZ2("bz2");
+		ZIP(".zip"), ZIPX(".zipx"), TAR(".tar"), TARGZ(".tar.gz"), SEVENZ(".7z"), RAR(".rar"), TGZ(".tgz"), ARJ(".arj"),
+		BZIP(".bzip"), BZIP2("bzip2"), BZ(".bz"), BZ2("bz2");
 
 		private String string;
 
@@ -88,8 +89,8 @@ public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 
 		case PUBLISHER_PANEL:
 			PublicationMainPanel.blockForPublisherField();
-			((AttributeSplitPane) PublicationMainPanel.subjectsPublisherPanel).setRightComponent(null);
-			((AttributeSplitPane) PublicationMainPanel.subjectsPublisherPanel)
+			((AttributeSplitPane) PublicationMainPanel.subjectsRelatedIdentiferPanel).setRightComponent(null);
+			((AttributeSplitPane) PublicationMainPanel.subjectsRelatedIdentiferPanel)
 					.setRightComponent(PublicationMainPanel.publisherPanel);
 			break;
 
@@ -190,11 +191,9 @@ public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 				if (!PropertyLoader.userValues.containsKey("dontShowUploadHint")
 						|| (PropertyLoader.userValues.containsKey("dontShowUploadHint")
 								&& PropertyLoader.userValues.getProperty("dontShowUploadHint").equals("false"))
-						|| PropertyLoader.userValues.containsKey("dontShowUploadHintTime")
-								&& ChronoUnit.HOURS.between(
-										LocalDateTime
-												.parse(PropertyLoader.userValues.getProperty("dontShowUploadHintTime")),
-										LocalDateTime.now()) >= HOURS_TO_SHOW_HINT_DIALOG_AGAIN) {
+						|| PropertyLoader.userValues.containsKey("dontShowUploadHintTime") && ChronoUnit.HOURS.between(
+								LocalDateTime.parse(PropertyLoader.userValues.getProperty("dontShowUploadHintTime")),
+								LocalDateTime.now()) >= HOURS_TO_SHOW_HINT_DIALOG_AGAIN) {
 
 					JCheckBox checkbox = new JCheckBox("Do not show this message again.");
 					JEditorPane editorPane = new JEditorPane();
@@ -268,6 +267,9 @@ public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 					BorderLayout.SOUTH);
 			break;
 
+		case RELATED_IDENTIFIER_PANEL:
+
+			break;
 		}
 		PublicationFrame.updateUI();
 

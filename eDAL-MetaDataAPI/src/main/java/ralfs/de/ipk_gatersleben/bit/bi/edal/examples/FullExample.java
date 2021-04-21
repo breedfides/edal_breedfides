@@ -358,8 +358,8 @@ public class FullExample {
 				
 				IdentifierRelation relation = (IdentifierRelation)entities.get(entities.size()-1).getMetaData().getElementValue(EnumDublinCoreElements.RELATION);
 				results1 = rootDirectory.searchByDublinCoreElement(EnumDublinCoreElements.RELATION, relation, false, true);
-				String searchedRelation = relation.getRelations().iterator().next().getID();
-				String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getID();
+				String searchedRelation = relation.getRelations().iterator().next().getIdentifier();
+				String foundRelation =((IdentifierRelation)results1.get(0).getMetaData().getElementValue(EnumDublinCoreElements.RELATION)).getRelations().iterator().next().getIdentifier();
 				log("\n STORED: "+searchedRelation+"\n FOUND: "+foundRelation);
 				
 //				Calendar lastEvents = (Calendar)date.getStartDate().clone();

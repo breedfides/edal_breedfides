@@ -62,7 +62,6 @@ public class StoreDataScript {
 		int countWords =words.size();
 		Random random = new Random();
 		long startTime = System.nanoTime();
-		Identifier referenceIdentifier = new Identifier(words.get(random.nextInt(countWords)));
 		ArrayList<PrimaryDataFile> files = new ArrayList<>();
 		for(int i = 0; i < size; i++) {
 	        String title = words.get(random.nextInt(countWords));
@@ -87,7 +86,6 @@ public class StoreDataScript {
 			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 			metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(description));
-			metadata.setElementValue(EnumDublinCoreElements.IDENTIFIER, referenceIdentifier);
 			entity.setMetaData(metadata);
 			files.add(entity);
 			
@@ -98,7 +96,6 @@ public class StoreDataScript {
 		entity.store(fin);
 		fin.close();
 		IdentifierRelation relation = new IdentifierRelation();
-		relation.add(referenceIdentifier);
 		MetaData referenceMetaData = entity.getMetaData();
 		referenceMetaData.setElementValue(EnumDublinCoreElements.RELATION, relation);
 		EdalLanguage lang = new EdalLanguage(Locale.CHINA);
