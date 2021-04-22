@@ -1003,7 +1003,7 @@ public class DataManager {
 		
 	}
 	
-	static public ArrayList<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType){
+	static public ArrayList<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType){		
 		final long startTime = System.currentTimeMillis();
     	IndexReader reader = null;
 		try {

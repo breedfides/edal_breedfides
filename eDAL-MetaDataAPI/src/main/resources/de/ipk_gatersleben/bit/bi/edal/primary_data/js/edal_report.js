@@ -205,7 +205,7 @@ let EdalReport = new function() {
                   } else {
                       //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
                       //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
-                      $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
+                      $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
                           self.reportData = data;
                           console.log("Data:")
                           console.log(self.reportData);
@@ -224,7 +224,7 @@ let EdalReport = new function() {
                   } else {
                       //self.datatable.search(searchword).draw();
                       //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
-                      $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
+                      $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
                           self.reportData = data;
                           console.log("Data:")
                           console.log(self.reportData);
