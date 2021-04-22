@@ -113,7 +113,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String PUBLICID = "PublicReference";
 	public static final String PUBLICREFERENCE = "rootDirectory";
 	public static final String INDIVIDUALFILE = "singleData";
-	int indexedSingleData = 0;
+	protected static int lastIndexedID = 0;
 	int counterValue = 0;
 	IndexWriter writer = null;
 	StandardAnalyzer analyzer;
@@ -122,6 +122,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	int indexedVersions = 0;
 	int flushedObjects = 0;
 	Directory index;
+	int filesCounter = 0;
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(10, 5);
 	final int directoryFetchSize = (int) Math.pow(10, 5);
@@ -151,14 +152,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			try {
 				FileInputStream fis = new FileInputStream(this.pathToLastId.toFile());
 				ObjectInputStream ois = new ObjectInputStream(fis);
-				this.lastIndexedID = (int) ois.readObject();
+				this.setLastID((int) ois.readObject());
 				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
-		this.implementationProviderLogger.info("Last indexed public reference: " + this.lastIndexedID);
-		this.indexWriterThreadLogger.debug("Last indexed public reference: " + this.lastIndexedID);
+		this.implementationProviderLogger.info("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
+		this.indexWriterThreadLogger.debug("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
 		
 	}
 
@@ -203,7 +204,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					.from(PublicReferenceImplementation.class);
 			criteria.select(root.get("id"));
 			Predicate predicateId = criteriaBuilder.gt(root.get("id"),
-					this.lastIndexedID);
+					PublicVersionIndexWriterThread.getLastID());
 			Predicate predicateAccepted = criteriaBuilder.equal(
 					root.get("publicationStatus"), PublicationStatus.ACCEPTED);
 			Predicate predicateType = criteriaBuilder.equal(
@@ -228,10 +229,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long indexStartTime = System.currentTimeMillis();
 			Integer publicRef = null;
 			while (results.next()) {
+				long startTime = System.currentTimeMillis();
 				publicRef = (Integer) results.get(0);
 				/** index all associated Files/Directories */
 				updateIndex(publicRef, session);
-				this.lastIndexedID = publicRef;
+				this.setLastID(publicRef);
+				this.implementationProviderLogger.info("[PublicVersionIndexWriterThread] Indexing time: "+(System.currentTimeMillis()-startTime)+"ms for "+this.filesCounter+" files");
 			}
 			results.close();
 			session.getTransaction().commit();
@@ -243,6 +246,16 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			if (indexedVersions > 0 || flushedObjects > 0) {
 				try {
 					this.writer.commit();
+					try {
+						FileOutputStream fos = new FileOutputStream(
+								Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
+						ObjectOutputStream oos = new ObjectOutputStream(fos);
+						oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
+						oos.close();
+						fos.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -255,7 +268,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					FileOutputStream fos = new FileOutputStream(
 							Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(this.lastIndexedID);
+					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 					oos.close();
 					fos.close();
 				} catch (IOException e) {
@@ -285,7 +298,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 	
 	private void updateIndex(Integer pubRef, Session session) {
-		this.implementationProviderLogger.info("UPDATE VERSION PrefId:  "+pubRef);		
+		this.filesCounter = 0;	
 		//Alternative way to fetch the PrimaryDataFileImplementation associated with the publicReference (requieres entire publicReference)
 		//PrimaryDataFileImplementation parentDirFile = session.get(PrimaryDataFileImplementation.class, pubRef.getVersion().getPrimaryEntityId());
 		
@@ -377,29 +390,30 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			Term term = new Term(MetaDataImplementation.VERSIONID,
 					Integer.toString(version));
 			hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
-			while(hits2 == null || hits2.length == 0) {
-				this.implementationProviderLogger
-				.info("(public) waiting for NativeLuceneIndexWriter");
-				try {
-					Thread.sleep(Math.min(
-							Math.max(NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
-									NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
-							NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
-				} catch (final InterruptedException e) {
-					e.printStackTrace();
-				}
-				try {
-					IndexReader newReader = DirectoryReader.openIfChanged(directoryReader);
-					if(newReader != null) {
-						reader.close();
-						reader = newReader;
-						searcher = new IndexSearcher(reader);
+			if(hits2 == null || hits2.length == 0) {
+				this.implementationProviderLogger.info("(public) waiting for NativeLuceneIndexWriter");
+				do {
+					try {
+						Thread.sleep(Math.min(
+								Math.max(NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
+										NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
+								NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
+					} catch (final InterruptedException e) {
+						e.printStackTrace();
 					}
-				} catch (IOException e2) {
-					// TODO Auto-generated catch block
-					e2.printStackTrace();
-				}
-				hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
+					try {
+						IndexReader newReader = DirectoryReader.openIfChanged(directoryReader);
+						if(newReader != null) {
+							reader.close();
+							reader = newReader;
+							searcher = new IndexSearcher(reader);
+						}
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
+					hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
+				}while(hits2 == null || hits2.length == 0);
 			}
 		}catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
@@ -422,10 +436,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					String.valueOf(pubRef), Store.YES));
 			writer.addDocument(doc);
 			indexedVersions++;
-			this.indexedSingleData++;
-			this.implementationProviderLogger
-			.info("(public) current PublicReference: "+pubRef+" IndexedversionNO: "+version+ "indexedSIngle: "+this.indexedSingleData);
-
+			this.filesCounter++;
 //				this.implementationProviderLogger
 //						.info("UPDATED VERSION: " + doc.get(MetaDataImplementation.TITLE)
 //								+ " ID:" + doc.get(MetaDataImplementation.VERSIONID));
@@ -436,16 +447,26 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
+				try {
+					FileOutputStream fos = new FileOutputStream(
+							Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
+					ObjectOutputStream oos = new ObjectOutputStream(fos);
+					oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
+					oos.close();
+					fos.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 				flushedObjects += fetchSize;
-				if (indexedVersions > 0 && pubRef > this.lastIndexedID) {
+				if (indexedVersions > 0 && pubRef > PublicVersionIndexWriterThread.getLastID()) {
 					try {
 						FileOutputStream fos = new FileOutputStream(
 								Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
 						ObjectOutputStream oos = new ObjectOutputStream(fos);
-						oos.writeObject(this.lastIndexedID);
+						oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 						oos.close();
 						fos.close();
 					} catch (IOException e) {
@@ -597,13 +618,20 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 		//readerProvider.close(reader);
 
-		this.lastIndexedID = 0;
+		this.setLastID(0);
 
 		this.requestForReset = false;
 
 		this.indexWriterThreadLogger.debug("Index structure deleted, restart index calculating...");
 		this.implementationProviderLogger.info("Index structure deleted, restart index calculating...");
 
+	}
+	
+	protected void setLastID(int val) {
+		PublicVersionIndexWriterThread.lastIndexedID = val;
+	}
+	protected static int getLastID() {
+		return PublicVersionIndexWriterThread.lastIndexedID;
 	}
 	
 	@Override

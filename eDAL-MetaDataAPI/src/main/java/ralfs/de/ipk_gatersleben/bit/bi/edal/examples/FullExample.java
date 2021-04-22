@@ -75,6 +75,7 @@ public class FullExample {
 
 	public static void main(String[] args) throws Exception {		
 		PrimaryDataDirectory root = getRoot();
+		
 //		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
 //		IndexSearcher searcher = new IndexSearcher(reader);
@@ -100,11 +101,6 @@ public class FullExample {
 //			log(entity.getID());
 //		}
 //		log("Finsihed in: "+(System.currentTimeMillis()-start));
-		Thread.sleep(90000000);	
-		//Thread.sleep(60000);
-//		List<PrimaryDataEntity> results = DataManager.searchByKeyword("Torben", false, "singleData");
-//		log("public data: "+results.size());
-		DataManager.shutdown();
 			
 //		Thread.sleep(5000);
 //		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();

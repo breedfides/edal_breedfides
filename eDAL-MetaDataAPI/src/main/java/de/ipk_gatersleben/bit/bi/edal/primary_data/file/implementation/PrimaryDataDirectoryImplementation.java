@@ -1829,9 +1829,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
-	    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
-	    			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
-	    			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
+	    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.PERSON,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
 	    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE};
 			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 				    new MultiFieldQueryParser(fields, new StandardAnalyzer());
@@ -2155,24 +2153,30 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
-	    	StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
-	    	QueryParser queryLegalName = new QueryParser(MetaDataImplementation.LEGALNAME,standardAnalyzer);
-	    	QueryParser queryAddress = new QueryParser(MetaDataImplementation.ADDRESSLINE,standardAnalyzer);
-	    	QueryParser queryZip= new QueryParser(MetaDataImplementation.ZIP,standardAnalyzer);
-	    	QueryParser queryCountry = new QueryParser(MetaDataImplementation.COUNTRY,standardAnalyzer);
-			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-			if(!person.getLegalName().equals(""))
-				booleanQuery.add(queryLegalName.parse(person.getLegalName()), BooleanClause.Occur.MUST);
-			if(!person.getAddressLine().equals(""))
-				booleanQuery.add(queryAddress.parse(person.getAddressLine()), BooleanClause.Occur.MUST);
-			if(!person.getZip().equals(""))
-				booleanQuery.add(queryZip.parse(person.getZip()), BooleanClause.Occur.MUST);
-			if(!person.getCountry().equals(""))
-				booleanQuery.add(queryCountry.parse(person.getCountry()), BooleanClause.Occur.MUST);
-		    
+	    	StringBuilder builder = new StringBuilder();
+			if(!person.getLegalName().equals("")) {
+				builder.append(person.getLegalName());
+				builder.append(" ");
+			}
+			if(!person.getAddressLine().equals("")) {
+				builder.append(person.getAddressLine());
+				builder.append(" ");
+			}
+			if(!person.getZip().equals("")) {
+				builder.append(person.getZip());
+				builder.append(" ");
+			}
+			if(!person.getCountry().equals("")) {
+				builder.append(person.getCountry());
+			}
+			if(fuzzy) {
+				builder.append('~');
+			}
+			QueryParser parser = new QueryParser(MetaDataImplementation.LEGALPERSON, new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 	        ScoreDoc[] hits2;
 			try {
-				hits2 = searcher.search(booleanQuery.build(), 10).scoreDocs;
+				hits2 = searcher.search(parser.parse(builder.toString()), 5000).scoreDocs;
 		        for(int i = 0; i < hits2.length; i++) {
 		        	Document doc = searcher.doc(hits2[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
@@ -2304,24 +2308,28 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser("givenName", new StandardAnalyzer());
-			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+
 			String luceneString;
+			StringBuilder builder = new StringBuilder();
+
+			builder.append(person.getGivenName());
+			builder.append(" ");
+			builder.append(person.getSureName());
+			builder.append(" ");
+			builder.append(person.getAddressLine());
+			builder.append(" ");
+			builder.append(person.getZip());
+			builder.append(" ");
+			builder.append(person.getCountry());
 			if(fuzzy) {
-				luceneString = MetaDataImplementation.GIVENNAME+":"
-				+person.getGivenName()+" "+MetaDataImplementation.SURENAME+":"+person.getSureName()+
-		        		" "+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+" "+MetaDataImplementation.ZIP+
-		        		":"+person.getZip()+" "+MetaDataImplementation.COUNTRY+":"+person.getCountry();
-			}else {
-				luceneString = MetaDataImplementation.GIVENNAME+":"
-				+person.getGivenName()+"~ "+MetaDataImplementation.SURENAME+":"+person.getSureName()+
-		        		"~ "+MetaDataImplementation.ADDRESSLINE+":"+person.getAddressLine()+"~ "+MetaDataImplementation.ZIP+
-		        		":"+person.getZip()+"~ "+MetaDataImplementation.COUNTRY+":"+person.getCountry()+"~";
+				builder.append('~');
 			}
-	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
+			QueryParser parser = new QueryParser(MetaDataImplementation.PERSON, new StandardAnalyzer());
+			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
+	        org.apache.lucene.search.Query luceneQuery = parser.parse(builder.toString());
 	        ScoreDoc[] hits2;
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
+				hits2 = searcher.search(luceneQuery, 5000).scoreDocs;
 		        for(int i = 0; i < hits2.length; i++) {
 		        	Document doc = searcher.doc(hits2[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));

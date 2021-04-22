@@ -74,7 +74,6 @@ abstract class IndexWriterThread extends EdalThread {
 	
 	protected Logger indexLogger = null;
 
-	protected int lastIndexedID = 0;
 	protected Path indexDirectory;
 	protected Logger indexWriterThreadLogger = null;
 	protected Logger implementationProviderLogger = null;

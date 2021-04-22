@@ -61,7 +61,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  * @author arendd
  */
 public class HibernateIndexWriterThread extends IndexWriterThread {
-
+	protected int lastIndexedID = 0;
 	protected HibernateIndexWriterThread(final SessionFactory sessionFactory, final Path indexDirectory,
 			final Logger implementationProviderLogger) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);

@@ -98,9 +98,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
 	IndexWriter writer = null;
+	protected static int lastIndexedID = 0;
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat");
 	/** high value fetch objects faster, but more memory is needed */
-	final int fetchSize = (int) Math.pow(10, 5);
+	final int fetchSize = (int) Math.pow(12, 5);
 
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory, Logger implementationProviderLogger,
 			IndexWriter writer) {
@@ -131,15 +132,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			try {
 				FileInputStream fis = new FileInputStream(this.pathToLastId.toFile());
 				ObjectInputStream ois = new ObjectInputStream(fis);
-				this.lastIndexedID = (int) ois.readObject();
+				this.setLastID((int) ois.readObject());
 				ois.close();
 				fis.close();
-				this.implementationProviderLogger.info("last IndexedID: "+this.lastIndexedID);
+				this.implementationProviderLogger.info("last IndexedID: "+NativeLuceneIndexWriterThread.getLastID());
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
-		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.lastIndexedID);
+		this.indexWriterThreadLogger.debug("Last indexed ID : " + NativeLuceneIndexWriterThread.getLastID());
 
 
 		
@@ -160,7 +161,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
+			criteria.where(criteriaBuilder.gt(root.get("id"), NativeLuceneIndexWriterThread.getLastID())).orderBy(criteriaBuilder.asc(root.get("id")));
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
@@ -180,40 +181,42 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					/** index each element */
 					this.indexVersion(writer, version);
 					indexedObjects++;
-					this.implementationProviderLogger.info("(exec)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+fetchSize);
+					this.setLastID(version.getId());
 				} catch (MetaDataException e) {
 					e.printStackTrace();
 				}
 				if (indexedObjects % fetchSize == 0) {
-					try {
-						this.implementationProviderLogger.info("(exec)NativeLuceneIndexer_Commit() ");
-						writer.commit();
-						session.clear();
-						flushedObjects += fetchSize;
-						if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
-							this.lastIndexedID = version.getId();
-						}
-					} catch (IOException e) {
-						this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
-					}
+					flushedObjects += fetchSize;
 				}
 			}
+			session.clear();
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
 			// this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects:
 			// "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
-
+			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
 			if (indexedObjects > 0 || flushedObjects > 0) {
 				try {
-					writer.commit();
-					this.lastIndexedID = version.getId();
+					this.implementationProviderLogger.info("[NativeLuceneIndexWriterThread] Commit");
+					writer.commit();				
 				} catch (IOException e) {
 					this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
 				}
 				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
 						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
+				this.implementationProviderLogger.info("[NativeLuceneIndexWriterThread] Indexing Time: "+executeIndexingFinishTime);
+			}
+			try {
+				FileOutputStream fos = new FileOutputStream(
+						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.writeObject(PublicVersionIndexWriterThread.getLastID());
+				oos.close();
+				fos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			updateLastIndexedID(indexedObjects);
 			try {
@@ -229,7 +232,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 			// this.implementationProviderLogger.info("Finished execute Index task:
 			// lastIndexedID: " + lastIndexedID);
-			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
 			this.indexLogger.debug("NativeLuceneIndexWriterThread time: "+executeIndexingFinishTime);
 			// this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+"
 			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
@@ -243,7 +245,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				FileOutputStream fos = new FileOutputStream(
 						Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
-				oos.writeObject(this.lastIndexedID);
+				oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
 				oos.close();
 				fos.close();
 			} catch (IOException e) {
@@ -259,9 +261,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
 				Store.YES));
 		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
+		StringBuilder builder = new StringBuilder();
 		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.YES));
-		
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.YES));		
 		doc.add(new TextField(MetaDataImplementation.RELATEDIDENTIFIERTYPE,
 				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.RELATIONTYPE,
@@ -275,38 +277,43 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		persons.addAll(naturalPersons);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
-		persons.add(legalPerson);
+		builder.setLength(0);
+		builder.append(( legalPerson).getLegalName());
+		builder.append(" ");
+		builder.append(( legalPerson).getAddressLine());
+		builder.append(" ");
+		builder.append(( legalPerson).getZip());
+		builder.append(" ");
+		builder.append(( legalPerson).getCountry());
+		doc.add(new TextField(MetaDataImplementation.LEGALPERSON, builder.toString(), Store.YES));
 		/** 
-		 * StringJoiner to combine multiple Values into one large String to store the text in one field per categopry
+		 * Stringbuilder to combine multiple Values into one large String to store the text in one field per categopry
 		 * Not used for Relations and dates, because these values occur rarely more than once per Version/Document
 		 *  */
-		StringJoiner givenNames = new StringJoiner(" ");
-		StringJoiner sureNames = new StringJoiner(" ");
-		StringJoiner addresslines = new StringJoiner(" ");
-		StringJoiner zips = new StringJoiner(" ");
-		StringJoiner countries = new StringJoiner(" ");
 		for (Person currentPerson : persons) {
+			builder.setLength(0);
 			if (currentPerson instanceof NaturalPerson) {
-				givenNames.add(((NaturalPerson) currentPerson).getGivenName());
-				sureNames.add(((NaturalPerson) currentPerson).getSureName());
+				builder.append(((NaturalPerson) currentPerson).getGivenName());
+				builder.append(" ");
+				builder.append(((NaturalPerson) currentPerson).getSureName());
+				builder.append(" ");
 			}
-			addresslines.add(currentPerson.getAddressLine());
-			zips.add( currentPerson.getZip());
-			countries.add(currentPerson.getCountry());
+			builder.append(( currentPerson).getAddressLine());
+			builder.append(" ");
+			builder.append(( currentPerson).getZip());
+			builder.append(" ");
+			builder.append(( currentPerson).getCountry());
+			doc.add(new TextField(MetaDataImplementation.PERSON, builder.toString(), Store.YES));
 		}
-		doc.add(new TextField(MetaDataImplementation.GIVENNAME, givenNames.toString(), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.SURENAME, sureNames.toString(), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.ADDRESSLINE, addresslines.toString(), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.ZIP, zips.toString(), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.COUNTRY, countries.toString(), Store.YES));
-		doc.add(new TextField(MetaDataImplementation.LEGALNAME, getString(legalPerson.getLegalName()), Store.YES));
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
-		StringJoiner algorithms = new StringJoiner(" ");
-		StringJoiner checksums = new StringJoiner(" ");
+		builder.setLength(0);
 		if(checkSums.size() > 1) {
 			for (CheckSumType checkSum : checkSums) {
-				algorithms.add(checkSum.getAlgorithm());
-				checksums.add(checkSum.getCheckSum());
+				builder.append(checkSum.getAlgorithm());
+				builder.append(" ");
+				builder.append(checkSum.getCheckSum());
+				builder.append(", ");
+				doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getAlgorithm(), Store.YES));
 			}
 		}else if(checkSums.size() == 1) {
 			CheckSumType checkSum = checkSums.iterator().next();
@@ -314,14 +321,22 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
 		}
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
-		StringJoiner subjectList = new StringJoiner(" ");
+		builder.setLength(0);
 		for (UntypedData subject : subjects) {
-			subjectList.add(subject.getString());
+			builder.append(subject.getString());
+			builder.append(" ");
 		}
-		doc.add(new TextField(MetaDataImplementation.SUBJECT, subjectList.toString(), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.SUBJECT, builder.toString(), Store.YES));
 		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
 		for (Identifier identifier : relations) {
-			doc.add(new TextField(MetaDataImplementation.RELATION, identifier.getIdentifier(), Store.YES));
+			builder.setLength(0);
+			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()));
+			builder.append(" ");
+			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()));
+			builder.append(" ");
+			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
+			builder.append(", ");
+			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.YES));
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
@@ -361,7 +376,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	}
 
 	protected void indexRestObjects() {
-		long executeIndexingStart = System.currentTimeMillis();
+//		long executeIndexingStart = System.currentTimeMillis();
 //
 //		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 //			final Session session = this.sessionFactory.openSession();
@@ -468,7 +483,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 
-		this.lastIndexedID = 0;
+		this.setLastID(0);
 
 		this.requestForReset = false;
 
@@ -479,6 +494,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	
 	protected void commitRequired() {
 		this.lastIDChanged = true;
+	}
+	
+	protected void setLastID(int val) {
+		NativeLuceneIndexWriterThread.lastIndexedID = val;
+	}
+	protected static int getLastID() {
+		return NativeLuceneIndexWriterThread.lastIndexedID;
 	}
 
 

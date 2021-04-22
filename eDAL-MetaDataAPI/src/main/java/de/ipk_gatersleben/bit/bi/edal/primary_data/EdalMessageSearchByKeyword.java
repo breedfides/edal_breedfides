@@ -48,6 +48,9 @@ public class EdalMessageSearchByKeyword {
 		for(Integer id : ids) {
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
 			JSONObject obj = new JSONObject();
+			if(id == 1897) {
+				int test = 0;
+			}
 			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			try {
 				obj.put("doi", reference.getAssignedID());
@@ -58,9 +61,11 @@ public class EdalMessageSearchByKeyword {
 			obj.put("title", reference.getVersion().getMetaData().toString());
 			String internalID = reference.getInternalID();
 			obj.put("downloads", String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
-			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));
-			obj.put("locations",
-					GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
+			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
+			if(VeloCityHtmlGenerator.ipMap.get(internalID) != null) {
+				obj.put("locations",
+						GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
+			}
 			finalArray.add(obj);
 		}
 		return finalArray;

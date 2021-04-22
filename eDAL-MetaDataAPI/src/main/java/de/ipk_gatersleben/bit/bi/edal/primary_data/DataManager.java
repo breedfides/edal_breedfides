@@ -1015,17 +1015,18 @@ public class DataManager {
 		BooleanQuery.setMaxClauseCount(10000);
 		Analyzer standardAnalyzer = new StandardAnalyzer();
     	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
-    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.GIVENNAME,
-    			MetaDataImplementation.SURENAME,MetaDataImplementation.LEGALNAME,MetaDataImplementation.ADDRESSLINE,MetaDataImplementation.ZIP,
-    			MetaDataImplementation.COUNTRY,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
+    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.PERSON,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
     			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE,
     			MetaDataImplementation.RELATIONTYPE, MetaDataImplementation.RELATEDIDENTIFIERTYPE};
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 			    new MultiFieldQueryParser(fields, standardAnalyzer);
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
         org.apache.lucene.search.Query luceneQuery = null;
+        if(fuzzy) {
+        	keyword += "~";
+        }
 		try {
-			luceneQuery = fuzzy ? parser.parse(keyword+'~') : parser.parse(keyword);
+			luceneQuery = parser.parse(QueryParser.escape(keyword));
 		} catch (ParseException e2) {
 			((FileSystemImplementationProvider)getImplProv()).getLogger().info("Not able to Parse: \n"+keyword);
 			return new ArrayList<Integer>();
