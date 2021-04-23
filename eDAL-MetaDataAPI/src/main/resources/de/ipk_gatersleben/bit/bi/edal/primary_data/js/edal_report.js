@@ -10,6 +10,7 @@ let EdalReport = new function() {
     this.stateShowAllMarkers = false;
     this.allYears = [];
     this.initReportData = null;
+    this.AjaxRequest = null;
 
 
     this.init = function(reportData, mapData) {
@@ -179,14 +180,6 @@ let EdalReport = new function() {
             }
         });
 
-        function delay(fn, ms) {
-          let timer = 0
-          return function(...args) {
-            clearTimeout(timer)
-            timer = setTimeout(fn.bind(this, ...args), ms || 0)
-          }
-        }
-
         $(document).on('keyup', '#edal-report-search', function(event) {
               event.preventDefault();
               let searchword = $(this).val();
@@ -198,90 +191,42 @@ let EdalReport = new function() {
                   if (searchword === null) {
                       //self.datatable.search('').columns(5).search(self.yearFilter).draw();
                       self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
                       self.datatable.destroy();
                       self.renderDatatable();
                   } else {
                       //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
                       //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
-                      $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
+                      if(self.AjaxRequest != null){
+                        self.AjaxRequest.abort();
+                      }
+                      self.AjaxRequest = $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
                           self.reportData = data;
-                          console.log("Data:")
-                          console.log(self.reportData);
                           self.datatable.destroy();
                           self.renderDatatable();
+                          self.AjaxRequest = null;
                       });
                   }
               } else {
                   if (searchword === null) {
                       //self.datatable.search('').columns().search('').draw();
                       self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
                       self.datatable.destroy();
                       self.renderDatatable();
                   } else {
                       //self.datatable.search(searchword).draw();
                       //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
-                      $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
+                      if(self.AjaxRequest != null){
+                        self.AjaxRequest.abort();
+                      }
+                      self.AjaxRequest = $.get( "https://doi.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
                           self.reportData = data;
-                          console.log("Data:")
-                          console.log(self.reportData);
                           self.datatable.destroy();
                           self.renderDatatable();
+                          self.AjaxRequest = null;
                       });
                   }
               }
         });
-
-        // $(document).on('keyup', '#edal-report-search', delay(function(event) {
-        //     event.preventDefault();
-        //     let searchword = $(this).val();
-        //     if (searchword === '') {
-        //         searchword = null;
-        //     }
-        //     self.searchFilter = searchword;
-        //     if (self.yearFilter !== null) {
-        //         if (searchword === null) {
-        //             //self.datatable.search('').columns(5).search(self.yearFilter).draw();
-        //             self.reportData = self.initReportData;
-        //             console.log("Data:")
-        //             console.log(self.reportData);
-        //             self.datatable.destroy();
-        //             self.renderDatatable();
-        //         } else {
-        //             //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
-        //             //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
-        //             $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter, function( data ) {
-        //                 self.reportData = data;
-        //                 console.log("Data:")
-        //                 console.log(self.reportData);
-        //                 self.datatable.destroy();
-        //                 self.renderDatatable();
-        //             });
-        //         }
-        //     } else {
-        //         if (searchword === null) {
-        //             //self.datatable.search('').columns().search('').draw();
-        //             self.reportData = self.initReportData;
-        //             console.log("Data:")
-        //             console.log(self.reportData);
-        //             self.datatable.destroy();
-        //             self.renderDatatable();
-        //         } else {
-        //             //self.datatable.search(searchword).draw();
-        //             //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
-        //             $.get( "http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword, function( data ) {
-        //                 self.reportData = data;
-        //                 console.log("Data:")
-        //                 console.log(self.reportData);
-        //                 self.datatable.destroy();
-        //                 self.renderDatatable();
-        //             });
-        //         }
-        //     }
-        // }, 300));
 
         $(document).on('click', '#edal-report-export-csv', function(event) {
             event.preventDefault();

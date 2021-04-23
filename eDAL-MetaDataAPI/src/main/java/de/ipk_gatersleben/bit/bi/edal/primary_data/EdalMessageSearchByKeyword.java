@@ -48,9 +48,6 @@ public class EdalMessageSearchByKeyword {
 		for(Integer id : ids) {
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
 			JSONObject obj = new JSONObject();
-			if(id == 1897) {
-				int test = 0;
-			}
 			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			try {
 				obj.put("doi", reference.getAssignedID());
