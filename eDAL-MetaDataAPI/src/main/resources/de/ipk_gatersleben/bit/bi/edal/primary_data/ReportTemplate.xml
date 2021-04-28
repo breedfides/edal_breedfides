@@ -20,7 +20,7 @@
         <div id="controls" class="pt-2 pb-2">
             <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
                 <span class="h2 mr-5">Request - Statistics</span>
-                <span class="h6" style="display:inline-block;">DOIs: $dois - distinct client IP addresses: $totalAccesses - download volume: $totalDownloadVolume</span>
+                <span class="h6" id="statisticsSpan" style="display:inline-block;">DOIs: $dois - distinct client IP addresses: $totalAccesses - download volume: $totalDownloadVolume</span>
             </div>
             <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
                 <div class="mr-5" style="display:inline-block;color:white;">
@@ -83,6 +83,10 @@
     <script>
         var reportData = $json;
         var mapData = $jsonall;
+        var serverURL = "$serverURL";
+        var defaultDois = $dois;
+        var defaultTotalDownloadVolume = "$totalDownloadVolume";
+        var defaultTotalAccesses = $totalAccesses;
     </script>
 
     <script>

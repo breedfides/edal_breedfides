@@ -77,7 +77,7 @@ public class EdalMessageExtendedSearch {
 	@POST
 	@Path("/fuzzySearch")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
+	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
 		return DataManager.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 

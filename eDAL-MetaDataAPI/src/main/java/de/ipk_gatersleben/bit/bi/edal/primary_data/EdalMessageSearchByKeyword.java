@@ -17,11 +17,14 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 
+import org.glassfish.jersey.server.ManagedAsync;
 import org.hibernate.Session;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -40,9 +43,10 @@ public class EdalMessageSearchByKeyword {
 
 	@GET
 	@Path("/{keyword}")
+	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
-		ArrayList<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		HashSet<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.INDIVIDUALFILE);
 		JSONArray finalArray = new JSONArray();
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		for(Integer id : ids) {
@@ -68,9 +72,10 @@ public class EdalMessageSearchByKeyword {
 		return finalArray;
 	}
 	@GET
+	@ManagedAsync
 	@Path("/{keyword}/fuzzy")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ArrayList<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
+	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
 		return DataManager.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 
