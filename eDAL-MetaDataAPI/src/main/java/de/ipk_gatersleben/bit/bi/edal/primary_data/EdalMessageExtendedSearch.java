@@ -46,13 +46,14 @@ import javax.ws.rs.Produces;
 @Path("extendedSearch")
 public class EdalMessageExtendedSearch {
 
-	@POST
 	@Path("/search")
+	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public JSONArray extendedSearch(@FormParam("searchMap") String searchMap) throws JsonParseException, JsonMappingException, IOException {
-		HashMap<String,String> mapFromJson = (HashMap<String,String>)new ObjectMapper().readValue(searchMap, HashMap.class);
+	public JSONArray extendedSearch(JSONObject json) throws JsonParseException, JsonMappingException, IOException {
+		DataManager.getImplProv().getLogger().info(json.toJSONString());
 		JSONArray finalArray = new JSONArray();
+		finalArray.add(new JSONObject().put("msg", "Hello World"));
 //		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 //		for(Integer id : ids) {
 //			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
@@ -73,12 +74,6 @@ public class EdalMessageExtendedSearch {
 //			finalArray.add(obj);
 //		}
 		return finalArray;
-	}
-	@POST
-	@Path("/fuzzySearch")
-	@Produces(MediaType.APPLICATION_JSON)
-	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
-		return DataManager.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 
 }

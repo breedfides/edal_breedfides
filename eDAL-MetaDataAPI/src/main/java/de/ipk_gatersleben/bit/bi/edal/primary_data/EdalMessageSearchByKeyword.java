@@ -46,7 +46,7 @@ public class EdalMessageSearchByKeyword {
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
-		HashSet<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.INDIVIDUALFILE);
+		HashSet<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		JSONArray finalArray = new JSONArray();
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		for(Integer id : ids) {
