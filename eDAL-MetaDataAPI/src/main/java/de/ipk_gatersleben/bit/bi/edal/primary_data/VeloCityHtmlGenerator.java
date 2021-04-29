@@ -1221,6 +1221,12 @@ class VeloCityHtmlGenerator {
 		final Map<String, HashSet<String>> accessMap = new HashMap<String, HashSet<String>>();
 
 		final Map<String, String[]> accessStatistic = new TreeMap<String, String[]>();
+		
+		VeloCityHtmlGenerator.ipMap.clear();
+
+		VeloCityHtmlGenerator.downloadedVolume.clear();;
+
+		VeloCityHtmlGenerator.uniqueAccessNumbers.clear();;
 
 		final Path pathToLogFiles = Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(),
 				"jetty_log");
