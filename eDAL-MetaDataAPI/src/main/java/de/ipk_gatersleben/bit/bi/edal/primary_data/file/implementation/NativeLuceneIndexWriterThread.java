@@ -39,8 +39,11 @@ import javax.security.auth.Subject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
@@ -340,8 +343,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
-			doc.add(new LongPoint(MetaDataImplementation.STARTDATE,
-					date.getStartDate().getTimeInMillis()));
+			doc.add(new TextField(MetaDataImplementation.STARTDATE,
+					DateTools.timeToString(date.getStartDate().getTimeInMillis(), Resolution.DAY),Store.YES));
 			if (date instanceof EdalDateRange) {
 				doc.add(new LongPoint(MetaDataImplementation.ENDDATE,
 						((EdalDateRange) date).getEndDate().getTimeInMillis()));

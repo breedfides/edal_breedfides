@@ -12,6 +12,28 @@ let EdalReport = new function() {
     this.initReportData = null;
     this.ID = 0;
 
+    /*  For REST-ExtendedSearch
+        Const fields needed to access the proper indexed fields for the search  */
+    const TITLE = "title";
+    const DESCRIPTION = "description";
+    const COVERAGE = "coverage";
+    const IDENTIFIER = "identifier";
+    const RELATEDIDENTIFIERTYPE = "relatedIdentifierType";
+    const RELATIONTYPE = "relationType";
+    const SIZE = "size";
+    const TYPE = "type";
+    const LANGUAGE = "language";
+    const ALGORITHM = "algorithm";
+    const CHECKSUM = "checkSum";
+    const VERSIONID = "versionID";
+    const SUBJECT = "subject";
+    const RELATION = "relation";
+    const MIMETYPE = "mimeType";
+    const STARTDATE = "startDate";
+    const ENDDATE = "endDate";
+    const PERSON = "person";
+    const LEGALPERSON = "legalPerson";
+
     this.init = function(reportData, mapData) {
         this.initReportData = this.reportData = reportData;
         this.mapData = mapData;
@@ -273,32 +295,82 @@ let EdalReport = new function() {
                       });
                       document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
                   } else {
-                      //self.datatable.search(searchword).draw();
-                      //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+searchword);
                       self.ID++;
                       var requestId = self.ID;
-                      $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
-                          self.reportData = data;
-                          console.log("ID: "+requestId+"Data:")
-                          console.log(self.reportData);
-                          if(self.ID == requestId){
-                            self.datatable.destroy();
-                            self.renderDatatable();
-                            var totalAccesses = 0;
-                            var totalDownloadVolume = 0;
-                            console.log("stringContent: "+data[1].downloads);
-                            self.reportData.forEach((item) => {
-                              var accesses = parseInt(item.accesses);
-                              if(!isNaN(accesses)){
-                                totalAccesses += accesses;
-                              }
-                              var vol = parseInt(item.downloads);
-                              if(!isNaN(vol)){
-                                totalDownloadVolume += parseInt(item.downloads);
-                              }
-                            });
-                            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                        }
+                      // $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
+                      //     self.reportData = data;
+                      //     console.log("ID: "+requestId+"Data:")
+                      //     console.log(self.reportData);
+                      //     if(self.ID == requestId){
+                      //       self.datatable.destroy();
+                      //       self.renderDatatable();
+                      //       var totalAccesses = 0;
+                      //       var totalDownloadVolume = 0;
+                      //       console.log("stringContent: "+data[1].downloads);
+                      //       self.reportData.forEach((item) => {
+                      //         var accesses = parseInt(item.accesses);
+                      //         if(!isNaN(accesses)){
+                      //           totalAccesses += accesses;
+                      //         }
+                      //         var vol = parseInt(item.downloads);
+                      //         if(!isNaN(vol)){
+                      //           totalDownloadVolume += parseInt(item.downloads);
+                      //         }
+                      //       });
+                      //       document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
+                      //   }
+                      // });
+
+                      // var arr = {"hitType":"both","groups":
+                      //   [ {"goup":
+                      //     [
+                      //         {"type":"person1","value":"someTerm1","fuzzy":false,"Occur":"must"},
+                      //         {"type":"person2","value":"someTerm2","fuzzy":true,"Occur":"must"},
+                      //         {"type":"person3","value":"someTerm3","fuzzy":false,"Occur":"should"}
+                      //       ],
+                      //       "Occur":""
+                      //     },
+                      //     {"goup":
+                      //       [
+                      //         {"type":"person1","value":"someTerm1","fuzzy":false,"Occur":"must"},
+                      //         {"type":"person2","value":"someTerm2","fuzzy":true,"Occur":"must"},
+                      //         {"type":"person3","value":"someTerm3","fuzzy":false,"Occur":"should"}
+                      //       ],
+                      //       "Occur":""
+                      //     }
+                      // ]};
+
+                      var arr = {"hitType":"public","groups":
+                        [ {"goup":
+                          [
+                              {"type":PERSON,"value":"Arend","fuzzy":false,"Occur":"MUST"},
+                              {"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
+                            ],
+                            "Occur":"MUST"
+                          }
+                      ]};
+                      $.post(serverURL+"/rest/extendedSearch/search", JSON.stringify(arr), function(data){
+                        self.reportData = data;
+                        console.log("ID: "+requestId+"Data:")
+                        console.log(self.reportData);
+                        if(self.ID == requestId){
+                          self.datatable.destroy();
+                          self.renderDatatable();
+                          var totalAccesses = 0;
+                          var totalDownloadVolume = 0;
+                          console.log("stringContent: "+data[1].downloads);
+                          self.reportData.forEach((item) => {
+                            var accesses = parseInt(item.accesses);
+                            if(!isNaN(accesses)){
+                              totalAccesses += accesses;
+                            }
+                            var vol = parseInt(item.downloads);
+                            if(!isNaN(vol)){
+                              totalDownloadVolume += parseInt(item.downloads);
+                            }
+                          });
+                          document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
+                      }
                       });
                   }
               }

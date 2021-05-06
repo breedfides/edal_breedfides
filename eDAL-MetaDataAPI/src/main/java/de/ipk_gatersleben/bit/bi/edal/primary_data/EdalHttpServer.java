@@ -147,7 +147,7 @@ public class EdalHttpServer {
 		jerseyServlet.setInitOrder(1);
 		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
 				"de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageRest,de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageTest,"
-				+ "de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageSearchByKeyword");
+				+ "de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageSearchByKeyword,de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageExtendedSearch");
 
 //		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
 //		contextHandlerCollection.addHandler(edalContextHandler);

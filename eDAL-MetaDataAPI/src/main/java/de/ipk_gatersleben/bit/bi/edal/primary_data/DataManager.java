@@ -1034,7 +1034,23 @@ public class DataManager {
 		if(luceneQuery == null) {
 			return new HashSet<>();
 		}
+		
+		/** A possible way to search for Files AND rootDirectories */
+//		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+//		BooleanQuery.Builder subbooleanQuery = new BooleanQuery.Builder();
+//		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
+//		queryType.setDefaultOperator(QueryParser.OR_OPERATOR);
+//		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
+//		try {
+//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)).toString()), Occur.SHOULD);
+//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)).toString()), Occur.SHOULD);
+//			booleanQuery.add(queryType.parse(subbooleanQuery.build().toString()),Occur.MUST);
+//		} catch (ParseException e2) {
+//			// TODO Auto-generated catch block
+//			e2.printStackTrace();
+//		}		
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+		
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
 		try {
@@ -1052,9 +1068,6 @@ public class DataManager {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		
-		final CriteriaBuilder builder = session.getCriteriaBuilder();
 		HashSet<Integer> ids = new HashSet<>();
         for(int i = 0; i < hits2.length; i++) {
         	Document doc = null;
