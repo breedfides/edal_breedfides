@@ -1053,12 +1053,8 @@ public class DataManager {
 		
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
-		try {
-			booleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)).toString()), Occur.FILTER);
-		} catch (ParseException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
+		booleanQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)), Occur.FILTER);
+
     	IndexSearcher searcher = new IndexSearcher(reader);
         ScoreDoc[] hits2 = null;
         //BooleanQuery booleanQuery2 = booleanQuery.build();

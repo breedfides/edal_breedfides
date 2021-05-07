@@ -41,9 +41,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
@@ -428,11 +430,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			Document doc = searcher.doc(hits2[0].doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
-			doc.add(new TextField(MetaDataImplementation.ENTITYTYPE,
+			doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
 					entityType, Store.YES));
 //			doc.add(new TextField(MetaDataImplementation.ENTITYID,
 //					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
-			doc.add(new TextField(PublicVersionIndexWriterThread.PUBLICID,
+			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,
 					String.valueOf(pubRef), Store.YES));
 			writer.addDocument(doc);
 			indexedVersions++;

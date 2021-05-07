@@ -43,6 +43,7 @@ import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -109,14 +110,16 @@ public class EdalMessageExtendedSearch {
 				JSONObject queryData = (JSONObject)untypedQueryData;
 				if(((String)queryData.get("type")).equals(MetaDataImplementation.STARTDATE) || 
 						((String)queryData.get("type")).equals(MetaDataImplementation.ENDDATE)) {
-					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy",Locale.ENGLISH);
-					LocalDateTime lowerBound = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
-					LocalDateTime upperBound = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();	
-					ZonedDateTime lowerZDT = ZonedDateTime.of(lowerBound, ZoneId.of("UTC"));
-					ZonedDateTime upperZDT = ZonedDateTime.of(upperBound, ZoneId.of("UTC"));
-					long lowerms = lowerZDT.toInstant().toEpochMilli();
-					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE+"String", DateTools.timeToString(lowerZDT.toInstant().toEpochMilli(),Resolution.DAY), DateTools.timeToString(upperZDT.toInstant().toEpochMilli(),Resolution.DAY), false, false);
 					
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy",Locale.ENGLISH);
+					LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
+					LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();	
+					String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+					String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
+					
+				}else if(((String)queryData.get("type")).equals(MetaDataImplementation.SIZE)) {
+					query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
 				}else {
 					QueryParser queryParser = new QueryParser((String) queryData.get("type"), analyzer);
 					try {
@@ -138,12 +141,7 @@ public class EdalMessageExtendedSearch {
 			finalQuery.add(subQuery.build(), Occur.valueOf((String) currentGroup.get("Occur")));
 		}
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,analyzer);
-		try {
-			finalQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)).toString()), Occur.FILTER);
-		} catch (org.apache.lucene.queryparser.classic.ParseException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
+		finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
 		
 		
 		IndexReader reader = null;

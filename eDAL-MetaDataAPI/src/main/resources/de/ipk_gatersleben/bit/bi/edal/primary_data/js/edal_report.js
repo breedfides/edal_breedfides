@@ -344,7 +344,8 @@ let EdalReport = new function() {
                         [ {"goup":
                           [
                               {"type":PERSON,"value":"Arend","fuzzy":false,"Occur":"MUST"},
-                              {"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
+                              {"type":SIZE,"lower":12615182,"upper":13715182,"fuzzy":false,"Occur":"MUST"}
+                              //{"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
                             ],
                             "Occur":"MUST"
                           }

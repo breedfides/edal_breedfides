@@ -79,7 +79,6 @@ public class FullExample {
 //		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
 //		IndexSearcher searcher = new IndexSearcher(reader);
-		
 //		final CriteriaBuilder builder = session.getCriteriaBuilder();
 //		CriteriaQuery<?> query = builder.createQuery(PrimaryDataEntityVersionImplementation.class);
 //		Root<PrimaryDataEntityVersionImplementation> queryRoot = query.from(PrimaryDataEntityVersionImplementation.class);
