@@ -13,33 +13,45 @@
 package de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import de.ipk_gatersleben.bit.bi.edal.publication.AttributeLabel;
+import de.ipk_gatersleben.bit.bi.edal.publication.PropertyLoader;
+
 public class RelatedIdentifierPanel extends JPanel {
 
-	JTextField filePathField = new JTextField();
+	private JScrollPane scrollPane;
 
-	public JTextField getFilePathField() {
-		return filePathField;
+	public static final AttributeLabel RELATED_IDENTIFIER_LABEL = new AttributeLabel(
+			PropertyLoader.props.getProperty("RELATED_IDENTIFIER_LABEL"),
+			PropertyLoader.props.getProperty("RELATED_IDENTIFIER_LABEL"));
+
+	public JScrollPane getScrollPane() {
+		return this.scrollPane;
 	}
 
-	private void setFilePathField(JTextField filePathField) {
-		this.filePathField = filePathField;
+	public void setScrollPane(JScrollPane scrollPane) {
+		this.scrollPane = scrollPane;
+		this.add(this.scrollPane, BorderLayout.CENTER);
+
 	}
 
 	public RelatedIdentifierPanel() {
 
+		RelatedIdentifierPanel.RELATED_IDENTIFIER_LABEL.setForeground(PropertyLoader.LABEL_COLOR);
+
 		BorderLayout layout = new BorderLayout();
+		
+	
+		
 		this.setLayout(layout);
-
-		filePathField.setBorder(new EmptyBorder(0, 0, 0, 0));
-
-		this.add(filePathField , BorderLayout.CENTER);
-
 	}
 
 }

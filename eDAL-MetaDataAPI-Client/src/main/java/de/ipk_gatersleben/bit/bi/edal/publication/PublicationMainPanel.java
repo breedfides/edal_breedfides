@@ -14,11 +14,21 @@ package de.ipk_gatersleben.bit.bi.edal.publication;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
@@ -93,6 +103,7 @@ public class PublicationMainPanel extends JPanel {
 	public static PublisherPanel publisherPanel;
 	public static EmbargoPanel embargboPanel;
 	public static ResourcePanel resourcePanel;
+	public static RelatedIdentifierPanel relatedIdentifierPanel;
 
 	public static LicenseCheckBoxPanel licensePanel;
 	private static NonFreeTextPanelMouseAdapter openAuthorPanelListener;
@@ -116,6 +127,7 @@ public class PublicationMainPanel extends JPanel {
 		embargboPanel = new EmbargoPanel();
 		licensePanel = new LicenseCheckBoxPanel();
 		resourcePanel = new ResourcePanel();
+		relatedIdentifierPanel = new RelatedIdentifierPanel();
 
 		openAuthorPanelListener = new NonFreeTextPanelMouseAdapter(PanelType.AUTHOR_PANEL);
 		openLanguagePanelListener = new NonFreeTextPanelMouseAdapter(PanelType.LANGUAGE_PANEL);
@@ -470,9 +482,22 @@ public class PublicationMainPanel extends JPanel {
 		publisherField.addMouseListener(openPublisherPanelListener);
 		embargoField.addMouseListener(openEmbargoPanelListener);
 		resourceField.addMouseListener(openResourcePanelListener);
+		
+		//KANN WEG WEIL ES KEIN MAUSKLICK EVENT GIBT
+		
 		relatedIdentifierPathField.addMouseListener(openRelatedIdentifierPanelListener);
 
 		/* end other Listeners */
+		
+		
+		//DRAGDROPLISTENER
+		
+//		relatedIdentifierPathField.setDragEnabled(true);
+//		
+//		new DropTarget(relatedIdentifierPathField, new RelatedIdDragDropListener());
+		    
+		
+		
 
 		AttributeLableAttributeTextAreaPanel descriptionPanel = new AttributeLableAttributeTextAreaPanel(
 				PropertyLoader.DESCRIPTION_LABEL, descriptionField, PropertyLoader.DESCRIPTION_PANEL_HEIGHT);
@@ -531,16 +556,20 @@ public class PublicationMainPanel extends JPanel {
 				relatedIdentifierAttributePanel);
 		subjectsRelatedIdentiferPanel.setResizeWeight(0.6);
 
-		relatedIdentifierPublisherPanel = new AttributeSplitPane(subjectsRelatedIdentiferPanel,
-				publisherAttributePanel);
-		relatedIdentifierPublisherPanel.setResizeWeight(0.6);
+//		relatedIdentifierPublisherPanel = new AttributeSplitPane(subjectsRelatedIdentiferPanel,
+//				publisherAttributePanel);
+//		relatedIdentifierPublisherPanel.setResizeWeight(0.6);
+//
+//		if (showPublisherField) {
+//			mainPanel.add(relatedIdentifierPublisherPanel, BorderLayout.CENTER);
+//		} else {
+//			mainPanel.add(subjectsRelatedIdentiferPanel, BorderLayout.CENTER);
+//		}
 
-		if (showPublisherField) {
-			mainPanel.add(relatedIdentifierPublisherPanel, BorderLayout.CENTER);
-		} else {
-			mainPanel.add(subjectsRelatedIdentiferPanel, BorderLayout.CENTER);
-		}
-
+		// developmet //
+		mainPanel.add(descriptionSubjectsSplitPanel, BorderLayout.CENTER);
+		//            //
+		
 		embargoLanguageResourceLicensePanel = new JPanel(new BorderLayout());
 
 		languageResourcePanel = new JPanel(new BorderLayout());
@@ -554,8 +583,6 @@ public class PublicationMainPanel extends JPanel {
 		embargoLanguageResourceLicensePanel.add(embargoAttributePanel, BorderLayout.SOUTH);
 
 		mainPanel.add(embargoLanguageResourceLicensePanel, BorderLayout.SOUTH);
-
-//		mainPanel.add(relatedIdentifierPanel,BorderLayout.SOUTH);
 
 		JScrollPane scrollableMainPane = new JScrollPane(mainPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
