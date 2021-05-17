@@ -107,6 +107,7 @@ allprojects {
 	
 	shadowJar {
    		classifier = 'jar-with-dependencies'
+		zip64 true
 	}
 	
 	artifacts {
