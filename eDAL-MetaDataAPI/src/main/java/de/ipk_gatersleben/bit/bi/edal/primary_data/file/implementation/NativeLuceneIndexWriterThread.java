@@ -140,7 +140,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				this.setLastID((int) ois.readObject());
 				ois.close();
 				fis.close();
-				this.implementationProviderLogger.info("last IndexedID: "+NativeLuceneIndexWriterThread.getLastID());
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -204,14 +203,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
 			if (indexedObjects > 0 || flushedObjects > 0) {
 				try {
-					this.implementationProviderLogger.info("[NativeLuceneIndexWriterThread] Commit");
 					writer.commit();				
 				} catch (IOException e) {
 					this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
 				}
 				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
 						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
-				this.implementationProviderLogger.info("[NativeLuceneIndexWriterThread] Indexing Time: "+executeIndexingFinishTime);
+				this.implementationProviderLogger.debug("[NativeLuceneIndexWriterThread] Indexing Time: "+executeIndexingFinishTime);
 			}
 			try {
 				FileOutputStream fos = new FileOutputStream(
@@ -465,7 +463,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	protected void resetIndexThread() {
 
-		this.implementationProviderLogger.info("#####\n######  Reset has been called");
 		this.requestForReset = true;
 
 		this.indexWriterThreadLogger.debug("Reseting index structure...");
@@ -513,7 +510,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	@Override
 	public void run() {
 		super.run();
-		this.implementationProviderLogger.info("finished (NativeluceneIndexThread), now Counting Down Latch");
 		this.countDownLatch.countDown();
 	}
 }

@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,11 +23,14 @@ import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -596,7 +600,11 @@ public class EdalHttpHandler extends AbstractHandler {
 						case LATEST:
 							this.sendLatestNews(response, HttpStatus.Code.OK);
 							break;
-
+						
+						case SEARCH:
+							this.sendSearch(response, HttpStatus.Code.OK);
+							break;
+							
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -1307,6 +1315,48 @@ public class EdalHttpHandler extends AbstractHandler {
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
+	}
+	
+	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode) {
+		
+		
+		try {
+
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, responseCode).toString();
+
+			response.setStatus(responseCode.getCode());
+
+			response.setContentType("text/html");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
+
+		} catch (EofException eof) {
+			// Do nothing, because response was already send
+		} catch (IOException | EdalException e) {
+			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
+		}
+		
+//		response.setStatus(HttpStatus.Code.OK.getCode());
+//		response.setContentType("text/html");
+//
+//		OutputStream responseBody;
+//		try {
+//			responseBody = response.getOutputStream();
+//			ClassLoader classLoader = getClass().getClassLoader();
+//			Scanner scanner = new Scanner(new File(classLoader.getResource("edalAdvancedSearch.html").toURI()));
+//			String htmlString = scanner.useDelimiter("\\Z").next();
+//			scanner.close();
+//			responseBody.write(htmlString.getBytes("UTF-8"));
+//			responseBody.close();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (URISyntaxException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 
 	/**

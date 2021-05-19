@@ -160,7 +160,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-		this.implementationProviderLogger.info("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
 		this.indexWriterThreadLogger.debug("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
 		
 	}

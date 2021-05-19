@@ -76,6 +76,9 @@ public class FullExample {
 	public static void main(String[] args) throws Exception {		
 		PrimaryDataDirectory root = getRoot();
 		
+		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
+		PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class, "c26ba9ee-249c-42c9-a77d-1a93c809239e");
+		log(file.getName());
 //		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
 //		IndexSearcher searcher = new IndexSearcher(reader);

@@ -1430,6 +1430,45 @@ class VeloCityHtmlGenerator {
 		return output;
 
 	}
+	
+	/**
+	 * Generate HTML output for an Error message of the HHTP handler.
+	 * 
+	 * @param responseCode the error code of the response, e.g. 404.
+	 * @param responseCode2      the error message.
+	 * @return the HTML output in a {@link StringWriter}.
+	 * @throws EdalException if unable to create output.
+	 */
+	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
+			throws EdalException {
+
+		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", responseCode.getCode());
+		/* set serverURL */
+		context.put("serverURL", EdalHttpServer.getServerURL());
+
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
+
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/edalAdvancedSearch.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
+
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
+	}
 
 	/**
 	 * @return
@@ -1464,5 +1503,6 @@ class VeloCityHtmlGenerator {
 		json.put("date", "");
 		return json.toJSONString();
 	}
+
 
 }

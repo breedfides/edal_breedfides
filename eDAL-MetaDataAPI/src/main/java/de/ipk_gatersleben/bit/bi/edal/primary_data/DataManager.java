@@ -27,11 +27,18 @@ import java.nio.file.Paths;
 import java.security.Policy;
 import java.security.Principal;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -58,7 +65,9 @@ import javax.security.auth.Subject;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -68,13 +77,17 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.hibernate.Session;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
@@ -82,6 +95,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ALLPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
@@ -91,6 +105,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataI
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataDirectoryImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.RebuildIndexThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.CheckReviewStatusThread;
@@ -1078,6 +1093,129 @@ public class DataManager {
 //		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
 //		return Collections.unmodifiableList(results);
         return ids;
+	}
+	
+	static public JSONArray advancedSearch(JSONObject jsonArray) {
+		JSONArray groups = (JSONArray) jsonArray.get("groups");
+		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+		for(Object group : groups) {
+			JSONObject queryData = (JSONObject) group;
+			BooleanQuery.Builder subQuery = new BooleanQuery.Builder();
+			Query query = null;
+			if(((String)queryData.get("type")).equals(MetaDataImplementation.STARTDATE) || 
+					((String)queryData.get("type")).equals(MetaDataImplementation.ENDDATE)) {
+				
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy",Locale.ENGLISH);
+				LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
+				LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();	
+				String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+				String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+				query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
+				
+			}else if(((String)queryData.get("type")).equals(MetaDataImplementation.SIZE)) {
+				query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
+			}else {
+				QueryParser queryParser = new QueryParser((String) queryData.get("type"), analyzer);
+				try {
+//					if((boolean) queryData.get("fuzzy")) {
+//						query = queryParser.parse((String) queryData.get("value")+'~');
+//						
+//					}else {
+//						query = queryParser.parse((String) queryData.get("value"));
+//					}
+					query = queryParser.parse((String) queryData.get("searchterm"));
+				} catch (org.apache.lucene.queryparser.classic.ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			DataManager.getImplProv().getLogger().info("New Query added:");
+			DataManager.getImplProv().getLogger().info(query.toString());
+			finalQuery.add(query, Occur.valueOf((String) queryData.get("Occur")));
+		}
+		
+		String hitType = (String) jsonArray.get("hitType");
+		if(hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
+		}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+		}else {
+			BooleanQuery.Builder restrictionQuery = new BooleanQuery.Builder();
+			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.SHOULD);
+			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.SHOULD);
+			finalQuery.add(restrictionQuery.build(), Occur.FILTER);
+		}
+		
+		
+		
+		IndexReader reader = null;
+		try {
+	    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
+	    	reader = DirectoryReader.open(indexDirectory);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		BooleanQuery.setMaxClauseCount(10000);
+		IndexSearcher searcher = new IndexSearcher(reader);
+        ScoreDoc[] hits2 = null;
+        //BooleanQuery booleanQuery2 = booleanQuery.build();
+		try {
+			hits2 = searcher.search(finalQuery.build(), 50000).scoreDocs;
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+		JSONArray finalArray = new JSONArray();
+        for(int i = 0; i < hits2.length; i++) {
+        	Document doc = null;
+			try {
+				doc = searcher.doc(hits2[i].doc);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			JSONObject obj = new JSONObject();
+			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
+			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+			if(type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+        		obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+    			try {
+    				obj.put("doi", reference.getAssignedID());
+    			} catch (PublicReferenceException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+    			obj.put("title", reference.getVersion().getMetaData().toString());
+    			obj.put("hitType", "Publicreference");
+    			String internalID = reference.getInternalID();
+    			obj.put("downloads", String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
+    			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
+    			if(VeloCityHtmlGenerator.ipMap.get(internalID) != null) {
+    				obj.put("locations",
+    						GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
+    			}
+			}else if(type.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+				PrimaryDataFileImplementation file =  session.get(PrimaryDataFileImplementation.class, doc.get(MetaDataImplementation.PRIMARYENTITYID));
+        		obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+    			try {
+    				obj.put("doi", reference.getAssignedID());
+    			} catch (PublicReferenceException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+				obj.put("title", file.toString());
+    			obj.put("hitType", "File or Directory");
+    			obj.put("downloads", "");
+    			obj.put("accesses", "");
+    			obj.put("locations", new JSONArray());
+			}
+			finalArray.add(obj);
+        }
+//		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
+//		return Collections.unmodifiableList(results);
+		return finalArray;
 	}
 
 }

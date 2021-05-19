@@ -141,12 +141,7 @@ let EdalReport = new function() {
                     render: function (data, type, row) {
                         return '<a class="worldmap-link" data-doi="'+row['doi']+'" href="#" target="_blank">Show</a>';
                     }
-                },
-                {
-                    title: "Year",
-                    data: "year",
-                    visible: false
-                },
+                }
             ]
         });
     };
@@ -297,82 +292,36 @@ let EdalReport = new function() {
                   } else {
                       self.ID++;
                       var requestId = self.ID;
-                      // $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
-                      //     self.reportData = data;
-                      //     console.log("ID: "+requestId+"Data:")
-                      //     console.log(self.reportData);
-                      //     if(self.ID == requestId){
-                      //       self.datatable.destroy();
-                      //       self.renderDatatable();
-                      //       var totalAccesses = 0;
-                      //       var totalDownloadVolume = 0;
-                      //       console.log("stringContent: "+data[1].downloads);
-                      //       self.reportData.forEach((item) => {
-                      //         var accesses = parseInt(item.accesses);
-                      //         if(!isNaN(accesses)){
-                      //           totalAccesses += accesses;
-                      //         }
-                      //         var vol = parseInt(item.downloads);
-                      //         if(!isNaN(vol)){
-                      //           totalDownloadVolume += parseInt(item.downloads);
-                      //         }
-                      //       });
-                      //       document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                      //   }
-                      // });
-
-                      // var arr = {"hitType":"both","groups":
-                      //   [ {"goup":
-                      //     [
-                      //         {"type":"person1","value":"someTerm1","fuzzy":false,"Occur":"must"},
-                      //         {"type":"person2","value":"someTerm2","fuzzy":true,"Occur":"must"},
-                      //         {"type":"person3","value":"someTerm3","fuzzy":false,"Occur":"should"}
-                      //       ],
-                      //       "Occur":""
-                      //     },
-                      //     {"goup":
-                      //       [
-                      //         {"type":"person1","value":"someTerm1","fuzzy":false,"Occur":"must"},
-                      //         {"type":"person2","value":"someTerm2","fuzzy":true,"Occur":"must"},
-                      //         {"type":"person3","value":"someTerm3","fuzzy":false,"Occur":"should"}
-                      //       ],
-                      //       "Occur":""
-                      //     }
-                      // ]};
-
-                      var arr = {"hitType":"public","groups":
-                        [ {"goup":
-                          [
-                              {"type":PERSON,"value":"Arend","fuzzy":false,"Occur":"MUST"},
-                              {"type":SIZE,"lower":12615182,"upper":13715182,"fuzzy":false,"Occur":"MUST"}
-                              //{"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
-                            ],
-                            "Occur":"MUST"
-                          }
-                      ]};
-                      $.post(serverURL+"/rest/extendedSearch/search", JSON.stringify(arr), function(data){
-                        self.reportData = data;
-                        console.log("ID: "+requestId+"Data:")
-                        console.log(self.reportData);
-                        if(self.ID == requestId){
-                          self.datatable.destroy();
-                          self.renderDatatable();
-                          var totalAccesses = 0;
-                          var totalDownloadVolume = 0;
-                          console.log("stringContent: "+data[1].downloads);
-                          self.reportData.forEach((item) => {
-                            var accesses = parseInt(item.accesses);
-                            if(!isNaN(accesses)){
-                              totalAccesses += accesses;
-                            }
-                            var vol = parseInt(item.downloads);
-                            if(!isNaN(vol)){
-                              totalDownloadVolume += parseInt(item.downloads);
-                            }
-                          });
-                          document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                      }
+                      $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
+                          self.reportData = data;
+                          console.log("ID: "+requestId+"Data:")
+                          console.log(self.reportData);
+                          if(self.ID == requestId){
+                            self.datatable.destroy();
+                            self.renderDatatable();
+                            var totalAccesses = 0;
+                            var totalDownloadVolume = 0;
+                            console.log("stringContent: "+data[1].downloads);
+                            self.reportData.forEach((item) => {
+                              var accesses = parseInt(item.accesses);
+                              if(!isNaN(accesses)){
+                                totalAccesses += accesses;
+                              }
+                              var vol = parseInt(item.downloads);
+                              if(!isNaN(vol)){
+                                totalDownloadVolume += parseInt(item.downloads);
+                              }
+                            });
+                            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
+                        }
                       });
+
+
+                      // var arr = {"hitType":"public","groups":
+                      //   [     {"type":PERSON,"searchterm":"Arend","fuzzy":false,"Occur":"MUST"}
+                      //         //{"type":SIZE,"lower":12615182,"upper":13715182,"fuzzy":false,"Occur":"MUST"}
+                      //         //{"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
+                      // ]};
                   }
               }
         });
