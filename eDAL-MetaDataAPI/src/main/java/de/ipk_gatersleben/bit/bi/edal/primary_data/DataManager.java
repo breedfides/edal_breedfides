@@ -74,6 +74,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -1103,28 +1104,53 @@ public class DataManager {
 			JSONObject queryData = (JSONObject) group;
 			BooleanQuery.Builder subQuery = new BooleanQuery.Builder();
 			Query query = null;
-			if(((String)queryData.get("type")).equals(MetaDataImplementation.STARTDATE) || 
-					((String)queryData.get("type")).equals(MetaDataImplementation.ENDDATE)) {
-				
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy",Locale.ENGLISH);
+			String type = ((String)queryData.get("type"));
+			String keyword = (String) queryData.get("searchterm");
+			if(type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {				
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy",Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();	
 				String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
 				String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
 				query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
 				
-			}else if(((String)queryData.get("type")).equals(MetaDataImplementation.SIZE)) {
+			}else if(type.equals(MetaDataImplementation.SIZE)) {
 				query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
-			}else {
-				QueryParser queryParser = new QueryParser((String) queryData.get("type"), analyzer);
+			}else if(type.equals("ALL")) {
+		    	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
+		    			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.PERSON,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
+		    			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE,
+		    			MetaDataImplementation.RELATIONTYPE, MetaDataImplementation.RELATEDIDENTIFIERTYPE};
+				org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
+					    new MultiFieldQueryParser(fields, analyzer);
+				parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+		        if((boolean) queryData.get("fuzzy")) {
+		        	keyword += "~";
+		        }
 				try {
-//					if((boolean) queryData.get("fuzzy")) {
-//						query = queryParser.parse((String) queryData.get("value")+'~');
-//						
-//					}else {
-//						query = queryParser.parse((String) queryData.get("value"));
-//					}
-					query = queryParser.parse((String) queryData.get("searchterm"));
+					query = parser.parse(keyword);
+				} catch (ParseException e2) {
+					((FileSystemImplementationProvider)getImplProv()).getLogger().debug("Was not able to Parse: \n"+keyword);
+				}				
+			}else if(type.equals(MetaDataImplementation.MIMETYPE)){
+				QueryParser queryParser = new QueryParser(type, analyzer);
+				queryParser.setDefaultOperator(Operator.AND);
+				keyword.replace("\\", "");
+				try {
+					query = queryParser.parse(QueryParser.escape(keyword));
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}else {				
+				QueryParser queryParser = new QueryParser(type, analyzer);
+				try {
+					if((boolean) queryData.get("fuzzy")) {
+						query = queryParser.parse(keyword+'~');
+						
+					}else {
+						query = queryParser.parse(keyword);
+					}
 				} catch (org.apache.lucene.queryparser.classic.ParseException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1132,7 +1158,11 @@ public class DataManager {
 			}
 			DataManager.getImplProv().getLogger().info("New Query added:");
 			DataManager.getImplProv().getLogger().info(query.toString());
-			finalQuery.add(query, Occur.valueOf((String) queryData.get("Occur")));
+			if(((String) queryData.get("Occur")).equals("And")) {
+				finalQuery.add(query, Occur.MUST);
+			}else {
+				finalQuery.add(query, Occur.SHOULD);
+			}
 		}
 		
 		String hitType = (String) jsonArray.get("hitType");
@@ -1160,8 +1190,10 @@ public class DataManager {
 		IndexSearcher searcher = new IndexSearcher(reader);
         ScoreDoc[] hits2 = null;
         //BooleanQuery booleanQuery2 = booleanQuery.build();
+        Query buildedQuery = finalQuery.build();
+		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
 		try {
-			hits2 = searcher.search(finalQuery.build(), 50000).scoreDocs;
+			hits2 = searcher.search(buildedQuery, 50000).scoreDocs;
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

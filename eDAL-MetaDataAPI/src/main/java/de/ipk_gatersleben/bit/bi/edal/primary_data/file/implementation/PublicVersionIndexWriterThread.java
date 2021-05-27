@@ -148,7 +148,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
 
 		if (Files.exists(pathToLastId)) {
 			try {

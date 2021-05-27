@@ -53,6 +53,7 @@ import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.glassfish.jersey.server.ManagedAsync;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -87,6 +88,7 @@ public class EdalMessageExtendedSearch {
 
 	@Path("/search")
 	@POST
+	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray extendedSearch(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
