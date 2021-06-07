@@ -432,6 +432,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					entityType, Store.YES));
 //			doc.add(new TextField(MetaDataImplementation.ENTITYID,
 //					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
+			
 			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,
 					String.valueOf(pubRef), Store.YES));
 			writer.addDocument(doc);

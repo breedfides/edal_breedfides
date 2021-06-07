@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+  <head>
+
+    <title>$title - $repositoryNameShort</title>
+
+    <meta charset="$charset"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+<meta name="description" content=""/>
+<meta name="author" content=""/>
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/themes/default/style.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css" />
+<link rel="icon" type="image/png"  href="$serverURL/LOGO/edal_icon.png"/>
+
+    <link rel="stylesheet" href="$serverURL/CSS/report.css">
+
+	#if( $MatomoTemplate)
+		$MatomoTemplate
+	#end
+
+  </head>
+
+  <body>
+    <div id="grid-container">
+      <nav>
+  <div class="container-fluid">
+      <div class="row header">
+          <div class="col my-auto"><a target="_blank" href="http://edal.ipk-gatersleben.de"><img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" /></a></div>
+          <div id="edal-report-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
+          <div id="edal-report-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
+          #if( $InstituteLogo)
+<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
+#else
+<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
+      #end
+
+      </div>
+  </div>
+</nav>
+        <div id="controls" class="pt-2 pb-2">
+            <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
+                <span class="h2 mr-5">Database</span>
+                <span class="h6" id="statisticsSpan" style="display:inline-block;">
+
+                  <div class="form-row" style="max-width:800px">
+                    <div class="col">
+                        <label class="h5" for="scales">Fuzzy</label>
+                    </div>
+                    <div class="col">
+                      <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales">
+                    </div>
+
+                    <div class="col">
+                      <label class="h5" for="fname">Type:</label>
+                    </div>
+
+                    <div class="col">
+                      <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px">
+                        <option>Title</option>
+                        <option>Description</option>
+                        <option>Creator</option>
+                        <option>Legalperson</option>
+                        <option>Subject</option>
+                        <option>Language</option>
+                        <option>Checksum</option>
+                        <option>ALL</option>
+                      </select>
+                    </div>
+
+                    <div class="col">
+                      <label class="h5">Term:</label>
+                    </div>
+
+                    <div class="col">
+                      <input class="form-control form-control-sm" style="min-width:150px;" id="searchterm" type="text" name="searchterm"></input>
+                    </div>
+
+                    <div class="col">
+                      <button class="form-control form-control-sm" id="addButton" type="button" name="button"  onclick="EdalReport.build()">+</button>
+
+                    </div>
+
+                  </div>
+                </span>
+            </div>
+            <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
+                <div class="mr-5" style="display:inline-block;color:white;">
+                  <div class="form-row" style="max-width:800px">
+                    <div class="col">
+                      <input class="form-control form-control-sm" style="min-width:700px" id="query" type="text" name="query" placeholder="Search..."></input>
+                    </div>
+
+                    <div class="col">
+                      <button class="form-control form-control-sm" id="searchButton" type="button" name="searchbutton" onclick="EdalReport.search()" >go</button>
+                    </div>
+                  </div>
+                    <!-- <div id="edal-report-filter-container" class="mr-3">
+                        <span class="mr-2">Filter:</span>
+                        <select id="edal-report-year-filter">
+                            <option value="All">All</option>
+                        </select>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+
+        <div id="grid-container-table-and-map">
+            <div id="edal-report-table-container" class="px-3" style="overflow-y: hidden;">
+              <div id="edal-report-table-inner-container">
+                <div id="edal-report-filter" class="mr-2 mt-2">
+
+                  <div class="filter subcontainer">
+
+                    <input type="checkbox" class="mt-4" name="Ongoing" id="period">
+                    <div class="spanlabels">
+                      Startdate
+                      <br>
+                      Enddate
+
+                    </div>
+                    <div class="spaninputs">
+                      <input id="datepickerlow" disabled class="datepicker smallinput form-control form-control-sm" type="text" name="" value="">
+                      <input id="datepickerhigh" disabled class="datepicker smallinput form-control form-control-sm" type="text" name="" value="">
+                    </div>
+
+                    <div class="hittypelabel">
+                      <label for="">Result types</label>
+                    </div>
+                    <div class="hittypeinput">
+                      <select class="smallinput form-control form-control-sm" id="hitType" name="top5" size="1">
+                      </select>
+                    </div>
+
+                    <div class="filetypelabel">
+                      <label for="">Format</label>
+                    </div>
+                    <input id="suffix" type="checkbox" name="Ongoing"  >
+                    <div class="filetypeinput">
+                      <select id="suffixesSelect" class="smallinput form-control form-control-sm" disabled name="top5" size="1">
+                        <option>text/plain</option>
+                        <option>application/zip</option>
+                        <option>application/xml</option>
+                        <option>image/png</option>
+                        <option>application/octet-stream</option>
+                        <option>application/x-sqlite3</option>
+                        <option>application/x-tika-ooxml</option>
+                      </select>
+                    </div>
+
+                    <div class="filesizelabel">
+                      <label for="">File size</label>
+                    </div>
+                    <input id="filesize" type="checkbox" name="Ongoing"  >
+                    <div class="filesizeinputs">
+                      <div class="filesizeinputnumbers">
+                        <input id="filesizelow" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
+                        <input id="filesizehigh" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
+                      </div>
+                      <div class="filesizeinputnumbers">
+                        <select id="filesizelowbyte" class="smallinput" disabled name="top5" size="1">
+                          <option>B</option>
+                          <option>KB</option>
+                          <option>MB</option>
+                          <option>GB</option>
+                          <option>TB</option>
+                        </select>
+                        <select id="filesizehighbyte" class="smallinput" disabled name="top5" size="1">
+                          <option>B</option>
+                          <option>KB</option>
+                          <option>MB</option>
+                          <option>GB</option>
+                          <option>TB</option>
+                        </select>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+                <div id="table-column">
+                  <table id="report" class="table table-hover table-bordered table-sm" width="100%"></table>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort() - data volume: $datastock - number of files: $filenumber - active data contributors: $users</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+
+
+    <!-----------------------------------
+    -------- Edal Report Javascript -------
+    -------------------------------------->
+    <script src="$serverURL/JS/edal_search.js"></script>
+
+    <script>
+        var serverURL = "$serverURL";
+        //var reportData = $json;
+        //var mapData = $jsonall;
+        var reportData = [];
+        var mapData = [];
+        /**
+        var defaultDois = $dois;
+        var defaultTotalDownloadVolume = "$totalDownloadVolume";
+        var defaultTotalAccesses = $totalAccesses; */
+    </script>
+
+    <script>
+    EdalReport.init(reportData, mapData);
+
+    let resultTypeHashMap = {};
+    resultTypeHashMap["Records"] = "rootDirectory";
+    resultTypeHashMap["Files"] = "singleData";
+    resultTypeHashMap["Records and files"] = "Entity/File/Directory";
+
+    var select = document.getElementById("hitType");
+    var options = Object.keys(resultTypeHashMap);
+
+    for(var i = 0; i < options.length; i++) {
+        var opt = options[i];
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    }
+
+    $(function() {
+      $(".datepicker").datepicker({
+        inline: true,
+        showOtherMonths: true,
+        dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        changeMonth: true,
+        changeYear: true
+      });
+    });
+
+    $('#period').change(function() {
+      $('#datepickerlow').prop('disabled', !this.checked);
+      $('#datepickerhigh').prop('disabled', !this.checked);
+    });
+
+    $('#suffix').change(function() {
+      $('#suffixesSelect').prop('disabled', !this.checked);
+    });
+
+    $('#filesize').change(function() {
+      $('#filesizelow').prop('disabled', !this.checked);
+      $('#filesizehigh').prop('disabled', !this.checked);
+      $('#filesizelowbyte').prop('disabled', !this.checked);
+      $('#filesizehighbyte').prop('disabled', !this.checked);
+    });
+    </script>
+
+  </body>
+</html>

@@ -108,25 +108,25 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 
 	private int id;
 	
-	public static final String TITLE = "title";
-	public static final String DESCRIPTION = "description";
-	public static final String COVERAGE = "coverage";
-	public static final String IDENTIFIER = "identifier";
-	public static final String RELATEDIDENTIFIERTYPE = "relatedIdentifierType";
-	public static final String RELATIONTYPE = "relationType";
-	public static final String SIZE = "size";
-	public static final String TYPE = "type";
-	public static final String LANGUAGE = "language";
-	public static final String ALGORITHM = "algorithm";
-	public static final String CHECKSUM = "checkSum";
+	public static final String TITLE = "Title";
+	public static final String DESCRIPTION = "Description";
+	public static final String COVERAGE = "Coverage";
+	public static final String IDENTIFIER = "Identifier";
+	public static final String RELATEDIDENTIFIERTYPE = "RelatedIdentifierType";
+	public static final String RELATIONTYPE = "RelationType";
+	public static final String SIZE = "Size";
+	public static final String TYPE = "Type";
+	public static final String LANGUAGE = "Language";
+	public static final String ALGORITHM = "Algorithm";
+	public static final String CHECKSUM = "Checksum";
 	public static final String VERSIONID = "versionID";
-	public static final String SUBJECT = "subject";
-	public static final String RELATION = "relation";
-	public static final String MIMETYPE = "mimeType";
-	public static final String STARTDATE = "startDate";
-	public static final String ENDDATE = "endDate";
-	public static final String PERSON = "person";
-	public static final String LEGALPERSON = "legalPerson";
+	public static final String SUBJECT = "Subject";
+	public static final String RELATION = "Relation";
+	public static final String MIMETYPE = "Mimetype";
+	public static final String STARTDATE = "Startdate";
+	public static final String ENDDATE = "Enddate";
+	public static final String PERSON = "Creator";
+	public static final String LEGALPERSON = "Legalperson";
 	
 	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";

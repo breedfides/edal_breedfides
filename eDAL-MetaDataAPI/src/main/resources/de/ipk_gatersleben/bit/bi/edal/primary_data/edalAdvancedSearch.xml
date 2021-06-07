@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+
+  <head>
+    <title>e!DAL advanced search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <!--link rel="shortcut icon" href="/assests/favicon.ico"-->
+    <!--link rel="stylesheet" href="edalAdvancedSearch.css"-->
+    <style>
+      body {
+        margin: 0;
+        background: white;
+      }
+
+      .container {
+        width: 100vw;
+        height: 100vh;
+
+        font-family: 'Quicksand', sans-serif;
+        font-weight: bold;
+        font-size: 18px;
+        color: black;
+
+
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        grid-template-rows: 60px 60px 1fr 1fr 60px;
+
+        gap: 5px;
+        padding: 5px;
+        box-sizing: border-box;
+      }
+
+      .subcontainer {
+        background: #f9f9f9;
+        padding: 5px;
+        border: 1px solid rgba(47, 54, 64, .7);
+      }
+
+      .header {
+        grid-column-start: 1;
+        grid-column-end: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .filterHead {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .main_input {
+        grid-column-start: 2;
+        grid-column-end: 6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 0;
+      }
+
+      .resultsStatistics{
+        grid-column-start: 6;
+        grid-column-end: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 0;
+      }
+
+      .filter {
+        grid-row-start: 3;
+        grid-row-end: 5;
+
+        display: grid;
+        grid-template-columns: 1fr 15% 1fr;
+        grid-template-rows: repeat(20, 1fr);
+      }
+
+      .tablecontainer {
+        grid-column-start: 2;
+        grid-column-end: 6;
+        grid-row-start: 3;
+        grid-row-end: 5;
+      }
+
+      .results{
+        grid-column-start: 6;
+        grid-column-end: 10;
+        grid-row-start: 3;
+        grid-row-end: 5;
+      }
+
+      .footer {
+        grid-column-start: 1;
+        grid-column-end: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .elementandval {
+        height: 100%;
+        width: 80%;
+        border-radius: 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #336B6B;
+        background: #ddefef;
+      }
+
+      span {
+        display: inline-block
+      }
+
+      .bigspan {
+        width: 15px;
+      }
+
+      #period{
+        grid-row-start: 4;
+        grid-row-end: 5;
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
+
+      .spanlabel {
+        grid-row-start: 4;
+        grid-row-end: 5;
+      }
+
+      .spanlabels {
+        grid-row-start: 5;
+        grid-row-end: 6;
+        font-weight: normal;
+      }
+
+      .spaninputs {
+        grid-row-start: 5;
+        grid-row-end: 6;
+        grid-column-start: 3;
+        grid-column-end: 4;
+        font-weight: normal;
+        width:92%
+      }
+
+      .filetypelabel {
+        grid-row-start: 7;
+        grid-row-end: 8;
+        font-weight: normal;
+      }
+
+      .filetypeinput{
+        grid-row-start: 7;
+        grid-row-end: 8;
+        grid-column-start: 3;
+        grid-column-end: 4;
+        font-weight: normal;
+        width: 100%;
+      }
+
+      #suffix{
+        grid-row-start: 7;
+        grid-row-end: 8;
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
+      .smallinput{
+        width: 100%;
+      }
+
+      .hittypelabel{
+        grid-row-start: 2;
+        grid-row-end: 3;
+        font-weight: normal;
+      }
+
+      .hittypeinput{
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 2;
+        grid-column-end: 4;
+        font-weight: normal;
+        width: 100%;
+      }
+
+      .halfinput{
+        width:50%;
+      }
+
+      .filesizelabel{
+        grid-row-start: 9;
+        grid-row-end: 10;
+        font-weight: normal;
+      }
+
+      .filesizeinputs{
+        grid-row-start: 9;
+        grid-row-end: 10;
+        grid-column-start: 3;
+        grid-column-end: 4;
+        font-weight: normal;
+        width: 100%;
+      }
+
+      .filesizeinputnumbers{
+        display:flex;
+      }
+
+      #filesize{
+        grid-row-start: 9;
+        grid-row-end: 10;
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
+
+      .ui-datepicker {
+        height: auto;
+        margin: 5px auto 0;
+        font: 9pt Arial, sans-serif;
+        -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+        -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+        box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+      }
+
+      .ui-datepicker a {
+        text-decoration: none;
+      }
+
+      .ui-datepicker table {
+        width: 100%;
+      }
+
+      .ui-datepicker-header {
+        background: url('20fed66c2bb51531210bff6a560cf13b.jpg') repeat 0 0 #000;
+        color: #e0e0e0;
+        font-weight: bold;
+        -webkit-box-shadow: inset 0px 1px 1px 0px rgba(250, 250, 250, 2);
+        -moz-box-shadow: inset 0px 1px 1px 0px rgba(250, 250, 250, .2);
+        box-shadow: inset 0px 1px 1px 0px rgba(250, 250, 250, .2);
+        text-shadow: 1px -1px 0px #000;
+        filter: dropshadow(color=#000, offx=1, offy=-1);
+        border-width: 1px 0 0 0;
+        border-style: solid;
+        border-color: #111;
+      }
+
+      .ui-datepicker-title {
+        text-align: center;
+      }
+
+      .ui-datepicker-prev,
+      .ui-datepicker-next {
+        text-align: center;
+        cursor: pointer;
+        overflow: hidden;
+      }
+
+      .ui-datepicker-prev {
+        float: left;
+        background-position: center -30px;
+      }
+
+      .ui-datepicker-next {
+        float: right;
+        background-position: center 0px;
+      }
+
+      .ui-datepicker thead {
+        background-color: #f7f7f7;
+        background-image: -moz-linear-gradient(top, #f7f7f7 0%, #f1f1f1 100%);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f7f7f7), color-stop(100%, #f1f1f1));
+        background-image: -webkit-linear-gradient(top, #f7f7f7 0%, #f1f1f1 100%);
+        background-image: -o-linear-gradient(top, #f7f7f7 0%, #f1f1f1 100%);
+        background-image: -ms-linear-gradient(top, #f7f7f7 0%, #f1f1f1 100%);
+        background-image: linear-gradient(top, #f7f7f7 0%, #f1f1f1 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f7f7f7', endColorstr='#f1f1f1', GradientType=0);
+        border-bottom: 1px solid #bbb;
+      }
+
+      .ui-datepicker th {
+        text-transform: uppercase;
+        font-size: 6pt;
+        padding: 5px 0;
+        color: #666666;
+        text-shadow: 1px 0px 0px #fff;
+        filter: dropshadow(color=#fff, offx=1, offy=0);
+      }
+
+      .ui-datepicker tbody td {
+        padding: 0;
+        border-right: 1px solid #bbb;
+      }
+
+      .ui-datepicker tbody td:last-child {
+        border-right: 0px;
+      }
+
+      .ui-datepicker tbody tr {
+        border-bottom: 1px solid #bbb;
+      }
+
+      .ui-datepicker tbody tr:last-child {
+        border-bottom: 0px;
+      }
+
+      .ui-datepicker td span,
+      .ui-datepicker td a {
+        display: inline-block;
+        font-weight: bold;
+        text-align: center;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        color: #666666;
+        text-shadow: 1px 1px 0px #fff;
+        filter: dropshadow(color=#fff, offx=1, offy=1);
+      }
+
+      .ui-datepicker-calendar .ui-state-default {
+        background: #ededed;
+        background: -moz-linear-gradient(top, #ededed 0%, #dedede 100%);
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ededed), color-stop(100%, #dedede));
+        background: -webkit-linear-gradient(top, #ededed 0%, #dedede 100%);
+        background: -o-linear-gradient(top, #ededed 0%, #dedede 100%);
+        background: -ms-linear-gradient(top, #ededed 0%, #dedede 100%);
+        background: linear-gradient(top, #ededed 0%, #dedede 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ededed', endColorstr='#dedede', GradientType=0);
+        -webkit-box-shadow: inset 1px 1px 0px 0px rgba(250, 250, 250, .5);
+        -moz-box-shadow: inset 1px 1px 0px 0px rgba(250, 250, 250, .5);
+        box-shadow: inset 1px 1px 0px 0px rgba(250, 250, 250, .5);
+      }
+
+      .ui-datepicker-unselectable .ui-state-default {
+        background: #f4f4f4;
+        color: #b4b3b3;
+      }
+
+      .ui-datepicker-calendar .ui-state-hover {
+        background: #f7f7f7;
+      }
+
+      .ui-datepicker-calendar .ui-state-active {
+        background: #6eafbf;
+        -webkit-box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, .1);
+        -moz-box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, .1);
+        box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, .1);
+        color: #e0e0e0;
+        text-shadow: 0px 1px 0px #4d7a85;
+        filter: dropshadow(color=#4d7a85, offx=0, offy=1);
+        border: 1px solid #55838f;
+        position: relative;
+        margin: -1px;
+      }
+
+      .ui-datepicker-calendar td:first-child .ui-state-active {
+        width: 29px;
+        margin-left: 0;
+      }
+
+      .ui-datepicker-calendar td:last-child .ui-state-active {
+        width: 29px;
+        margin-right: 0;
+      }
+      #table{
+        width:100%;
+        height: 100%;
+      }
+      #termTable{
+        width:100%;
+      }
+      #resultTable{
+        width:100%;
+      }
+
+      .table {
+          border: solid 1px #DDEEEE;
+          border-collapse: collapse;
+          border-spacing: 0;
+          font-family: 'Quicksand', sans-serif;
+          font: normal 13px Arial, sans-serif;
+      }
+      .table thead th {
+          background-color: #DDEFEF;
+          border: solid 1px #DDEEEE;
+          color: #336B6B;
+          padding: 10px;
+          text-align: left;
+          text-shadow: 1px 1px 1px #fff;
+      }
+      .table tbody td {
+          border: solid 1px #DDEEEE;
+          color: black;
+          padding: 10px;
+      }
+      th.logicaloperator{
+        width:25%;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+
+      <div class="header subcontainer">
+        #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TopSectionTemplateReport.xml")
+        e!DAL Advanced Search
+      </div>
+
+      <div class="filterHead subcontainer">
+        Filter
+      </div>
+
+      <div class="main_input subcontainer">
+        <div class="elementandval">
+          <select id="occur" name="occur" size="1">
+            <option>And</option>
+            <option>Or</option>
+          </select>
+          <span class="bigspan"></span>
+          <label for="scales">Fuzzy</label>
+          <input type="checkbox" id="fuzzy" name="scales">
+          <span class="bigspan"></span>
+          <label for="fname">Type:</label>
+          <span></span>
+          <select id="element" name="element" size="1">
+          </select>
+          <span class="bigspan"></span>
+          <label for="fname">Search term:</label>
+          <span></span>
+          <input id="searchterm" type="text" name="searchterm"></input>
+          <span class="bigspan"></span>
+          <button id="addButton" type="button" name="button"  onclick="add()">+</button>
+        </div>
+        <span class="bigspan"></span>
+        <button type="button" onclick="search()" name="button">Search</button>
+      </div>
+
+      <div class="resultsStatistics subcontainer">
+        <div class="elementandval">
+          <span id="statisticsSpan" style="display:inline-block;">Statistics</span>
+        </div>
+      </div>
+
+      <div class="filter subcontainer">
+
+        <div class="spanlabel">
+          Time
+        </div>
+        <input type="checkbox" name="Ongoing" id="period">
+        <div class="spanlabels">
+          Startdate
+          <br>
+          Enddate
+
+        </div>
+        <div class="spaninputs">
+          <input id="datepickerlow" disabled class="datepicker smallinput" type="text" name="" value="">
+          <input id="datepickerhigh" disabled class="datepicker smallinput" type="text" name="" value="">
+        </div>
+
+        <div class="hittypelabel">
+          <label for="">Result types</label>
+        </div>
+        <div class="hittypeinput">
+          <select class="smallinput" id="hitType" name="top5" size="1">
+          </select>
+        </div>
+
+        <div class="filetypelabel">
+          <label for="">Format</label>
+        </div>
+        <input id="suffix" type="checkbox" name="Ongoing"  >
+        <div class="filetypeinput">
+          <select id="suffixesSelect" class="smallinput" disabled name="top5" size="1">
+            <option>text/plain</option>
+            <option>application/zip</option>
+            <option>application/xml</option>
+            <option>image/png</option>
+            <option>application/octet-stream</option>
+            <option>application/x-sqlite3</option>
+            <option>application/x-tika-ooxml</option>
+          </select>
+        </div>
+
+        <div class="filesizelabel">
+          <label for="">File size</label>
+        </div>
+        <input id="filesize" type="checkbox" name="Ongoing"  >
+        <div class="filesizeinputs">
+          <div class="filesizeinputnumbers">
+            <input id="filesizelow" class = "halfinput" disabled type="number" name="" value="">
+            <input id="filesizehigh" class = "halfinput" disabled type="number" name="" value="">
+          </div>
+          <div class="filesizeinputnumbers">
+            <select id="filesizelowbyte" class="smallinput" disabled name="top5" size="1">
+              <option>B</option>
+              <option>KB</option>
+              <option>MB</option>
+              <option>GB</option>
+              <option>TB</option>
+            </select>
+            <select id="filesizehighbyte" class="smallinput" disabled name="top5" size="1">
+              <option>B</option>
+              <option>KB</option>
+              <option>MB</option>
+              <option>GB</option>
+              <option>TB</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="tablecontainer subcontainer">
+        <table id="termTable" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th class="logicaloperator">Operator</th>
+                    <th class="logicaloperator">Fuzzy</th>
+                    <th>Element</th>
+                    <th>Search term</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+      </div>
+
+      <div class="results subcontainer">
+        <table id="resultTable" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Doi</th>
+                    <th>Title</th>
+                    <th>Distinct Ips</th>
+                    <th>Download Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+      </div>
+      <div class="footer subcontainer">
+        Footer
+      </div>
+
+    </div>
+    <script>
+    let table = null;
+    let resultTable = null;
+    let searchTerms = [];
+
+    let hashMap = {};
+    hashMap["Creator"] = "person";
+    hashMap["Organisation"] = "legalPerson";
+    hashMap["Identifier"] = "identifier";
+    hashMap["Title/Filename"] = "title";
+    hashMap["Subject"] = "subject";
+    hashMap["Description"] = "description";
+    hashMap["All types"] = "ALL";
+
+    var select = document.getElementById("element");
+    var options = Object.keys(hashMap);
+
+    for(var i = 0; i < options.length; i++) {
+        var opt = options[i];
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    }
+
+    let resultTypeHashMap = {};
+    resultTypeHashMap["Records"] = "rootDirectory";
+    resultTypeHashMap["Files"] = "singleData";
+    resultTypeHashMap["Records and files"] = "Entity/File/Directory";
+
+    select = document.getElementById("hitType");
+    options = Object.keys(resultTypeHashMap);
+
+    for(var i = 0; i < options.length; i++) {
+        var opt = options[i];
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    }
+
+    let searchTerms = [];
+    let ID = 0;
+    let reportData = null;
+    const STARTDATE = "startDate";
+    const SIZE = "size";
+    const MIMETYPE = "mimeType";
+      $(function() {
+        $(".datepicker").datepicker({
+          inline: true,
+          showOtherMonths: true,
+          dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+          changeMonth: true,
+          changeYear: true
+        });
+      });
+    </script>
+    <script>
+      function search(){
+     	    ID++;
+          let requestId = ID;
+
+          let searchTermsClone = [...searchTerms];
+
+          let periodbox = document.getElementById("period");
+          if(periodbox.checked){
+            let lowbound = document.getElementById("datepickerlow").value;
+            let highbound = document.getElementById("datepickerhigh").value;
+            if(lowbound != "" && highbound != ""){
+              console.log("adding dates");
+              searchTermsClone.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
+            }
+          }
+          let filesize = document.getElementById("filesize");
+          if(filesize.checked){
+            let lowbound = parseInt(document.getElementById("filesizelow").value);
+            let highbound = parseInt(document.getElementById("filesizehigh").value);
+            let lowerSize = document.getElementById("filesizelowbyte").value;
+            let higherSize = document.getElementById("filesizehighbyte").value;
+            console.log(reverseNiceBytes(lowbound,lowerSize));
+            console.log(reverseNiceBytes(highbound,higherSize));
+            if(lowbound != "" && highbound != ""){
+              searchTermsClone.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
+            }
+          }
+          let suffix = document.getElementById("suffix");
+          if(suffix.checked){
+            let suffixValue = document.getElementById("suffixesSelect").value;
+            if(suffixValue != "")
+              searchTermsClone.push({"type":MIMETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+          }
+          let requestData = { "hitType":resultTypeHashMap[document.getElementById("hitType").value], "groups":searchTermsClone };
+
+          $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
+          reportData = data;
+          console.log("ID: "+requestId+"Data:")
+          console.log(reportData);
+          if(ID == requestId){
+          	console.log(data);
+            resultTable.destroy();
+            renderResultTable();
+            var totalAccesses = 0;
+            var totalDownloadVolume = 0;
+            reportData.forEach((item) => {
+              var accesses = parseInt(item.accesses);
+              if(!isNaN(accesses)){
+                totalAccesses += accesses;
+              }
+              var vol = parseInt(item.downloads);
+              if(!isNaN(vol)){
+                totalDownloadVolume += parseInt(item.downloads);
+              }
+            });
+            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+niceBytes(totalDownloadVolume);
+        }
+        });
+      }
+
+      function add(){
+        reverseNiceBytes(5,"kB");
+        let obj = {
+          "type":hashMap[document.getElementById("element").value],
+          "searchterm":document.getElementById("searchterm").value,
+          "fuzzy":document.getElementById("fuzzy").checked,
+          "Occur":document.getElementById("occur").value
+        }
+        searchTerms.push(obj);
+        table.destroy();
+        renderTermTable();
+        document.getElementById('searchterm').value = '';
+        console.log(searchTerms);
+      }
+      function deleteRow(data){
+        console.log("try to delete"+data);
+        let row = $(data).closest('tr');
+        let index = row[0];
+        $('#termTable').dataTable().fnDeleteRow(index);
+        console.log("after delete of:"+index);
+        searchTerms = table.rows().data().toArray();
+      }
+      function renderTermTable(){
+        table = $('#termTable').DataTable( {
+            data: searchTerms,
+            searching: false,
+            paging: false,
+            info: false,
+            scrollY: true,
+            "sScrollY" : ($(window).height() * 0.7),
+            scrollCollapse: true,
+            columns: [
+                { data: 'Occur', width:"5%" },
+                { data: 'fuzzy', width:"5%" },
+                { data: 'type' },
+                { data: 'searchterm' }
+            ],
+            "columnDefs": [
+              {
+                "targets": 4,
+                "render": function(data, type, full, meta){
+                  console.log("button insert");
+                  return '<button onclick="deleteRow(this)">X</Button>';
+                }
+              }
+            ],
+            language: { emptyTable: "Stack for search terms"}
+        } );
+      }
+
+      function renderResultTable(){
+        resultTable = $('#resultTable').DataTable({
+            data: reportData,
+            dom: 't',
+            //dom: 'Bfrtip',
+            order: [[2, 'desc']],
+            searching: true,
+            paging: false,
+            info: false,
+            "sScrollY" : ($(window).height() * 0.7),
+            scrollY: true,
+            scrollCollapse: true,
+            columns: [
+                {
+                    title: "DOI",
+                    data: "doi",
+                    width: "15%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+                    }
+                },
+                {
+                    title: "Title",
+                    data: "title",
+                    class: "edal-report-title"
+                },
+                {
+                    title: "Distinct IPs",
+                    data: "accesses",
+                    width: "10%",
+                    className: "text-center",
+                },
+                {
+                    title: "Download volume",
+                    data: "downloads",
+                    width: "10%",
+                    className: "text-center",
+                    render: function (data, type, row) {
+                        if (type === "display") {
+                          if(data === "")
+                            return data;
+                          return self.niceBytes(parseInt(data));
+                        } else {
+                            return data;
+                        }
+                    }
+                }
+            ]
+        });
+      }
+      $(document).ready(function() {
+        renderTermTable();
+        renderResultTable();
+        document.getElementById("searchterm").addEventListener("keyup", function(event) {
+        // Number 13 is the "Enter" key on the keyboard
+        if (event.keyCode === 13) {
+          // Cancel the default action, if needed
+          event.preventDefault();
+          // Trigger the button element with a click
+          document.getElementById("addButton").click();
+        }
+      });
+    });
+
+    function reverseNiceBytes(fileSize, unit){
+      if(unit === 'B')
+        return fileSize;
+      let multiplier = 1024;
+      const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      for(let i = 0; i < units.length; i++){
+        fileSize = fileSize * 1024;
+        if(units[i] === unit){
+          break;
+        }
+      }
+      console.log(fileSize);
+      return fileSize;
+    }
+
+     this.niceBytes = function(bytes) {
+      const thresh = 1024;
+      const dp = 1;
+      if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+      }
+
+      const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      let u = -1;
+      const r = 10**dp;
+
+      do {
+        bytes /= thresh;
+        ++u;
+      } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+      return bytes.toFixed(dp).replace(".", ",") + ' ' + units[u];
+    };
+
+    $('#period').change(function() {
+      $('#datepickerlow').prop('disabled', !this.checked);
+      $('#datepickerhigh').prop('disabled', !this.checked);
+    });
+
+    $('#suffix').change(function() {
+      $('#suffixesSelect').prop('disabled', !this.checked);
+    });
+
+    $('#filesize').change(function() {
+      $('#filesizelow').prop('disabled', !this.checked);
+      $('#filesizehigh').prop('disabled', !this.checked);
+      $('#filesizelowbyte').prop('disabled', !this.checked);
+      $('#filesizehighbyte').prop('disabled', !this.checked);
+    });
+  </script>
+  </body>

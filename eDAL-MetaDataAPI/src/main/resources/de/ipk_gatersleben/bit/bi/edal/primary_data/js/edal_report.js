@@ -315,13 +315,6 @@ let EdalReport = new function() {
                             document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
                         }
                       });
-
-
-                      // var arr = {"hitType":"public","groups":
-                      //   [     {"type":PERSON,"searchterm":"Arend","fuzzy":false,"Occur":"MUST"}
-                      //         //{"type":SIZE,"lower":12615182,"upper":13715182,"fuzzy":false,"Occur":"MUST"}
-                      //         //{"type":STARTDATE,"lower":"01-09-2014","upper":"01-10-2014","fuzzy":false,"Occur":"MUST"}
-                      // ]};
                   }
               }
         });
