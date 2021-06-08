@@ -59,6 +59,7 @@ let EdalReport = new function() {
     }
 
     this.search = function(){
+      document.getElementById("loading-indicator").style.display="block";
       let self = this;
       ID++;
       let requestId = ID;
@@ -103,6 +104,7 @@ let EdalReport = new function() {
         self.reportData = data;
         self.datatable.destroy();
         self.renderDatatable();
+        document.getElementById("loading-indicator").style.display="none";
       }
       });
     }
@@ -171,7 +173,7 @@ let EdalReport = new function() {
                     width: "15%",
                     class: "edal-report-doi",
                     render: function (data, type, row) {
-                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+                        return '<a href="'+serverURL+'/DOI/'+data+'" target="_blank">'+data+'</a>';
                     }
                 },
                 {

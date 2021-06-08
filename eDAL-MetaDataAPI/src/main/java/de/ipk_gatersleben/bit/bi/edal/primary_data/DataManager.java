@@ -1204,14 +1204,10 @@ public class DataManager {
 			JSONObject obj = new JSONObject();
 			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+    		String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID)+"/"+doc.get(MetaDataImplementation.PRIMARYENTITYID)+"/"+doc.get(PublicVersionIndexWriterThread.REVISION);
 			if(type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
-        		obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
-    			try {
-    				obj.put("doi", reference.getAssignedID());
-    			} catch (PublicReferenceException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    			}
+    			obj.put("doi", doi);
     			obj.put("title", reference.getVersion().getMetaData().toString());
     			obj.put("hitType", "Publicreference");
     			String internalID = reference.getInternalID();
@@ -1224,13 +1220,12 @@ public class DataManager {
 			}else if(type.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 				PrimaryDataFileImplementation file =  session.get(PrimaryDataFileImplementation.class, doc.get(MetaDataImplementation.PRIMARYENTITYID));
         		obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
-    			try {
-    				obj.put("doi", reference.getAssignedID());
-    			} catch (PublicReferenceException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    			}
-				obj.put("title", file.toString());
+    			obj.put("doi", doi);
+    			StringBuilder builder = new StringBuilder("[");
+    			builder.append(file.toString());
+    			builder.append("] ");
+    			builder.append(reference.getVersion().getMetaData().toString());
+				obj.put("title", builder.toString());
     			obj.put("hitType", "File or Directory");
     			obj.put("downloads", "");
     			obj.put("accesses", "");

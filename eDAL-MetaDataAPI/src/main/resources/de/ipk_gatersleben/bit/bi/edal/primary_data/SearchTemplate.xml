@@ -84,7 +84,6 @@
 
                     <div class="col">
                       <button class="form-control form-control-sm" id="addButton" type="button" name="button"  onclick="EdalReport.build()">+</button>
-
                     </div>
 
                   </div>
@@ -94,11 +93,16 @@
                 <div class="mr-5" style="display:inline-block;color:white;">
                   <div class="form-row" style="max-width:800px">
                     <div class="col">
-                      <input class="form-control form-control-sm" style="min-width:700px" id="query" type="text" name="query" placeholder="Search..."></input>
+                      <input class="form-control form-control-sm" style="min-width:680px" id="query" type="text" name="query" placeholder="Search..."></input>
                     </div>
 
                     <div class="col">
                       <button class="form-control form-control-sm" id="searchButton" type="button" name="searchbutton" onclick="EdalReport.search()" >go</button>
+                    </div>
+                    <div class="col">
+                      <div class="col">
+                        <div class="lds-ellipsis" id="loading-indicator" style="display:none"><div></div><div></div><div></div><div></div></div>
+                      </div>
                     </div>
                   </div>
                     <!-- <div id="edal-report-filter-container" class="mr-3">
