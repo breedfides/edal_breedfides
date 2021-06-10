@@ -42,6 +42,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Field.Store;
@@ -53,6 +54,7 @@ import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.hibernate.CacheMode;
@@ -362,6 +364,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
 		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
 		
+		StringJoiner allFieldsJoiner = new StringJoiner(" ");
+		for(IndexableField field : doc.getFields()){	
+			allFieldsJoiner.add(field.stringValue());
+		}
+		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {

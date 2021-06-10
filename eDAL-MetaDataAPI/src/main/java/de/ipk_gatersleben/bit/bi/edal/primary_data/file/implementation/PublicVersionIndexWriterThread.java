@@ -37,6 +37,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.security.auth.Subject;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -117,6 +118,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String REVISION = "revision";
 	public static final String PUBLICREFERENCE = "rootDirectory";
 	public static final String INDIVIDUALFILE = "singleData";
+	private final short REVISIONFILE = 1;
+	private final short REVISIONDIRECTORY = 0;
+	private final short REVISIONPUBLICREFERENCE = 2;
 	protected static int lastIndexedID = 0;
 	int counterValue = 0;
 	IndexWriter writer = null;
@@ -319,9 +323,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			while (!stack.isEmpty()) {
 				String dir = stack.pop();
 				if(parentDirFile.equals(dir)) {
-					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.PUBLICREFERENCE,2);
+					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.PUBLICREFERENCE,REVISIONPUBLICREFERENCE);
 				}else {
-					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,0);
+					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,REVISIONDIRECTORY);
 				}
 				long dirStart = System.currentTimeMillis();
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n" + 
@@ -338,7 +342,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					if (((Character)results.get(1)).equals('D')) {
 						stack.add(tempFileId);
 					} else {
-						this.updateVersions(tempFileId, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,1);
+						this.updateVersions(tempFileId, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,REVISIONFILE);
 					}
 					count++;
 				}
@@ -358,7 +362,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						if (((Character)results.get(1)).equals('D')) {
 							stack.add(tempFileId);
 						} else {
-							this.updateVersions(tempFileId, session, pubRef, internalId,PublicVersionIndexWriterThread.INDIVIDUALFILE,1);
+							this.updateVersions(tempFileId, session, pubRef, internalId,PublicVersionIndexWriterThread.INDIVIDUALFILE,REVISIONFILE);
 						}
 						count++;
 					}
@@ -367,7 +371,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 		} else {
-			this.updateVersions(parentDirFile, session, pubRef, internalId,PublicVersionIndexWriterThread.PUBLICREFERENCE,1);
+			this.updateVersions(parentDirFile, session, pubRef, internalId,PublicVersionIndexWriterThread.PUBLICREFERENCE,REVISIONFILE);
 		}
 	}
 	
@@ -439,8 +443,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					internalId, Store.YES));
 			doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,
 					Integer.toString(revision), Store.YES));
-//			doc.add(new TextField(MetaDataImplementation.ENTITYID,
-//					pubRef.getVersion().getPrimaryEntityId(), Store.YES));
+			if(entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+				if(revision == 1) {
+					doc.add(new StringField(MetaDataImplementation.FILETYPE,
+							FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE)), Store.YES));
+				}else if(revision == 0) {
+					doc.add(new StringField(MetaDataImplementation.FILETYPE,
+							MetaDataImplementation.DIRECTORY, Store.YES));
+				}
+			}
 			
 			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,
 					String.valueOf(pubRef), Store.YES));

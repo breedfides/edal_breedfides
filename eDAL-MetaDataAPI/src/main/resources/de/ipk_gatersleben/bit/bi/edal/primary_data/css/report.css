@@ -411,7 +411,7 @@ footer {
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;
-  width:92%
+  width:90%
 }
 
 .filetypelabel {
@@ -426,7 +426,7 @@ footer {
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;
-  width: 100%;
+  width: 90%;
 }
 
 #suffix{
@@ -434,9 +434,6 @@ footer {
   grid-row-end: 5;
   grid-column-start: 2;
   grid-column-end: 3;
-}
-.smallinput{
-  width: 100%;
 }
 
 .hittypelabel{
@@ -451,7 +448,7 @@ footer {
   grid-column-start: 2;
   grid-column-end: 4;
   font-weight: normal;
-  width: 100%;
+  width: 90%;
 }
 
 .halfinput{
@@ -470,7 +467,7 @@ footer {
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;
-  width: 100%;
+  width: 90%;
 }
 
 .filesizeinputnumbers{

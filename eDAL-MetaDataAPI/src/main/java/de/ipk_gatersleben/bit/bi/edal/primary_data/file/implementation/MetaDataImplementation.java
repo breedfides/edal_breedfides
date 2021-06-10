@@ -127,7 +127,9 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String ENDDATE = "Enddate";
 	public static final String PERSON = "Creator";
 	public static final String LEGALPERSON = "Legalperson";
-	
+	public static final String FILETYPE = "Filetype";
+	public static final String DIRECTORY = "Directory";
+	public static final String ALL = "Allfields";
 	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";
 	//to map a Document to it's corresponding DataEntity
@@ -135,6 +137,7 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	
 	//to distinguish publicReferenceEntities and single Files/Folders
 	public static final String ENTITYTYPE = "entityType";
+
 
 
 

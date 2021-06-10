@@ -4,20 +4,7 @@
 
     <title>$title - $repositoryNameShort</title>
 
-    <meta charset="$charset"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-<meta name="description" content=""/>
-<meta name="author" content=""/>
-
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/themes/default/style.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.2/css/buttons.dataTables.min.css" />
-<link rel="icon" type="image/png"  href="$serverURL/LOGO/edal_icon.png"/>
+    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
 
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
 
@@ -42,8 +29,8 @@
       #end
 
       </div>
-  </div>
-</nav>
+        </div>
+      </nav>
         <div id="controls" class="pt-2 pb-2">
             <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
                 <span class="h2 mr-5">Database</span>
@@ -130,15 +117,19 @@
 
                     </div>
                     <div class="spaninputs">
-                      <input id="datepickerlow" disabled class="datepicker smallinput form-control form-control-sm" type="text" name="" value="">
-                      <input id="datepickerhigh" disabled class="datepicker smallinput form-control form-control-sm" type="text" name="" value="">
+                      <input type="date" class="form-control form-control-sm" id="datepickerlow" disabled name="start"
+                       value="2018-07-22"
+                       min="1980-01-01" max="2018-12-31">
+                     <input type="date" class="form-control form-control-sm" id="datepickerhigh" disabled name="end"
+                       value="2018-07-22"
+                       min="1980-01-01">
                     </div>
 
                     <div class="hittypelabel">
                       <label for="">Result types</label>
                     </div>
                     <div class="hittypeinput">
-                      <select class="smallinput form-control form-control-sm" id="hitType" name="top5" size="1">
+                      <select class="form-control form-control-sm" id="hitType" name="top5" size="1">
                       </select>
                     </div>
 
@@ -147,7 +138,7 @@
                     </div>
                     <input id="suffix" type="checkbox" name="Ongoing"  >
                     <div class="filetypeinput">
-                      <select id="suffixesSelect" class="smallinput form-control form-control-sm" disabled name="top5" size="1">
+                      <select id="suffixesSelect" class="form-control form-control-sm" disabled name="top5" size="1">
                         <option>text/plain</option>
                         <option>application/zip</option>
                         <option>application/xml</option>
@@ -168,14 +159,14 @@
                         <input id="filesizehigh" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
                       </div>
                       <div class="filesizeinputnumbers">
-                        <select id="filesizelowbyte" class="smallinput" disabled name="top5" size="1">
+                        <select id="filesizelowbyte" class="form-control form-control-sm" disabled name="top5" size="1">
                           <option>B</option>
                           <option>KB</option>
                           <option>MB</option>
                           <option>GB</option>
                           <option>TB</option>
                         </select>
-                        <select id="filesizehighbyte" class="smallinput" disabled name="top5" size="1">
+                        <select id="filesizehighbyte" class="form-control form-control-sm" disabled name="top5" size="1">
                           <option>B</option>
                           <option>KB</option>
                           <option>MB</option>
@@ -246,16 +237,6 @@
         el.value = opt;
         select.appendChild(el);
     }
-
-    $(function() {
-      $(".datepicker").datepicker({
-        inline: true,
-        showOtherMonths: true,
-        dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-        changeMonth: true,
-        changeYear: true
-      });
-    });
 
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);

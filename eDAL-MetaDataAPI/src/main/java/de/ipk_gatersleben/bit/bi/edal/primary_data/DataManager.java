@@ -1120,7 +1120,7 @@ public class DataManager {
 			String type = ((String)queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
 			if(type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy",Locale.ENGLISH);
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();
 				String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
