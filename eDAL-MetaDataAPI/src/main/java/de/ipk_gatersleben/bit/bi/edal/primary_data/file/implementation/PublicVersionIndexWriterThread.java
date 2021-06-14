@@ -445,10 +445,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					Integer.toString(revision), Store.YES));
 			if(entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 				if(revision == 1) {
-					doc.add(new StringField(MetaDataImplementation.FILETYPE,
+					doc.add(new TextField(MetaDataImplementation.FILETYPE,
 							FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE)), Store.YES));
 				}else if(revision == 0) {
-					doc.add(new StringField(MetaDataImplementation.FILETYPE,
+					doc.add(new TextField(MetaDataImplementation.FILETYPE,
 							MetaDataImplementation.DIRECTORY, Store.YES));
 				}
 			}

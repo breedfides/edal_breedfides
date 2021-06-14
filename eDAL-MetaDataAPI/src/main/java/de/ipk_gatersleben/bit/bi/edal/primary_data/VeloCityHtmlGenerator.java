@@ -61,6 +61,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumCCLicense;
@@ -1448,6 +1449,8 @@ class VeloCityHtmlGenerator {
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
+		
+		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
 
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());

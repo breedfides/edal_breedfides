@@ -113,5 +113,19 @@ public class EdalMessageExtendedSearch {
 			return "";
 		}
 	}
+	
+	@Path("/countHits")
+	@POST
+	@ManagedAsync
+	@Produces(MediaType.APPLICATION_JSON)
+	public long countHits(String json) throws JsonParseException, JsonMappingException, IOException {
+		JSONParser parser = new JSONParser();
+		try {
+			return DataManager.countHits((JSONObject) parser.parse(json));
+		} catch (ParseException e) {
+			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
+			return -1;
+		}
+	}
 
 }

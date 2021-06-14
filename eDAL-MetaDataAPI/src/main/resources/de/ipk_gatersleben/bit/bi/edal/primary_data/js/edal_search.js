@@ -38,6 +38,7 @@ let EdalReport = new function() {
   	const ENDDATE = "Enddate";
   	const PERSON = "Creator";
   	const LEGALPERSON = "Legalperson";
+    const FILETYPE = "Filetype";
 
     this.build = function(){
       searchTerms = [];
@@ -91,9 +92,23 @@ let EdalReport = new function() {
       if(suffix.checked){
         let suffixValue = document.getElementById("suffixesSelect").value;
         if(suffixValue != "")
-          filters.push({"type":MIMETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+          filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
       }
       let requestData = { "hitType":resultTypeHashMap[document.getElementById("hitType").value], "existingQuery":document.getElementById('query').value, "filters":filters };
+
+      $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
+        if(ID == requestId){
+          if(data == 0){
+            document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
+          }else if(data == 1){
+            document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hit is loading </div>';
+          }else if(data < 1000){
+            document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hits are loading </div>';
+          }else{
+            document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
+          }
+        }
+      });
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data;

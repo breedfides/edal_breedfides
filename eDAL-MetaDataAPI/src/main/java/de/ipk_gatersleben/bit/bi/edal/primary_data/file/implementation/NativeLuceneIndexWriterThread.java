@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
@@ -55,8 +56,13 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.MultiTerms;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
 import org.hibernate.ScrollMode;
@@ -104,8 +110,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
+	private static List<String> fileTypes;
 	IndexWriter writer = null;
 	protected static int lastIndexedID = 0;
+
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat");
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(12, 5);
@@ -117,7 +125,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		int numberDocs = 0;
 		try {
 			IndexReader reader = DirectoryReader.open(writer);
+			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
 			numberDocs += reader.numDocs();
+			if(numberDocs > 0) {
+				createFileTypeList(terms);
+			}
 			reader.close();
 			reader = null;
 		} catch (IOException e) {
@@ -150,6 +162,36 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 
 		
+	}
+	
+	
+	/**
+	 * Initializes the fileType[] with all existing file types in descending order
+	 * @param terms Lucene.Terms Object containing all fileTypes of the current Index
+	 */
+	private void createFileTypeList(Terms terms) {
+		TermsEnum it;
+		try {
+			it = terms.iterator();
+			int count = 0;
+			List<MyTerm> termList = new ArrayList<MyTerm>();
+			while(it.next() != null) {
+				String term = it.term().utf8ToString();
+				if(!term.equals(""))
+					termList.add(new MyTerm(term,it.docFreq()));
+				count++;
+			}
+			Collections.sort(termList);
+			fileTypes = new ArrayList<String>();
+			int size = termList.size();
+			for(int i = 0; i < size; i++) {
+				fileTypes.add(termList.get(i).getTerm());
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
 	}
 
 	protected void executeIndexing() {
@@ -242,6 +284,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
 			// "+flushedObjects);
 		}
+	}
+	
+	public static List<String> getTerms() {
+		return fileTypes;
 	}
 
 	private void updateLastIndexedID(int indexedObjects) {
@@ -518,5 +564,26 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	public void run() {
 		super.run();
 		this.countDownLatch.countDown();
+	}
+	
+	class MyTerm implements Comparable<MyTerm>{
+		
+		private String term;
+		private int frequence;
+		
+		public MyTerm(String term, int frequence) {
+			this.term = term;
+			this.frequence = frequence;
+		}
+		
+		public String getTerm() {
+			return term;
+		}
+
+		@Override
+		public int compareTo(MyTerm term) {
+			return frequence < term.frequence ? 1 : frequence > term.frequence ? -1 : 0;
+		}
+		
 	}
 }
