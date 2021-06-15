@@ -42,12 +42,11 @@
       </nav>
         <div id="controls" class="pt-2 pb-2">
             <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
-                <span class="h2 mr-5">Database</span>
-                <span class="h6" id="statisticsSpan" style="display:inline-block;">
+                <span class="h2 mr-5" style="float:right">Database</span>
 
                   <div class="form-row" style="max-width:800px">
-                    <div class="col">
-                        <label class="h5" for="scales">Fuzzy</label>
+                    <div class="col" style="min-width:170px">
+                        <label class="h5" for="scales">Find approximate</label>
                     </div>
                     <div class="col">
                       <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales">
@@ -58,13 +57,14 @@
                     </div>
 
                     <div class="col">
-                      <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px">
+                      <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px" onchange="EdalReport.typeChange()">
                         <option>Title</option>
                         <option>Description</option>
                         <option>Creator</option>
                         <option>Legalperson</option>
                         <option>Subject</option>
                         <option>Language</option>
+                        <option>Filetype</option>
                         <option>Checksum</option>
                         <option>Allfields</option>
                       </select>
@@ -75,7 +75,27 @@
                     </div>
 
                     <div class="col">
-                      <input class="form-control form-control-sm" style="min-width:150px;" id="searchterm" type="text" name="searchterm"></input>
+                      <input class="form-control form-control-sm" list="auto-complete" style="min-width:150px;height:28px" id="searchterm" type="text" name="searchterm">
+                        <datalist id="auto-complete">
+
+                                        <option value="U.S.">
+                                        <option value="France">
+                                        <option value="China">
+                                        <option value="Cambodia">
+                                        <option value="Chile">
+                                        <option value="Canada">
+                                        <option value="Poland">
+
+                                      </datalist>
+                      </input>
+                    </div>
+
+                    <div class="col">
+                      <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:135px">
+                        <option value="MUST">Must occur</option>
+                        <option value="SHOULD">May occur</option>
+                        <option value="MUST_NOT">Must not occur</option>
+                      </select>
                     </div>
 
                     <div class="col">
@@ -93,7 +113,7 @@
                     </div>
 
                     <div class="col">
-                      <button class="form-control form-control-sm" id="searchButton" type="button" name="searchbutton" onclick="EdalReport.search()" >go</button>
+                      <button class="form-control form-control-sm" id="searchButton" type="button" name="searchbutton" onclick="EdalReport.search()" >search</button>
                     </div>
                     <div class="col">
                       <div class="col">
@@ -139,6 +159,9 @@
                     </div>
                     <div class="hittypeinput">
                       <select class="form-control form-control-sm" id="hitType" name="top5" size="1">
+                        <option value="rootDirectory">Records</option>
+                        <option value="singleData">Files</option>
+                        <option value="Entity/File/Directory">Records and Files</option>
                       </select>
                     </div>
 
@@ -210,26 +233,15 @@
         //var mapData = $jsonall;
         var reportData = [];
         var mapData = [];
+        var filetypes = [];
+        var limit = 8;
+        #foreach($obj in $filetypes)
+          filetypes.push("$obj");
+         #end
     </script>
 
     <script>
     EdalReport.init(reportData, mapData);
-
-    let resultTypeHashMap = {};
-    resultTypeHashMap["Records"] = "rootDirectory";
-    resultTypeHashMap["Files"] = "singleData";
-    resultTypeHashMap["Records and files"] = "Entity/File/Directory";
-
-    var select = document.getElementById("hitType");
-    var options = Object.keys(resultTypeHashMap);
-
-    for(var i = 0; i < options.length; i++) {
-        var opt = options[i];
-        var el = document.createElement("option");
-        el.textContent = opt;
-        el.value = opt;
-        select.appendChild(el);
-    }
 
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);

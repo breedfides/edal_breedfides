@@ -45,6 +45,7 @@ let EdalReport = new function() {
       let obj = {
         "type":document.getElementById("element").value,
         "searchterm":document.getElementById("searchterm").value,
+        "occur":document.getElementById("occur").value,
         "fuzzy":document.getElementById("fuzzy").checked
       }
       searchTerms.push(obj);
@@ -94,7 +95,7 @@ let EdalReport = new function() {
         if(suffixValue != "")
           filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
       }
-      let requestData = { "hitType":resultTypeHashMap[document.getElementById("hitType").value], "existingQuery":document.getElementById('query').value, "filters":filters };
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":filters };
 
       $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
         if(ID == requestId){
@@ -199,6 +200,29 @@ let EdalReport = new function() {
             ]
         });
     };
+
+    this.typeChange = function() {
+          //clear old recommendations
+          var searchTerm = document.getElementById("searchterm");
+          var dl = document.getElementById("auto-complete");
+          dl.parentNode.removeChild(dl);
+          //add new recommendations
+          dl = document.createElement('datalist');
+          dl.id="auto-complete";
+          var type = document.getElementById("element").value;
+          switch(type){
+            case FILETYPE:
+              for (i = 0; i < 8; i++) {
+                console.log(filetypes[i]);
+                var el = document.createElement("option");
+                el.textContent = filetypes[i];
+                dl.appendChild(el);
+              }
+              searchTerm.appendChild(dl);
+              break;
+            default:
+          }
+    }
 
     this.addObservers = function() {
         let self = this;
@@ -369,4 +393,19 @@ let EdalReport = new function() {
 
       return bytes.toFixed(dp).replace(".", ",") + ' ' + units[u];
     };
+
+    function reverseNiceBytes(fileSize, unit){
+      if(unit === 'B')
+        return fileSize;
+      let multiplier = 1024;
+      const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      for(let i = 0; i < units.length; i++){
+        fileSize = fileSize * 1024;
+        if(units[i] === unit){
+          break;
+        }
+      }
+      console.log(fileSize);
+      return fileSize;
+    }
 }

@@ -428,13 +428,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
 		}
 		try {
-			Term term = new Term(MetaDataImplementation.VERSIONID,
-					Integer.toString(version));
-			long hitVal = searcher.search(new TermQuery(term), 1).totalHits.value;
-			Relation relation = searcher.search(new TermQuery(term), 1).totalHits.relation;
-			if(hitVal > 1) {
-				int alarm = 1;
-			}
 			Document doc = searcher.doc(hits2[0].doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
@@ -443,10 +436,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					internalId, Store.YES));
 			doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,
 					Integer.toString(revision), Store.YES));
+			String title = doc.get(MetaDataImplementation.TITLE);
 			if(entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 				if(revision == 1) {
-					doc.add(new TextField(MetaDataImplementation.FILETYPE,
-							FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE)), Store.YES));
+					if(title != null) {
+						doc.add(new TextField(MetaDataImplementation.FILETYPE,
+								FilenameUtils.getExtension(title), Store.YES));
+					}
 				}else if(revision == 0) {
 					doc.add(new TextField(MetaDataImplementation.FILETYPE,
 							MetaDataImplementation.DIRECTORY, Store.YES));

@@ -1158,63 +1158,36 @@ public class DataManager {
 	}
 
 	public static Query parseToLuceneQuery(JSONObject jsonArray){
-		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.AND);
+		pars.setDefaultOperator(Operator.OR);
 		String existing = (String) jsonArray.get("existingQuery");
-		if(!existing.equals(""))
-			try {
-				finalQuery.add(pars.parse(existing), Occur.MUST);
-			} catch (ParseException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 		JSONObject queryData = (JSONObject) jsonArray.get("newQuery");
 		Query query = null;
 		String type = ((String)queryData.get("type"));
 		String keyword = (String) queryData.get("searchterm");
-		if(type.equals("ALL")) {
-			String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
-					MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.PERSON,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
-					MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE,
-					MetaDataImplementation.RELATIONTYPE, MetaDataImplementation.RELATEDIDENTIFIERTYPE};
-			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
-					new MultiFieldQueryParser(fields, analyzer);
-			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+		QueryParser queryParser = new QueryParser(type, analyzer);
+		queryParser.setDefaultOperator(Operator.AND);
+		try {
 			if((boolean) queryData.get("fuzzy")) {
-				keyword += "~";
-			}
-			try {
-				query = parser.parse(keyword);
-			} catch (ParseException e2) {
-				((FileSystemImplementationProvider)getImplProv()).getLogger().debug("Was not able to Parse: \n"+keyword);
-			}
-		}else {
-			QueryParser queryParser = new QueryParser(type, analyzer);
-			queryParser.setDefaultOperator(Operator.AND);
-			try {
-				if((boolean) queryData.get("fuzzy")) {
-					query = queryParser.parse(keyword+'~');
+				query = queryParser.parse(keyword+'~');
 
-				}else {
-					query = queryParser.parse(keyword);
-				}
-			} catch (org.apache.lucene.queryparser.classic.ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			}else {
+				query = queryParser.parse(keyword);
 			}
+		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(existing.equals("")) {
+			return query;
+		}else {
 			try {
-				return pars.parse(existing+" "+query.toString());
+				return pars.parse(existing+" "+Occur.valueOf((String) queryData.get("occur"))+query.toString());
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return null;
 			}
 		}
-		DataManager.getImplProv().getLogger().info("New Query added:");
-		DataManager.getImplProv().getLogger().info(query.toString());
-		finalQuery.add(query, Occur.MUST);
-		return finalQuery.build();
 	}
 
 	public static long countHits(JSONObject jsonArray) {
