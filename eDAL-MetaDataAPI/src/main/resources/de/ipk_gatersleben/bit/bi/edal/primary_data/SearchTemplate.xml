@@ -41,12 +41,13 @@
         </div>
       </nav>
         <div id="controls" class="pt-2 pb-2">
-            <div class="mb-2 px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
-                <span class="h2 mr-5" style="float:right">Database</span>
+            <div class="px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
+              <span class="h2 mr-3">Search</span>
+              <span class="h6" id="statisticsSpan" style="display:inline-block;">
 
                   <div class="form-row" style="max-width:800px">
-                    <div class="col" style="min-width:170px">
-                        <label class="h5" for="scales">Find approximate</label>
+                    <div class="col">
+                        <label class="h5" for="scales">Fuzzy</label>
                     </div>
                     <div class="col">
                       <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales">
@@ -58,7 +59,7 @@
 
                     <div class="col">
                       <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px" onchange="EdalReport.typeChange()">
-                        <option>Title</option>
+                        <option value="Title">Title/Filename</option>
                         <option>Description</option>
                         <option>Creator</option>
                         <option>Legalperson</option>
@@ -66,27 +67,17 @@
                         <option>Language</option>
                         <option>Filetype</option>
                         <option>Checksum</option>
-                        <option>Allfields</option>
+                        <option value="Allfields">Search All types</option>
                       </select>
                     </div>
 
                     <div class="col">
-                      <label class="h5">Term:</label>
+                      <label class="h5" style="white-space: nowrap;">Search term:</label>
                     </div>
 
                     <div class="col">
                       <input class="form-control form-control-sm" list="auto-complete" style="min-width:150px;height:28px" id="searchterm" type="text" name="searchterm">
-                        <datalist id="auto-complete">
-
-                                        <option value="U.S.">
-                                        <option value="France">
-                                        <option value="China">
-                                        <option value="Cambodia">
-                                        <option value="Chile">
-                                        <option value="Canada">
-                                        <option value="Poland">
-
-                                      </datalist>
+                        <datalist id="auto-complete"></datalist>
                       </input>
                     </div>
 
@@ -107,9 +98,9 @@
             </div>
             <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
                 <div class="mr-5" style="display:inline-block;color:white;">
-                  <div class="form-row" style="max-width:800px">
+                  <div class="form-row" style="max-width:900px">
                     <div class="col">
-                      <input class="form-control form-control-sm" style="min-width:680px" id="query" type="text" name="query" placeholder="Search..."></input>
+                      <input class="form-control form-control-sm clearable" style="min-width:700px" id="query" type="text" name="query" placeholder="Search..."></input>
                     </div>
 
                     <div class="col">
@@ -216,7 +207,7 @@
 
         <footer class="footer">
             <div class="container">
-                <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort() - data volume: $datastock - number of files: $filenumber - active data contributors: $users</span>
+                <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort()</span>
             </div>
         </footer>
     </div>
@@ -243,6 +234,19 @@
     <script>
     EdalReport.init(reportData, mapData);
 
+    function tog(v){
+      return v ? "addClass" : "removeClass";
+    }
+
+    $(document).on("input", ".clearable", function(){
+        $(this)[tog(this.value)]("x");
+    }).on("mousemove", ".x", function( e ){
+        $(this)[tog(this.offsetWidth-18 < e.clientX-this.getBoundingClientRect().left)]("onX");
+    }).on("touchstart click", ".onX", function( ev ){
+        ev.preventDefault();
+        $(this).removeClass("x onX").val("").change();
+    });
+
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);
       $('#datepickerhigh').prop('disabled', !this.checked);
@@ -258,6 +262,7 @@
       $('#filesizelowbyte').prop('disabled', !this.checked);
       $('#filesizehighbyte').prop('disabled', !this.checked);
     });
+
     </script>
 
   </body>

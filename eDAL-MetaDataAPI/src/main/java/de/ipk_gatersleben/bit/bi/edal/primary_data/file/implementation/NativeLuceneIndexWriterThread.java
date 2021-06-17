@@ -308,23 +308,23 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
-		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.NO));
+		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
-				Store.NO));
-		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.NO));
+				Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
 		StringBuilder builder = new StringBuilder();
 		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.NO));		
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.YES));		
 		doc.add(new TextField(MetaDataImplementation.RELATEDIDENTIFIERTYPE,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.NO));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.RELATIONTYPE,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.NO));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.YES));
 		
 		doc.add(new TextField(MetaDataImplementation.SIZE,
-				String.format("%014d",((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.NO));
+				String.format("%014d",((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
 		
 		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
-				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.NO));
+				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
 		Persons naturalPersons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		persons.addAll(naturalPersons);
@@ -337,7 +337,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		builder.append(( legalPerson).getZip());
 		builder.append(" ");
 		builder.append(( legalPerson).getCountry());
-		doc.add(new TextField(MetaDataImplementation.LEGALPERSON, builder.toString(), Store.NO));
+		doc.add(new TextField(MetaDataImplementation.LEGALPERSON, builder.toString(), Store.YES));
 		/** 
 		 * Stringbuilder to combine multiple Values into one large String to store the text in one field per categopry
 		 * Not used for Relations and dates, because these values occur rarely more than once per Version/Document
@@ -355,7 +355,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(( currentPerson).getZip());
 			builder.append(" ");
 			builder.append(( currentPerson).getCountry());
-			doc.add(new TextField(MetaDataImplementation.PERSON, builder.toString(), Store.NO));
+			doc.add(new TextField(MetaDataImplementation.PERSON, builder.toString(), Store.YES));
 		}
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
 		builder.setLength(0);
@@ -365,12 +365,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(checkSum.getCheckSum());
 				builder.append(", ");
-				doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getAlgorithm(), Store.NO));
+				doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getAlgorithm(), Store.YES));
 			}
 		}else if(checkSums.size() == 1) {
 			CheckSumType checkSum = checkSums.iterator().next();
-			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.NO));
-			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.NO));
+			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
 		}
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
 		builder.setLength(0);
@@ -378,7 +378,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(subject.getString());
 			builder.append(" ");
 		}
-		doc.add(new TextField(MetaDataImplementation.SUBJECT, builder.toString(), Store.NO));
+		doc.add(new TextField(MetaDataImplementation.SUBJECT, builder.toString(), Store.YES));
 		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
 		for (Identifier identifier : relations) {
 			builder.setLength(0);
@@ -388,24 +388,24 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(" ");
 			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
 			builder.append(", ");
-			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.NO));
+			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.YES));
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
 			doc.add(new TextField(MetaDataImplementation.STARTDATE,
-					DateTools.timeToString(date.getStartDate().getTimeInMillis(), Resolution.DAY),Store.NO));
+					DateTools.timeToString(date.getStartDate().getTimeInMillis(), Resolution.DAY),Store.YES));
 			if (date instanceof EdalDateRange) {
 				doc.add(new LongPoint(MetaDataImplementation.ENDDATE,
 						((EdalDateRange) date).getEndDate().getTimeInMillis()));
 			}
 		}
 		if (metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
-			doc.add(new TextField(MetaDataImplementation.MIMETYPE, "none", Store.NO));
-			doc.add(new TextField(MetaDataImplementation.TYPE, "none", Store.NO));
+			doc.add(new TextField(MetaDataImplementation.MIMETYPE, "none", Store.YES));
+			doc.add(new TextField(MetaDataImplementation.TYPE, "none", Store.YES));
 		} else {
 			doc.add(new TextField(MetaDataImplementation.MIMETYPE,
-					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.NO));
-			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.NO));
+					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}
 		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
 		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
@@ -414,7 +414,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		for(IndexableField field : doc.getFields()){	
 			allFieldsJoiner.add(field.stringValue());
 		}
-		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.NO));
+		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {

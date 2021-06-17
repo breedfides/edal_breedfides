@@ -605,6 +605,10 @@ public class EdalHttpHandler extends AbstractHandler {
 							this.sendSearch(response, HttpStatus.Code.OK);
 							break;
 							
+						case HOME:
+							this.sendHomePage(response,HttpStatus.Code.OK);
+							break;
+							
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -624,6 +628,28 @@ public class EdalHttpHandler extends AbstractHandler {
 			}
 			response.flushBuffer();
 		}
+	}
+
+	private void sendHomePage(final HttpServletResponse response, final HttpStatus.Code responseCode) {
+			
+		try {
+
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForHomePage(responseCode, responseCode).toString();
+
+			response.setStatus(responseCode.getCode());
+
+			response.setContentType("text/html");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
+
+		} catch (EofException eof) {
+			// Do nothing, because response was already send
+		} catch (IOException | EdalException e) {
+			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
+		}
+		
 	}
 
 	private void sendLatestNews(HttpServletResponse response, Code responseCode) {
@@ -1338,25 +1364,6 @@ public class EdalHttpHandler extends AbstractHandler {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
 		
-//		response.setStatus(HttpStatus.Code.OK.getCode());
-//		response.setContentType("text/html");
-//
-//		OutputStream responseBody;
-//		try {
-//			responseBody = response.getOutputStream();
-//			ClassLoader classLoader = getClass().getClassLoader();
-//			Scanner scanner = new Scanner(new File(classLoader.getResource("edalAdvancedSearch.html").toURI()));
-//			String htmlString = scanner.useDelimiter("\\Z").next();
-//			scanner.close();
-//			responseBody.write(htmlString.getBytes("UTF-8"));
-//			responseBody.close();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (URISyntaxException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 
 	/**

@@ -1126,31 +1126,25 @@ public class DataManager {
 			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
 			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
-    		String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID)+"/"+doc.get(MetaDataImplementation.PRIMARYENTITYID)+"/"+doc.get(PublicVersionIndexWriterThread.REVISION);
 			if(type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
-    			obj.put("doi", doi);
+    			try {
+					obj.put("doi", reference.getAssignedID());
+				} catch (PublicReferenceException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
     			obj.put("title", reference.getVersion().getMetaData().toString());
-    			obj.put("hitType", "Publicreference");
-    			String internalID = reference.getInternalID();
-    			obj.put("downloads", String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
-    			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
-    			if(VeloCityHtmlGenerator.ipMap.get(internalID) != null) {
-    				obj.put("locations",
-    						GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
-    			}
+    			obj.put("fileName", "");
+    			obj.put("ext", "");
 			}else if(type.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+	    		String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID)+"/"+doc.get(MetaDataImplementation.PRIMARYENTITYID)
+	    		+"/"+doc.get(PublicVersionIndexWriterThread.REVISION);
 				PrimaryDataFileImplementation file =  session.get(PrimaryDataFileImplementation.class, doc.get(MetaDataImplementation.PRIMARYENTITYID));
         		obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
     			obj.put("doi", doi);
-    			StringBuilder builder = new StringBuilder("[");
-    			builder.append(file.toString());
-    			builder.append("] ");
-    			builder.append(reference.getVersion().getMetaData().toString());
-				obj.put("title", builder.toString());
-    			obj.put("hitType", "File or Directory");
-    			obj.put("downloads", "");
-    			obj.put("accesses", "");
-    			obj.put("locations", new JSONArray());
+    			obj.put("fileName", file.toString());
+				obj.put("title", reference.getVersion().getMetaData().toString());
+				obj.put("ext",doc.get(MetaDataImplementation.FILETYPE));
 			}
 			finalArray.add(obj);
         }
@@ -1170,11 +1164,12 @@ public class DataManager {
 		queryParser.setDefaultOperator(Operator.AND);
 		try {
 			if((boolean) queryData.get("fuzzy")) {
-				query = queryParser.parse(keyword+'~');
-
-			}else {
-				query = queryParser.parse(keyword);
+				keyword=keyword+'~';
 			}
+			if(existing.equals("")) {
+				keyword=Occur.valueOf((String) queryData.get("occur"))+keyword;
+			}
+			query = queryParser.parse(keyword);
 		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

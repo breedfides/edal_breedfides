@@ -13,6 +13,7 @@ let EdalReport = new function() {
     this.ID = 0;
     this.searchID = 0;
     this.buildID = 0;
+    this.query = "";
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -41,6 +42,14 @@ let EdalReport = new function() {
     const FILETYPE = "Filetype";
 
     this.build = function(){
+      if(document.getElementById("searchterm").value == ""){
+        console.log("no val in searchterm");
+        return;
+      }
+      var searchInput = document.getElementById("query");
+      if(!searchInput.value){
+        searchInput.classList.add("x");
+      }
       searchTerms = [];
       let obj = {
         "type":document.getElementById("element").value,
@@ -119,11 +128,58 @@ let EdalReport = new function() {
         console.log(data);
         self.reportData = data;
         self.datatable.destroy();
-        self.renderDatatable();
+        var tableid = "#report";
+        $(tableid + " tbody").empty();
+        $(tableid + " thead").empty();
+        if(requestData.hitType == "rootDirectory"){
+          self.renderDatatableReports();
+        }else{
+          self.renderDatatableFiles();
+        }
         document.getElementById("loading-indicator").style.display="none";
       }
       });
     }
+
+    this.queryChange = function(){
+      let filters = [];
+      ID++;
+      let requestId = ID;
+      let periodbox = document.getElementById("period");
+      if(periodbox.checked){
+        let lowbound = document.getElementById("datepickerlow").value;
+        let highbound = document.getElementById("datepickerhigh").value;
+        if(lowbound != "" && highbound != ""){
+          console.log("adding dates");
+          filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
+        }
+      }
+      let filesize = document.getElementById("filesize");
+      if(filesize.checked){
+        let lowbound = parseInt(document.getElementById("filesizelow").value);
+        let highbound = parseInt(document.getElementById("filesizehigh").value);
+        let lowerSize = document.getElementById("filesizelowbyte").value;
+        let higherSize = document.getElementById("filesizehighbyte").value;
+        console.log(reverseNiceBytes(lowbound,lowerSize));
+        console.log(reverseNiceBytes(highbound,higherSize));
+        if(lowbound != "" && highbound != ""){
+          filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
+        }
+      }
+      let suffix = document.getElementById("suffix");
+      if(suffix.checked){
+        let suffixValue = document.getElementById("suffixesSelect").value;
+        if(suffixValue != "")
+          filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+      }
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":filters };
+      $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
+        if(ID == requestId){
+          this.query = data;
+          console.log(this.query);
+        }
+      });
+    };
 
     this.init = function(reportData, mapData) {
         this.initReportData = this.reportData = reportData;
@@ -143,7 +199,7 @@ let EdalReport = new function() {
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
             self.renderYearSelectOptions();
-            self.renderDatatable();
+            self.renderDatatableReports();
             self.addObservers();
         });
     };
@@ -155,7 +211,57 @@ let EdalReport = new function() {
         });
     }
 
-    this.renderDatatable = function() {
+    this.renderDatatableFiles = function() {
+        let self = this;
+
+        this.datatable = $('#report').DataTable({
+            data: self.reportData,
+            dom: 't',
+            //dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+                {
+                    extend: 'csvHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+            ],
+            searching: true,
+            paging: false,
+            info: false,
+            "sScrollY" : ($(window).height() * 0.7),
+            scrollY: true,
+            scrollCollapse: true,
+            columns: [
+                {
+                    title: "Filename",
+                    width: "25%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                    }
+                },
+                {
+                    title: "Extension",
+                    data: "ext",
+                    class: "edal-report-title"
+                },
+                {
+                    title: "Record",
+                    data: "title",
+                    class: "edal-report-title"
+                }
+            ]
+        });
+    };
+
+    this.renderDatatableReports = function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -186,14 +292,14 @@ let EdalReport = new function() {
                 {
                     title: "DOI",
                     data: "doi",
-                    width: "15%",
+                    width: "10%",
                     class: "edal-report-doi",
                     render: function (data, type, row) {
                         return '<a href="'+serverURL+'/DOI/'+data+'" target="_blank">'+data+'</a>';
                     }
                 },
                 {
-                    title: "Title",
+                    title: "Record",
                     data: "title",
                     class: "edal-report-title"
                 }
@@ -218,10 +324,10 @@ let EdalReport = new function() {
                 el.textContent = filetypes[i];
                 dl.appendChild(el);
               }
-              searchTerm.appendChild(dl);
               break;
             default:
           }
+          searchTerm.appendChild(dl);
     }
 
     this.addObservers = function() {

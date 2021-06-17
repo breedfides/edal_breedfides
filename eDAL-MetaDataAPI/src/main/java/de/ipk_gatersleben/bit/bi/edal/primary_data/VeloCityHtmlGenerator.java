@@ -1450,6 +1450,8 @@ class VeloCityHtmlGenerator {
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		
+		context.put("title", "PGP-Search");
+		
 		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
 
 		/* set instance name long */
@@ -1505,6 +1507,39 @@ class VeloCityHtmlGenerator {
 		json.put("doi", "");
 		json.put("date", "");
 		return json.toJSONString();
+	}
+
+	public Object generateHtmlForHomePage(Code responseCode, Code responseCode2) throws EdalException {
+		final VelocityContext context = new VelocityContext();
+		/* set the charset */
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", responseCode.getCode());
+		/* set serverURL */
+		context.put("serverURL", EdalHttpServer.getServerURL());
+		
+		context.put("title", "PGP-Home");
+		
+		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
+
+		/* set instance name long */
+		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
+		/* set instance name short */
+		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
+
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/Home.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
+
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
 	}
 
 

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+
+    <title>$title - $repositoryNameShort</title>
+
+    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
+
+    <link rel="stylesheet" href="$serverURL/CSS/report.css">
+
+	#if( $MatomoTemplate)
+		$MatomoTemplate
+	#end
+
+  <style>
+
+    .flex-container {
+        display: grid;
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr;
+    }
+
+    .main-content {
+      padding: 280px 100px 280px 100px;
+      display:grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 50px 1fr;
+      text-align: center;
+      color:white;
+      font-size: large;
+    }
+
+    #search-container{
+      grid-column-start: 1;
+      grid-column-end: 2;
+      background-color: #59c3ed;
+    }
+    #report-container{
+      grid-column-start: 2;
+      grid-column-end: 3;
+      background-color:#74b9ff;
+    }
+
+    #grid-container {
+        display: grid;
+        grid-template-rows: 80px 1fr 40px;
+        grid-template-columns: 1fr;
+        height: 100vh;
+    }
+
+    .btn-1{
+      width:300px;
+      height:80px;
+      border:none;
+      color:white;
+      border-radius:4px;
+      transition:ease-out 0.2s;
+      font-size: 2rem;
+      outline:none;
+      border: 3px solid white;
+      background-color: #59c3ed;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-1:hover{
+      color:#59c3ed;
+      cursor: pointer;
+    }
+
+    .btn-1:before{
+      transition: 0.2s all ease;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      right: 50%;
+      bottom: 0;
+      opacity: 0;
+      content: "";
+      background-color: white;
+    }
+
+    .btn-1:hover:before{
+      transition: 0.2s all ease;
+      left: 0;
+      right: 0;
+      opacity: 1;
+      z-index: -1;
+    }
+
+    .btn-2{
+      width:300px;
+      height:80px;
+      border:none;
+      color:white;
+      border-radius:4px;
+      transition:ease-out 0.2s;
+      font-size: 2rem;
+      outline:none;
+      border: 3px solid white;
+      background-color: #74b9ff;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-2:hover{
+      color:#74b9ff;
+      cursor: pointer;
+    }
+
+    .btn-2:before{
+      transition: 0.2s all ease;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      right: 50%;
+      bottom: 0;
+      opacity: 0;
+      content: "";
+      background-color: white;
+    }
+
+    .btn-2:hover:before{
+      transition: 0.2s all ease;
+      left: 0;
+      right: 0;
+      opacity: 1;
+      z-index: -1;
+    }
+
+    .inner-main-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+  </style>
+
+  </head>
+
+  <body>
+    <div id="search-counter"></div>
+    <div id="grid-container">
+      <nav>
+  <div class="container-fluid">
+      <div class="row header">
+          <div class="col my-auto"><a target="_blank" href="http://edal.ipk-gatersleben.de"><img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" /></a></div>
+          <div id="edal-report-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
+          <div id="edal-report-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
+          #if( $InstituteLogo)
+          <div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
+          #else
+          <div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
+          #end
+
+      </div>
+        </div>
+      </nav>
+
+      <main class="flex-container">
+        <section class="main-content" id="search-container">
+          <h1 class="search-header inner-main-container" style="color:white;">PGP Search</h2>
+          <p >
+            Browse the Database of the PGP Repository with the power of Lucene!
+          </p>
+          <div class="inner-main-container">
+            <button class="btn-1" onclick="location.href='$serverURL/search'">Search</button>
+          </div>
+        </section>
+        <section class="main-content" id="report-container">
+          <h1 class="search-header inner-main-container" style="color:white;">PGP Report</h2>
+          <p >
+            Review the statistics of all available reports of the PGP Repository!
+          </p>
+          <div class="inner-main-container">
+            <button class="btn-2" onclick="location.href='$serverURL/report'">Statistics</button>
+          </div>
+        </section>
+      </main>
+
+        <footer class="footer">
+            <div class="container">
+                <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort()</span>
+            </div>
+        </footer>
+    </div>
+
+
+    <!-----------------------------------
+    -------- Edal Report Javascript -------
+    -------------------------------------->
+
+    <script>
+        var serverURL = "$serverURL";
+        //var reportData = $json;
+        //var mapData = $jsonall;
+    </script>
+
+
+  </body>
+</html>
