@@ -1136,7 +1136,9 @@ public class DataManager {
     			obj.put("title", reference.getVersion().getMetaData().toString());
     			obj.put("fileName", "");
     			obj.put("ext", "");
+				obj.put("type", "record");
 			}else if(type.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+				String ext = doc.get(MetaDataImplementation.FILETYPE);
 	    		String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID)+"/"+doc.get(MetaDataImplementation.PRIMARYENTITYID)
 	    		+"/"+doc.get(PublicVersionIndexWriterThread.REVISION);
 				PrimaryDataFileImplementation file =  session.get(PrimaryDataFileImplementation.class, doc.get(MetaDataImplementation.PRIMARYENTITYID));
@@ -1144,7 +1146,13 @@ public class DataManager {
     			obj.put("doi", doi);
     			obj.put("fileName", file.toString());
 				obj.put("title", reference.getVersion().getMetaData().toString());
-				obj.put("ext",doc.get(MetaDataImplementation.FILETYPE));
+				if(ext.equals(MetaDataImplementation.DIRECTORY)) {
+					obj.put("type", "Directory");
+					obj.put("ext","");
+				}else {
+					obj.put("type", "File");
+					obj.put("ext",ext);
+				}
 			}
 			finalArray.add(obj);
         }
@@ -1258,10 +1266,13 @@ public class DataManager {
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
 		}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+		}else if(hitType.equals(MetaDataImplementation.DIRECTORY)){
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST);
 		}else {
 			BooleanQuery.Builder restrictionQuery = new BooleanQuery.Builder();
 			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.SHOULD);
-			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.SHOULD);
+			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.SHOULD);
 			finalQuery.add(restrictionQuery.build(), Occur.FILTER);
 		}
 		IndexReader reader = null;

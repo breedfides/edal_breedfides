@@ -133,8 +133,12 @@ let EdalReport = new function() {
         $(tableid + " thead").empty();
         if(requestData.hitType == "rootDirectory"){
           self.renderDatatableReports();
-        }else{
+        }else if(requestData.hitType == "singleData"){
           self.renderDatatableFiles();
+        }else if(requestData.hitType == "Directory"){
+          self.renderDatatableDirectories();
+        }else{
+          self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
       }
@@ -246,6 +250,110 @@ let EdalReport = new function() {
                     render: function (data, type, row) {
                         return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
                     }
+                },
+                {
+                    title: "Extension",
+                    data: "ext",
+                    class: "edal-report-title"
+                },
+                {
+                    title: "Record",
+                    data: "title",
+                    class: "edal-report-title"
+                }
+            ]
+        });
+    };
+
+    this.renderDatatableDirectories = function() {
+        let self = this;
+
+        this.datatable = $('#report').DataTable({
+            data: self.reportData,
+            dom: 't',
+            //dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+                {
+                    extend: 'csvHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+            ],
+            searching: true,
+            paging: false,
+            info: false,
+            "sScrollY" : ($(window).height() * 0.7),
+            scrollY: true,
+            scrollCollapse: true,
+            columns: [
+                {
+                    title: "Directory",
+                    width: "25%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                    }
+                },
+                {
+                    title: "Record",
+                    data: "title",
+                    class: "edal-report-title"
+                }
+            ]
+        });
+    };
+
+    this.renderDatatableMixed = function() {
+        let self = this;
+
+        this.datatable = $('#report').DataTable({
+            data: self.reportData,
+            dom: 't',
+            //dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+                {
+                    extend: 'csvHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+            ],
+            searching: true,
+            paging: false,
+            info: false,
+            "sScrollY" : ($(window).height() * 0.7),
+            scrollY: true,
+            scrollCollapse: true,
+            columns: [
+                {
+                    title: "Title",
+                    width: "25%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                      if(row.type == "record"){
+                        return '<a href="'+serverURL+'/DOI/'+data+'" target="_blank">'+data+'</a>';
+                      }else{
+                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                      }
+                    }
+                },
+                {
+                    title: "Type",
+                    data: "type",
+                    class: "edal-report-title"
                 },
                 {
                     title: "Extension",

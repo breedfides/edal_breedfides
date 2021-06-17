@@ -125,42 +125,43 @@
         <div id="grid-container-table-and-map">
             <div id="edal-report-table-container" class="px-3" style="overflow-y: hidden;">
               <div id="edal-report-table-inner-container">
-                <div id="edal-report-filter" class="mr-2 mt-2">
+                <div id="edal-report-filter" class="mt-2">
 
-                  <div class="filter subcontainer">
 
-                    <input type="checkbox" class="mt-4" name="Ongoing" id="period">
-                    <div class="spanlabels">
-                      Startdate
-                      <br>
-                      Enddate
+                <div class="creation-label centerclass">
+                  Creation date
+                  <input type="checkbox" name="Ongoing" id="period" class="ml-1">
+                </div>
 
-                    </div>
-                    <div class="spaninputs">
-                      <input type="date" class="form-control form-control-sm" id="datepickerlow" disabled name="start"
-                       value="2018-07-22"
-                       min="1980-01-01" max="2018-12-31">
-                     <input type="date" class="form-control form-control-sm" id="datepickerhigh" disabled name="end"
-                       value="2018-07-22"
-                       min="1980-01-01">
-                    </div>
+                <div class="datepickerlowcontainer centerclass">
+                  <input type="date" class="form-control form-control-sm centerclass" id="datepickerlow" disabled name="start"
+                   value="2018-07-22"
+                   min="1980-01-01" max="2018-12-31">
+                </div>
 
-                    <div class="hittypelabel">
+                <div class="datepickerhighcontainer centerclass">
+                  <input type="date" class="form-control form-control-sm centerclass" id="datepickerhigh" disabled name="end"
+                    value="2018-07-22"
+                    min="1980-01-01">
+                </div>
+
+                    <div class="hittypelabel centerclass">
                       <label for="">Result types</label>
                     </div>
-                    <div class="hittypeinput">
+                    <div class="hittypeinput centerclass">
                       <select class="form-control form-control-sm" id="hitType" name="top5" size="1">
                         <option value="rootDirectory">Records</option>
                         <option value="singleData">Files</option>
-                        <option value="Entity/File/Directory">Records and Files</option>
+                        <option value="Directory">Directories</option>
+                        <option value="Entity/File/Directory">Records/Files/Directories</option>
                       </select>
                     </div>
 
-                    <div class="filetypelabel">
-                      <label for="">Filetype</label>
+                    <div class="filetypelabel centerclass">
+                      <label for="">File Extension </label>
+                      <input id="suffix" type="checkbox" class="mb-1 ml-1" name="Ongoing"  >
                     </div>
-                    <input id="suffix" type="checkbox" name="Ongoing"  >
-                    <div class="filetypeinput">
+                    <div class="filetypeinput centerclass">
                       <select id="suffixesSelect" class="form-control form-control-sm" disabled name="top5" size="1">
                         #foreach($obj in $filetypes)
                           <option value="$obj">$obj</option>
@@ -168,16 +169,16 @@
                       </select>
                     </div>
 
-                    <div class="filesizelabel">
-                      <label for="">File size</label>
+                    <div class="filesizelabel centerclass">
+                      <label for="">File size </label>
+                      <input id="filesize" class="mb-1 ml-1" type="checkbox" name="Ongoing"  >
                     </div>
-                    <input id="filesize" type="checkbox" name="Ongoing"  >
                     <div class="filesizeinputs">
-                      <div class="filesizeinputnumbers">
+                      <div class="filesizeinputnumbers centerclass">
                         <input id="filesizelow" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
                         <input id="filesizehigh" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
                       </div>
-                      <div class="filesizeinputnumbers">
+                      <div class="filesizeinputnumbers centerclass">
                         <select id="filesizelowbyte" class="form-control form-control-sm" disabled name="top5" size="1">
                           <option>B</option>
                           <option>KB</option>
@@ -194,8 +195,6 @@
                         </select>
                       </div>
                     </div>
-
-                  </div>
 
                 </div>
                 <div id="table-column">

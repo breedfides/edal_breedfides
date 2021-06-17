@@ -121,13 +121,20 @@ table#report tr td.edal-report-doi {
 
 div#edal-report-filter{
   grid-column-start: 1;
-  grid-column-end: 1;
+  grid-column-end: 2;
+  grid-row-start: 1;
+  grid-row-end: 3;
   height:100%;
+  text-align: center;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(20, 1fr);
 }
 
 #edal-report-table-inner-container{
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 320px 1fr;
 }
 
 div#report_wrapper {
@@ -383,57 +390,54 @@ footer {
     }
 }
 
-.filter {
-  grid-row-start: 3;
-  grid-row-end: 5;
 
-  display: grid;
-  grid-template-columns: 1fr 15% 1fr;
-  grid-template-rows: repeat(20, 1fr);
-}
-
-#period{
-  grid-row-start: 2;
-  grid-row-end: 3;
-  grid-column-start: 2;
-  grid-column-end: 3;
-}
-
-.spanlabels {
+.creation-label {
   grid-row-start: 2;
   grid-row-end: 3;
   font-weight: normal;
 }
 
-.spaninputs {
-  grid-row-start: 2;
-  grid-row-end: 3;
+.datepickerlowcontainer{
+  grid-row-start: 3;
+  grid-row-end: 4;
+  grid-column-start: 1;
+  grid-column-end: 2;
+}
+
+.datepickerhighcontainer{
+  grid-row-start: 3;
+  grid-row-end: 4;
   grid-column-start: 3;
   grid-column-end: 4;
+}
+
+#datepickerlow {
   font-weight: normal;
-  width:90%
+}
+
+#datepickerhigh {
+  font-weight: normal;
 }
 
 .filetypelabel {
-  grid-row-start: 4;
-  grid-row-end: 5;
+  grid-row-start: 5;
+  grid-row-end: 6;
   font-weight: normal;
 }
 
 .filetypeinput{
-  grid-row-start: 4;
-  grid-row-end: 5;
+  grid-row-start: 5;
+  grid-row-end: 6;
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;
   width: 90%;
 }
 
-#suffix{
-  grid-row-start: 4;
-  grid-row-end: 5;
-  grid-column-start: 2;
-  grid-column-end: 3;
+.centerclass{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 
@@ -457,14 +461,14 @@ footer {
 }
 
 .filesizelabel{
-  grid-row-start: 6;
-  grid-row-end: 7;
+  grid-row-start: 7;
+  grid-row-end: 8;
   font-weight: normal;
 }
 
 .filesizeinputs{
-  grid-row-start: 6;
-  grid-row-end: 7;
+  grid-row-start: 7;
+  grid-row-end: 8;
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;
@@ -473,13 +477,6 @@ footer {
 
 .filesizeinputnumbers{
   display:flex;
-}
-
-#filesize{
-  grid-row-start: 6;
-  grid-row-end: 7;
-  grid-column-start: 2;
-  grid-column-end: 3;
 }
 
 .ui-datepicker {
