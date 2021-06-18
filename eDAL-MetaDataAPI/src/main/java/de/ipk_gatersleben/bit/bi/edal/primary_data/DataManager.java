@@ -1101,23 +1101,27 @@ public class DataManager {
         return ids;
 	}
 	
-	static public JSONArray advancedSearch(JSONObject jsonArray) {
+	static public JSONObject advancedSearch(JSONObject jsonArray) {
 		Query buildedQuery = buildQueryFromJSON(jsonArray);
 		IndexSearcher searcher = DataManager.initSearcher();
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
-        ScoreDoc[] hits2 = null;
+        ScoreDoc[] scoreDocs = null;
 		try {
-			hits2 = searcher.search(buildedQuery, 1000).scoreDocs;
+			scoreDocs = searcher.search(buildedQuery, 1000).scoreDocs;
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
-        for(int i = 0; i < hits2.length; i++) {
-        	Document doc = null;
+		JSONObject result = new JSONObject();
+		if(scoreDocs.length == 0) {
+			return result;
+		}
+    	Document doc = null;
+        for(int i = 0; i < scoreDocs.length; i++) {
 			try {
-				doc = searcher.doc(hits2[i].doc);
+				doc = searcher.doc(scoreDocs[i].doc);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1134,6 +1138,7 @@ public class DataManager {
 					e.printStackTrace();
 				}
     			obj.put("title", reference.getVersion().getMetaData().toString());
+    			DataManager.getImplProv().getLogger().info(reference.getVersion().getMetaData().toString());
     			obj.put("fileName", "");
     			obj.put("ext", "");
 				obj.put("type", "record");
@@ -1156,7 +1161,10 @@ public class DataManager {
 			}
 			finalArray.add(obj);
         }
-        return finalArray;
+        result.put("results", finalArray);
+        //bottomResult.docid needs to be stored, to support paginated Searching
+        result.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
+        return result;
 	}
 
 	public static Query parseToLuceneQuery(JSONObject jsonArray){
@@ -1220,7 +1228,7 @@ public class DataManager {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.AND);
+		pars.setDefaultOperator(Operator.OR);
 		String existing = (String) jsonArray.get("existingQuery");
 		if(!existing.equals(""))
 			try {

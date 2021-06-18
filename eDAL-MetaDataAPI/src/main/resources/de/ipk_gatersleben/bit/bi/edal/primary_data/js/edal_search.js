@@ -14,6 +14,7 @@ let EdalReport = new function() {
     this.searchID = 0;
     this.buildID = 0;
     this.query = "";
+    this.bottomResultId = null;
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -121,12 +122,13 @@ let EdalReport = new function() {
       });
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
-      reportData = data;
+      reportData = data.results;
       console.log("ID: "+requestId+"Data:")
       console.log(self.datatable);
       if(ID == requestId){
         console.log(data);
-        self.reportData = data;
+        self.bottomResultId = data.bottomResult;
+        self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
         $(tableid + " tbody").empty();
@@ -219,29 +221,27 @@ let EdalReport = new function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
-            data: self.reportData,
-            dom: 't',
-            //dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'copyHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-            ],
-            searching: true,
-            paging: false,
-            info: false,
-            "sScrollY" : ($(window).height() * 0.7),
-            scrollY: true,
-            scrollCollapse: true,
+          data: self.reportData,
+          dom: 't<"left" p>',
+          //dom: 'Bfrtip',
+          buttons: [
+              {
+                  extend: 'copyHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+              {
+                  extend: 'csvHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+          ],
+          "pagingType": "simple",
+          "pageLength": 15,
+          info: false,
+          "order": [],
             columns: [
                 {
                     title: "Filename",
@@ -269,29 +269,27 @@ let EdalReport = new function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
-            data: self.reportData,
-            dom: 't',
-            //dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'copyHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-            ],
-            searching: true,
-            paging: false,
-            info: false,
-            "sScrollY" : ($(window).height() * 0.7),
-            scrollY: true,
-            scrollCollapse: true,
+          data: self.reportData,
+          dom: 't<"left" p>',
+          //dom: 'Bfrtip',
+          buttons: [
+              {
+                  extend: 'copyHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+              {
+                  extend: 'csvHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+          ],
+          "pagingType": "simple",
+          "pageLength": 15,
+          info: false,
+          "order": [],
             columns: [
                 {
                     title: "Directory",
@@ -314,29 +312,27 @@ let EdalReport = new function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
-            data: self.reportData,
-            dom: 't',
-            //dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'copyHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-            ],
-            searching: true,
-            paging: false,
-            info: false,
-            "sScrollY" : ($(window).height() * 0.7),
-            scrollY: true,
-            scrollCollapse: true,
+          data: self.reportData,
+          dom: 't<"left" p>',
+          //dom: 'Bfrtip',
+          buttons: [
+              {
+                  extend: 'copyHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+              {
+                  extend: 'csvHtml5',
+                  exportOptions: {
+                      columns: [0, 1, 2, 3]
+                  }
+              },
+          ],
+          "pagingType": "simple",
+          "pageLength": 15,
+          info: false,
+          "order": [],
             columns: [
                 {
                     title: "Title",
@@ -374,7 +370,7 @@ let EdalReport = new function() {
 
         this.datatable = $('#report').DataTable({
             data: self.reportData,
-            dom: 't',
+            dom: 't<"left" p>',
             //dom: 'Bfrtip',
             buttons: [
                 {
@@ -390,12 +386,16 @@ let EdalReport = new function() {
                     }
                 },
             ],
-            searching: true,
-            paging: false,
+            "pagingType": "simple",
+            "pageLength": 15,
             info: false,
-            "sScrollY" : ($(window).height() * 0.7),
-            scrollY: true,
-            scrollCollapse: true,
+            "order": [],
+            fixedColumns:   {
+                heightMatch: 'none'
+            },
+            "columnDefs": [
+              {"className": "dt-center", "targets": "_all"}
+            ],
             columns: [
                 {
                     title: "DOI",

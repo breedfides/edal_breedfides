@@ -90,13 +90,13 @@ public class EdalMessageExtendedSearch {
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONArray extendedSearch(String json) throws JsonParseException, JsonMappingException, IOException {
+	public JSONObject extendedSearch(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
 			return DataManager.advancedSearch((JSONObject) parser.parse(json));
 		} catch (ParseException e) {
 			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
-			return new JSONArray();
+			return new JSONObject();
 		}
 	}
 	
