@@ -1102,24 +1102,48 @@ public class DataManager {
 	}
 	
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
+		DataManager.getImplProv().getLogger().info("start search");
+		DataManager.getImplProv().getLogger().info(jsonArray.toString());
 		Query buildedQuery = buildQueryFromJSON(jsonArray);
 		IndexSearcher searcher = DataManager.initSearcher();
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
-        ScoreDoc[] scoreDocs = null;
-		try {
-			scoreDocs = searcher.search(buildedQuery, 1000).scoreDocs;
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+        TopDocs topDocs = null;
+		JSONObject result = new JSONObject();
+        if(jsonArray.get("bottomResultId") == null) {
+        	try {
+        		topDocs = searcher.search(buildedQuery, 5000000);
+        		result.put("hitSize", topDocs.totalHits.value);
+    		} catch (IOException e1) {
+    			// TODO Auto-generated catch block
+    			e1.printStackTrace();
+    		}
+        }else {
+        	ScoreDoc bottomScoreDoc = null;
+            try {
+				bottomScoreDoc = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID,(String)jsonArray.get("bottomResultId"))),1).scoreDocs[0];
+				bottomScoreDoc.score = ((float) (double) jsonArray.get("bottomResultScore"));
+				DataManager.getImplProv().getLogger().info(bottomScoreDoc.toString());
+				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
+				DataManager.getImplProv().getLogger().info(topDocs.totalHits.value);
+				result.put("hitSize", topDocs.scoreDocs.length);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+        }
+        ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
-		JSONObject result = new JSONObject();
 		if(scoreDocs.length == 0) {
 			return result;
 		}
     	Document doc = null;
-        for(int i = 0; i < scoreDocs.length; i++) {
+    	Long pageSize = (Long) jsonArray.get("pageSize");
+    	if(scoreDocs.length < pageSize) {
+    		pageSize = (long) scoreDocs.length;
+    	}
+        for(int i = 0; i < pageSize; i++) {
 			try {
 				doc = searcher.doc(scoreDocs[i].doc);
 			} catch (IOException e) {
@@ -1164,6 +1188,8 @@ public class DataManager {
         result.put("results", finalArray);
         //bottomResult.docid needs to be stored, to support paginated Searching
         result.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
+        result.put("bottomResultScore", scoreDocs[scoreDocs.length-1].score);
+		DataManager.getImplProv().getLogger().info("search finished");
         return result;
 	}
 
@@ -1176,6 +1202,9 @@ public class DataManager {
 		Query query = null;
 		String type = ((String)queryData.get("type"));
 		String keyword = (String) queryData.get("searchterm");
+		if("arend" != keyword) {
+			int x = 0;
+		}
 		QueryParser queryParser = new QueryParser(type, analyzer);
 		queryParser.setDefaultOperator(Operator.AND);
 		try {
@@ -1274,6 +1303,7 @@ public class DataManager {
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
 		}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST_NOT);
 		}else if(hitType.equals(MetaDataImplementation.DIRECTORY)){
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST);

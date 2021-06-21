@@ -86,10 +86,13 @@ tr {
 }
 
 table.dataTable tbody td {
-  vertical-align: center;
+  vertical-align: middle;
 }
 
-th.dt-center, td.dt-center { text-align: center; }
+th.dt-center, td.dt-center {
+  text-align: center;
+  vertical-align: middle;
+ }
 
 table#report {
     border-bottom:2px solid rgb(230, 230, 230);
@@ -99,7 +102,7 @@ table#report tr td {
     font-size:90%;
     padding-top:1px;
     padding-bottom:1px;
-    vertical-align: center;
+    vertical-align: middle;
 }
 
 
@@ -109,6 +112,7 @@ table#report tr td.edal-report-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 table#report tr td.edal-report-doi {
@@ -116,6 +120,7 @@ table#report tr td.edal-report-doi {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 @supports ( -moz-appearance:none ){

@@ -16,6 +16,13 @@
 
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
 
+      <style>
+        div#report_wrapper {
+            height: 100%;
+            box-sizing: border-box;
+            margin-bottom:0px;
+        }
+      </style>
 	#if( $MatomoTemplate)
 		$MatomoTemplate
 	#end
@@ -130,17 +137,17 @@
 
                 <div class="creation-label centerclass">
                   Creation date
-                  <input type="checkbox" name="Ongoing" id="period" class="ml-1">
+                  <input type="checkbox" onchange="EdalReport.filterChange()" name="Ongoing" id="period" class="ml-1">
                 </div>
 
                 <div class="datepickerlowcontainer centerclass">
-                  <input type="date" class="form-control form-control-sm centerclass" id="datepickerlow" disabled name="start"
+                  <input type="date" onchange="EdalReport.filterChange()" class="form-control form-control-sm centerclass" id="datepickerlow" disabled name="start"
                    value="2018-07-22"
                    min="1980-01-01" max="2018-12-31">
                 </div>
 
                 <div class="datepickerhighcontainer centerclass">
-                  <input type="date" class="form-control form-control-sm centerclass" id="datepickerhigh" disabled name="end"
+                  <input type="date" onchange="EdalReport.filterChange()" class="form-control form-control-sm centerclass" id="datepickerhigh" disabled name="end"
                     value="2018-07-22"
                     min="1980-01-01">
                 </div>
@@ -159,10 +166,10 @@
 
                     <div class="filetypelabel centerclass">
                       <label for="">File Extension </label>
-                      <input id="suffix" type="checkbox" class="mb-1 ml-1" name="Ongoing"  >
+                      <input id="suffix" onchange="EdalReport.filterChange()" type="checkbox" class="mb-1 ml-1" name="Ongoing"  >
                     </div>
                     <div class="filetypeinput centerclass">
-                      <select id="suffixesSelect" class="form-control form-control-sm" disabled name="top5" size="1">
+                      <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled name="top5" size="1">
                         #foreach($obj in $filetypes)
                           <option value="$obj">$obj</option>
                          #end
@@ -171,22 +178,22 @@
 
                     <div class="filesizelabel centerclass">
                       <label for="">File size </label>
-                      <input id="filesize" class="mb-1 ml-1" type="checkbox" name="Ongoing"  >
+                      <input id="filesize" onchange="EdalReport.filterChange()" class="mb-1 ml-1" type="checkbox" name="Ongoing"  >
                     </div>
                     <div class="filesizeinputs">
                       <div class="filesizeinputnumbers centerclass">
-                        <input id="filesizelow" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
-                        <input id="filesizehigh" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
+                        <input id="filesizelow" onchange="EdalReport.filterChange()" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
+                        <input id="filesizehigh" onchange="EdalReport.filterChange()" class = "halfinput form-control form-control-sm" disabled type="number" name="" value="">
                       </div>
                       <div class="filesizeinputnumbers centerclass">
-                        <select id="filesizelowbyte" class="form-control form-control-sm" disabled name="top5" size="1">
+                        <select id="filesizelowbyte" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled name="top5" size="1">
                           <option>B</option>
                           <option>KB</option>
                           <option>MB</option>
                           <option>GB</option>
                           <option>TB</option>
                         </select>
-                        <select id="filesizehighbyte" class="form-control form-control-sm" disabled name="top5" size="1">
+                        <select id="filesizehighbyte" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled name="top5" size="1">
                           <option>B</option>
                           <option>KB</option>
                           <option>MB</option>
@@ -197,7 +204,7 @@
                     </div>
 
                 </div>
-                <div id="table-column">
+                <div id="table-column" class="pl-3">
                   <table id="report" class="table table-hover table-bordered table-sm" width="100%"></table>
                 </div>
               </div>
@@ -232,19 +239,6 @@
 
     <script>
     EdalReport.init(reportData, mapData);
-
-    function tog(v){
-      return v ? "addClass" : "removeClass";
-    }
-
-    $(document).on("input", ".clearable", function(){
-        $(this)[tog(this.value)]("x");
-    }).on("mousemove", ".x", function( e ){
-        $(this)[tog(this.offsetWidth-18 < e.clientX-this.getBoundingClientRect().left)]("onX");
-    }).on("touchstart click", ".onX", function( ev ){
-        ev.preventDefault();
-        $(this).removeClass("x onX").val("").change();
-    });
 
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);

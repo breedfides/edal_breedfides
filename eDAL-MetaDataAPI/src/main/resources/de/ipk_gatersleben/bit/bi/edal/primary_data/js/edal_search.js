@@ -15,6 +15,13 @@ let EdalReport = new function() {
     this.buildID = 0;
     this.query = "";
     this.bottomResultId = null;
+    this.previousBottomResultId = null;
+    this.pageSize = 15;
+    this.filters = [];
+    this.hitSize = 0;
+    this.pageNumbers = 0;
+    this.currentPage = 0;
+    this.currentRequestData = {};
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -51,14 +58,12 @@ let EdalReport = new function() {
       if(!searchInput.value){
         searchInput.classList.add("x");
       }
-      searchTerms = [];
       let obj = {
         "type":document.getElementById("element").value,
         "searchterm":document.getElementById("searchterm").value,
         "occur":document.getElementById("occur").value,
         "fuzzy":document.getElementById("fuzzy").checked
       }
-      searchTerms.push(obj);
       document.getElementById('searchterm').value = '';
 
       let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
@@ -75,58 +80,43 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
-
-      let filters = [];
-
-      let periodbox = document.getElementById("period");
-      if(periodbox.checked){
-        let lowbound = document.getElementById("datepickerlow").value;
-        let highbound = document.getElementById("datepickerhigh").value;
-        if(lowbound != "" && highbound != ""){
-          console.log("adding dates");
-          filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
-        }
-      }
-      let filesize = document.getElementById("filesize");
-      if(filesize.checked){
-        let lowbound = parseInt(document.getElementById("filesizelow").value);
-        let highbound = parseInt(document.getElementById("filesizehigh").value);
-        let lowerSize = document.getElementById("filesizelowbyte").value;
-        let higherSize = document.getElementById("filesizehighbyte").value;
-        console.log(reverseNiceBytes(lowbound,lowerSize));
-        console.log(reverseNiceBytes(highbound,higherSize));
-        if(lowbound != "" && highbound != ""){
-          filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
-        }
-      }
-      let suffix = document.getElementById("suffix");
-      if(suffix.checked){
-        let suffixValue = document.getElementById("suffixesSelect").value;
-        if(suffixValue != "")
-          filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
-      }
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":filters };
-
-      $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
-        if(ID == requestId){
-          if(data == 0){
-            document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
-          }else if(data == 1){
-            document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hit is loading </div>';
-          }else if(data < 1000){
-            document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hits are loading </div>';
-          }else{
-            document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
-          }
-        }
-      });
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize };
+      self.currentRequestData = requestData;
+      // $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
+      //   if(ID == requestId){
+      //     this.hitSize = data;
+      //     this.pageNumbers = Math.ceil(data/self.pageSize);
+      //     if(data == 0){
+      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
+      //     }else if(data == 1){
+      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hit is loading </div>';
+      //     }else if(data < 1000){
+      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hits are loading </div>';
+      //     }else{
+      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
+      //     }
+      //   }
+      // });
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       console.log("ID: "+requestId+"Data:")
       console.log(self.datatable);
       if(ID == requestId){
-        console.log(data);
+        self.hitSize = data.hitSize;
+        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+        if(data.hitSize == 0){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
+        }else if(data.hitSize == 1){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
+        }else if(data.hitSize < 1000){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
+        }else{
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
+        }
+        self.currentRequestData.bottomResultId = data.bottomResult;
+        self.currentRequestData.bottomResultScore = data.bottomResultScore;
+        self.previousBottomResultId = null;
         self.bottomResultId = data.bottomResult;
         self.reportData = data.results;
         self.datatable.destroy();
@@ -143,8 +133,111 @@ let EdalReport = new function() {
           self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
+        self.currentPage = 0;
+        if(self.pageNumbers > 1){
+          var nextBtn = document.getElementById("btn_next");
+          nextBtn.disabled = false;
+          nextBtn.classList.remove("disabled");
+          nextBtn.onclick = function(){
+            self.next(self.currentRequestData, data, self.pageNumbers);
+          };
+        }
       }
       });
+    }
+
+    this.previous = function(){
+      alert("prev");
+    }
+
+    this.next = function(requestData, data, pageNumbers){
+      document.getElementById("loading-indicator").style.display="block";
+      let self = this;
+      ID++;
+      let requestId = ID;
+      $.post("/rest/extendedSearch/search", JSON.stringify(this.currentRequestData), function(data){
+
+      reportData = data.results;
+      console.log("ID: "+requestId+"Data:")
+      console.log(self.datatable);
+      if(ID == requestId){
+        self.currentPage++;
+        self.hitSize = data.hitSize;
+        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+        if(data.hitSize == 0){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
+        }else if(data.hitSize == 1){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
+        }else if(data.hitSize < 1000){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
+        }else{
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
+        }
+        console.log(data);
+        if(self.currentPage < 3){
+          self.previousBottomResultId = null;
+        }else{
+          self.previousBottomResultId = self.bottomResultId;
+        }
+        self.bottomResultId = data.bottomResult;
+        self.reportData = data.results;
+        self.datatable.destroy();
+        var tableid = "#report";
+        $(tableid + " tbody").empty();
+        $(tableid + " thead").empty();
+        if(requestData.hitType == "rootDirectory"){
+          self.renderDatatableReports();
+        }else if(requestData.hitType == "singleData"){
+          self.renderDatatableFiles();
+        }else if(requestData.hitType == "Directory"){
+          self.renderDatatableDirectories();
+        }else{
+          self.renderDatatableMixed();
+        }
+        document.getElementById("loading-indicator").style.display="none";
+        this.currentPage = 0;
+        if(this.pageNumbers > 1){
+          var nextBtn = document.getElementById("btn_next");
+          nextBtn.disabled = false;
+          nextBtn.classList.remove("disabled");
+          nextBtn.onclick = function(){
+            self.next(self.currentRequestData, data, self.pageNumbers);
+          };
+        }
+      }
+      });
+
+    }
+
+    this.filterChange = function(){
+      this.filters = [];
+      let periodbox = document.getElementById("period");
+      if(periodbox.checked){
+        let lowbound = document.getElementById("datepickerlow").value;
+        let highbound = document.getElementById("datepickerhigh").value;
+        if(lowbound != "" && highbound != ""){
+          console.log("adding dates");
+          this.filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
+        }
+      }
+      let filesize = document.getElementById("filesize");
+      if(filesize.checked){
+        let lowbound = parseInt(document.getElementById("filesizelow").value);
+        let highbound = parseInt(document.getElementById("filesizehigh").value);
+        let lowerSize = document.getElementById("filesizelowbyte").value;
+        let higherSize = document.getElementById("filesizehighbyte").value;
+        console.log(reverseNiceBytes(lowbound,lowerSize));
+        console.log(reverseNiceBytes(highbound,higherSize));
+        if(lowbound != "" && highbound != ""){
+          this.filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
+        }
+      }
+      let suffix = document.getElementById("suffix");
+      if(suffix.checked){
+        let suffixValue = document.getElementById("suffixesSelect").value;
+        if(suffixValue != "")
+          this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+      }
     }
 
     this.queryChange = function(){
@@ -308,6 +401,14 @@ let EdalReport = new function() {
         });
     };
 
+    this.manipulateDataTable = function(){
+      var div = document.createElement("div");
+      div.classList.add("dataTables_paginate");
+      div.classList.add("paging_simple");
+      document.getElementById("report_wrapper").appendChild(div);
+      div.innerHTML = '<ul style="float:left" class="pagination"><li id="btn_previous" class="paginate_button page-item previous disabled" disabled><div class="page-link">Previous</div></li><li id="btn_next" class="paginate_button page-item next disabled"><div class="page-link">Next</div></ul>'
+    }
+
     this.renderDatatableMixed = function() {
         let self = this;
 
@@ -370,7 +471,7 @@ let EdalReport = new function() {
 
         this.datatable = $('#report').DataTable({
             data: self.reportData,
-            dom: 't<"left" p>',
+            dom: 't',
             //dom: 'Bfrtip',
             buttons: [
                 {
@@ -393,9 +494,6 @@ let EdalReport = new function() {
             fixedColumns:   {
                 heightMatch: 'none'
             },
-            "columnDefs": [
-              {"className": "dt-center", "targets": "_all"}
-            ],
             columns: [
                 {
                     title: "DOI",
@@ -413,6 +511,7 @@ let EdalReport = new function() {
                 }
             ]
         });
+        this.manipulateDataTable();
     };
 
     this.typeChange = function() {
