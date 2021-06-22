@@ -20,7 +20,6 @@ let EdalReport = new function() {
     this.filters = [];
     this.hitSize = 0;
     this.pageNumbers = 0;
-    this.currentPage = 0;
     this.currentRequestData = {};
     let searchTerms = [];
     let ID = 0;
@@ -103,6 +102,9 @@ let EdalReport = new function() {
       console.log("ID: "+requestId+"Data:")
       console.log(self.datatable);
       if(ID == requestId){
+        var currentPage = 0;
+        var history = [{"bottomResult":null, "bottomResultScore":null},{"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore}];
+
         self.hitSize = data.hitSize;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         if(data.hitSize == 0){
@@ -114,10 +116,6 @@ let EdalReport = new function() {
         }else{
           document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
         }
-        self.currentRequestData.bottomResultId = data.bottomResult;
-        self.currentRequestData.bottomResultScore = data.bottomResultScore;
-        self.previousBottomResultId = null;
-        self.bottomResultId = data.bottomResult;
         self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
@@ -133,36 +131,37 @@ let EdalReport = new function() {
           self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
-        self.currentPage = 0;
+        console.log("pageNumbers: "+self.pageNumbers);
         if(self.pageNumbers > 1){
           var nextBtn = document.getElementById("btn_next");
-          nextBtn.disabled = false;
           nextBtn.classList.remove("disabled");
+          console.log(history[0]);
+          console.log(history[1]);
+          console.log(currentPage);
           nextBtn.onclick = function(){
-            self.next(self.currentRequestData, data, self.pageNumbers);
+            self.next(self.currentRequestData, history, currentPage);
           };
         }
       }
       });
     }
 
-    this.previous = function(){
-      alert("prev");
-    }
-
-    this.next = function(requestData, data, pageNumbers){
+    this.previous = function(requestData, history, currentPage){
       document.getElementById("loading-indicator").style.display="block";
+      currentPage--;
       let self = this;
       ID++;
       let requestId = ID;
+      requestData["bottomResultId"] = history[currentPage].bottomResult;
+      requestData["bottomResultScore"] = history[currentPage].bottomResultScore;
       $.post("/rest/extendedSearch/search", JSON.stringify(this.currentRequestData), function(data){
-
       reportData = data.results;
       console.log("ID: "+requestId+"Data:")
       console.log(self.datatable);
       if(ID == requestId){
-        self.currentPage++;
+        console.log("currentPage:"+currentPage);
         self.hitSize = data.hitSize;
+        console.log("selfhitSize:"+self.hitSize);
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         if(data.hitSize == 0){
           document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
@@ -174,12 +173,6 @@ let EdalReport = new function() {
           document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
         }
         console.log(data);
-        if(self.currentPage < 3){
-          self.previousBottomResultId = null;
-        }else{
-          self.previousBottomResultId = self.bottomResultId;
-        }
-        self.bottomResultId = data.bottomResult;
         self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
@@ -195,18 +188,81 @@ let EdalReport = new function() {
           self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
-        this.currentPage = 0;
-        if(this.pageNumbers > 1){
-          var nextBtn = document.getElementById("btn_next");
-          nextBtn.disabled = false;
+        var nextBtn = document.getElementById("btn_next");
+        if(nextBtn.classList.contains("disabled")){
           nextBtn.classList.remove("disabled");
-          nextBtn.onclick = function(){
-            self.next(self.currentRequestData, data, self.pageNumbers);
+        }
+        nextBtn.onclick = function(){
+          self.next(self.currentRequestData, history, currentPage);
+        };
+        var prevBtn = document.getElementById("btn_previous");
+        if(currentPage > 0){
+          prevBtn.classList.remove("disabled");
+          prevBtn.onclick = function(){
+            self.previous(self.currentRequestData, history, currentPage);
           };
         }
       }
       });
+    }
 
+    this.next = function(requestData, history, currentPage){
+      document.getElementById("loading-indicator").style.display="block";
+      currentPage++;
+      let self = this;
+      ID++;
+      let requestId = ID;
+      requestData["bottomResultId"] = history[currentPage].bottomResult;
+      requestData["bottomResultScore"] = history[currentPage].bottomResultScore;
+      $.post("/rest/extendedSearch/search", JSON.stringify(this.currentRequestData), function(data){
+      reportData = data.results;
+      console.log("ID: "+requestId+"Data:")
+      console.log(self.datatable);
+      if(ID == requestId){
+        console.log("currentPage:"+currentPage);
+        self.hitSize = data.hitSize;
+        console.log("selfhitSize:"+self.hitSize);
+        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+        if(data.hitSize == 0){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
+        }else if(data.hitSize == 1){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
+        }else if(data.hitSize < 1000){
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
+        }else{
+          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
+        }
+        console.log(data);
+        self.reportData = data.results;
+        self.datatable.destroy();
+        var tableid = "#report";
+        $(tableid + " tbody").empty();
+        $(tableid + " thead").empty();
+        if(requestData.hitType == "rootDirectory"){
+          self.renderDatatableReports();
+        }else if(requestData.hitType == "singleData"){
+          self.renderDatatableFiles();
+        }else if(requestData.hitType == "Directory"){
+          self.renderDatatableDirectories();
+        }else{
+          self.renderDatatableMixed();
+        }
+        document.getElementById("loading-indicator").style.display="none";
+        var nextBtn = document.getElementById("btn_next");
+        if(self.pageNumbers > 1){
+          nextBtn.classList.remove("disabled");
+          history.push({"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore});
+          nextBtn.onclick = function(){
+            self.next(self.currentRequestData, history, currentPage);
+          };
+        }
+        var prevBtn = document.getElementById("btn_previous");
+        prevBtn.classList.remove("disabled");
+        prevBtn.onclick = function(){
+          self.previous(self.currentRequestData, history, currentPage);
+        };
+      }
+      });
     }
 
     this.filterChange = function(){
@@ -315,7 +371,7 @@ let EdalReport = new function() {
 
         this.datatable = $('#report').DataTable({
           data: self.reportData,
-          dom: 't<"left" p>',
+          dom: 't',
           //dom: 'Bfrtip',
           buttons: [
               {
@@ -356,6 +412,7 @@ let EdalReport = new function() {
                 }
             ]
         });
+        self.manipulateDataTable();
     };
 
     this.renderDatatableDirectories = function() {
@@ -363,7 +420,7 @@ let EdalReport = new function() {
 
         this.datatable = $('#report').DataTable({
           data: self.reportData,
-          dom: 't<"left" p>',
+          dom: 't',
           //dom: 'Bfrtip',
           buttons: [
               {
@@ -399,6 +456,7 @@ let EdalReport = new function() {
                 }
             ]
         });
+        self.manipulateDataTable();
     };
 
     this.manipulateDataTable = function(){
@@ -406,7 +464,7 @@ let EdalReport = new function() {
       div.classList.add("dataTables_paginate");
       div.classList.add("paging_simple");
       document.getElementById("report_wrapper").appendChild(div);
-      div.innerHTML = '<ul style="float:left" class="pagination"><li id="btn_previous" class="paginate_button page-item previous disabled" disabled><div class="page-link">Previous</div></li><li id="btn_next" class="paginate_button page-item next disabled"><div class="page-link">Next</div></ul>'
+      div.innerHTML = '<ul style="float:left" class="pagination"><li id="btn_previous" class="paginate_button page-item previous disabled"><div class="page-link">Previous</div></li><li id="btn_next" class="paginate_button page-item next disabled"><div class="page-link">Next</div></ul>'
     }
 
     this.renderDatatableMixed = function() {
@@ -414,7 +472,7 @@ let EdalReport = new function() {
 
         this.datatable = $('#report').DataTable({
           data: self.reportData,
-          dom: 't<"left" p>',
+          dom: 't',
           //dom: 'Bfrtip',
           buttons: [
               {
@@ -464,6 +522,7 @@ let EdalReport = new function() {
                 }
             ]
         });
+        self.manipulateDataTable();
     };
 
     this.renderDatatableReports = function() {
@@ -511,7 +570,7 @@ let EdalReport = new function() {
                 }
             ]
         });
-        this.manipulateDataTable();
+        self.manipulateDataTable();
     };
 
     this.typeChange = function() {

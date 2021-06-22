@@ -1112,7 +1112,6 @@ public class DataManager {
         if(jsonArray.get("bottomResultId") == null) {
         	try {
         		topDocs = searcher.search(buildedQuery, 5000000);
-        		result.put("hitSize", topDocs.totalHits.value);
     		} catch (IOException e1) {
     			// TODO Auto-generated catch block
     			e1.printStackTrace();
@@ -1125,22 +1124,24 @@ public class DataManager {
 				DataManager.getImplProv().getLogger().info(bottomScoreDoc.toString());
 				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
 				DataManager.getImplProv().getLogger().info(topDocs.totalHits.value);
-				result.put("hitSize", topDocs.scoreDocs.length);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
         }
+		result.put("hitSize", topDocs.scoreDocs.length);
         ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
 		if(scoreDocs.length == 0) {
+			result.put("hitSize", scoreDocs.length);
 			return result;
 		}
     	Document doc = null;
     	Long pageSize = (Long) jsonArray.get("pageSize");
     	if(scoreDocs.length < pageSize) {
+			result.put("hitSize", scoreDocs.length);
     		pageSize = (long) scoreDocs.length;
     	}
         for(int i = 0; i < pageSize; i++) {
