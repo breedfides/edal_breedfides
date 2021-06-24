@@ -86,6 +86,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
@@ -1102,8 +1103,6 @@ public class DataManager {
 	}
 	
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
-		DataManager.getImplProv().getLogger().info("start search");
-		DataManager.getImplProv().getLogger().info(jsonArray.toString());
 		Query buildedQuery = buildQueryFromJSON(jsonArray);
 		IndexSearcher searcher = DataManager.initSearcher();
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
@@ -1119,11 +1118,9 @@ public class DataManager {
         }else {
         	ScoreDoc bottomScoreDoc = null;
             try {
-				bottomScoreDoc = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID,(String)jsonArray.get("bottomResultId"))),1).scoreDocs[0];
+				bottomScoreDoc = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID,(String)jsonArray.get("bottomResultId"))),5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) jsonArray.get("bottomResultScore"));
-				DataManager.getImplProv().getLogger().info(bottomScoreDoc.toString());
 				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
-				DataManager.getImplProv().getLogger().info(topDocs.totalHits.value);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1131,6 +1128,8 @@ public class DataManager {
 
         }
 		result.put("hitSize", topDocs.scoreDocs.length);
+		result.put("hitSizeDescription", topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
+	
         ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
@@ -1139,10 +1138,10 @@ public class DataManager {
 			return result;
 		}
     	Document doc = null;
-    	Long pageSize = (Long) jsonArray.get("pageSize");
+    	int pageSize = ((int)(long) jsonArray.get("pageSize"));
     	if(scoreDocs.length < pageSize) {
 			result.put("hitSize", scoreDocs.length);
-    		pageSize = (long) scoreDocs.length;
+    		pageSize = ((int)(long) scoreDocs.length);
     	}
         for(int i = 0; i < pageSize; i++) {
 			try {
@@ -1187,10 +1186,72 @@ public class DataManager {
 			finalArray.add(obj);
         }
         result.put("results", finalArray);
-        //bottomResult.docid needs to be stored, to support paginated Searching
-        result.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
-        result.put("bottomResultScore", scoreDocs[scoreDocs.length-1].score);
-		DataManager.getImplProv().getLogger().info("search finished");
+        //bottomResult.docids needs to be stored, to support paginated Searching
+        
+		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
+		JSONArray pagination = (JSONArray) jsonArray.get("pagination");
+		int additionalPages;
+		int currentPageNumber = -1;
+		JSONArray pageArray = new JSONArray();
+		if(pagination.size() == 0) {
+			additionalPages = 10;
+			for(int i = 1; i <= additionalPages; i++) {
+				JSONObject page = new JSONObject();
+				int index = i*pageSize-1;
+				if(index < scoreDocs.length) {
+					try {
+						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+				        page.put("bottomResultScore", scoreDocs[index].score);
+						page.put("page", i);
+						pageArray.add(page);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}else {
+					page.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
+			        page.put("bottomResultScore", scoreDocs[pageSize-1].score);
+					page.put("page", i);
+					pageArray.add(page);
+					break;
+				}
+			}
+		}else {
+			JSONObject currentPage = (JSONObject) pagination.get(pageIndex);
+			int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
+			currentPageNumber = ((int)(long) currentPage.get("page"));
+			additionalPages = currentPageNumber+4<pageArraySize ? 1 : currentPageNumber+5-pageArraySize;
+			for(int i = 1; i <= additionalPages; i++) {
+				JSONObject page = new JSONObject();
+				int index = i*pageSize-1;
+				if(index < scoreDocs.length) {
+					try {
+						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+				        page.put("bottomResultScore", scoreDocs[index].score);
+						page.put("page", currentPageNumber+i+1);
+						pageArray.add(page);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}else {
+					page.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
+			        page.put("bottomResultScore", scoreDocs[pageSize-1].score);
+					page.put("page", i);
+					pageArray.add(page);
+					break;
+				}
+			}
+		}
+		result.put("pageArray", pageArray);
+        try {
+			result.put("bottomResult", searcher.doc(scoreDocs[pageSize-1].doc).get(PublicVersionIndexWriterThread.DOCID));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        result.put("bottomResultScore", scoreDocs[pageSize-1].score);
+		DataManager.getImplProv().getLogger().info(scoreDocs[pageSize-1]);
         return result;
 	}
 

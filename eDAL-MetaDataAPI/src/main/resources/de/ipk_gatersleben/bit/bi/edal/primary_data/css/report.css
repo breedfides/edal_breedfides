@@ -131,7 +131,16 @@ table#report tr td.edal-report-doi {
 
 #table-column{
   grid-column-start: 2;
+  grid-row-start: 2;
 }
+
+#result-stats{
+  display: table-cell;
+  vertical-align: middle;
+  color:#70757a;
+  font-size:small;
+}
+
 
 div#edal-report-filter{
   grid-column-start: 1;
@@ -149,6 +158,7 @@ div#edal-report-filter{
 #edal-report-table-inner-container{
   display: grid;
   grid-template-columns: 320px 1fr;
+  grid-template-rows: 20px 1fr;
 }
 
 div#report_wrapper {

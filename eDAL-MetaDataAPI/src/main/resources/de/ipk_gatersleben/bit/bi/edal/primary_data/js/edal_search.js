@@ -79,23 +79,9 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize };
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[] };
+      console.log(requestData);
       self.currentRequestData = requestData;
-      // $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
-      //   if(ID == requestId){
-      //     this.hitSize = data;
-      //     this.pageNumbers = Math.ceil(data/self.pageSize);
-      //     if(data == 0){
-      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
-      //     }else if(data == 1){
-      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hit is loading </div>';
-      //     }else if(data < 1000){
-      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data+' hits are loading </div>';
-      //     }else{
-      //       document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
-      //     }
-      //   }
-      // });
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
@@ -107,28 +93,23 @@ let EdalReport = new function() {
 
         self.hitSize = data.hitSize;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        if(data.hitSize == 0){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
-        }else if(data.hitSize == 1){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
-        }else if(data.hitSize < 1000){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
-        }else{
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
-        }
+        self.hitSize = data.hitSize;
+        document.getElementById("result-stats").innerHTML = 'Page 1 of '+data.hitSizeDescription+' '+data.hitSize+' results';
         self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
         $(tableid + " tbody").empty();
         $(tableid + " thead").empty();
+        console.log("pagearray");
+        console.log(data.pageArray);
         if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports();
+          self.renderDatatableReports(data.pageArray);
         }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles();
+          self.renderDatatableFiles(data.pageArray);
         }else if(requestData.hitType == "Directory"){
-          self.renderDatatableDirectories();
+          self.renderDatatableDirectories(data.pageArray);
         }else{
-          self.renderDatatableMixed();
+          self.renderDatatableMixed(data.pageArray);
         }
         document.getElementById("loading-indicator").style.display="none";
         console.log("pageNumbers: "+self.pageNumbers);
@@ -159,19 +140,8 @@ let EdalReport = new function() {
       console.log("ID: "+requestId+"Data:")
       console.log(self.datatable);
       if(ID == requestId){
-        console.log("currentPage:"+currentPage);
-        self.hitSize = data.hitSize;
-        console.log("selfhitSize:"+self.hitSize);
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        if(data.hitSize == 0){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
-        }else if(data.hitSize == 1){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
-        }else if(data.hitSize < 1000){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
-        }else{
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
-        }
+        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
         console.log(data);
         self.reportData = data.results;
         self.datatable.destroy();
@@ -220,18 +190,9 @@ let EdalReport = new function() {
       console.log(self.datatable);
       if(ID == requestId){
         console.log("currentPage:"+currentPage);
-        self.hitSize = data.hitSize;
         console.log("selfhitSize:"+self.hitSize);
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        if(data.hitSize == 0){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> No hits found </div>';
-        }else if(data.hitSize == 1){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hit is loading </div>';
-        }else if(data.hitSize < 1000){
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-primary alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>'+data.hitSize+' hits are loading </div>';
-        }else{
-          document.getElementById("search-counter").innerHTML = '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button> Found more than '+data.hitSize+' hits! Only the top 1000 will be showed. Please try again with a more precise query</div>';
-        }
+        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
         console.log(data);
         self.reportData = data.results;
         self.datatable.destroy();
@@ -247,6 +208,7 @@ let EdalReport = new function() {
         }else{
           self.renderDatatableMixed();
         }
+        document.getElementById()
         document.getElementById("loading-indicator").style.display="none";
         var nextBtn = document.getElementById("btn_next");
         if(self.pageNumbers > 1){
@@ -366,7 +328,7 @@ let EdalReport = new function() {
         });
     }
 
-    this.renderDatatableFiles = function() {
+    this.renderDatatableFiles = function(numbers = []) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -412,10 +374,10 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable();
+        self.manipulateDataTable(numbers);
     };
 
-    this.renderDatatableDirectories = function() {
+    this.renderDatatableDirectories = function(numbers = []) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -456,18 +418,25 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable();
+        self.manipulateDataTable(numbers);
     };
 
-    this.manipulateDataTable = function(){
+    this.manipulateDataTable = function(numbers){
+      function insertNumbers(numbers){
+        var liNumbers = '';
+        for(i = 0; i < numbers.length; i++){
+          liNumbers += '<li class="page-item" id="page'+numbers[i].page+'"><a class="page-link" href="#">'+numbers[i].page+'</a></li>';
+        }
+        return liNumbers;
+      }
       var div = document.createElement("div");
       div.classList.add("dataTables_paginate");
       div.classList.add("paging_simple");
       document.getElementById("report_wrapper").appendChild(div);
-      div.innerHTML = '<ul style="float:left" class="pagination"><li id="btn_previous" class="paginate_button page-item previous disabled"><div class="page-link">Previous</div></li><li id="btn_next" class="paginate_button page-item next disabled"><div class="page-link">Next</div></ul>'
+      div.innerHTML = '<ul class="pagination justify-content-center" id="ul_pagination"><li class="page-item disabled"  id="btn_previous"><a class="page-link" href="#" tabindex="-1">Previous</a></li>'+insertNumbers(numbers)+'<li class="page-item disabled" id="btn_next"><a class="page-link" href="#">Next</a></li></ul>';
     }
 
-    this.renderDatatableMixed = function() {
+    this.renderDatatableMixed = function(numbers = []) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -522,10 +491,10 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable();
+        self.manipulateDataTable(numbers);
     };
 
-    this.renderDatatableReports = function() {
+    this.renderDatatableReports = function(numbers = []) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -570,7 +539,7 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable();
+        self.manipulateDataTable(numbers);
     };
 
     this.typeChange = function() {

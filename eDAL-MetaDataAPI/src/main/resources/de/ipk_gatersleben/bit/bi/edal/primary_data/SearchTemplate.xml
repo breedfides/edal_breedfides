@@ -204,6 +204,9 @@
                     </div>
 
                 </div>
+                <div class="pl-3 mt-1 " >
+                  <div id="result-stats"></div>
+                </div>
                 <div id="table-column" class="pl-3">
                   <table id="report" class="table table-hover table-bordered table-sm" width="100%"></table>
                 </div>
