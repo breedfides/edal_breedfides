@@ -89,8 +89,7 @@ let EdalReport = new function() {
       console.log(self.datatable);
       if(ID == requestId){
         var currentPage = 0;
-        var history = [{"bottomResult":null, "bottomResultScore":null},{"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore}];
-
+        var history = data.pageArray;
         self.hitSize = data.hitSize;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         self.hitSize = data.hitSize;
@@ -103,13 +102,13 @@ let EdalReport = new function() {
         console.log("pagearray");
         console.log(data.pageArray);
         if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports(data.pageArray);
+          self.renderDatatableReports(history, currentPage);
         }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles(data.pageArray);
+          self.renderDatatableFiles(history, currentPage);
         }else if(requestData.hitType == "Directory"){
-          self.renderDatatableDirectories(data.pageArray);
+          self.renderDatatableDirectories(history, currentPage);
         }else{
-          self.renderDatatableMixed(data.pageArray);
+          self.renderDatatableMixed(history, currentPage);
         }
         document.getElementById("loading-indicator").style.display="none";
         console.log("pageNumbers: "+self.pageNumbers);
@@ -208,7 +207,6 @@ let EdalReport = new function() {
         }else{
           self.renderDatatableMixed();
         }
-        document.getElementById()
         document.getElementById("loading-indicator").style.display="none";
         var nextBtn = document.getElementById("btn_next");
         if(self.pageNumbers > 1){
@@ -316,7 +314,7 @@ let EdalReport = new function() {
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
             self.renderYearSelectOptions();
-            self.renderDatatableReports();
+            self.renderDatatableReports([],-1);
             self.addObservers();
         });
     };
@@ -328,7 +326,7 @@ let EdalReport = new function() {
         });
     }
 
-    this.renderDatatableFiles = function(numbers = []) {
+    this.renderDatatableFiles = function(numbers = [], currentPage) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -374,10 +372,10 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers);
+        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.renderDatatableDirectories = function(numbers = []) {
+    this.renderDatatableDirectories = function(numbers = [], currentPage) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -418,10 +416,11 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers);
+        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.manipulateDataTable = function(numbers){
+    this.manipulateDataTable = function(numbers, currentPage){
+      let self = this;
       function insertNumbers(numbers){
         var liNumbers = '';
         for(i = 0; i < numbers.length; i++){
@@ -434,6 +433,20 @@ let EdalReport = new function() {
       div.classList.add("paging_simple");
       document.getElementById("report_wrapper").appendChild(div);
       div.innerHTML = '<ul class="pagination justify-content-center" id="ul_pagination"><li class="page-item disabled"  id="btn_previous"><a class="page-link" href="#" tabindex="-1">Previous</a></li>'+insertNumbers(numbers)+'<li class="page-item disabled" id="btn_next"><a class="page-link" href="#">Next</a></li></ul>';
+      if(currentPage < 0){
+        return;
+      }
+      console.log(numbers);
+      console.log(typeof numbers);
+      console.log("numbers.length: "+numbers.length);
+      var currentSelectedLi = document.getElementById("page"+numbers[currentPage].page).classList.add("active");
+      for(i = 1; i < numbers.length; i++){
+        var index = i;
+        document.getElementById("page"+numbers[index].page).onclick = function(){
+          console.log("clicked index:_ ");
+          console.log(index);
+        }
+      }
     }
 
     this.renderDatatableMixed = function(numbers = []) {
@@ -491,10 +504,10 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers);
+        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.renderDatatableReports = function(numbers = []) {
+    this.renderDatatableReports = function(numbers = [], currentPage) {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -539,7 +552,7 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers);
+        self.manipulateDataTable(numbers, currentPage);
     };
 
     this.typeChange = function() {

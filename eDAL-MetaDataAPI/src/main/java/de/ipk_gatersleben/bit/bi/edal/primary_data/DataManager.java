@@ -1194,8 +1194,8 @@ public class DataManager {
 		int currentPageNumber = -1;
 		JSONArray pageArray = new JSONArray();
 		if(pagination.size() == 0) {
-			additionalPages = 10;
-			for(int i = 1; i <= additionalPages; i++) {
+			additionalPages = 11;
+			for(int i = 1; i < additionalPages; i++) {
 				JSONObject page = new JSONObject();
 				int index = i*pageSize-1;
 				if(index < scoreDocs.length) {
