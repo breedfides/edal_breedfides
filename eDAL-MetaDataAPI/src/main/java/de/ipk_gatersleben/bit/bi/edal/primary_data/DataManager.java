@@ -1108,7 +1108,10 @@ public class DataManager {
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
         TopDocs topDocs = null;
 		JSONObject result = new JSONObject();
-        if(jsonArray.get("bottomResultId") == null) {
+		int currentPageNumber = ((int)(long)jsonArray.get("displayedPage"));
+		int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
+		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
+        if(pageArraySize == 0 || currentPageNumber == 1) {
         	try {
         		topDocs = searcher.search(buildedQuery, 5000000);
     		} catch (IOException e1) {
@@ -1129,6 +1132,8 @@ public class DataManager {
         }
 		result.put("hitSize", topDocs.scoreDocs.length);
 		result.put("hitSizeDescription", topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
+		result.put("displayedPage", (long)jsonArray.get("displayedPage"));
+		result.put("pageIndex", pageIndex);
 	
         ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
@@ -1187,44 +1192,38 @@ public class DataManager {
         }
         result.put("results", finalArray);
         //bottomResult.docids needs to be stored, to support paginated Searching
-        
-		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
-		JSONArray pagination = (JSONArray) jsonArray.get("pagination");
 		int additionalPages;
-		int currentPageNumber = -1;
 		JSONArray pageArray = new JSONArray();
-		if(pagination.size() == 0) {
+		JSONObject page = new JSONObject();
+		if(pageArraySize == 0) {
+			page.put("bottomResult", null);
+	        page.put("bottomResultScore", 0);
+			page.put("page", 1);
+			pageArray.add(page);
 			additionalPages = 11;
 			for(int i = 1; i < additionalPages; i++) {
-				JSONObject page = new JSONObject();
+				page = new JSONObject();
 				int index = i*pageSize-1;
 				if(index < scoreDocs.length) {
 					try {
 						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
 				        page.put("bottomResultScore", scoreDocs[index].score);
-						page.put("page", i);
+						page.put("page", i+1);
 						pageArray.add(page);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}else {
-					page.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
-			        page.put("bottomResultScore", scoreDocs[pageSize-1].score);
-					page.put("page", i);
-					pageArray.add(page);
 					break;
 				}
 			}
 		}else {
-			JSONObject currentPage = (JSONObject) pagination.get(pageIndex);
-			int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
-			currentPageNumber = ((int)(long) currentPage.get("page"));
 			//check if there needs to be loaded more additional Sites or only 1 (the current selected Site)
 			//pageArraySize = array of all pages
 			additionalPages = currentPageNumber+4<pageArraySize ? 0 : pageArraySize+4;
 			for(int i = pageArraySize; i < additionalPages; i++) {
-				JSONObject page = new JSONObject();
+				page = new JSONObject();
 				int index = i*pageSize-1;
 				if(index < scoreDocs.length) {
 					try {

@@ -79,15 +79,17 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[] };
-      console.log(requestData);
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
       self.currentRequestData = requestData;
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
-      console.log("ID: "+requestId+"Data:")
-      console.log(self.datatable);
       if(ID == requestId){
+        console.log("___SEARCH___");
+        console.log("pagearray:");
+        console.log(data.pageArray);
+        console.log("data");
+        console.log(data);
         var currentPage = 0;
         var history = data.pageArray;
         self.hitSize = data.hitSize;
@@ -216,16 +218,28 @@ let EdalReport = new function() {
       }
       });
     }
-    this.changePage = function(index, currentRequestData, history){
+    this.changePage = function(index, page, currentRequestData, history){
       document.getElementById("loading-indicator").style.display="block";
       let self = this;
       ID++;
       let requestId = ID;
       currentRequestData["bottomResultId"] = history[index].bottomResult;
       currentRequestData["bottomResultScore"] = history[index].bottomResultScore;
+      currentRequestData["pageIndex"] = index;
+      currentRequestData["pageArraySize"] = history.length;
+      currentRequestData["displayedPage"] = page;
+      console.log("_____ PAGE CHANGE _____");
+      console.log(currentRequestData);
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
       reportData = data.results;
       if(ID == requestId){
+        console.log("pagearray:");
+        console.log(data.pageArray);
+        console.log("data");
+        console.log(data);
+        console.log("index: "+index);
+        console.log("history");
+        console.log(history);
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
@@ -250,31 +264,21 @@ let EdalReport = new function() {
         var tableid = "#report";
         $(tableid + " tbody").empty();
         $(tableid + " thead").empty();
-        if(requestData.hitType == "rootDirectory"){
+        if(currentRequestData.hitType == "rootDirectory"){
           self.renderDatatableReports();
-        }else if(requestData.hitType == "singleData"){
+        }else if(currentRequestData.hitType == "singleData"){
           self.renderDatatableFiles();
-        }else if(requestData.hitType == "Directory"){
+        }else if(currentRequestData.hitType == "Directory"){
           self.renderDatatableDirectories();
         }else{
           self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
         self.manipulateDataTable(pageArray, self.currentRequestData, history);
-        var nextBtn = document.getElementById("btn_next");
-        if(self.pageNumbers > 1){
-          nextBtn.classList.remove("disabled");
-          history.push({"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore});
-          nextBtn.onclick = function(){
-            self.next(self.currentRequestData, history, currentPage);
-          };
-        }
-        var prevBtn = document.getElementById("btn_previous");
-        prevBtn.classList.remove("disabled");
-        prevBtn.onclick = function(){
-          self.previous(self.currentRequestData, history, currentPage);
-        };
       }
+      console.log("After _____ PAGE CHANGE _____");
+      console.log("history");
+      console.log(history);
       });
     }
 
@@ -285,7 +289,6 @@ let EdalReport = new function() {
         let lowbound = document.getElementById("datepickerlow").value;
         let highbound = document.getElementById("datepickerhigh").value;
         if(lowbound != "" && highbound != ""){
-          console.log("adding dates");
           this.filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
         }
       }
@@ -295,8 +298,6 @@ let EdalReport = new function() {
         let highbound = parseInt(document.getElementById("filesizehigh").value);
         let lowerSize = document.getElementById("filesizelowbyte").value;
         let higherSize = document.getElementById("filesizehighbyte").value;
-        console.log(reverseNiceBytes(lowbound,lowerSize));
-        console.log(reverseNiceBytes(highbound,higherSize));
         if(lowbound != "" && highbound != ""){
           this.filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
         }
@@ -318,7 +319,6 @@ let EdalReport = new function() {
         let lowbound = document.getElementById("datepickerlow").value;
         let highbound = document.getElementById("datepickerhigh").value;
         if(lowbound != "" && highbound != ""){
-          console.log("adding dates");
           filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
         }
       }
@@ -328,8 +328,6 @@ let EdalReport = new function() {
         let highbound = parseInt(document.getElementById("filesizehigh").value);
         let lowerSize = document.getElementById("filesizelowbyte").value;
         let higherSize = document.getElementById("filesizehighbyte").value;
-        console.log(reverseNiceBytes(lowbound,lowerSize));
-        console.log(reverseNiceBytes(highbound,higherSize));
         if(lowbound != "" && highbound != ""){
           filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
         }
@@ -344,7 +342,6 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
         if(ID == requestId){
           this.query = data;
-          console.log(this.query);
         }
       });
     };
@@ -477,8 +474,8 @@ let EdalReport = new function() {
       }
       let self = this;
       self.currentRequestData = currentRequestData;
-      var currentPage = currentRequestData.pageIndex;
-      console.log("pageIndex am Anfang von manipulate..: "+currentRequestData.pageIndex);
+      var currentPage = currentRequestData.displayedPage;
+      var currentIndex = currentRequestData.pageIndex;
       function insertNumbers(numbers){
         var liNumbers = '';
         for(i = 0; i < numbers.length; i++){
@@ -494,33 +491,38 @@ let EdalReport = new function() {
       if(currentPage < 0){
         return;
       }
+      console.log("numbers["+currentIndex+"].page == "+numbers[currentIndex].page);
+      console.log("numbers:");
       console.log(numbers);
-      console.log(typeof numbers);
-      console.log("numbers.length: "+numbers.length);
-      var currentSelectedLi = document.getElementById("page"+numbers[currentPage].page).classList.add("active");
+      var currentSelectedLi = document.getElementById("page"+numbers[currentIndex].page).classList.add("active");
       for(i = 0; i < numbers.length; i++){
-        if(currentPage != i){
+        if(currentIndex != i){
           var index = i;
+          console.log("numbers["+index+"].page == "+numbers[index].page);
           document.getElementById("page"+numbers[index].page).onclick = function(){
-            self.changePage(index, currentRequestData, history);
+            self.changePage(index, numbers[index].page, currentRequestData, history);
           }
         }
       }
-      if(currentPage+1 < history.length){
+      if(currentIndex+1 < history.length){
         var nextBtn = document.getElementById("btn_next");
         nextBtn.classList.remove("disabled");
-        self.currentRequestData.pageIndex++;
         nextBtn.onclick = function(){
-          console.log("pageIndex in Zuweisung von onclick..: "+currentRequestData.pageIndex);
-          self.changePage(currentPage++, currentRequestData, history);
+          var nextIndex = currentIndex+1;
+          var nextPage = currentPage+1;
+          console.log("nextIndex = "+nextIndex+" nextpage="+nextPage)
+          self.changePage(nextIndex, nextPage, currentRequestData, history);
         };
       }
-      if(currentPage-1 > 0){
+      alert(currentIndex-1);
+      if(currentIndex-1 > -1){
         var nextBtn = document.getElementById("btn_previous");
         nextBtn.classList.remove("disabled");
-        self.currentRequestData.pageIndex--;
         nextBtn.onclick = function(){
-          self.changePage(currentPage--, currentRequestData, history);
+          var prevIndex = currentIndex-1;
+          var prevPage = currentPage-1;
+          console.log("prevIndex = "+prevIndex+" prevpage="+prevPage)
+          self.changePage(prevIndex, prevPage, currentRequestData, history);
         };
       }
     }
