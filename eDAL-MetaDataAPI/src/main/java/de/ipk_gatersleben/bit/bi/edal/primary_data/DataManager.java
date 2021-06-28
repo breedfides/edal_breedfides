@@ -1199,6 +1199,7 @@ public class DataManager {
 			page.put("bottomResult", null);
 	        page.put("bottomResultScore", 0);
 			page.put("page", 1);
+			page.put("index", 0);
 			pageArray.add(page);
 			additionalPages = 10;
 			for(int i = 1; i < additionalPages; i++) {

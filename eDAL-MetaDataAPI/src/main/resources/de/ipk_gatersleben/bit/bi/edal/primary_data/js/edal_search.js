@@ -223,12 +223,14 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
+      console.log("_____ PAGE CHANGE _____");
+      console.log("changePage--index "+index);
+      console.log(currentRequestData);
       currentRequestData["bottomResultId"] = history[index].bottomResult;
       currentRequestData["bottomResultScore"] = history[index].bottomResultScore;
       currentRequestData["pageIndex"] = index;
       currentRequestData["pageArraySize"] = history.length;
       currentRequestData["displayedPage"] = page;
-      console.log("_____ PAGE CHANGE _____");
       console.log(currentRequestData);
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
       reportData = data.results;
@@ -243,7 +245,7 @@ let EdalReport = new function() {
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
+        document.getElementById("result-stats").innerHTML = 'Page '+currentPage+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
         var pageArray = [];
         if(history[index].page < 7){
           i = 0;
@@ -259,7 +261,6 @@ let EdalReport = new function() {
         }
         var j = 0;
         var sum = i+j;
-        alert("baue array auf mit i = "+i+" und index="+index+"und history[index].page "+history[index].page);
         while(j < 10 && sum < history.length){
           pageArray.push(history[sum]);
           j++;
@@ -314,6 +315,7 @@ let EdalReport = new function() {
         if(suffixValue != "")
           this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
       }
+      this.search();
     }
 
     this.queryChange = function(){
@@ -475,7 +477,7 @@ let EdalReport = new function() {
     };
 
     this.manipulateDataTable = function(numbers, currentRequestData, history){
-      if(numbers.length == 0){
+      if(typeof numbers == 'undefined' || numbers.length == 0){
         return;
       }
       let self = this;
