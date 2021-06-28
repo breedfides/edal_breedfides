@@ -1220,25 +1220,23 @@ public class DataManager {
 			JSONObject currentPage = (JSONObject) pagination.get(pageIndex);
 			int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
 			currentPageNumber = ((int)(long) currentPage.get("page"));
-			additionalPages = currentPageNumber+4<pageArraySize ? 1 : currentPageNumber+5-pageArraySize;
-			for(int i = 1; i <= additionalPages; i++) {
+			//check if there needs to be loaded more additional Sites or only 1 (the current selected Site)
+			//pageArraySize = array of all pages
+			additionalPages = currentPageNumber+4<pageArraySize ? 0 : pageArraySize+4;
+			for(int i = pageArraySize; i < additionalPages; i++) {
 				JSONObject page = new JSONObject();
 				int index = i*pageSize-1;
 				if(index < scoreDocs.length) {
 					try {
 						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
 				        page.put("bottomResultScore", scoreDocs[index].score);
-						page.put("page", currentPageNumber+i+1);
+						page.put("page", index+1);
 						pageArray.add(page);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}else {
-					page.put("bottomResult", doc.get(PublicVersionIndexWriterThread.DOCID));
-			        page.put("bottomResultScore", scoreDocs[pageSize-1].score);
-					page.put("page", i);
-					pageArray.add(page);
 					break;
 				}
 			}

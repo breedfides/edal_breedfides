@@ -102,26 +102,16 @@ let EdalReport = new function() {
         console.log("pagearray");
         console.log(data.pageArray);
         if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports(history, currentPage);
+          self.renderDatatableReports();
         }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles(history, currentPage);
+          self.renderDatatableFiles();
         }else if(requestData.hitType == "Directory"){
-          self.renderDatatableDirectories(history, currentPage);
+          self.renderDatatableDirectories();
         }else{
-          self.renderDatatableMixed(history, currentPage);
+          self.renderDatatableMixed();
         }
+        self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
         document.getElementById("loading-indicator").style.display="none";
-        console.log("pageNumbers: "+self.pageNumbers);
-        if(self.pageNumbers > 1){
-          var nextBtn = document.getElementById("btn_next");
-          nextBtn.classList.remove("disabled");
-          console.log(history[0]);
-          console.log(history[1]);
-          console.log(currentPage);
-          nextBtn.onclick = function(){
-            self.next(self.currentRequestData, history, currentPage);
-          };
-        }
       }
       });
     }
@@ -156,6 +146,7 @@ let EdalReport = new function() {
         }else{
           self.renderDatatableMixed();
         }
+        self.manipulateDataTable(data.pageArray, currentPage);
         document.getElementById("loading-indicator").style.display="none";
         var nextBtn = document.getElementById("btn_next");
         if(nextBtn.classList.contains("disabled")){
@@ -207,7 +198,69 @@ let EdalReport = new function() {
         }else{
           self.renderDatatableMixed();
         }
+        self.manipulateDataTable(data.pageArray, currentPage);
         document.getElementById("loading-indicator").style.display="none";
+        var nextBtn = document.getElementById("btn_next");
+        if(self.pageNumbers > 1){
+          nextBtn.classList.remove("disabled");
+          history.push({"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore});
+          nextBtn.onclick = function(){
+            self.next(self.currentRequestData, history, currentPage);
+          };
+        }
+        var prevBtn = document.getElementById("btn_previous");
+        prevBtn.classList.remove("disabled");
+        prevBtn.onclick = function(){
+          self.previous(self.currentRequestData, history, currentPage);
+        };
+      }
+      });
+    }
+    this.changePage = function(index, currentRequestData, history){
+      document.getElementById("loading-indicator").style.display="block";
+      let self = this;
+      ID++;
+      let requestId = ID;
+      currentRequestData["bottomResultId"] = history[index].bottomResult;
+      currentRequestData["bottomResultScore"] = history[index].bottomResultScore;
+      $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
+      reportData = data.results;
+      if(ID == requestId){
+        self.reportData = data.results;
+        var currentPage = index+1;
+        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
+        var pageArray = [];
+        if(history[index].page < 7){
+          i = 0;
+        }else if(index > 5){
+          i = index-5;
+          if(data.pageArray.length > 0){
+            for(j = 0; j < data.pageArray.length; j++){
+              history.push(data.pageArray[j]);
+            }
+          }
+        }else{
+          alert("bummer: index < 5 und page >= 7");
+        }
+        for(i; i < history.length; i++){
+          pageArray.push(history[i]);
+        }
+        self.datatable.destroy();
+        var tableid = "#report";
+        $(tableid + " tbody").empty();
+        $(tableid + " thead").empty();
+        if(requestData.hitType == "rootDirectory"){
+          self.renderDatatableReports();
+        }else if(requestData.hitType == "singleData"){
+          self.renderDatatableFiles();
+        }else if(requestData.hitType == "Directory"){
+          self.renderDatatableDirectories();
+        }else{
+          self.renderDatatableMixed();
+        }
+        document.getElementById("loading-indicator").style.display="none";
+        self.manipulateDataTable(pageArray, self.currentRequestData, history);
         var nextBtn = document.getElementById("btn_next");
         if(self.pageNumbers > 1){
           nextBtn.classList.remove("disabled");
@@ -314,7 +367,8 @@ let EdalReport = new function() {
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
             self.renderYearSelectOptions();
-            self.renderDatatableReports([],-1);
+            self.renderDatatableReports();
+            self.manipulateDataTable([],null,[]);
             self.addObservers();
         });
     };
@@ -326,7 +380,7 @@ let EdalReport = new function() {
         });
     }
 
-    this.renderDatatableFiles = function(numbers = [], currentPage) {
+    this.renderDatatableFiles = function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -372,10 +426,9 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.renderDatatableDirectories = function(numbers = [], currentPage) {
+    this.renderDatatableDirectories = function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -416,11 +469,16 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.manipulateDataTable = function(numbers, currentPage){
+    this.manipulateDataTable = function(numbers, currentRequestData, history){
+      if(numbers.length == 0){
+        return;
+      }
       let self = this;
+      self.currentRequestData = currentRequestData;
+      var currentPage = currentRequestData.pageIndex;
+      console.log("pageIndex am Anfang von manipulate..: "+currentRequestData.pageIndex);
       function insertNumbers(numbers){
         var liNumbers = '';
         for(i = 0; i < numbers.length; i++){
@@ -440,16 +498,34 @@ let EdalReport = new function() {
       console.log(typeof numbers);
       console.log("numbers.length: "+numbers.length);
       var currentSelectedLi = document.getElementById("page"+numbers[currentPage].page).classList.add("active");
-      for(i = 1; i < numbers.length; i++){
-        var index = i;
-        document.getElementById("page"+numbers[index].page).onclick = function(){
-          console.log("clicked index:_ ");
-          console.log(index);
+      for(i = 0; i < numbers.length; i++){
+        if(currentPage != i){
+          var index = i;
+          document.getElementById("page"+numbers[index].page).onclick = function(){
+            self.changePage(index, currentRequestData, history);
+          }
         }
+      }
+      if(currentPage+1 < history.length){
+        var nextBtn = document.getElementById("btn_next");
+        nextBtn.classList.remove("disabled");
+        self.currentRequestData.pageIndex++;
+        nextBtn.onclick = function(){
+          console.log("pageIndex in Zuweisung von onclick..: "+currentRequestData.pageIndex);
+          self.changePage(currentPage++, currentRequestData, history);
+        };
+      }
+      if(currentPage-1 > 0){
+        var nextBtn = document.getElementById("btn_previous");
+        nextBtn.classList.remove("disabled");
+        self.currentRequestData.pageIndex--;
+        nextBtn.onclick = function(){
+          self.changePage(currentPage--, currentRequestData, history);
+        };
       }
     }
 
-    this.renderDatatableMixed = function(numbers = []) {
+    this.renderDatatableMixed = function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -504,10 +580,9 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers, currentPage);
     };
 
-    this.renderDatatableReports = function(numbers = [], currentPage) {
+    this.renderDatatableReports = function() {
         let self = this;
 
         this.datatable = $('#report').DataTable({
@@ -552,7 +627,6 @@ let EdalReport = new function() {
                 }
             ]
         });
-        self.manipulateDataTable(numbers, currentPage);
     };
 
     this.typeChange = function() {
