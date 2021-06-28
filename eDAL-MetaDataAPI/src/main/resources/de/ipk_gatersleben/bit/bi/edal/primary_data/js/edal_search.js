@@ -257,9 +257,15 @@ let EdalReport = new function() {
         }else{
           alert("bummer: index < 5 und page >= 7");
         }
-        for(i; i < history.length; i++){
-          pageArray.push(history[i]);
+        var j = 0;
+        var sum = i+j;
+        alert("baue array auf mit i = "+i+" und index="+index+"und history[index].page "+history[index].page);
+        while(j < 10 && sum < history.length){
+          pageArray.push(history[sum]);
+          j++;
+          sum = i+j;
         }
+        console.log(pageArray);
         self.datatable.destroy();
         var tableid = "#report";
         $(tableid + " tbody").empty();
@@ -491,16 +497,17 @@ let EdalReport = new function() {
       if(currentPage < 0){
         return;
       }
-      console.log("numbers["+currentIndex+"].page == "+numbers[currentIndex].page);
       console.log("numbers:");
       console.log(numbers);
-      var currentSelectedLi = document.getElementById("page"+numbers[currentIndex].page).classList.add("active");
+      console.log("curIndex "+currentIndex);
+      console.log("numbers["+currentIndex+"].page == "+history[currentIndex].page);
+      var currentSelectedLi = document.getElementById("page"+history[currentIndex].page).classList.add("active");
       for(i = 0; i < numbers.length; i++){
-        if(currentIndex != i){
-          var index = i;
+        if(history[currentIndex].page != numbers[i].page){
+          const index = i;
           console.log("numbers["+index+"].page == "+numbers[index].page);
           document.getElementById("page"+numbers[index].page).onclick = function(){
-            self.changePage(index, numbers[index].page, currentRequestData, history);
+            self.changePage(numbers[index].index, numbers[index].page, currentRequestData, history);
           }
         }
       }
@@ -514,7 +521,6 @@ let EdalReport = new function() {
           self.changePage(nextIndex, nextPage, currentRequestData, history);
         };
       }
-      alert(currentIndex-1);
       if(currentIndex-1 > -1){
         var nextBtn = document.getElementById("btn_previous");
         nextBtn.classList.remove("disabled");

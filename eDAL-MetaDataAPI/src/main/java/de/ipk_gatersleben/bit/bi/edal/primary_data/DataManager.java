@@ -1200,7 +1200,7 @@ public class DataManager {
 	        page.put("bottomResultScore", 0);
 			page.put("page", 1);
 			pageArray.add(page);
-			additionalPages = 11;
+			additionalPages = 10;
 			for(int i = 1; i < additionalPages; i++) {
 				page = new JSONObject();
 				int index = i*pageSize-1;
@@ -1209,6 +1209,7 @@ public class DataManager {
 						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
 				        page.put("bottomResultScore", scoreDocs[index].score);
 						page.put("page", i+1);
+						page.put("index", i);
 						pageArray.add(page);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -1229,7 +1230,8 @@ public class DataManager {
 					try {
 						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
 				        page.put("bottomResultScore", scoreDocs[index].score);
-						page.put("page", index+1);
+						page.put("page", i+1);
+						page.put("index", i);
 						pageArray.add(page);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
