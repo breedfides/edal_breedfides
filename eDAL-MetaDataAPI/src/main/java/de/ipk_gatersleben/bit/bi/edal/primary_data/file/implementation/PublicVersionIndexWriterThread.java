@@ -118,6 +118,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String REVISION = "revision";
 	public static final String PUBLICREFERENCE = "rootDirectory";
 	public static final String INDIVIDUALFILE = "singleData";
+	public static final String DIRECTORY = "directory";
+	public static final String FILE = "file";
 	public static final String DOCID = "docid";
 	private final short REVISIONFILE = 1;
 	private final short REVISIONDIRECTORY = 0;
@@ -432,8 +434,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			Document doc = searcher.doc(hits2[0].doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			String pID = String.valueOf(pubRef);
-			doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
-					entityType, Store.YES));
 			doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID,
 					internalId, Store.YES));
 			doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,
@@ -445,14 +445,19 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			String title = doc.get(MetaDataImplementation.TITLE);
 			if(entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 				if(revision == 1) {
+					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
+							PublicVersionIndexWriterThread.FILE, Store.YES));
 					if(title != null) {
 						doc.add(new TextField(MetaDataImplementation.FILETYPE,
 								FilenameUtils.getExtension(title), Store.YES));
 					}
 				}else if(revision == 0) {
-					doc.add(new TextField(MetaDataImplementation.FILETYPE,
-							MetaDataImplementation.DIRECTORY, Store.YES));
+					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
+							PublicVersionIndexWriterThread.DIRECTORY, Store.YES));
 				}
+			}else {
+				doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
+						entityType, Store.YES));
 			}
 			
 			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,

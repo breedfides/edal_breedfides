@@ -75,11 +75,15 @@ let EdalReport = new function() {
     }
 
     this.search = function(){
+      var queryValue = document.getElementById('query').value;
+      if(queryValue == ""){
+        return;
+      }
       document.getElementById("loading-indicator").style.display="block";
       let self = this;
       ID++;
       let requestId = ID;
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
+      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
       self.currentRequestData = requestData;
 
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
@@ -107,10 +111,8 @@ let EdalReport = new function() {
           self.renderDatatableReports();
         }else if(requestData.hitType == "singleData"){
           self.renderDatatableFiles();
-        }else if(requestData.hitType == "Directory"){
+        }else if(requestData.hitType == "directory"){
           self.renderDatatableDirectories();
-        }else{
-          self.renderDatatableMixed();
         }
         self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
         document.getElementById("loading-indicator").style.display="none";
@@ -143,10 +145,8 @@ let EdalReport = new function() {
           self.renderDatatableReports();
         }else if(requestData.hitType == "singleData"){
           self.renderDatatableFiles();
-        }else if(requestData.hitType == "Directory"){
+        }else if(requestData.hitType == "directory"){
           self.renderDatatableDirectories();
-        }else{
-          self.renderDatatableMixed();
         }
         self.manipulateDataTable(data.pageArray, currentPage);
         document.getElementById("loading-indicator").style.display="none";
@@ -195,10 +195,8 @@ let EdalReport = new function() {
           self.renderDatatableReports();
         }else if(requestData.hitType == "singleData"){
           self.renderDatatableFiles();
-        }else if(requestData.hitType == "Directory"){
+        }else if(requestData.hitType == "directory"){
           self.renderDatatableDirectories();
-        }else{
-          self.renderDatatableMixed();
         }
         self.manipulateDataTable(data.pageArray, currentPage);
         document.getElementById("loading-indicator").style.display="none";
@@ -223,9 +221,6 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
-      console.log("_____ PAGE CHANGE _____");
-      console.log("changePage--index "+index);
-      console.log(currentRequestData);
       currentRequestData["bottomResultId"] = history[index].bottomResult;
       currentRequestData["bottomResultScore"] = history[index].bottomResultScore;
       currentRequestData["pageIndex"] = index;
@@ -235,13 +230,6 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
       reportData = data.results;
       if(ID == requestId){
-        console.log("pagearray:");
-        console.log(data.pageArray);
-        console.log("data");
-        console.log(data);
-        console.log("index: "+index);
-        console.log("history");
-        console.log(history);
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
@@ -260,13 +248,21 @@ let EdalReport = new function() {
           alert("bummer: index < 5 und page >= 7");
         }
         var j = 0;
+        var offset = index+4;
+        console.log("index= "+index+"offset= "+offset+" history.length_"+history.length);
+        if(offset > history.length){
+          i -= offset-history.length;
+          if(history.length > 10){
+            i--;
+          }
+          console.log("index adjusted to: "+i);
+        }
         var sum = i+j;
         while(j < 10 && sum < history.length){
           pageArray.push(history[sum]);
           j++;
           sum = i+j;
         }
-        console.log(pageArray);
         self.datatable.destroy();
         var tableid = "#report";
         $(tableid + " tbody").empty();
@@ -275,17 +271,12 @@ let EdalReport = new function() {
           self.renderDatatableReports();
         }else if(currentRequestData.hitType == "singleData"){
           self.renderDatatableFiles();
-        }else if(currentRequestData.hitType == "Directory"){
+        }else if(currentRequestData.hitType == "directory"){
           self.renderDatatableDirectories();
-        }else{
-          self.renderDatatableMixed();
         }
         document.getElementById("loading-indicator").style.display="none";
         self.manipulateDataTable(pageArray, self.currentRequestData, history);
       }
-      console.log("After _____ PAGE CHANGE _____");
-      console.log("history");
-      console.log(history);
       });
     }
 
@@ -499,10 +490,6 @@ let EdalReport = new function() {
       if(currentPage < 0){
         return;
       }
-      console.log("numbers:");
-      console.log(numbers);
-      console.log("curIndex "+currentIndex);
-      console.log("numbers["+currentIndex+"].page == "+history[currentIndex].page);
       var currentSelectedLi = document.getElementById("page"+history[currentIndex].page).classList.add("active");
       for(i = 0; i < numbers.length; i++){
         if(history[currentIndex].page != numbers[i].page){
@@ -534,63 +521,6 @@ let EdalReport = new function() {
         };
       }
     }
-
-    this.renderDatatableMixed = function() {
-        let self = this;
-
-        this.datatable = $('#report').DataTable({
-          data: self.reportData,
-          dom: 't',
-          //dom: 'Bfrtip',
-          buttons: [
-              {
-                  extend: 'copyHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-              {
-                  extend: 'csvHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-          ],
-          "pagingType": "simple",
-          "pageLength": 15,
-          info: false,
-          "order": [],
-            columns: [
-                {
-                    title: "Title",
-                    width: "25%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                      if(row.type == "record"){
-                        return '<a href="'+serverURL+'/DOI/'+data+'" target="_blank">'+data+'</a>';
-                      }else{
-                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
-                      }
-                    }
-                },
-                {
-                    title: "Type",
-                    data: "type",
-                    class: "edal-report-title"
-                },
-                {
-                    title: "Extension",
-                    data: "ext",
-                    class: "edal-report-title"
-                },
-                {
-                    title: "Record",
-                    data: "title",
-                    class: "edal-report-title"
-                }
-            ]
-        });
-    };
 
     this.renderDatatableReports = function() {
         let self = this;
@@ -627,7 +557,7 @@ let EdalReport = new function() {
                     width: "10%",
                     class: "edal-report-doi",
                     render: function (data, type, row) {
-                        return '<a href="'+serverURL+'/DOI/'+data+'" target="_blank">'+data+'</a>';
+                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
                     }
                 },
                 {

@@ -1171,7 +1171,7 @@ public class DataManager {
     			obj.put("fileName", "");
     			obj.put("ext", "");
 				obj.put("type", "record");
-			}else if(type.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+			}else {
 				String ext = doc.get(MetaDataImplementation.FILETYPE);
 	    		String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID)+"/"+doc.get(MetaDataImplementation.PRIMARYENTITYID)
 	    		+"/"+doc.get(PublicVersionIndexWriterThread.REVISION);
@@ -1180,12 +1180,12 @@ public class DataManager {
     			obj.put("doi", doi);
     			obj.put("fileName", file.toString());
 				obj.put("title", reference.getVersion().getMetaData().toString());
-				if(ext.equals(MetaDataImplementation.DIRECTORY)) {
-					obj.put("type", "Directory");
-					obj.put("ext","");
-				}else {
+				if(type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext",ext);
+				}else if(type.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+					obj.put("type", "Directory");
+					obj.put("ext","");
 				}
 			}
 			finalArray.add(obj);
@@ -1201,45 +1201,51 @@ public class DataManager {
 			page.put("page", 1);
 			page.put("index", 0);
 			pageArray.add(page);
+			//if pageSize equals the result size, only one page should be stored
+			if(pageSize != scoreDocs.length) {
 			additionalPages = 10;
-			for(int i = 1; i < additionalPages; i++) {
-				page = new JSONObject();
-				int index = i*pageSize-1;
-				if(index < scoreDocs.length) {
-					try {
-						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
-				        page.put("bottomResultScore", scoreDocs[index].score);
-						page.put("page", i+1);
-						page.put("index", i);
-						pageArray.add(page);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+				for(int i = 1; i < additionalPages; i++) {
+					page = new JSONObject();
+					int index = i*pageSize-1;
+					if(index < scoreDocs.length) {
+						try {
+							page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+					        page.put("bottomResultScore", scoreDocs[index].score);
+							page.put("page", i+1);
+							page.put("index", i);
+							pageArray.add(page);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}else {
+						break;
 					}
-				}else {
-					break;
 				}
 			}
 		}else {
 			//check if there needs to be loaded more additional Sites or only 1 (the current selected Site)
 			//pageArraySize = array of all pages
-			additionalPages = currentPageNumber+4<pageArraySize ? 0 : pageArraySize+4;
-			for(int i = pageArraySize; i < additionalPages; i++) {
-				page = new JSONObject();
-				int index = i*pageSize-1;
-				if(index < scoreDocs.length) {
-					try {
-						page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
-				        page.put("bottomResultScore", scoreDocs[index].score);
-						page.put("page", i+1);
-						page.put("index", i);
-						pageArray.add(page);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+			if(currentPageNumber+4 > pageArraySize && scoreDocs.length > pageSize) {
+				int offset = pageArraySize-currentPageNumber+1;
+				additionalPages = 5-offset;
+				for(int i = 0; i < additionalPages; i++) {
+					page = new JSONObject();
+					int index = (i+offset)*pageSize-1;
+					if(index < scoreDocs.length) {
+						try {
+							page.put("bottomResult", searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+					        page.put("bottomResultScore", scoreDocs[index].score);
+							page.put("page", i+1+pageArraySize);
+							page.put("index", i+pageArraySize);
+							pageArray.add(page);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}else {
+						break;
 					}
-				}else {
-					break;
 				}
 			}
 		}
@@ -1364,16 +1370,13 @@ public class DataManager {
 		if(hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
 			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
 		}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST_NOT);
-		}else if(hitType.equals(MetaDataImplementation.DIRECTORY)){
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.FILTER);
+			//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST_NOT);
+		}else if(hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)){
+			//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY)), Occur.MUST);
 		}else {
-			BooleanQuery.Builder restrictionQuery = new BooleanQuery.Builder();
-			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.SHOULD);
-			restrictionQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.SHOULD);
-			finalQuery.add(restrictionQuery.build(), Occur.FILTER);
+			return null;
 		}
 		IndexReader reader = null;
 		try {

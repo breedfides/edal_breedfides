@@ -39,18 +39,22 @@
           <div id="edal-report-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
           <div id="edal-report-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
           #if( $InstituteLogo)
-<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
-#else
-<div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
+  <div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png" /></a></div>
+  #else
+  <div class="col text-right pt-1"><a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" /></a></div>
       #end
 
       </div>
         </div>
       </nav>
         <div id="controls" class="pt-2 pb-2">
-            <div class="px-3" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
-              <span class="h2 mr-3">Search</span>
-              <span class="h6" id="statisticsSpan" style="display:inline-block;">
+            <div class="pl-3 form-row" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
+              <span class="flex-col h2 mr-1">Search</span>
+              <div class="flex-col pt-1">
+                <span class="form-control form-control-sm" id="collapseButton" style="background-color: transparent;border-color: transparent;color:white;cursor: pointer;font-size:large" type="button" name="collapseButton" onclick="collapse()" >+</span>
+              </div>
+              <span class="col h6 collapsible" id="statisticsSpan" style="display:inline-block;">
+                <div class="content" id="collapsible-content">
 
                   <div class="form-row" style="max-width:800px">
                     <div class="col">
@@ -101,6 +105,7 @@
                     </div>
 
                   </div>
+                </div>
                 </span>
             </div>
             <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
@@ -114,9 +119,7 @@
                       <button class="form-control form-control-sm" id="searchButton" type="button" name="searchbutton" onclick="EdalReport.search()" >search</button>
                     </div>
                     <div class="col">
-                      <div class="col">
                         <div class="lds-ellipsis" id="loading-indicator" style="display:none"><div></div><div></div><div></div><div></div></div>
-                      </div>
                     </div>
                   </div>
                     <!-- <div id="edal-report-filter-container" class="mr-3">
@@ -159,8 +162,7 @@
                       <select class="form-control form-control-sm" id="hitType" name="top5" size="1">
                         <option value="rootDirectory">Records</option>
                         <option value="singleData">Files</option>
-                        <option value="Directory">Directories</option>
-                        <option value="Entity/File/Directory">Records/Files/Directories</option>
+                        <option value="directory">Directories</option>
                       </select>
                     </div>
 
@@ -242,6 +244,18 @@
 
     <script>
     EdalReport.init(reportData, mapData);
+
+    function collapse(){
+      var element = document.getElementsByClassName("collapsible");
+      var content = document.getElementById("collapsible-content");
+      if (content.style.display === "block") {
+        content.style.display = "none";
+        document.getElementById("collapseButton").innerHTML = "+";
+      } else {
+        content.style.display = "block";
+        document.getElementById("collapseButton").innerHTML = '&#8722';
+      }
+    }
 
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);
