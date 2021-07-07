@@ -36,6 +36,9 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.StopwordAnalyzerBase;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -117,6 +120,24 @@ public class FileSystemImplementationProvider
 	private static final int SQL_ERROR_DATABASE_IN_USE = 90020;
 
 	private static final int SQL_ERROR_DATABASE_NOT_FOUND = 90013;
+	
+	public static final List<String> STOPWORDS = Arrays.asList(
+			"a", "about", "again", "all", "almost", "also", "although", "always", "among", 
+			"an", "and", "another", "any", "are", "as", "at", "be", 
+			"because", "been", "before", "being", "between", "both", "but", "by", 
+			"can", "could", "did", "do", "does", "done", "due", "during", 
+			"each", "either", "enough", "especially", "etc", "for", "found", "from", 
+			"further", "had", "has", "have", "having", "here", "how", "however", 
+			"i", "if", "in", "into", "is", "it", "its", "itself", 
+			"just", "kg", "km", "made", "mainly", "make", "may", "mg", 
+			"might", "ml", "mm", "most", "mostly", "must", "nearly", "neither", 
+			"no", "nor", "obtained", "of", "often", "on", "our", "overall", 
+			"perhaps", "pmid", "quite", "rather", "really", "regarding", "seem", "seen", 
+			"several", "should", "show", "showed", "shown", "shows", "significantly", "since", 
+			"so", "some", "such", "than", "that", "the", "their", "theirs", 
+			"them", "then", "there", "therefore", "these", "they", "this", "those", 
+			"through", "thus", "to", "upon", "various", "very", "was", "we", 
+			"were", "what", "when", "which", "while", "with", "within", "without", "would");
 
 	private IndexWriter writer = null;
 	public IndexWriter getWriter() {
@@ -422,8 +443,12 @@ public class FileSystemImplementationProvider
 				try {
 					Directory indexingDirectory = FSDirectory
 							.open(Paths.get(indexDirectory.toString(), "Master_Index"));
-					TieredMergePolicy pol = new TieredMergePolicy();					
-					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer());
+					TieredMergePolicy pol = new TieredMergePolicy();		
+					CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+					final CharArraySet stopSet = new CharArraySet(STOPWORDS.size()+defaultStopWords.size(), false);
+					stopSet.addAll(defaultStopWords);
+					stopSet.addAll(STOPWORDS);
+					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
 					writer = new IndexWriter(indexingDirectory, writerConfig);
 				} catch (IOException e) {

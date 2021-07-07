@@ -25,9 +25,6 @@ div.row.header > div {
     padding-top:15px;
 }
 
-
-
-
 nav {
 	background: white !important;
     border-bottom: 1px solid rgb(125, 125, 125);
@@ -76,14 +73,6 @@ a.edal-report-year-filter {
         display:none;
     }
 }
-
-
-
-
-
-
-
-
 
 tr {
   height: 35px
@@ -152,17 +141,19 @@ div#edal-report-filter{
   grid-row-start: 1;
   grid-row-end: 3;
   height:100%;
+  max-width:100%;
   text-align: center;
-
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(20, 1fr);
+  border-right: 1px solid #0984e3;
 }
 
 #edal-report-table-inner-container{
   display: grid;
   grid-template-columns: 320px 1fr;
   grid-template-rows: 20px 1fr;
+  max-height: 100%;
 }
 
 div#report_wrapper {
@@ -185,14 +176,6 @@ div.dataTables_scrollBody {
         height: calc(100% - 67px);
     }
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -463,6 +446,7 @@ footer {
 }
 
 .centerclass{
+  max-height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -497,6 +481,85 @@ footer {
 .filesizeinputs{
   grid-row-start: 7;
   grid-row-end: 8;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  font-weight: normal;
+  width: 90%;
+}
+
+.addableterms{
+  grid-row-start: 9;
+  grid-row-end: 10;
+  grid-column-start: 1;
+  grid-column-end: 4;
+  font-weight: normal;
+  text-align: center;
+}
+
+.creatorsLabel{
+  grid-row-start: 10;
+  grid-row-end: 11;
+  font-weight: normal;
+}
+.creatorsSelect{
+  grid-row-start: 10;
+  grid-row-end: 11;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  font-weight: normal;
+  width: 90%;
+}
+
+.contributorLabel{
+  grid-row-start: 12;
+  grid-row-end: 13;
+  font-weight: normal;
+}
+.contributorSelect{
+  grid-row-start: 12;
+  grid-row-end: 13;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  font-weight: normal;
+  width: 90%;
+}
+
+.subjectsLabel{
+  grid-row-start: 14;
+  grid-row-end: 15;
+  font-weight: normal;
+}
+.subjectsSelect{
+  grid-row-start: 14;
+  grid-row-end: 15;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  font-weight: normal;
+  width: 90%;
+}
+
+.titlesLabel{
+  grid-row-start: 16;
+  grid-row-end: 17;
+  font-weight: normal;
+}
+.titlesSelect{
+  grid-row-start: 16;
+  grid-row-end: 17;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  font-weight: normal;
+  width: 90%;
+}
+
+.descriptionsLabel{
+  grid-row-start: 18;
+  grid-row-end: 19;
+  font-weight: normal;
+}
+.descriptionsSelect{
+  grid-row-start: 18;
+  grid-row-end: 19;
   grid-column-start: 3;
   grid-column-end: 4;
   font-weight: normal;

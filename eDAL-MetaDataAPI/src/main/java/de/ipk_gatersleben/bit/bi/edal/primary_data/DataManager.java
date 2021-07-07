@@ -64,6 +64,8 @@ import javax.persistence.criteria.Root;
 import javax.security.auth.Subject;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
@@ -1035,7 +1037,11 @@ public class DataManager {
 			e1.printStackTrace();
 		}
 		BooleanQuery.setMaxClauseCount(10000);
-		Analyzer standardAnalyzer = new StandardAnalyzer();
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
+		stopSet.addAll(defaultStopWords);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		Analyzer standardAnalyzer = new StandardAnalyzer(stopSet);
     	String[] fields = {MetaDataImplementation.TITLE,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.COVERAGE,MetaDataImplementation.IDENTIFIER,
     			MetaDataImplementation.SIZE,MetaDataImplementation.TYPE,MetaDataImplementation.LANGUAGE,MetaDataImplementation.PERSON,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALGORITHM,MetaDataImplementation.CHECKSUM,MetaDataImplementation.SUBJECT,
     			MetaDataImplementation.RELATION,MetaDataImplementation.MIMETYPE,MetaDataImplementation.STARTDATE,MetaDataImplementation.ENDDATE,
@@ -1101,6 +1107,7 @@ public class DataManager {
 //		return Collections.unmodifiableList(results);
         return ids;
 	}
+	
 	
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
 		Query buildedQuery = buildQueryFromJSON(jsonArray);
@@ -1262,7 +1269,11 @@ public class DataManager {
 	}
 
 	public static Query parseToLuceneQuery(JSONObject jsonArray){
-		StandardAnalyzer analyzer = new StandardAnalyzer();
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
+		stopSet.addAll(defaultStopWords);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.OR);
 		String existing = (String) jsonArray.get("existingQuery");
@@ -1309,7 +1320,45 @@ public class DataManager {
 		}
 	}
 	
-	private static IndexSearcher initSearcher() {
+	public static JSONArray countHits2(JSONArray jsonArray) {
+		JSONArray result = new JSONArray();
+	      String[] arr = new String[jsonArray.size()];
+	      CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
+		  IndexSearcher searcher = DataManager.initSearcher();
+	      for(int i = 0; i < jsonArray.size(); i++) {
+	    	  final int index = i;
+	    	  final String currentType = (String) jsonArray.get(i);
+	    	  Thread innerThread = new Thread(){
+	  		    public void run(){
+	  		    	  try {
+	  					TopDocs topDocs = searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), 50000000);
+	  					String typeANdHits = topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? currentType+" ("+Long.toString(topDocs.totalHits.value)+")" : currentType+" > "+Long.toString(topDocs.totalHits.value);
+	  			        synchronized (arr) {
+	  			        	arr[index] = typeANdHits;
+	  			        }
+	  				} catch (IOException e) {
+	  					// TODO Auto-generated catch block
+	  					e.printStackTrace();
+	  				}
+	  		    	internalCountDownLatch.countDown();
+	  		    }
+	  		   };
+	  		   innerThread.start();
+	      }
+	      try {
+			internalCountDownLatch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	      for(String s : arr) {
+	    	  result.add(s);
+	      }
+	
+	      return result;
+	}
+	
+	public static IndexSearcher initSearcher() {
 		IndexReader reader = null;
 		try {
 	    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));

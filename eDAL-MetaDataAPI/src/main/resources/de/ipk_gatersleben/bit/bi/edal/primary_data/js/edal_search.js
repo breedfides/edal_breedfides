@@ -216,6 +216,33 @@ let EdalReport = new function() {
       }
       });
     }
+
+    this.listCreatorTerms = function(){
+      console.log("listCreatorTerms btn clicked");
+    }
+
+    this.listContributorTerms = function(){
+      console.log("contributor btn clicked");
+    }
+
+    this.listSubjectTerms = function(){
+      console.log("subject btn clicked");
+    }
+
+    this.listTitleTerms = function(){
+      console.log("title btn clicked");
+    }
+
+    this.listDescritionTerms = function(){
+      console.log("description btn clicked");
+    }
+
+    this.testCount = function(term){
+      $.post("/rest/extendedSearch/countHits2", term, function(data){
+        console.log(data);
+      });
+    }
+
     this.changePage = function(index, page, currentRequestData, history){
       document.getElementById("loading-indicator").style.display="block";
       let self = this;
@@ -235,6 +262,7 @@ let EdalReport = new function() {
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         document.getElementById("result-stats").innerHTML = 'Page '+currentPage+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
         var pageArray = [];
+        var offset;
         if(history[index].page < 7){
           i = 0;
         }else if(index > 5){
@@ -243,20 +271,20 @@ let EdalReport = new function() {
             for(j = 0; j < data.pageArray.length; j++){
               history.push(data.pageArray[j]);
             }
+          offset = index+4;
+          console.log("index= "+index+"offset= "+offset+" history.length_"+history.length);
+          if(offset > history.length){
+            i -= offset-history.length;
+            if(history.length > 10){
+              i--;
+            }
+            console.log("index adjusted to: "+i);
+          }
           }
         }else{
           alert("bummer: index < 5 und page >= 7");
         }
         var j = 0;
-        var offset = index+4;
-        console.log("index= "+index+"offset= "+offset+" history.length_"+history.length);
-        if(offset > history.length){
-          i -= offset-history.length;
-          if(history.length > 10){
-            i--;
-          }
-          console.log("index adjusted to: "+i);
-        }
         var sum = i+j;
         while(j < 10 && sum < history.length){
           pageArray.push(history[sum]);
@@ -401,6 +429,9 @@ let EdalReport = new function() {
           "pageLength": 15,
           info: false,
           "order": [],
+          "language": {
+            "emptyTable": ""
+          },
             columns: [
                 {
                     title: "Filename",
@@ -449,6 +480,9 @@ let EdalReport = new function() {
           "pageLength": 15,
           info: false,
           "order": [],
+          "language": {
+            "emptyTable": ""
+          },
             columns: [
                 {
                     title: "Directory",
@@ -547,6 +581,9 @@ let EdalReport = new function() {
             "pageLength": 15,
             info: false,
             "order": [],
+            "language": {
+              "emptyTable": ""
+            },
             fixedColumns:   {
                 heightMatch: 'none'
             },

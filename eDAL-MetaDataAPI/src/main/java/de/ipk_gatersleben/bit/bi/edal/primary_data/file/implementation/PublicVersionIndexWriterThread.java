@@ -127,7 +127,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	protected static int lastIndexedID = 0;
 	int counterValue = 0;
 	IndexWriter writer = null;
-	StandardAnalyzer analyzer;
 	IndexSearcher searcher = null;
 	IndexReader reader = null;
 	int indexedVersions = 0;

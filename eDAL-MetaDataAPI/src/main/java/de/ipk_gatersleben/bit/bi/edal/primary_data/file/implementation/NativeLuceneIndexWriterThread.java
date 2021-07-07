@@ -12,21 +12,27 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
@@ -39,7 +45,10 @@ import javax.security.auth.Subject;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
@@ -49,6 +58,7 @@ import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexNotFoundException;
@@ -60,6 +70,10 @@ import org.apache.lucene.index.MultiTerms;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -110,7 +124,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
-	private static List<String> fileTypes;
+	private static List<String> fileTypes = new ArrayList<>();
+	private static HashSet<String> subjects = new HashSet<>();
+	private static HashSet<String> contributors = new HashSet<>();;
+	private static HashSet<String> creators = new HashSet<>();
+	private static HashSet<String> legalPersons = new HashSet<>();
+	private static HashSet<String> titles = new HashSet<>();
+	private static HashSet<String> descriptions = new HashSet<>();
+	
+
 	IndexWriter writer = null;
 	protected static int lastIndexedID = 0;
 
@@ -125,18 +147,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		int numberDocs = 0;
 		try {
 			IndexReader reader = DirectoryReader.open(writer);
-			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
-			numberDocs += reader.numDocs();
-			if(numberDocs > 0) {
-				createFileTypeList(terms);
-			}
+			numberDocs = reader.numDocs();
+			initializeTermSets(reader);
 			reader.close();
 			reader = null;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
-
 		Path parent = this.pathToLastId.getParent();
 
 		if (!Files.exists(parent)) {
@@ -164,34 +182,78 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		
 	}
 	
-	
-	/**
-	 * Initializes the fileType[] with all existing file types in descending order
-	 * @param terms Lucene.Terms Object containing all fileTypes of the current Index
-	 */
-	private void createFileTypeList(Terms terms) {
-		TermsEnum it;
-		try {
-			it = terms.iterator();
-			int count = 0;
-			List<MyTerm> termList = new ArrayList<MyTerm>();
-			while(it.next() != null) {
-				String term = it.term().utf8ToString();
-				if(!term.equals(""))
-					termList.add(new MyTerm(term,it.docFreq()));
-				count++;
+	private void initializeTermSets(IndexReader reader) throws IOException {
+		if(reader != null) {
+			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
+			if(reader.numDocs() > 0) {
+				//Fills the fileTypes list with all existing file types found in the index in descending order
+				TermsEnum it;
+				try {
+					it = terms.iterator();
+					int count = 0;
+					List<MyTerm> termList = new ArrayList<MyTerm>();
+					while(it.next() != null) {
+						String term = it.term().utf8ToString();
+						if(!term.equals(""))
+							termList.add(new MyTerm(term,it.docFreq()));
+						count++;
+					}
+					Collections.sort(termList);
+					int size = termList.size();
+					for(int i = 0; i < size; i++) {
+						fileTypes.add(termList.get(i).getTerm());
+					}
+				} catch (IOException e) {
+					this.implementationProviderLogger.debug("Error in createFileTypeList(): "+e.getMessage());
+				}
+				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
+				IndexSearcher searcher = new IndexSearcher(reader);
+				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
+				this.implementationProviderLogger.info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
+				ScoreDoc[] scoreDocs = docs.scoreDocs;
+				for(ScoreDoc scoreDoc : scoreDocs) {
+					Document doc = searcher.doc(scoreDoc.doc);
+					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORUNTOKENIZED);
+					for(String string : strings) {
+						contributors.add(string);
+					}
+					String s = null;
+					s = doc.get(MetaDataImplementation.CREATORUNTOKENIZED);
+					if(s != null) {
+						creators.add(s);
+					}
+					s = doc.get(MetaDataImplementation.LEGALPERSON);
+					if(s != null) {
+						legalPersons.add(s);
+					}
+				}
+				//Obtaining the Metadata of Titles/Description requires analysis and tokenizing
+				docs = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, "b8497c99-8d2a-4a91-9fea-3a634c1afae8-74")), 1);
+				Document doc = searcher.doc(docs.scoreDocs[0].doc);
+				Analyzer myAnalyzer = writer.getAnalyzer();
+				TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
+				ts.reset();
+				while (ts.incrementToken()) {
+					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+					descriptions.add(ta.toString());
+				}
+				ts.close();
+				ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+				ts.reset();
+				while (ts.incrementToken()) {
+					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+					titles.add(ta.toString());
+				}
+				ts.close();
+				ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+				ts.reset();
+				while (ts.incrementToken()) {
+					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+					subjects.add(ta.toString());
+				}
+				ts.close();
 			}
-			Collections.sort(termList);
-			fileTypes = new ArrayList<String>();
-			int size = termList.size();
-			for(int i = 0; i < size; i++) {
-				fileTypes.add(termList.get(i).getTerm());
-			}
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
+		}
 	}
 
 	protected void executeIndexing() {
@@ -285,10 +347,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			// "+flushedObjects);
 		}
 	}
-	
-	public static List<String> getTerms() {
-		return fileTypes;
-	}
 
 	private void updateLastIndexedID(int indexedObjects) {
 		if (indexedObjects != 0) {
@@ -325,9 +383,26 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		
 		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
 				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
-		Persons naturalPersons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
+		Persons creators = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
+		StringBuilder stringFieldBuilder;
+		for (Person currentPerson : creators) {
+			builder.setLength(0);
+			if (currentPerson instanceof NaturalPerson) {
+				builder.append(((NaturalPerson) currentPerson).getGivenName());
+				builder.append(" ");
+				builder.append(((NaturalPerson) currentPerson).getSureName());
+				builder.append(" ");
+				stringFieldBuilder = new StringBuilder(builder).append(currentPerson.getAddressLine());
+				doc.add(new StringField("CreatorUntokenized", stringFieldBuilder.toString(), Store.YES));
+			}
+			builder.append(( currentPerson).getAddressLine());
+			builder.append(" ");
+			builder.append(( currentPerson).getZip());
+			builder.append(" ");
+			builder.append(( currentPerson).getCountry());
+			doc.add(new TextField(MetaDataImplementation.PERSON, builder.toString(), Store.YES));
+		}
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
-		persons.addAll(naturalPersons);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		builder.setLength(0);
 		builder.append(( legalPerson).getLegalName());
@@ -349,13 +424,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(" ");
+				stringFieldBuilder = new StringBuilder(builder).append(currentPerson.getAddressLine());
+				doc.add(new StringField("ContributorUntokenized", stringFieldBuilder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(" ");
 			builder.append(( currentPerson).getZip());
 			builder.append(" ");
 			builder.append(( currentPerson).getCountry());
-			doc.add(new TextField(MetaDataImplementation.PERSON, builder.toString(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.CONTRIBUTOR, builder.toString(), Store.YES));
 		}
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
 		builder.setLength(0);
@@ -585,5 +662,34 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			return frequence < term.frequence ? 1 : frequence > term.frequence ? -1 : 0;
 		}
 		
+	}
+	
+	public static HashSet<String> getTitles() {
+		return titles;
+	}
+
+	public static HashSet<String> getDescriptions() {
+		return descriptions;
+	}
+
+	public static HashSet<String> getLegalPersons() {
+		return legalPersons;
+	}
+
+	public static HashSet<String> getSubjects() {
+		return subjects;
+	}
+
+	public static HashSet<String> getContributors() {
+		return contributors;
+	}
+
+
+	public static HashSet<String> getCreators() {
+		return creators;
+	}
+	
+	public static List<String> getTerms() {
+		return fileTypes;
 	}
 }

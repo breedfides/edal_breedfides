@@ -73,6 +73,7 @@
                         <option value="Title">Title/Filename</option>
                         <option>Description</option>
                         <option>Creator</option>
+                        <option>Contributor</option>
                         <option>Legalperson</option>
                         <option>Subject</option>
                         <option>Language</option>
@@ -135,7 +136,7 @@
         <div id="grid-container-table-and-map">
             <div id="edal-report-table-container" class="px-3" style="overflow-y: hidden;">
               <div id="edal-report-table-inner-container">
-                <div id="edal-report-filter" class="mt-2">
+                <div id="edal-report-filter" class="mt-2 mb-2 pr-3">
 
 
                 <div class="creation-label centerclass">
@@ -167,10 +168,10 @@
                     </div>
 
                     <div class="filetypelabel centerclass">
-                      <label for="">File Extension </label>
+                      <label for="">File extension </label>
                       <input id="suffix" onchange="EdalReport.filterChange()" type="checkbox" class="mb-1 ml-1" name="Ongoing"  >
                     </div>
-                    <div class="filetypeinput centerclass">
+                    <div class="filetypeinput centerclass" >
                       <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled name="top5" size="1">
                         #foreach($obj in $filetypes)
                           <option value="$obj">$obj</option>
@@ -204,6 +205,43 @@
                         </select>
                       </div>
                     </div>
+                    <div class="centerclass addableterms">
+                      <label>Addable search terms</label>
+                    </div>
+                    <div class="centerclass creatorsLabel">
+                      <label>Creators</label>
+                    </div>
+                    <div class="centerclass creatorsSelect">
+                      <button id="creatorButton" onclick="EdalReport.listCreatorTerms()"></button>
+                    </div>
+
+                    <div class="centerclass contributorLabel">
+                      <label>Contributors</label>
+                    </div>
+                    <div class="centerclass contributorSelect">
+                      <button id="contributoButton" onclick="EdalReport.listContributorTerms()"></button>
+                    </div>
+
+                    <div class="centerclass subjectsLabel">
+                      <label>Subjects</label>
+                    </div>
+                    <div class="centerclass subjectsSelect">
+                        <button id="subjectButton" onclick="EdalReport.listSubjectTerms()"></button>
+                    </div>
+
+                    <div class="centerclass titlesLabel">
+                      <label>Title keywords</label>
+                    </div>
+                    <div class="centerclass titlesSelect">
+                        <button id="titleButton" onclick="EdalReport.listTitleTerms()"></button>
+                    </div>
+
+                    <div class="centerclass descriptionsLabel">
+                      <label>Description Keywords</label>
+                    </div>
+                    <div class="centerclass descriptionsSelect">
+                      <button id="descriptionButton" onclick="EdalReport.listDescritionTerms()"></button>
+                    </div>
 
                 </div>
                 <div class="pl-3 mt-1 " >
@@ -236,10 +274,63 @@
         var reportData = [];
         var mapData = [];
         var filetypes = [];
+        var subjects = [];
         var limit = 8;
         #foreach($obj in $filetypes)
           filetypes.push("$obj");
          #end
+         #foreach($obj in $subjects)
+           subjects.push("$obj");
+          #end
+
+
+          var selectObj = $("#subjects");
+          var singleoptionheight = selectObj.find("option").height();
+          var selectboxheight = selectObj.height();
+          var numOfOptionBeforeToLoadNextSet = 2;
+          var lastScrollTop = 0;
+          var currentPageNo = 1;
+          var isAppending = false;
+          var currentScroll = 0;
+
+          $(document).ready(function() {
+          $(selectObj).scroll(function(event) {
+            OnSelectScroll(event);
+          });
+        });
+
+        function OnSelectScroll(event) {
+        var st = $(selectObj).scrollTop();
+        var totalheight = selectObj.find("option").length * singleoptionheight;
+        if (st > lastScrollTop) {
+          // downscroll code
+          currentScroll = st + selectboxheight;
+
+          if ((currentScroll + (numOfOptionBeforeToLoadNextSet * singleoptionheight)) >= totalheight) {
+            currentPageNo++;
+            LoadNextSetOfOptions(currentPageNo);
+          }
+
+        }
+        lastScrollTop = st;
+      }
+      function LoadNextSetOfOptions(pageNo) {
+        //here we can have ajax call to fetch options from server.
+        //for demo purpose we will have simple for loop
+        //assuming pageNo starts with 1
+        var startOption = ((pageNo - 1) * 10); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
+        var endOption = startOption + 10; //for example if pageNo is 2 then endOption = 11 + 10 = 21
+        $.post("/rest/extendedSearch/countHits2", JSON.stringify(subjects.slice(startOption, endOption)), function(data){
+          for (i = startOption; i < endOption; i++) {
+            if(i < subjects.length){
+              $(selectObj).append("<option>"+ data[i-startOption] + "</option>");
+            }
+          }
+
+          $(selectObj).scrollTop(currentScroll - (selectboxheight));
+        });
+
+      }
     </script>
 
     <script>

@@ -30,6 +30,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +46,11 @@ import javax.mail.internet.InternetAddress;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TotalHits;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -61,6 +67,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
@@ -1442,6 +1449,50 @@ class VeloCityHtmlGenerator {
 	 */
 	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
 			throws EdalException {
+		
+		CountDownLatch countDownLatch = new CountDownLatch(1);
+		List<String> facetedList = new ArrayList<String>();
+		Thread thread = new Thread(){
+		    public void run(){
+			  ArrayList<String> subjects = new ArrayList<String>(NativeLuceneIndexWriterThread.getSubjects());
+		      int size = subjects.size() < 10 ? subjects.size() : 10;
+		      String[] arr = new String[size];
+		      CountDownLatch internalCountDownLatch = new CountDownLatch(size);
+	    	  IndexSearcher searcher = DataManager.initSearcher();
+		      for(int i = 0; i < size; i++) {
+		    	  final int index = i;
+		    	  final String currentType = subjects.get(i);
+		    	  Thread innerThread = new Thread(){
+		  		    public void run(){
+		  		    	  try {
+		  					TopDocs topDocs = searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), 50000000);
+		  					String typeANdHits = topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? currentType+" ("+Long.toString(topDocs.totalHits.value)+")" : currentType+" > "+Long.toString(topDocs.totalHits.value);
+		  			        synchronized (arr) {
+		  			        	arr[index] = typeANdHits;
+		  			        }
+		  				} catch (IOException e) {
+		  					// TODO Auto-generated catch block
+		  					e.printStackTrace();
+		  				}
+		  		    	internalCountDownLatch.countDown();
+		  		    }
+		  		   };
+		  		   innerThread.start();
+		      }
+		      try {
+				internalCountDownLatch.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		      for(String s : arr) {
+		    	  facetedList.add(s);
+		      }
+		      countDownLatch.countDown();
+		      System.out.println("Thread Finished");
+		    }
+		};
+		thread.start();
 
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
@@ -1451,13 +1502,24 @@ class VeloCityHtmlGenerator {
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		
 		context.put("title", "PGP-Search");
-		
-		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
 
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
+		
+		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
+		
+		context.put("subjects", NativeLuceneIndexWriterThread.getSubjects());
+		
+		try {
+			countDownLatch.await();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		context.put("subjectsWithCounts", facetedList);
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		
