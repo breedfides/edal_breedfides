@@ -30,6 +30,46 @@
   </head>
 
   <body>
+    <div id="myModal" class="modal">
+
+      <!-- Modal content -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Creators</h2>
+          <span style="float:right" class="close" onclick="hideModalDialog()">&times;</span>
+        </div>
+        <div class="modal-body">
+          <ul class="list-group" id="modal-list" style="max-height: 250px;overflow-y:auto">
+            <li class="list-group-item d-flex justify-content-between align-items-center liHover" onclick="alert('clicked li item')">
+              Cras justo odio
+              <span class="badge badge-primary badge-pill">14</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Dapibus ac facilisis in
+              <span class="badge badge-primary badge-pill">2</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Morbi leo risus
+              <span class="badge badge-primary badge-pill">1</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Dapibus ac facilisis in
+              <span class="badge badge-primary badge-pill">2</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Morbi leo risus
+              <span class="badge badge-primary badge-pill">1</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Morbi leo risus
+              <span class="badge badge-primary badge-pill">1</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
     <div id="search-counter"></div>
     <div id="grid-container">
       <nav>
@@ -269,19 +309,39 @@
 
     <script>
         var serverURL = "$serverURL";
-        //var reportData = $json;
-        //var mapData = $jsonall;
         var reportData = [];
         var mapData = [];
-        var filetypes = [];
-        var subjects = [];
-        var limit = 8;
+        var filetypes = [
         #foreach($obj in $filetypes)
-          filetypes.push("$obj");
+          "$obj",
          #end
-         #foreach($obj in $subjects)
-           subjects.push("$obj");
-          #end
+        ];
+        var subjects = [
+        #foreach($obj in $subjects)
+          "$obj",
+         #end
+        ];
+        var limit = 8;
+        var creators = [
+        #foreach($obj in $creators)
+          "$obj",
+         #end
+        ];
+        var contributors = [
+        #foreach($obj in $contributors)
+          "$obj",
+         #end
+        ];
+        var titles = [
+        #foreach($obj in $titles)
+          "$obj",
+         #end
+        ];
+        var descriptions = [
+        #foreach($obj in $descriptions)
+          "$obj",
+         #end
+        ];
 
 
           var selectObj = $("#subjects");
@@ -313,6 +373,17 @@
 
         }
         lastScrollTop = st;
+      }
+
+      function hideModalDialog(){
+        document.getElementById("myModal").style.display="none";
+      }
+
+      window.onclick = function(event) {
+      var modal = document.getElementById("myModal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
       }
       function LoadNextSetOfOptions(pageNo) {
         //here we can have ajax call to fetch options from server.

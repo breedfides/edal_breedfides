@@ -211,6 +211,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
 				this.implementationProviderLogger.info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
 				ScoreDoc[] scoreDocs = docs.scoreDocs;
+				Analyzer myAnalyzer = writer.getAnalyzer();
 				for(ScoreDoc scoreDoc : scoreDocs) {
 					Document doc = searcher.doc(scoreDoc.doc);
 					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORUNTOKENIZED);
@@ -226,32 +227,30 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					if(s != null) {
 						legalPersons.add(s);
 					}
+					TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+						descriptions.add(ta.toString());
+					}
+					ts.close();
+					ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+						titles.add(ta.toString());
+					}
+					ts.close();
+					ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+						subjects.add(ta.toString());
+					}
+					ts.close();
 				}
 				//Obtaining the Metadata of Titles/Description requires analysis and tokenizing
 				docs = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, "b8497c99-8d2a-4a91-9fea-3a634c1afae8-74")), 1);
-				Document doc = searcher.doc(docs.scoreDocs[0].doc);
-				Analyzer myAnalyzer = writer.getAnalyzer();
-				TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
-				ts.reset();
-				while (ts.incrementToken()) {
-					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-					descriptions.add(ta.toString());
-				}
-				ts.close();
-				ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
-				ts.reset();
-				while (ts.incrementToken()) {
-					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-					titles.add(ta.toString());
-				}
-				ts.close();
-				ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
-				ts.reset();
-				while (ts.incrementToken()) {
-					CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-					subjects.add(ta.toString());
-				}
-				ts.close();
 			}
 		}
 	}

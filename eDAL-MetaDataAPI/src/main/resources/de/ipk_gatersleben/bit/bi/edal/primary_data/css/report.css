@@ -146,7 +146,7 @@ div#edal-report-filter{
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(20, 1fr);
-  border-right: 1px solid #0984e3;
+  border-right: 1px solid #2596be;
 }
 
 #edal-report-table-inner-container{
@@ -829,4 +829,47 @@ footer {
   display: none;
   overflow: hidden;
   padding-top:6px;
+}
+
+#myModal{
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 2px 6px;
+  background-color: #08acec;
+  color: white;
+  text-shadow:2px
+}
+
+/* Modal Body */
+.modal-body {padding: 2px 6px;}
+
+.list-group li:hover{
+  background-color: #dfe6e9;
+}
+
+.list-group li:hover{
+  cursor:pointer;
+}
+
+/* Modal Content */
+.modal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #888;
+  width: 40%;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  animation-name: animatetop;
+  animation-duration: 0.4s
+}
+
+/* Add Animation */
+@keyframes animatetop {
+  from {top: -300px; opacity: 0}
+  to {top: 0; opacity: 1}
 }

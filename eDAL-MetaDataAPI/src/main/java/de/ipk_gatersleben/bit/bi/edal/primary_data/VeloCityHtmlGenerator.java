@@ -1450,50 +1450,6 @@ class VeloCityHtmlGenerator {
 	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
 			throws EdalException {
 		
-		CountDownLatch countDownLatch = new CountDownLatch(1);
-		List<String> facetedList = new ArrayList<String>();
-		Thread thread = new Thread(){
-		    public void run(){
-			  ArrayList<String> subjects = new ArrayList<String>(NativeLuceneIndexWriterThread.getSubjects());
-		      int size = subjects.size() < 10 ? subjects.size() : 10;
-		      String[] arr = new String[size];
-		      CountDownLatch internalCountDownLatch = new CountDownLatch(size);
-	    	  IndexSearcher searcher = DataManager.initSearcher();
-		      for(int i = 0; i < size; i++) {
-		    	  final int index = i;
-		    	  final String currentType = subjects.get(i);
-		    	  Thread innerThread = new Thread(){
-		  		    public void run(){
-		  		    	  try {
-		  					TopDocs topDocs = searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), 50000000);
-		  					String typeANdHits = topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? currentType+" ("+Long.toString(topDocs.totalHits.value)+")" : currentType+" > "+Long.toString(topDocs.totalHits.value);
-		  			        synchronized (arr) {
-		  			        	arr[index] = typeANdHits;
-		  			        }
-		  				} catch (IOException e) {
-		  					// TODO Auto-generated catch block
-		  					e.printStackTrace();
-		  				}
-		  		    	internalCountDownLatch.countDown();
-		  		    }
-		  		   };
-		  		   innerThread.start();
-		      }
-		      try {
-				internalCountDownLatch.await();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		      for(String s : arr) {
-		    	  facetedList.add(s);
-		      }
-		      countDownLatch.countDown();
-		      System.out.println("Thread Finished");
-		    }
-		};
-		thread.start();
-
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", DEFAULT_CHARSET.toString());
@@ -1512,14 +1468,14 @@ class VeloCityHtmlGenerator {
 		
 		context.put("subjects", NativeLuceneIndexWriterThread.getSubjects());
 		
-		try {
-			countDownLatch.await();
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		context.put("creators", NativeLuceneIndexWriterThread.getCreators());
 		
-		context.put("subjectsWithCounts", facetedList);
+		context.put("contributors", NativeLuceneIndexWriterThread.getContributors());
+		
+		context.put("titles", NativeLuceneIndexWriterThread.getTitles());
+		
+		context.put("descriptions", NativeLuceneIndexWriterThread.getDescriptions());
+	
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		

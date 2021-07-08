@@ -219,6 +219,14 @@ let EdalReport = new function() {
 
     this.listCreatorTerms = function(){
       console.log("listCreatorTerms btn clicked");
+      document.getElementById("myModal").style.display = "flex";
+      var li = document.createElement("li");
+      li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+      li.innerHTML = 'später hinzugefügt<span class="badge badge-primary badge-pill">14</span>';
+      setTimeout(function () {
+          document.getElementById("modal-list").appendChild(li);
+          console.log("appended li");
+      }, 2000);
     }
 
     this.listContributorTerms = function(){
