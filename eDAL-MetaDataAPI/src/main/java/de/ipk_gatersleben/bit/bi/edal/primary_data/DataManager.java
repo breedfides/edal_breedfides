@@ -88,6 +88,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -1322,19 +1323,19 @@ public class DataManager {
 	
 	public static JSONArray countHits2(JSONArray jsonArray) {
 		JSONArray result = new JSONArray();
-	      String[] arr = new String[jsonArray.size()];
+	      int[] arr = new int[jsonArray.size()];
 	      CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
 		  IndexSearcher searcher = DataManager.initSearcher();
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
-	    	  final String currentType = (String) jsonArray.get(i);
+	    	  final String currentType = (String) jsonArray.get(index);
 	    	  Thread innerThread = new Thread(){
 	  		    public void run(){
+	  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 	  		    	  try {
-	  					TopDocs topDocs = searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), 50000000);
-	  					String typeANdHits = topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? currentType+" ("+Long.toString(topDocs.totalHits.value)+")" : currentType+" > "+Long.toString(topDocs.totalHits.value);
+	  					searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), collector);
 	  			        synchronized (arr) {
-	  			        	arr[index] = typeANdHits;
+	  			        	arr[index] = collector.getTotalHits();
 	  			        }
 	  				} catch (IOException e) {
 	  					// TODO Auto-generated catch block
@@ -1351,8 +1352,8 @@ public class DataManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	      for(String s : arr) {
-	    	  result.add(s);
+	      for(int val : arr) {
+	    	  result.add(val);
 	      }
 	
 	      return result;

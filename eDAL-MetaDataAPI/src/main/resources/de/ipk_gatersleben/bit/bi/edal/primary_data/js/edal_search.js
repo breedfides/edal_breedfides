@@ -21,6 +21,17 @@ let EdalReport = new function() {
     this.hitSize = 0;
     this.pageNumbers = 0;
     this.currentRequestData = {};
+    this.myModal = document.getElementById("myModal");
+
+
+    this.ulCreator = document.createElement("ul");
+    this.ulCreator.classList.add("list-group");
+    this.ulCreator.style.maxHeight = "250px";
+    this.ulCreator.style.overflowY = "auto";
+    this.ulContributor = this.ulCreator.cloneNode(false);
+    this.ulSubjects = this.ulCreator.cloneNode(false);
+    this.ulTitles = this.ulCreator.cloneNode(false);
+    this.ulDescriptoions = this.ulCreator.cloneNode(false);
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -218,15 +229,14 @@ let EdalReport = new function() {
     }
 
     this.listCreatorTerms = function(){
+      let self = this;
       console.log("listCreatorTerms btn clicked");
       document.getElementById("myModal").style.display = "flex";
       var li = document.createElement("li");
       li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
       li.innerHTML = 'später hinzugefügt<span class="badge badge-primary badge-pill">14</span>';
-      setTimeout(function () {
-          document.getElementById("modal-list").appendChild(li);
-          console.log("appended li");
-      }, 2000);
+      self.ulCreator.appendChild(li);
+      document.getElementById("modal-list").appendChild(self.ulCreator);
     }
 
     this.listContributorTerms = function(){
@@ -234,7 +244,9 @@ let EdalReport = new function() {
     }
 
     this.listSubjectTerms = function(){
-      console.log("subject btn clicked");
+      let self = this;
+      document.getElementById("myModal").style.display = "flex";
+      document.getElementById("modal-list").appendChild(self.ulSubjects);
     }
 
     this.listTitleTerms = function(){
@@ -250,6 +262,48 @@ let EdalReport = new function() {
         console.log(data);
       });
     }
+
+
+        this.loadCreatorTerms = async function(){
+
+        }
+
+        this.loadContributorTerms = async function(){
+
+        }
+
+        this.loadSubjectTerms = async function(currentPageNo = 1){
+          let self = this;
+          const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
+          const upperBound = startOption + 5;
+          const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
+          const slice = subjects.slice(startOption, endOption);
+          console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
+          console.log(slice);
+          $.post("/rest/extendedSearch/countHits2", JSON.stringify(slice), function(data){
+            console.log("returned data: ");
+            console.log(data);
+            for (i = 0; i < data.length; i++) {
+                var li = document.createElement("li");
+                li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+                li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+                self.ulSubjects.appendChild(li);
+                console.log(slice[i]+" "+data[i]);
+            }
+            const incrementedPageNo = ++currentPageNo;
+            if(((currentPageNo - 1) * 5) < subjects.length){
+              self.loadSubjectTerms(incrementedPageNo);
+            }
+          });
+        }
+
+        this.loadTitleTerms = async function(){
+
+        }
+
+        this.loadDescriptionTerms = async function(){
+
+        }
 
     this.changePage = function(index, page, currentRequestData, history){
       document.getElementById("loading-indicator").style.display="block";
@@ -402,10 +456,15 @@ let EdalReport = new function() {
             self.renderDatatableReports();
             self.manipulateDataTable([],null,[]);
             self.addObservers();
+            self.loadCreatorTerms();
+            self.loadContributorTerms();
+            self.loadSubjectTerms();
+            self.loadTitleTerms();
+            self.loadDescriptionTerms();
         });
     };
 
-    this.renderYearSelectOptions = function() {
+    this.renderYearSelectOptions = async function() {
         let selectElem = $('#edal-report-year-filter');
         _.forEach(this.allYears, function(year) {
             selectElem.append('<option value="'+year+'">'+year+'</a>&nbsp;');

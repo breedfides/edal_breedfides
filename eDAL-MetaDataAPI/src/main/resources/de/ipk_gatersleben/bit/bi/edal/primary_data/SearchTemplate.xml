@@ -38,32 +38,7 @@
           <h2>Creators</h2>
           <span style="float:right" class="close" onclick="hideModalDialog()">&times;</span>
         </div>
-        <div class="modal-body">
-          <ul class="list-group" id="modal-list" style="max-height: 250px;overflow-y:auto">
-            <li class="list-group-item d-flex justify-content-between align-items-center liHover" onclick="alert('clicked li item')">
-              Cras justo odio
-              <span class="badge badge-primary badge-pill">14</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Dapibus ac facilisis in
-              <span class="badge badge-primary badge-pill">2</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Morbi leo risus
-              <span class="badge badge-primary badge-pill">1</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Dapibus ac facilisis in
-              <span class="badge badge-primary badge-pill">2</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Morbi leo risus
-              <span class="badge badge-primary badge-pill">1</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Morbi leo risus
-              <span class="badge badge-primary badge-pill">1</span>
-            </li>
+        <div class="modal-body" id="modal-list">
           </ul>
         </div>
       </div>
@@ -252,35 +227,35 @@
                       <label>Creators</label>
                     </div>
                     <div class="centerclass creatorsSelect">
-                      <button id="creatorButton" onclick="EdalReport.listCreatorTerms()"></button>
+                      <button id="creatorButton" class="form-control form-control-sm" onclick="EdalReport.listCreatorTerms()">$creators.size() elements</button>
                     </div>
 
                     <div class="centerclass contributorLabel">
                       <label>Contributors</label>
                     </div>
                     <div class="centerclass contributorSelect">
-                      <button id="contributoButton" onclick="EdalReport.listContributorTerms()"></button>
+                      <button id="contributoButton" class="form-control form-control-sm" onclick="EdalReport.listContributorTerms()">$contributors.size() elements</button>
                     </div>
 
                     <div class="centerclass subjectsLabel">
                       <label>Subjects</label>
                     </div>
                     <div class="centerclass subjectsSelect">
-                        <button id="subjectButton" onclick="EdalReport.listSubjectTerms()"></button>
+                        <button id="subjectButton" class="form-control form-control-sm" onclick="EdalReport.listSubjectTerms()">$subjects.size() elements</button>
                     </div>
 
                     <div class="centerclass titlesLabel">
                       <label>Title keywords</label>
                     </div>
                     <div class="centerclass titlesSelect">
-                        <button id="titleButton" onclick="EdalReport.listTitleTerms()"></button>
+                        <button id="titleButton" class="form-control form-control-sm" onclick="EdalReport.listTitleTerms()">$titles.size() elements</button>
                     </div>
 
                     <div class="centerclass descriptionsLabel">
                       <label>Description Keywords</label>
                     </div>
                     <div class="centerclass descriptionsSelect">
-                      <button id="descriptionButton" onclick="EdalReport.listDescritionTerms()"></button>
+                      <button id="descriptionButton" class="form-control form-control-sm" onclick="EdalReport.listDescritionTerms()">$descriptions.size() elements</button>
                     </div>
 
                 </div>
@@ -342,6 +317,12 @@
           "$obj",
          #end
         ];
+        var creatorsSize = creators.length;
+        var contributorsSize = contributors.length;
+        var subjectsSize = subjects.length;
+        var titlesSize = titles.length;
+        var descriptionsSize = descriptions.length;
+        console.log(creatorsSize+" "+contributorsSize+" "+subjectsSize+" "+titlesSize+" "+descriptionsSize);
 
 
           var selectObj = $("#subjects");
