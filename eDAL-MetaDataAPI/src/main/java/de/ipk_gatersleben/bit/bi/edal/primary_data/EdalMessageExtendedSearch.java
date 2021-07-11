@@ -139,7 +139,7 @@ public class EdalMessageExtendedSearch {
 	public JSONArray countHits2(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
-			return DataManager.countHits2((JSONArray)parser.parse(json));
+			return DataManager.countHits2((JSONObject)parser.parse(json));
 		} catch (ParseException e) {
 			return new JSONArray();
 		}

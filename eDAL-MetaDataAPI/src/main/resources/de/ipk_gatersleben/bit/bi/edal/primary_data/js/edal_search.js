@@ -22,6 +22,7 @@ let EdalReport = new function() {
     this.pageNumbers = 0;
     this.currentRequestData = {};
     this.myModal = document.getElementById("myModal");
+    this.modalID = 0;
 
 
     this.ulCreator = document.createElement("ul");
@@ -58,6 +59,7 @@ let EdalReport = new function() {
   	const PERSON = "Creator";
   	const LEGALPERSON = "Legalperson";
     const FILETYPE = "Filetype";
+    const CONTRIBUTOR = "Contributor";
 
     this.build = function(){
       if(document.getElementById("searchterm").value == ""){
@@ -228,33 +230,82 @@ let EdalReport = new function() {
       });
     }
 
+    this.loadTerms = async function(currentPageNo, type, unorderedList, list, id){
+      let self = this;
+      const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
+      const upperBound = startOption + 5;
+      const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
+      const slice = list.slice(startOption, endOption);
+      var request = {"termType":type, "terms":slice};
+      console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
+      console.log(slice);
+      $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        console.log("returned data: ");
+        console.log(data);
+        for (i = 0; i < data.length; i++) {
+            var li = document.createElement("li");
+            li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+            li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+            unorderedList.appendChild(li);
+            console.log(slice[i]+" "+data[i]);
+        }
+        const incrementedPageNo = ++currentPageNo;
+        console.log("modalID: "+self.modalID+" id: "+id);
+        if(self.modalID == id && ((currentPageNo - 1) * 5) < subjects.length){
+          self.loadTerms(incrementedPageNo, type, unorderedList, list, id);
+        }
+      });
+    }
+
+
     this.listCreatorTerms = function(){
       let self = this;
-      console.log("listCreatorTerms btn clicked");
+      var id = ++self.modalID;
+      self.loadTerms(1,PERSON, self.ulCreator, creators, id);
       document.getElementById("myModal").style.display = "flex";
-      var li = document.createElement("li");
-      li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-      li.innerHTML = 'später hinzugefügt<span class="badge badge-primary badge-pill">14</span>';
-      self.ulCreator.appendChild(li);
+      var modalList = document.getElementById("modal-list");
+      modalList.innerHTML = "";
       document.getElementById("modal-list").appendChild(self.ulCreator);
     }
 
     this.listContributorTerms = function(){
-      console.log("contributor btn clicked");
+      let self = this;
+      var id = ++self.modalID;
+      self.loadTerms(1,CONTRIBUTOR, self.ulContributor, contributors, id);
+      document.getElementById("myModal").style.display = "flex";
+      var modalList = document.getElementById("modal-list");
+      modalList.innerHTML = "";
+      document.getElementById("modal-list").appendChild(self.ulContributor);
     }
 
     this.listSubjectTerms = function(){
       let self = this;
+      var id = ++self.modalID;
+      self.loadTerms(1,SUBJECT, self.ulSubjects, subjects, id);
       document.getElementById("myModal").style.display = "flex";
+      var modalList = document.getElementById("modal-list");
+      modalList.innerHTML = "";
       document.getElementById("modal-list").appendChild(self.ulSubjects);
     }
 
     this.listTitleTerms = function(){
-      console.log("title btn clicked");
+      let self = this;
+      var id = ++self.modalID;
+      self.loadTerms(1,TITLE, self.ulTitles, titles, id);
+      document.getElementById("myModal").style.display = "flex";
+      var modalList = document.getElementById("modal-list");
+      modalList.innerHTML = "";
+      document.getElementById("modal-list").appendChild(self.ulTitles);
     }
 
     this.listDescritionTerms = function(){
-      console.log("description btn clicked");
+      let self = this;
+      var id = ++self.modalID;
+      self.loadTerms(1,DESCRIPTION, self.ulDescriptoions, descriptions, id);
+      document.getElementById("myModal").style.display = "flex";
+      var modalList = document.getElementById("modal-list");
+      modalList.innerHTML = "";
+      document.getElementById("modal-list").appendChild(self.ulDescriptoions);
     }
 
     this.testCount = function(term){
@@ -264,46 +315,57 @@ let EdalReport = new function() {
     }
 
 
-        this.loadCreatorTerms = async function(){
+        // this.loadContributorTerms = async function(currentPageNo, type){
+        //   let self = this;
+        //   const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
+        //   const upperBound = startOption + 5;
+        //   const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
+        //   const slice = subjects.slice(startOption, endOption);
+        //   var request = {"termType":type, "terms":slice};
+        //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
+        //   console.log(slice);
+        //   $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        //     console.log("returned data: ");
+        //     console.log(data);
+        //     for (i = 0; i < data.length; i++) {
+        //         var li = document.createElement("li");
+        //         li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+        //         li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+        //         self.ulContributor.appendChild(li);
+        //         console.log(slice[i]+" "+data[i]);
+        //     }
+        //     const incrementedPageNo = ++currentPageNo;
+        //     if(((currentPageNo - 1) * 5) < subjects.length){
+        //       self.loadContributorTerms(incrementedPageNo, type);
+        //     }
+        //   });
+        // }
 
-        }
-
-        this.loadContributorTerms = async function(){
-
-        }
-
-        this.loadSubjectTerms = async function(currentPageNo = 1){
-          let self = this;
-          const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
-          const upperBound = startOption + 5;
-          const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
-          const slice = subjects.slice(startOption, endOption);
-          console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
-          console.log(slice);
-          $.post("/rest/extendedSearch/countHits2", JSON.stringify(slice), function(data){
-            console.log("returned data: ");
-            console.log(data);
-            for (i = 0; i < data.length; i++) {
-                var li = document.createElement("li");
-                li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-                li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-                self.ulSubjects.appendChild(li);
-                console.log(slice[i]+" "+data[i]);
-            }
-            const incrementedPageNo = ++currentPageNo;
-            if(((currentPageNo - 1) * 5) < subjects.length){
-              self.loadSubjectTerms(incrementedPageNo);
-            }
-          });
-        }
-
-        this.loadTitleTerms = async function(){
-
-        }
-
-        this.loadDescriptionTerms = async function(){
-
-        }
+        // this.loadSubjectTerms = async function(currentPageNo, type){
+        //   let self = this;
+        //   const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
+        //   const upperBound = startOption + 5;
+        //   const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
+        //   const slice = subjects.slice(startOption, endOption);
+        //   var request = {"termType":type, "terms":slice};
+        //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
+        //   console.log(slice);
+        //   $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        //     console.log("returned data: ");
+        //     console.log(data);
+        //     for (i = 0; i < data.length; i++) {
+        //         var li = document.createElement("li");
+        //         li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+        //         li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+        //         self.ulSubjects.appendChild(li);
+        //         console.log(slice[i]+" "+data[i]);
+        //     }
+        //     const incrementedPageNo = ++currentPageNo;
+        //     if(((currentPageNo - 1) * 5) < subjects.length){
+        //       self.loadSubjectTerms(incrementedPageNo, type);
+        //     }
+        //   });
+        // }
 
     this.changePage = function(index, page, currentRequestData, history){
       document.getElementById("loading-indicator").style.display="block";
@@ -456,11 +518,6 @@ let EdalReport = new function() {
             self.renderDatatableReports();
             self.manipulateDataTable([],null,[]);
             self.addObservers();
-            self.loadCreatorTerms();
-            self.loadContributorTerms();
-            self.loadSubjectTerms();
-            self.loadTitleTerms();
-            self.loadDescriptionTerms();
         });
     };
 

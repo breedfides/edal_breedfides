@@ -1321,11 +1321,13 @@ public class DataManager {
 		}
 	}
 	
-	public static JSONArray countHits2(JSONArray jsonArray) {
-		JSONArray result = new JSONArray();
+	public static JSONArray countHits2(JSONObject jsonObject) {
+			JSONArray result = new JSONArray();
+			JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
 	      int[] arr = new int[jsonArray.size()];
 	      CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
 		  IndexSearcher searcher = DataManager.initSearcher();
+		  String type = (String) jsonObject.get("termType");
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
@@ -1333,7 +1335,7 @@ public class DataManager {
 	  		    public void run(){
 	  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 	  		    	  try {
-	  					searcher.search(new TermQuery(new Term(MetaDataImplementation.SUBJECT,currentType)), collector);
+	  					searcher.search(new TermQuery(new Term(type,currentType)), collector);
 	  			        synchronized (arr) {
 	  			        	arr[index] = collector.getTotalHits();
 	  			        }

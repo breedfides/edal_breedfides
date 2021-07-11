@@ -383,7 +383,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
 				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
 		Persons creators = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
-		StringBuilder stringFieldBuilder;
 		for (Person currentPerson : creators) {
 			builder.setLength(0);
 			if (currentPerson instanceof NaturalPerson) {
@@ -391,8 +390,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(" ");
-				stringFieldBuilder = new StringBuilder(builder).append(currentPerson.getAddressLine());
-				doc.add(new StringField("CreatorUntokenized", stringFieldBuilder.toString(), Store.YES));
+				doc.add(new StringField("CreatorUntokenized", builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(" ");
@@ -423,8 +421,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(" ");
-				stringFieldBuilder = new StringBuilder(builder).append(currentPerson.getAddressLine());
-				doc.add(new StringField("ContributorUntokenized", stringFieldBuilder.toString(), Store.YES));
+				doc.add(new StringField("ContributorUntokenized", builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(" ");
