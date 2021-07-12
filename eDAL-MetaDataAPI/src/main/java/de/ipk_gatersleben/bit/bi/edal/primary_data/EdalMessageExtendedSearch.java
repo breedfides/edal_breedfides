@@ -144,5 +144,18 @@ public class EdalMessageExtendedSearch {
 			return new JSONArray();
 		}
 	}
+	
+	@Path("/parseInternalQuery")
+	@POST
+	@ManagedAsync
+	@Produces(MediaType.TEXT_PLAIN)
+	public String buildQueryFromJson(String json) throws JsonParseException, JsonMappingException, IOException {
+		JSONParser parser = new JSONParser();
+		try {
+			return DataManager.buildQueryFromJSON((JSONObject)parser.parse(json)).toString();
+		} catch (ParseException e) {
+			return "";
+		}
+	}
 
 }

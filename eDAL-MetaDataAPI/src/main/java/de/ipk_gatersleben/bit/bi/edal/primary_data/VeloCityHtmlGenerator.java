@@ -1475,7 +1475,10 @@ class VeloCityHtmlGenerator {
 		context.put("titles", NativeLuceneIndexWriterThread.getTitles());
 		
 		context.put("descriptions", NativeLuceneIndexWriterThread.getDescriptions());
-	
+		
+		if(DataManager.globalSearcher == null) {
+			DataManager.globalSearcher = DataManager.initSearcher();
+		}
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		

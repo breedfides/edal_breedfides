@@ -175,7 +175,7 @@
                       <label for="">Result types</label>
                     </div>
                     <div class="hittypeinput centerclass">
-                      <select class="form-control form-control-sm" id="hitType" name="top5" size="1">
+                      <select class="form-control form-control-sm" id="hitType" onchange="EdalReport.filterChange()" name="top5" size="1">
                         <option value="rootDirectory">Records</option>
                         <option value="singleData">Files</option>
                         <option value="directory">Directories</option>

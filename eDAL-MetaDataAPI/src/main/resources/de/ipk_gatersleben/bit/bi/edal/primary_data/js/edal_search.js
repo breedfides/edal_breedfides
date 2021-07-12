@@ -13,7 +13,6 @@ let EdalReport = new function() {
     this.ID = 0;
     this.searchID = 0;
     this.buildID = 0;
-    this.query = "";
     this.bottomResultId = null;
     this.previousBottomResultId = null;
     this.pageSize = 15;
@@ -22,17 +21,12 @@ let EdalReport = new function() {
     this.pageNumbers = 0;
     this.currentRequestData = {};
     this.myModal = document.getElementById("myModal");
-    this.modalID = 0;
 
 
-    this.ulCreator = document.createElement("ul");
-    this.ulCreator.classList.add("list-group");
-    this.ulCreator.style.maxHeight = "250px";
-    this.ulCreator.style.overflowY = "auto";
-    this.ulContributor = this.ulCreator.cloneNode(false);
-    this.ulSubjects = this.ulCreator.cloneNode(false);
-    this.ulTitles = this.ulCreator.cloneNode(false);
-    this.ulDescriptoions = this.ulCreator.cloneNode(false);
+    this.ulDummy = document.createElement("ul");
+    this.ulDummy.classList.add("list-group");
+    this.ulDummy.style.maxHeight = "250px";
+    this.ulDummy.style.overflowY = "auto";
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -62,6 +56,7 @@ let EdalReport = new function() {
     const CONTRIBUTOR = "Contributor";
 
     this.build = function(){
+      let self = this;
       if(document.getElementById("searchterm").value == ""){
         console.log("no val in searchterm");
         return;
@@ -84,6 +79,7 @@ let EdalReport = new function() {
         console.log(data);
         document.getElementById("query").value = "";
         document.getElementById("query").value = data;
+        let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
       });
     }
 
@@ -98,7 +94,6 @@ let EdalReport = new function() {
       let requestId = ID;
       let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
       self.currentRequestData = requestData;
-
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       if(ID == requestId){
@@ -230,82 +225,93 @@ let EdalReport = new function() {
       });
     }
 
-    this.loadTerms = async function(currentPageNo, type, unorderedList, list, id){
+    this.loadTerms = async function(currentPageNo, type, unorderedList, list){
       let self = this;
       const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
       const upperBound = startOption + 5;
-      const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
+      const endOption = upperBound < list.length ? upperBound : list.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
       const slice = list.slice(startOption, endOption);
-      var request = {"termType":type, "terms":slice};
-      console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
+      var request = {"termType":type, "terms":slice, "requestData":self.currentRequestData};
+      console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption+" length of array: "+list.length);
       console.log(slice);
       $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
         console.log("returned data: ");
         console.log(data);
         for (i = 0; i < data.length; i++) {
-            var li = document.createElement("li");
-            li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-            li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-            unorderedList.appendChild(li);
-            console.log(slice[i]+" "+data[i]);
+          if(data[i] == 0){
+            continue;
+          }
+          var li = document.createElement("li");
+          li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+          li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+          unorderedList.appendChild(li);
+          console.log(slice[i]+" "+data[i]);
         }
         const incrementedPageNo = ++currentPageNo;
-        console.log("modalID: "+self.modalID+" id: "+id);
-        if(self.modalID == id && ((currentPageNo - 1) * 5) < subjects.length){
-          self.loadTerms(incrementedPageNo, type, unorderedList, list, id);
+        if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
+          self.loadTerms(incrementedPageNo, type, unorderedList, list);
         }
       });
     }
 
-
     this.listCreatorTerms = function(){
       let self = this;
-      var id = ++self.modalID;
-      self.loadTerms(1,PERSON, self.ulCreator, creators, id);
+      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["filters"] = self.filters;
+      var ulCreator = self.ulDummy.cloneNode(false);
+      self.loadTerms(1,PERSON, ulCreator, creators);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
-      document.getElementById("modal-list").appendChild(self.ulCreator);
+      document.getElementById("modal-list").appendChild(ulCreator);
     }
 
     this.listContributorTerms = function(){
       let self = this;
-      var id = ++self.modalID;
-      self.loadTerms(1,CONTRIBUTOR, self.ulContributor, contributors, id);
+      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["filters"] = self.filters;
+      var ulContributor = self.ulDummy.cloneNode(false);
+      self.loadTerms(1,CONTRIBUTOR, ulContributor, contributors);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
-      document.getElementById("modal-list").appendChild(self.ulContributor);
+      document.getElementById("modal-list").appendChild(ulContributor);
     }
 
     this.listSubjectTerms = function(){
       let self = this;
-      var id = ++self.modalID;
-      self.loadTerms(1,SUBJECT, self.ulSubjects, subjects, id);
+      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["filters"] = self.filters;
+      var ulSubjects = self.ulDummy.cloneNode(false);
+      self.loadTerms(1,SUBJECT, ulSubjects, subjects);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
-      document.getElementById("modal-list").appendChild(self.ulSubjects);
+      document.getElementById("modal-list").appendChild(ulSubjects);
     }
 
     this.listTitleTerms = function(){
       let self = this;
-      var id = ++self.modalID;
-      self.loadTerms(1,TITLE, self.ulTitles, titles, id);
+      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["filters"] = self.filters;
+      var ulTitles = self.ulDummy.cloneNode(false);
+      self.loadTerms(1,TITLE, ulTitles, titles);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
-      document.getElementById("modal-list").appendChild(self.ulTitles);
+      document.getElementById("modal-list").appendChild(ulTitles);
     }
 
     this.listDescritionTerms = function(){
       let self = this;
-      var id = ++self.modalID;
-      self.loadTerms(1,DESCRIPTION, self.ulDescriptoions, descriptions, id);
+      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["filters"] = self.filters;
+      var ulDescriptoions = self.ulDummy.cloneNode(false);
+      self.loadTerms(1,DESCRIPTION, ulDescriptoions, descriptions);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
-      document.getElementById("modal-list").appendChild(self.ulDescriptoions);
+      document.getElementById("modal-list").appendChild(ulDescriptoions);
     }
 
     this.testCount = function(term){
@@ -435,6 +441,7 @@ let EdalReport = new function() {
     this.filterChange = function(){
       this.filters = [];
       let periodbox = document.getElementById("period");
+      this.currentRequestData["hitType"] = document.getElementById("hitType").value;
       if(periodbox.checked){
         let lowbound = document.getElementById("datepickerlow").value;
         let highbound = document.getElementById("datepickerhigh").value;
@@ -461,41 +468,18 @@ let EdalReport = new function() {
       this.search();
     }
 
-    this.queryChange = function(){
-      let filters = [];
-      ID++;
-      let requestId = ID;
-      let periodbox = document.getElementById("period");
-      if(periodbox.checked){
-        let lowbound = document.getElementById("datepickerlow").value;
-        let highbound = document.getElementById("datepickerhigh").value;
-        if(lowbound != "" && highbound != ""){
-          filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
-        }
-      }
-      let filesize = document.getElementById("filesize");
-      if(filesize.checked){
-        let lowbound = parseInt(document.getElementById("filesizelow").value);
-        let highbound = parseInt(document.getElementById("filesizehigh").value);
-        let lowerSize = document.getElementById("filesizelowbyte").value;
-        let higherSize = document.getElementById("filesizehighbyte").value;
-        if(lowbound != "" && highbound != ""){
-          filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
-        }
-      }
-      let suffix = document.getElementById("suffix");
-      if(suffix.checked){
-        let suffixValue = document.getElementById("suffixesSelect").value;
-        if(suffixValue != "")
-          filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
-      }
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":filters };
-      $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
-        if(ID == requestId){
-          this.query = data;
-        }
-      });
-    };
+    // this.queryChange = function(){
+    //   alert("queryChange");
+    //   let self = this;
+    //   ID++;
+    //   let requestId = ID;
+    //   let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":self.filters };
+    //   $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
+    //     if(ID == requestId){
+    //       this.query = data;
+    //     }
+    //   });
+    // };
 
     this.init = function(reportData, mapData) {
         this.initReportData = this.reportData = reportData;

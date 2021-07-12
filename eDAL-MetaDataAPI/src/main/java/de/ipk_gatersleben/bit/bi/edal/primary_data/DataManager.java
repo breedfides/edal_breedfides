@@ -78,6 +78,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.queryparser.simple.SimpleQueryParser;
 import org.apache.lucene.search.BooleanClause;
@@ -224,6 +225,8 @@ public class DataManager {
 	private static ExecutorService jettyExecutorService = null;
 	private static ExecutorService listExecutorService = null;
 	private static ExecutorService velocityExecutorService = null;
+	
+	public static IndexSearcher globalSearcher = null;
 
 	static {
 
@@ -1282,9 +1285,6 @@ public class DataManager {
 		Query query = null;
 		String type = ((String)queryData.get("type"));
 		String keyword = (String) queryData.get("searchterm");
-		if("arend" != keyword) {
-			int x = 0;
-		}
 		QueryParser queryParser = new QueryParser(type, analyzer);
 		queryParser.setDefaultOperator(Operator.AND);
 		try {
@@ -1322,38 +1322,59 @@ public class DataManager {
 	}
 	
 	public static JSONArray countHits2(JSONObject jsonObject) {
-			JSONArray result = new JSONArray();
-			JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
-	      int[] arr = new int[jsonArray.size()];
-	      CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
-		  IndexSearcher searcher = DataManager.initSearcher();
-		  String type = (String) jsonObject.get("termType");
+		JSONArray result = new JSONArray();
+		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
+	    int[] arr = new int[jsonArray.size()];
+	    CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
+		String type = (String) jsonObject.get("termType");
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
+		stopSet.addAll(defaultStopWords);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
+		
+		QueryParser queryParser = new QueryParser(type, analyzer);
+		queryParser.setDefaultOperator(Operator.AND);
+		
+		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
+		pars.setDefaultOperator(Operator.OR);
+		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
+		String query = (String) requestData.get("existingQuery");
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
-	    	  Thread innerThread = new Thread(){
-	  		    public void run(){
-	  			  TotalHitCountCollector collector = new TotalHitCountCollector();
+	  			  String parsedQuery = null;
 	  		    	  try {
-	  					searcher.search(new TermQuery(new Term(type,currentType)), collector);
-	  			        synchronized (arr) {
-	  			        	arr[index] = collector.getTotalHits();
-	  			        }
-	  				} catch (IOException e) {
-	  					// TODO Auto-generated catch block
-	  					e.printStackTrace();
-	  				}
-	  		    	internalCountDownLatch.countDown();
-	  		    }
-	  		   };
-	  		   innerThread.start();
+  		    			parsedQuery = pars.parse(query+" "+Occur.MUST.toString()+currentType).toString();
+  		    			requestData.put("existingQuery", parsedQuery);
+  		    			final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
+			  		    Thread innerThread = new Thread(){
+			  		    public void run(){
+			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
+			  		    	  try {
+						  		DataManager.globalSearcher.search(finalQuery, collector);
+			  			        synchronized (arr) {
+			  			        	arr[index] = collector.getTotalHits();
+			  			        }
+			  				} catch (IOException e) {
+			  					// TODO Auto-generated catch block
+			  					e.printStackTrace();
+			  				} 
+			  		    	internalCountDownLatch.countDown();
+			  		    }
+			  		   };
+			  		   innerThread.start();
+	  				}  catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 	      }
 	      try {
 			internalCountDownLatch.await();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	      for(int val : arr) {
 	    	  result.add(val);
 	      }
@@ -1373,9 +1394,13 @@ public class DataManager {
 		return new IndexSearcher(reader);
 	}
 	
-	private static Query buildQueryFromJSON(JSONObject jsonArray) {
+	public static Query buildQueryFromJSON(JSONObject jsonArray) {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
-		StandardAnalyzer analyzer = new StandardAnalyzer();
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
+		stopSet.addAll(defaultStopWords);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.OR);
 		String existing = (String) jsonArray.get("existingQuery");
