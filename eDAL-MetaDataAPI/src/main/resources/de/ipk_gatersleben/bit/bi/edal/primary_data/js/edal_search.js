@@ -21,6 +21,7 @@ let EdalReport = new function() {
     this.pageNumbers = 0;
     this.currentRequestData = {};
     this.myModal = document.getElementById("myModal");
+    this.terms = {};
 
 
     this.ulDummy = document.createElement("ul");
@@ -97,6 +98,11 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       if(ID == requestId){
+        self.countFacetedTerms(PERSON, creators, "creatorButton");
+        self.countFacetedTerms(CONTRIBUTOR, contributors, "contributoButton");
+        self.countFacetedTerms(SUBJECT, subjects, "subjectButton");
+        self.countFacetedTerms(TITLE, titles, "titleButton");
+        self.countFacetedTerms(DESCRIPTION, descriptions, "descriptionButton");
         console.log("___SEARCH___");
         console.log("pagearray:");
         console.log(data.pageArray);
@@ -122,8 +128,29 @@ let EdalReport = new function() {
         }
         self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
         document.getElementById("loading-indicator").style.display="none";
-        document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
+        if (typeof data.results !== 'undefined'){
+            document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
+        }
       }
+      });
+    }
+
+    this.countFacetedTerms = async function(type, terms, btnName){
+      let self = this;
+      var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
+      let requestId = ID;
+      document.getElementById(btnName).innerHTML = "?";
+      $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        if(requestId == ID){
+          var tempList = [];
+          for(i = 0; i < data.length; i++){
+            if(data[i] > 0){
+              tempList.push(creators[i]);
+            }
+          }
+          self.terms[type] = tempList;
+          document.getElementById(btnName).innerHTML = tempList.length+" elements";
+        }
       });
     }
 
@@ -158,10 +185,6 @@ let EdalReport = new function() {
               "occur":"MUST",
               "fuzzy":false
             }
-            if(type == PERSON ||type == CONTRIBUTOR){
-              obj["searchterm"] = "\""+term+"\"";
-            }
-
             let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
             $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
               document.getElementById("query").value = "";
@@ -322,7 +345,9 @@ let EdalReport = new function() {
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +self.hitSize+' results';
+        if (typeof data.results !== 'undefined'){
+          document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +self.hitSize+' results';
+        }
         var pageArray = [];
         var offset;
         if(history[index].page < 7){

@@ -252,6 +252,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					}
 					ts.close();
 				}
+				ArrayList test = new ArrayList<>(descriptions);
 				//Obtaining the Metadata of Titles/Description requires analysis and tokenizing
 				docs = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, "b8497c99-8d2a-4a91-9fea-3a634c1afae8-74")), 1);
 			}

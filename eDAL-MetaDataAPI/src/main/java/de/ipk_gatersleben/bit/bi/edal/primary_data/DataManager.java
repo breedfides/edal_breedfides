@@ -1303,8 +1303,13 @@ public class DataManager {
 			return query;
 		}else {
 			try {
-				return pars.parse(existing+" "+Occur.valueOf((String) queryData.get("occur"))+query.toString());
+				if(query.toString().charAt(0) == '+') {
+					return pars.parse(existing+" "+query.toString());
+				}else {
+					return pars.parse(existing+" "+Occur.valueOf((String) queryData.get("occur"))+query.toString());
+				}				
 			} catch (ParseException e) {
+				e.printStackTrace();
 				return null;
 			}
 		}
@@ -1336,16 +1341,11 @@ public class DataManager {
 		QueryParser queryParser = new QueryParser(type, analyzer);
 		queryParser.setDefaultOperator(Operator.AND);
 		
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.OR);
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
 		String existing = (String) requestData.get("existingQuery");
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
-	    	  if(currentType.equals("training")) {
-	    		  int tes = 1;
-	    	  }
 	  			  String parsedQuery = currentType;
 	  			  Query q = null;
 	  		    	  try {
@@ -1354,7 +1354,7 @@ public class DataManager {
 	  		    			parsedQuery = q.toString();
 	  		    		}else {
 	  		    			parsedQuery = queryParser.parse(parsedQuery).toString();
-	  		    			q = pars.parse(existing+" "+Occur.MUST.toString()+new TermQuery(new Term(type,currentType)).toString());
+	  		    			q = queryParser.parse(existing+" "+currentType);
 	  		    			parsedQuery = q.toString();
 	  		    		}	  			    			
   		    			requestData.put("existingQuery", parsedQuery);
@@ -1409,9 +1409,13 @@ public class DataManager {
 			  		    public void run(){
 			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 			  		    	  try {
-						  		DataManager.globalSearcher.search(finalQuery.build(), collector);
+			  		    		  Query builded = finalQuery.build();
+						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
 			  			        	arr[index] = collector.getTotalHits();
+			  			        	if(collector.getTotalHits() > 0) {
+					  		  			DataManager.getImplProv().getLogger().info(builded.toString());
+			  			        	}
 			  			        }
 			  				} catch (IOException e) {
 			  					// TODO Auto-generated catch block
@@ -1424,6 +1428,9 @@ public class DataManager {
 	  				}  catch (ParseException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
+	  			        synchronized (arr) {
+	  			        	arr[index] = 0;
+	  			        }
 					}
 	      }
 	      try {
