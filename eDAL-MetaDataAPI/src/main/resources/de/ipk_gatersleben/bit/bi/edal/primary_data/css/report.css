@@ -130,8 +130,9 @@ table#report tr td.edal-report-doi {
 #result-stats{
   display: table-cell;
   vertical-align: middle;
+  float:right;
   color:#70757a;
-  font-size:small;
+  font-size:medium;
 }
 
 
@@ -823,6 +824,26 @@ footer {
   outline: none;
 }
 
+.faceted-Button{
+  cursor:pointer;
+  transition: all .2s ease;
+}
+
+.faceted-Button:hover, .faceted-Button:focus, .faceted-Button:active {
+    color: white;
+    background-color: #00b3db;
+    border-color: #285e8e; /*set the color you want here*/
+}
+.builder-Button{
+  transition: all .2s ease;
+}
+
+.builder-Button:hover{
+  cursor: pointer;
+  color: black;
+  background-color: #f9f9f9;
+  border-color: black; /*set the color you want here*/
+}
 
 /* Style the collapsible content. Note: hidden by default */
 #collapsible-content {

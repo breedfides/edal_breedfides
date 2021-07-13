@@ -1343,7 +1343,7 @@ public class DataManager {
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
-	    	  if(currentType.equals("infrastructure")) {
+	    	  if(currentType.equals("training")) {
 	    		  int tes = 1;
 	    	  }
 	  			  String parsedQuery = currentType;
@@ -1367,9 +1367,9 @@ public class DataManager {
   		    			for(Object obj : filters) {
   		    				JSONObject queryData = (JSONObject) obj;
   		    				Query query = null;
-  		    				type = ((String)queryData.get("type"));
+  		    				String filterType = ((String)queryData.get("type"));
   		    				String keyword = (String) queryData.get("searchterm");
-  		    				if(type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {
+  		    				if(filterType.equals(MetaDataImplementation.STARTDATE) || filterType.equals(MetaDataImplementation.ENDDATE)) {
   		    					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",Locale.ENGLISH);
   		    					LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
   		    					LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();
@@ -1377,19 +1377,19 @@ public class DataManager {
   		    					String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
   		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
 
-  		    				}else if(type.equals(MetaDataImplementation.SIZE)) {
+  		    				}else if(filterType.equals(MetaDataImplementation.SIZE)) {
   		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
-  		    				}else if(type.equals(MetaDataImplementation.FILETYPE)){
+  		    				}else if(filterType.equals(MetaDataImplementation.FILETYPE)){
+  	  		    				QueryParser filterParser = new QueryParser(filterType, analyzer);
+  	  		    				filterParser.setDefaultOperator(Operator.AND);
   		    					keyword.replace("\\", "");
   		    					try {
-  		    						query = queryParser.parse(QueryParser.escape(keyword));
+  		    						query = filterParser.parse(QueryParser.escape(keyword));
   		    					} catch (ParseException e) {
   		    						// TODO Auto-generated catch block
   		    						e.printStackTrace();
   		    					}
   		    				}
-  		    				DataManager.getImplProv().getLogger().info("New Query added:");
-  		    				DataManager.getImplProv().getLogger().info(query.toString());
   		    				finalQuery.add(query, Occur.MUST);
   		    			}	
   		    			String hitType = (String) requestData.get("hitType");

@@ -104,10 +104,8 @@ let EdalReport = new function() {
         console.log(data);
         var currentPage = 0;
         var history = data.pageArray;
-        self.hitSize = data.hitSize;
+        self.hitSize = data.hitSizeDescription+' '+data.hitSize;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        self.hitSize = data.hitSize;
-        document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +data.hitSizeDescription+' '+data.hitSize+' results';
         self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
@@ -124,103 +122,7 @@ let EdalReport = new function() {
         }
         self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
         document.getElementById("loading-indicator").style.display="none";
-      }
-      });
-    }
-
-    this.previous = function(requestData, history, currentPage){
-      document.getElementById("loading-indicator").style.display="block";
-      currentPage--;
-      let self = this;
-      ID++;
-      let requestId = ID;
-      requestData["bottomResultId"] = history[currentPage].bottomResult;
-      requestData["bottomResultScore"] = history[currentPage].bottomResultScore;
-      $.post("/rest/extendedSearch/search", JSON.stringify(this.currentRequestData), function(data){
-      reportData = data.results;
-      console.log("ID: "+requestId+"Data:")
-      console.log(self.datatable);
-      if(ID == requestId){
-        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
-        console.log(data);
-        self.reportData = data.results;
-        self.datatable.destroy();
-        var tableid = "#report";
-        $(tableid + " tbody").empty();
-        $(tableid + " thead").empty();
-        if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports();
-        }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles();
-        }else if(requestData.hitType == "directory"){
-          self.renderDatatableDirectories();
-        }
-        self.manipulateDataTable(data.pageArray, currentPage);
-        document.getElementById("loading-indicator").style.display="none";
-        var nextBtn = document.getElementById("btn_next");
-        if(nextBtn.classList.contains("disabled")){
-          nextBtn.classList.remove("disabled");
-        }
-        nextBtn.onclick = function(){
-          self.next(self.currentRequestData, history, currentPage);
-        };
-        var prevBtn = document.getElementById("btn_previous");
-        if(currentPage > 0){
-          prevBtn.classList.remove("disabled");
-          prevBtn.onclick = function(){
-            self.previous(self.currentRequestData, history, currentPage);
-          };
-        }
-      }
-      });
-    }
-
-    this.next = function(requestData, history, currentPage){
-      document.getElementById("loading-indicator").style.display="block";
-      currentPage++;
-      let self = this;
-      ID++;
-      let requestId = ID;
-      requestData["bottomResultId"] = history[currentPage].bottomResult;
-      requestData["bottomResultScore"] = history[currentPage].bottomResultScore;
-      $.post("/rest/extendedSearch/search", JSON.stringify(this.currentRequestData), function(data){
-      reportData = data.results;
-      console.log("ID: "+requestId+"Data:")
-      console.log(self.datatable);
-      if(ID == requestId){
-        console.log("currentPage:"+currentPage);
-        console.log("selfhitSize:"+self.hitSize);
-        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Showing '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
-        console.log(data);
-        self.reportData = data.results;
-        self.datatable.destroy();
-        var tableid = "#report";
-        $(tableid + " tbody").empty();
-        $(tableid + " thead").empty();
-        if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports();
-        }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles();
-        }else if(requestData.hitType == "directory"){
-          self.renderDatatableDirectories();
-        }
-        self.manipulateDataTable(data.pageArray, currentPage);
-        document.getElementById("loading-indicator").style.display="none";
-        var nextBtn = document.getElementById("btn_next");
-        if(self.pageNumbers > 1){
-          nextBtn.classList.remove("disabled");
-          history.push({"bottomResult":data.bottomResult, "bottomResultScore":data.bottomResultScore});
-          nextBtn.onclick = function(){
-            self.next(self.currentRequestData, history, currentPage);
-          };
-        }
-        var prevBtn = document.getElementById("btn_previous");
-        prevBtn.classList.remove("disabled");
-        prevBtn.onclick = function(){
-          self.previous(self.currentRequestData, history, currentPage);
-        };
+        document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
       }
       });
     }
@@ -256,7 +158,9 @@ let EdalReport = new function() {
               "occur":"MUST",
               "fuzzy":false
             }
-            document.getElementById('searchterm').value = '';
+            if(type == PERSON ||type == CONTRIBUTOR){
+              obj["searchterm"] = "\""+term+"\"";
+            }
 
             let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
             $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
@@ -307,6 +211,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
+      document.getElementById("modal-headline").innerHTML = "Subjects";
       var ulSubjects = self.ulDummy.cloneNode(false);
       self.loadTerms(1,SUBJECT, ulSubjects, subjects);
       document.getElementById("myModal").style.display = "flex";
@@ -319,6 +224,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
+      document.getElementById("modal-headline").innerHTML = "Titles";
       var ulTitles = self.ulDummy.cloneNode(false);
       self.loadTerms(1,TITLE, ulTitles, titles);
       document.getElementById("myModal").style.display = "flex";
@@ -331,6 +237,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
+      document.getElementById("modal-headline").innerHTML = "Descriptions";
       var ulDescriptoions = self.ulDummy.cloneNode(false);
       self.loadTerms(1,DESCRIPTION, ulDescriptoions, descriptions);
       document.getElementById("myModal").style.display = "flex";
@@ -415,7 +322,7 @@ let EdalReport = new function() {
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +data.hitSizeDescription+' '+data.hitSize+' results';
+        document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +self.hitSize+' results';
         var pageArray = [];
         var offset;
         if(history[index].page < 7){
