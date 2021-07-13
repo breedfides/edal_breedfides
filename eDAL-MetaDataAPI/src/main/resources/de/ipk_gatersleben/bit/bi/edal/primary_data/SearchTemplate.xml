@@ -35,7 +35,7 @@
       <!-- Modal content -->
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Creators</h2>
+          <h2 id="modal-headline"></h2>
           <span style="float:right" class="close" onclick="hideModalDialog()">&times;</span>
         </div>
         <div class="modal-body" id="modal-list">
@@ -399,6 +399,22 @@
         document.getElementById("collapseButton").innerHTML = '&#8722';
       }
     }
+
+    function tog(v){
+      return v ? "addClass" : "removeClass";
+    }
+
+    $(document).on("input", ".clearable", function(){
+        $(this)[tog(this.value)]("x");
+    }).on("mousemove", ".x", function( e ){
+        $(this)[tog(this.offsetWidth-18 < e.clientX-this.getBoundingClientRect().left)]("onX");
+    }).on("touchstart click", ".onX", function( ev ){
+        ev.preventDefault();
+        $(this).removeClass("x onX").val("").change();
+        EdalReport.reportData = [];
+        EdalReport.currentRequestData = {};
+        $('#report').DataTable().clear().draw();
+    });
 
     $('#period').change(function() {
       $('#datepickerlow').prop('disabled', !this.checked);

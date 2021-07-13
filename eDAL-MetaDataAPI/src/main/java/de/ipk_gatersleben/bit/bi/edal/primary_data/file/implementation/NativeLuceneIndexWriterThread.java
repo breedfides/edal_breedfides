@@ -231,21 +231,24 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					ts.reset();
 					while (ts.incrementToken()) {
 						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						descriptions.add(ta.toString());
+						if(ta.toString().length() > 1)
+							descriptions.add(ta.toString());
 					}
 					ts.close();
 					ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
 					ts.reset();
 					while (ts.incrementToken()) {
 						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						titles.add(ta.toString());
+						if(ta.toString().length() > 1)
+							titles.add(ta.toString());
 					}
 					ts.close();
 					ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
 					ts.reset();
 					while (ts.incrementToken()) {
 						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						subjects.add(ta.toString());
+						if(ta.toString().length() > 1)
+							subjects.add(ta.toString());
 					}
 					ts.close();
 				}

@@ -107,7 +107,7 @@ let EdalReport = new function() {
         self.hitSize = data.hitSize;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         self.hitSize = data.hitSize;
-        document.getElementById("result-stats").innerHTML = 'Page 1 of '+data.hitSizeDescription+' '+data.hitSize+' results';
+        document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +data.hitSizeDescription+' '+data.hitSize+' results';
         self.reportData = data.results;
         self.datatable.destroy();
         var tableid = "#report";
@@ -192,7 +192,7 @@ let EdalReport = new function() {
         console.log("currentPage:"+currentPage);
         console.log("selfhitSize:"+self.hitSize);
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Page '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
+        document.getElementById("result-stats").innerHTML = 'Showing '+(currentPage+1)+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
         console.log(data);
         self.reportData = data.results;
         self.datatable.destroy();
@@ -244,6 +244,29 @@ let EdalReport = new function() {
           var li = document.createElement("li");
           li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
           li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+          const term = slice[i];
+          li.onclick = function(){
+            var searchInput = document.getElementById("query");
+            if(!searchInput.value){
+              searchInput.classList.add("x");
+            }
+            let obj = {
+              "type":type,
+              "searchterm":term,
+              "occur":"MUST",
+              "fuzzy":false
+            }
+            document.getElementById('searchterm').value = '';
+
+            let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
+            $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
+              document.getElementById("query").value = "";
+              document.getElementById("query").value = data;
+              let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+              self.search();
+              document.getElementById("myModal").style.display = "none";
+            });
+          }
           unorderedList.appendChild(li);
           console.log(slice[i]+" "+data[i]);
         }
@@ -258,6 +281,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
+      document.getElementById("modal-headline").innerHTML = "Creators";
       var ulCreator = self.ulDummy.cloneNode(false);
       self.loadTerms(1,PERSON, ulCreator, creators);
       document.getElementById("myModal").style.display = "flex";
@@ -270,6 +294,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
+      document.getElementById("modal-headline").innerHTML = "Contributors";
       var ulContributor = self.ulDummy.cloneNode(false);
       self.loadTerms(1,CONTRIBUTOR, ulContributor, contributors);
       document.getElementById("myModal").style.display = "flex";
@@ -390,7 +415,7 @@ let EdalReport = new function() {
         self.reportData = data.results;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        document.getElementById("result-stats").innerHTML = 'Page '+currentPage+' of '+data.hitSizeDescription+' '+self.hitSize+' results';
+        document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +data.hitSizeDescription+' '+data.hitSize+' results';
         var pageArray = [];
         var offset;
         if(history[index].page < 7){
