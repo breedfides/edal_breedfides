@@ -1114,11 +1114,11 @@ public class DataManager {
 	
 	
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
-		Query buildedQuery = buildQueryFromJSON(jsonArray);
+		JSONObject result = new JSONObject();
+		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
 		IndexSearcher searcher = DataManager.initSearcher();
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
         TopDocs topDocs = null;
-		JSONObject result = new JSONObject();
 		int currentPageNumber = ((int)(long)jsonArray.get("displayedPage"));
 		int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
 		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
@@ -1314,17 +1314,6 @@ public class DataManager {
 			}
 		}
 	}
-
-	public static long countHits(JSONObject jsonArray) {
-		Query buildedQuery = DataManager.buildQueryFromJSON(jsonArray);
-		IndexSearcher searcher = DataManager.initSearcher();
-		try {
-			TopDocs topDocs = searcher.search(buildedQuery, 50000);
-			return topDocs.totalHits.value;
-		} catch (IOException e1) {
-			return -1;
-		}
-	}
 	
 	public static JSONArray countHits2(JSONObject jsonObject) {
 		JSONArray result = new JSONArray();
@@ -1413,9 +1402,6 @@ public class DataManager {
 						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
 			  			        	arr[index] = collector.getTotalHits();
-			  			        	if(collector.getTotalHits() > 0) {
-					  		  			DataManager.getImplProv().getLogger().info(builded.toString());
-			  			        	}
 			  			        }
 			  				} catch (IOException e) {
 			  					// TODO Auto-generated catch block
@@ -1458,7 +1444,7 @@ public class DataManager {
 		return new IndexSearcher(reader);
 	}
 	
-	public static Query buildQueryFromJSON(JSONObject jsonArray) {
+	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
@@ -1470,7 +1456,9 @@ public class DataManager {
 		String existing = (String) jsonArray.get("existingQuery");
 		if(!existing.equals(""))
 			try {
-				finalQuery.add(pars.parse(existing), Occur.MUST);
+				Query parsedQuery = pars.parse(existing);
+				finalQuery.add(parsedQuery, Occur.MUST);
+				result.put("parsedQuery", parsedQuery.toString());
 			} catch (ParseException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

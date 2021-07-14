@@ -21,7 +21,12 @@ let EdalReport = new function() {
     this.pageNumbers = 0;
     this.currentRequestData = {};
     this.myModal = document.getElementById("myModal");
-    this.terms = {};
+    this.terms = {"Creator":[], "Contributor":[], "Subject":[], "Title":[], "Description":[]};
+    this.creators;
+    this.contributors;
+    this.subjects;
+    this.titles;
+    this.descriptions;
 
 
     this.ulDummy = document.createElement("ul");
@@ -81,6 +86,7 @@ let EdalReport = new function() {
         document.getElementById("query").value = "";
         document.getElementById("query").value = data;
         let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+        self.resetTermList();
       });
     }
 
@@ -98,16 +104,13 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       if(ID == requestId){
-        self.countFacetedTerms(PERSON, creators, "creatorButton");
-        self.countFacetedTerms(CONTRIBUTOR, contributors, "contributoButton");
-        self.countFacetedTerms(SUBJECT, subjects, "subjectButton");
-        self.countFacetedTerms(TITLE, titles, "titleButton");
-        self.countFacetedTerms(DESCRIPTION, descriptions, "descriptionButton");
-        console.log("___SEARCH___");
-        console.log("pagearray:");
-        console.log(data.pageArray);
-        console.log("data");
-        console.log(data);
+        document.getElementById("query").value = data["parsedQuery"];
+        self.currentRequestData.existingQuery = data["parsedQuery"];
+        self.countFacetedTerms(PERSON, self.creators, "creatorButton");
+        self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
+        self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
+        self.countFacetedTerms(TITLE, self.titles, "titleButton");
+        self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
         var currentPage = 0;
         var history = data.pageArray;
         self.hitSize = data.hitSizeDescription+' '+data.hitSize;
@@ -139,17 +142,18 @@ let EdalReport = new function() {
       let self = this;
       var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
       let requestId = ID;
-      document.getElementById(btnName).innerHTML = "?";
+      document.getElementById(btnName).innerHTML = "0 elements";
       $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
         if(requestId == ID){
           var tempList = [];
           for(i = 0; i < data.length; i++){
             if(data[i] > 0){
-              tempList.push(creators[i]);
+              tempList.push([terms[i],data[i]]);
             }
           }
           self.terms[type] = tempList;
-          document.getElementById(btnName).innerHTML = tempList.length+" elements";
+          const el = document.getElementById(btnName);
+          animateCountUp(el, tempList.length);
         }
       });
     }
@@ -163,17 +167,14 @@ let EdalReport = new function() {
       var request = {"termType":type, "terms":slice, "requestData":self.currentRequestData};
       console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption+" length of array: "+list.length);
       console.log(slice);
-      $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
-        console.log("returned data: ");
-        console.log(data);
-        for (i = 0; i < data.length; i++) {
-          if(data[i] == 0){
-            continue;
-          }
+      var terms = self.terms[type];
+      if(terms.length > 0){
+        for (i = 0; i < terms.length; i++) {
           var li = document.createElement("li");
           li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-          li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-          const term = slice[i];
+          li.innerHTML = terms[i][0]+'<span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
+          const term = terms[i][0];
+          const value = terms[i];
           li.onclick = function(){
             var searchInput = document.getElementById("query");
             if(!searchInput.value){
@@ -195,13 +196,47 @@ let EdalReport = new function() {
             });
           }
           unorderedList.appendChild(li);
-          console.log(slice[i]+" "+data[i]);
         }
-        const incrementedPageNo = ++currentPageNo;
-        if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
-          self.loadTerms(incrementedPageNo, type, unorderedList, list);
-        }
-      });
+      }else{
+        $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+          console.log("returned data: ");
+          console.log(data);
+          for (i = 0; i < data.length; i++) {
+            if(data[i] == 0){
+              continue;
+            }
+            var li = document.createElement("li");
+            li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+            li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+            const term = slice[i];
+            li.onclick = function(){
+              var searchInput = document.getElementById("query");
+              if(!searchInput.value){
+                searchInput.classList.add("x");
+              }
+              let obj = {
+                "type":type,
+                "searchterm":term,
+                "occur":"MUST",
+                "fuzzy":false
+              }
+              let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
+              $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
+                document.getElementById("query").value = "";
+                document.getElementById("query").value = data;
+                let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+                self.search();
+                document.getElementById("myModal").style.display = "none";
+              });
+            }
+            unorderedList.appendChild(li);
+          }
+          const incrementedPageNo = ++currentPageNo;
+          if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
+            self.loadTerms(incrementedPageNo, type, unorderedList, list);
+          }
+        });
+      }
     }
 
     this.listCreatorTerms = function(){
@@ -210,7 +245,7 @@ let EdalReport = new function() {
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Creators";
       var ulCreator = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,PERSON, ulCreator, creators);
+      self.loadTerms(1,PERSON, ulCreator, self.creators);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -223,7 +258,7 @@ let EdalReport = new function() {
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Contributors";
       var ulContributor = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,CONTRIBUTOR, ulContributor, contributors);
+      self.loadTerms(1,CONTRIBUTOR, ulContributor, self.contributors);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -236,7 +271,7 @@ let EdalReport = new function() {
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Subjects";
       var ulSubjects = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,SUBJECT, ulSubjects, subjects);
+      self.loadTerms(1,SUBJECT, ulSubjects, self.subjects);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -249,7 +284,7 @@ let EdalReport = new function() {
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Titles";
       var ulTitles = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,TITLE, ulTitles, titles);
+      self.loadTerms(1,TITLE, ulTitles, self.titles);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -262,7 +297,7 @@ let EdalReport = new function() {
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Descriptions";
       var ulDescriptoions = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,DESCRIPTION, ulDescriptoions, descriptions);
+      self.loadTerms(1,DESCRIPTION, ulDescriptoions, self.descriptions);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -455,12 +490,72 @@ let EdalReport = new function() {
                 var viewportBottom = viewportTop + scrollBody.height();
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
+            self.resetTermList();
             self.renderYearSelectOptions();
             self.renderDatatableReports();
             self.manipulateDataTable([],null,[]);
             self.addObservers();
+            // var request = {"termType":DESCRIPTION, "terms":[descriptions[582]], "requestData":self.currentRequestData};
+            // $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+            //   console.log("returned data: ");
+            //   console.log(data);
+            //   for (i = 0; i < data.length; i++) {
+            //     if(data[i] == 0){
+            //       continue;
+            //     }
+            //     var li = document.createElement("li");
+            //     li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+            //     li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
+            //     const term = slice[i];
+            //     li.onclick = function(){
+            //       var searchInput = document.getElementById("query");
+            //       if(!searchInput.value){
+            //         searchInput.classList.add("x");
+            //       }
+            //       let obj = {
+            //         "type":type,
+            //         "searchterm":term,
+            //         "occur":"MUST",
+            //         "fuzzy":false
+            //       }
+            //       let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
+            //       $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
+            //         document.getElementById("query").value = "";
+            //         document.getElementById("query").value = data;
+            //         let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+            //         self.search();
+            //         document.getElementById("myModal").style.display = "none";
+            //       });
+            //     }
+            //     unorderedList.appendChild(li);
+            //     console.log(slice[i]+" "+data[i]);
+            //   }
+            //   const incrementedPageNo = ++currentPageNo;
+            //   if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
+            //     self.loadTerms(incrementedPageNo, type, unorderedList, list);
+            //   }
+            // });
         });
     };
+
+    this.resetTermList = function(){
+      let self = this;
+      self.currentRequestData.existingQuery = document.getElementById("query").value;
+      self.currentRequestData.filters = self.filters;
+      self.currentRequestData.hitType = document.getElementById("hitType").value;
+      $.post("/rest/extendedSearch/getTermLists", function(data){
+        self.creators = data[PERSON];
+        self.countFacetedTerms(PERSON, self.creators, "creatorButton");
+        self.contributors = data[CONTRIBUTOR];
+        self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
+        self.subjects = data[SUBJECT];
+        self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
+        self.titles = data[TITLE]
+        self.countFacetedTerms(TITLE, self.titles, "titleButton");
+        self.descriptions = data[DESCRIPTION];
+        self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
+      });
+    }
 
     this.renderYearSelectOptions = async function() {
         let selectElem = $('#edal-report-year-filter');
@@ -570,6 +665,8 @@ let EdalReport = new function() {
       if(typeof numbers == 'undefined' || numbers.length == 0){
         return;
       }
+      console.log("number array when creating pagination ");
+      console.log(numbers);
       let self = this;
       self.currentRequestData = currentRequestData;
       var currentPage = currentRequestData.displayedPage;

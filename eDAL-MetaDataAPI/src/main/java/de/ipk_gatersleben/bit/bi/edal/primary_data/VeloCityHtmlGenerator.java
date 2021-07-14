@@ -1452,7 +1452,7 @@ class VeloCityHtmlGenerator {
 		
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
-		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
@@ -1466,15 +1466,15 @@ class VeloCityHtmlGenerator {
 		
 		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
 		
-		context.put("subjects", NativeLuceneIndexWriterThread.getSubjects());
+		context.put("subjectsSize", NativeLuceneIndexWriterThread.getSubjects().size());
 		
-		context.put("creators", NativeLuceneIndexWriterThread.getCreators());
+		context.put("creatorsSize", NativeLuceneIndexWriterThread.getCreators().size());
 		
-		context.put("contributors", NativeLuceneIndexWriterThread.getContributors());
+		context.put("contributorsSize", NativeLuceneIndexWriterThread.getContributors().size());
 		
-		context.put("titles", NativeLuceneIndexWriterThread.getTitles());
+		context.put("titlesSize", NativeLuceneIndexWriterThread.getTitles().size());
 		
-		context.put("descriptions", NativeLuceneIndexWriterThread.getDescriptions());
+		context.put("descriptionsSize", NativeLuceneIndexWriterThread.getDescriptions().size());
 		
 		if(DataManager.globalSearcher == null) {
 			DataManager.globalSearcher = DataManager.initSearcher();

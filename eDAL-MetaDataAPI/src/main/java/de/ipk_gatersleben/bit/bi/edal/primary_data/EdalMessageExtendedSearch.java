@@ -76,6 +76,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -118,19 +119,6 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
-	@Path("/countHits")
-	@POST
-	@ManagedAsync
-	@Produces(MediaType.APPLICATION_JSON)
-	public long countHits(String json) throws JsonParseException, JsonMappingException, IOException {
-		JSONParser parser = new JSONParser();
-		try {
-			return DataManager.countHits((JSONObject) parser.parse(json));
-		} catch (ParseException e) {
-			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
-			return -1;
-		}
-	}
 	
 	@Path("/countHits2")
 	@POST
@@ -144,18 +132,18 @@ public class EdalMessageExtendedSearch {
 			return new JSONArray();
 		}
 	}
-	
-	@Path("/parseInternalQuery")
+	@Path("/getTermLists")
 	@POST
 	@ManagedAsync
-	@Produces(MediaType.TEXT_PLAIN)
-	public String buildQueryFromJson(String json) throws JsonParseException, JsonMappingException, IOException {
-		JSONParser parser = new JSONParser();
-		try {
-			return DataManager.buildQueryFromJSON((JSONObject)parser.parse(json)).toString();
-		} catch (ParseException e) {
-			return "";
-		}
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
+		JSONObject result = new JSONObject();
+		result.put("Creator", NativeLuceneIndexWriterThread.getCreators());
+		result.put("Contributor", NativeLuceneIndexWriterThread.getContributors());
+		result.put("Subject", NativeLuceneIndexWriterThread.getSubjects());
+		result.put("Title", NativeLuceneIndexWriterThread.getTitles());
+		result.put("Description", NativeLuceneIndexWriterThread.getDescriptions());		
+		return result;
 	}
 
 }
