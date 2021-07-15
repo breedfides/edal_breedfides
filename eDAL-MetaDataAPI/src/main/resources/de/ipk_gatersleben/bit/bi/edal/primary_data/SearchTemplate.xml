@@ -66,7 +66,7 @@
             <div class="pl-3 form-row pb-1" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
               <span class="flex-col h2 mr-1 my-auto">Search</span>
               <div class="flex-col my-auto">
-                <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()" >Advanced &#62</Button>
+                <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()" >Advanced</Button>
               </div>
               <span class="col h6 collapsible pl-4 my-auto" id="statisticsSpan" style="display:inline-block;">
                 <div class="content" id="collapsible-content">
@@ -221,7 +221,7 @@
                       </div>
                     </div>
                     <div class="centerclass addableterms">
-                      <label>Addable search terms</label>
+                      <label>Available search terms</label>
                     </div>
                     <div class="centerclass creatorsLabel">
                       <label>Creators</label>
@@ -312,10 +312,8 @@
       var content = document.getElementById("collapsible-content");
       if (content.style.display === "block") {
         content.style.display = "none";
-        document.getElementById("collapseButton").innerHTML = 'Advanced &#62';
       } else {
         content.style.display = "block";
-        document.getElementById("collapseButton").innerHTML = 'Advanced &#60';
       }
     }
 

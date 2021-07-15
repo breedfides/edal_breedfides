@@ -15,7 +15,8 @@ let EdalReport = new function() {
     this.buildID = 0;
     this.bottomResultId = null;
     this.previousBottomResultId = null;
-    this.pageSize = 15;
+    this.rowHeight = 35;
+    this.pageSize = Math.floor((document.getElementById("table-column").clientHeight - 3*this.rowHeight) / this.rowHeight);
     this.filters = [];
     this.hitSize = 0;
     this.pageNumbers = 0;
@@ -90,13 +91,23 @@ let EdalReport = new function() {
       });
     }
 
+    this.facetedTerms = async function(){
+      let self = this;
+      self.countFacetedTerms(PERSON, self.creators, "creatorButton");
+      self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
+      self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
+      self.countFacetedTerms(TITLE, self.titles, "titleButton");
+      self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
+    }
+
     this.search = function(){
+      let self = this;
       var queryValue = document.getElementById('query').value;
       if(queryValue == ""){
+        self.facetedTerms();
         return;
       }
       document.getElementById("loading-indicator").style.display="block";
-      let self = this;
       ID++;
       let requestId = ID;
       let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
@@ -106,11 +117,7 @@ let EdalReport = new function() {
       if(ID == requestId){
         document.getElementById("query").value = data["parsedQuery"];
         self.currentRequestData.existingQuery = data["parsedQuery"];
-        self.countFacetedTerms(PERSON, self.creators, "creatorButton");
-        self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
-        self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
-        self.countFacetedTerms(TITLE, self.titles, "titleButton");
-        self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
+        self.facetedTerms();
         var currentPage = 0;
         var history = data.pageArray;
         self.hitSize = data.hitSizeDescription+' '+data.hitSize;
@@ -152,6 +159,7 @@ let EdalReport = new function() {
             }
           }
           self.terms[type] = tempList;
+          //visual animation for the number of available faceted terms
           const el = document.getElementById(btnName);
           animateCountUp(el, tempList.length);
         }
@@ -478,8 +486,12 @@ let EdalReport = new function() {
         this.mapData = mapData;
         this.reportDataKeyed = _.keyBy(reportData, 'doi');
         this.allYears = _.uniq(_.map(reportData, 'year')).sort().reverse();
-
         let self = this;
+        if(self.pageSize > 5){
+          console.log("height > 5 :"+self.pageSize+" getting subtracted by "+self.pageSize%5);
+          self.pageSize = self.pageSize - self.pageSize%5;
+          console.log("new height :"+self.pageSize);
+        }
         $(document).ready(function() {
             $.fn.isInViewport = function() {
                 var elem = $(this);
@@ -495,46 +507,6 @@ let EdalReport = new function() {
             self.renderDatatableReports();
             self.manipulateDataTable([],null,[]);
             self.addObservers();
-            // var request = {"termType":DESCRIPTION, "terms":[descriptions[582]], "requestData":self.currentRequestData};
-            // $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
-            //   console.log("returned data: ");
-            //   console.log(data);
-            //   for (i = 0; i < data.length; i++) {
-            //     if(data[i] == 0){
-            //       continue;
-            //     }
-            //     var li = document.createElement("li");
-            //     li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-            //     li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-            //     const term = slice[i];
-            //     li.onclick = function(){
-            //       var searchInput = document.getElementById("query");
-            //       if(!searchInput.value){
-            //         searchInput.classList.add("x");
-            //       }
-            //       let obj = {
-            //         "type":type,
-            //         "searchterm":term,
-            //         "occur":"MUST",
-            //         "fuzzy":false
-            //       }
-            //       let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
-            //       $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-            //         document.getElementById("query").value = "";
-            //         document.getElementById("query").value = data;
-            //         let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-            //         self.search();
-            //         document.getElementById("myModal").style.display = "none";
-            //       });
-            //     }
-            //     unorderedList.appendChild(li);
-            //     console.log(slice[i]+" "+data[i]);
-            //   }
-            //   const incrementedPageNo = ++currentPageNo;
-            //   if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
-            //     self.loadTerms(incrementedPageNo, type, unorderedList, list);
-            //   }
-            // });
         });
     };
 
@@ -545,15 +517,11 @@ let EdalReport = new function() {
       self.currentRequestData.hitType = document.getElementById("hitType").value;
       $.post("/rest/extendedSearch/getTermLists", function(data){
         self.creators = data[PERSON];
-        self.countFacetedTerms(PERSON, self.creators, "creatorButton");
         self.contributors = data[CONTRIBUTOR];
-        self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
         self.subjects = data[SUBJECT];
-        self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
-        self.titles = data[TITLE]
-        self.countFacetedTerms(TITLE, self.titles, "titleButton");
+        self.titles = data[TITLE];
         self.descriptions = data[DESCRIPTION];
-        self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
+        self.facetedTerms();
       });
     }
 
@@ -586,7 +554,7 @@ let EdalReport = new function() {
               },
           ],
           "pagingType": "simple",
-          "pageLength": 15,
+          "pageLength": self.pageSize,
           info: false,
           "order": [],
           "language": {
@@ -637,7 +605,7 @@ let EdalReport = new function() {
               },
           ],
           "pagingType": "simple",
-          "pageLength": 15,
+          "pageLength": self.pageSize,
           info: false,
           "order": [],
           "language": {
@@ -719,9 +687,11 @@ let EdalReport = new function() {
     }
 
     this.renderDatatableReports = function() {
+      $('tr').css('height','10px');
         let self = this;
 
         this.datatable = $('#report').DataTable({
+
             data: self.reportData,
             dom: 't',
             //dom: 'Bfrtip',
@@ -740,7 +710,7 @@ let EdalReport = new function() {
                 },
             ],
             "pagingType": "simple",
-            "pageLength": 15,
+            "pageLength": self.pageSize,
             info: false,
             "order": [],
             "language": {
