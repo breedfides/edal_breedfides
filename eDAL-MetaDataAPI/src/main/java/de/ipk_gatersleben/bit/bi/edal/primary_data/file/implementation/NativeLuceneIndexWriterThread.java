@@ -214,12 +214,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				Analyzer myAnalyzer = writer.getAnalyzer();
 				for(ScoreDoc scoreDoc : scoreDocs) {
 					Document doc = searcher.doc(scoreDoc.doc);
-					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORUNTOKENIZED);
+					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
 					for(String string : strings) {
 						contributors.add(string);
 					}
 					String s = null;
-					s = doc.get(MetaDataImplementation.CREATORUNTOKENIZED);
+					s = doc.get(MetaDataImplementation.CREATORNAME);
 					if(s != null) {
 						creators.add(s);
 					}
@@ -393,7 +393,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(" ");
-				doc.add(new StringField("CreatorUntokenized", builder.toString(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.CREATORNAME, builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(" ");
@@ -424,7 +424,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(" ");
-				doc.add(new StringField("ContributorUntokenized", builder.toString(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.CONTRIBUTORNAME, builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(" ");

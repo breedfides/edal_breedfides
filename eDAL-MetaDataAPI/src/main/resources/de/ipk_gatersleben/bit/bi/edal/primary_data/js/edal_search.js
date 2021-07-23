@@ -34,6 +34,7 @@ let EdalReport = new function() {
     this.ulDummy.classList.add("list-group");
     this.ulDummy.style.maxHeight = "250px";
     this.ulDummy.style.overflowY = "auto";
+    this.ulDummy.style.overflowX = "hidden";
     let searchTerms = [];
     let ID = 0;
     let reportData = null;
@@ -93,11 +94,11 @@ let EdalReport = new function() {
 
     this.facetedTerms = async function(){
       let self = this;
-      self.countFacetedTerms(PERSON, self.creators, "creatorButton");
-      self.countFacetedTerms(CONTRIBUTOR, self.contributors, "contributoButton");
-      self.countFacetedTerms(SUBJECT, self.subjects, "subjectButton");
-      self.countFacetedTerms(TITLE, self.titles, "titleButton");
-      self.countFacetedTerms(DESCRIPTION, self.descriptions, "descriptionButton");
+      self.countFacetedTerms(PERSON, self.creators, document.getElementById("CreatorUl"));
+      self.countFacetedTerms(CONTRIBUTOR, self.contributors, document.getElementById("ContributorUl"));
+      self.countFacetedTerms(SUBJECT, self.subjects, document.getElementById("SubjectUl"));
+      self.countFacetedTerms(TITLE, self.titles, document.getElementById("TitleUl"));
+      self.countFacetedTerms(DESCRIPTION, self.descriptions, document.getElementById("DescriptionUl"));
     }
 
     this.search = function(){
@@ -145,12 +146,13 @@ let EdalReport = new function() {
       });
     }
 
-    this.countFacetedTerms = async function(type, terms, btnName){
+    this.countFacetedTerms = async function(type, terms, ul){
       let self = this;
       var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
       let requestId = ID;
-      document.getElementById(btnName).innerHTML = "0 elements";
+      ul.innerHTML = "";
       $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+
         if(requestId == ID){
           var tempList = [];
           for(i = 0; i < data.length; i++){
@@ -158,10 +160,71 @@ let EdalReport = new function() {
               tempList.push([terms[i],data[i]]);
             }
           }
+          for(i = 0; i < 4; i++){
+            if(i < data.length){
+              var li = document.createElement("li");
+              const term = tempList[i][0];
+              const count = tempList[i][1];
+              li.classList.add("decoration-underline");
+              li.innerHTML = term+'('+count+")";
+              li.onclick = function(){
+                var searchInput = document.getElementById("query");
+                if(!searchInput.value){
+                  searchInput.classList.add("x");
+                }
+                let obj = {
+                  "type":type,
+                  "searchterm":term,
+                  "occur":"MUST",
+                  "fuzzy":false
+                }
+                let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
+                $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
+                  document.getElementById("query").value = "";
+                  document.getElementById("query").value = data;
+                  let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+                  self.search();
+                  document.getElementById("myModal").style.display = "none";
+                });
+              }
+              ul.appendChild(li);
+            }
+          }
+          var li = document.createElement("li");
+          li.style.fontWeight = "bold";
+          li.innerHTML = "More ("+tempList.length+")";
+          li.classList.add("decoration-underline");
+          switch(type){
+            case PERSON:
+              li.onclick = function(){
+                self.listCreatorTerms();
+              };
+              break;
+            case CONTRIBUTOR:
+              li.onclick = function(){
+                self.listContributorTerms();
+              };
+              break;
+            case SUBJECT:
+              li.onclick = function(){
+                self.listSubjectTerms();
+              };
+              break;
+            case TITLE:
+              li.onclick = function(){
+                self.listTitleTerms();
+              };
+              break;
+            case DESCRIPTION:
+              li.onclick = function(){
+                self.listDescritionTerms();
+              };
+              break;
+          }
+          ul.appendChild(li);
           self.terms[type] = tempList;
-          //visual animation for the number of available faceted terms
-          const el = document.getElementById(btnName);
-          animateCountUp(el, tempList.length);
+          /**visual animation for the number of available faceted terms**/
+          animateCountUp(li, tempList.length);
         }
       });
     }
@@ -180,7 +243,8 @@ let EdalReport = new function() {
         for (i = 0; i < terms.length; i++) {
           var li = document.createElement("li");
           li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-          li.innerHTML = terms[i][0]+'<span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
+          li.style.textOverflow = "ellipsis";
+          li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i][0]+'</p><span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
           const term = terms[i][0];
           const value = terms[i];
           li.onclick = function(){
@@ -502,6 +566,13 @@ let EdalReport = new function() {
                 var viewportBottom = viewportTop + scrollBody.height();
                 return elementBottom > viewportTop && elementTop < viewportBottom;
             };
+            var toggler = document.getElementsByClassName("caret");
+            for (i = 0; i < toggler.length; i++) {
+              toggler[i].addEventListener("click", function() {
+                this.parentElement.querySelector(".nested").classList.toggle("active");
+                this.classList.toggle("caret-down");
+              });
+            }
             self.resetTermList();
             self.renderYearSelectOptions();
             self.renderDatatableReports();

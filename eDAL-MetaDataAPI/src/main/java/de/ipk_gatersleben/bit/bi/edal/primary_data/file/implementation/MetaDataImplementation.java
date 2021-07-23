@@ -129,8 +129,8 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 	public static final String CONTRIBUTOR = "Contributor";
 	public static final String LEGALPERSON = "Legalperson";
 	public static final String FILETYPE = "Filetype";
-	public static final String CONTRIBUTORUNTOKENIZED = "ContributorUntokenized";
-	public static final String CREATORUNTOKENIZED = "CreatorUntokenized";
+	public static final String CONTRIBUTORNAME = "ContributorName";
+	public static final String CREATORNAME = "CreatorName";
 	public static final String ALL = "Allfields";
 	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";

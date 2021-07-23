@@ -65,8 +65,10 @@ import javax.security.auth.Subject;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DateTools.Resolution;
@@ -1124,6 +1126,7 @@ public class DataManager {
 		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
         if(pageArraySize == 0 || currentPageNumber == 1) {
         	try {
+        		DataManager.getImplProv().getLogger().info("Builded QUery advanced search: "+buildedQuery.toString());
         		topDocs = searcher.search(buildedQuery, 5000000);
     		} catch (IOException e1) {
     			// TODO Auto-generated catch block
@@ -1326,31 +1329,34 @@ public class DataManager {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		
 		QueryParser queryParser = new QueryParser(type, analyzer);
-		queryParser.setDefaultOperator(Operator.AND);
 		
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
 		String existing = (String) requestData.get("existingQuery");
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
-	  			  String parsedQuery = currentType;
-	  			  Query q = null;
+	  			  Query parsedQuery = null;
 	  		    	  try {
 	  		    		if(existing == null || existing.equals("")) {
-	  		    			q = queryParser.parse(parsedQuery);
-	  		    			parsedQuery = q.toString();
+	  		    			queryParser.setDefaultOperator(Operator.AND);
+	  		    			parsedQuery = queryParser.parse(currentType);
 	  		    		}else {
-	  		    			parsedQuery = queryParser.parse(parsedQuery).toString();
-	  		    			q = queryParser.parse(existing+" "+currentType);
-	  		    			parsedQuery = q.toString();
+	  		    			queryParser.setDefaultOperator(Operator.OR);
+	  						StringBuilder toParse = new StringBuilder(existing);
+	  						String[] words = currentType.split(" ");
+	  						for(String s : words) {
+	  							toParse.append(" ");
+	  							toParse.append('+');
+	  							toParse.append(s);
+	  						}
+	  		    			parsedQuery = queryParser.parse(toParse.toString());
 	  		    		}	  			    			
-  		    			requestData.put("existingQuery", parsedQuery);
+  		    			requestData.put("existingQuery", parsedQuery.toString());
   		    			//final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
   		    			
   		    			BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
-  		    			finalQuery.add(q, Occur.MUST);
+  		    			finalQuery.add(parsedQuery, Occur.MUST);
   		    			
   		    			JSONArray filters = (JSONArray) requestData.get("filters");
   		    			for(Object obj : filters) {
@@ -1382,15 +1388,17 @@ public class DataManager {
   		    				finalQuery.add(query, Occur.MUST);
   		    			}	
   		    			String hitType = (String) requestData.get("hitType");
-  		    			if(hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+  		    			switch(hitType) {
+  		    			case PublicVersionIndexWriterThread.PUBLICREFERENCE:
   		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
-  		    			}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+  		    				break;
+  		    			case PublicVersionIndexWriterThread.INDIVIDUALFILE:
   		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.FILTER);
-  		    				//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST_NOT);
-  		    			}else if(hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)){
-  		    				//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
+  		    				break;
+  		    			case PublicVersionIndexWriterThread.DIRECTORY:
   		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY)), Occur.MUST);
-  		    			}else {
+  		    				break;
+  		    			default:
   		    				return null;
   		    			}
   		    			BooleanQuery.setMaxClauseCount(10000);
@@ -1398,7 +1406,7 @@ public class DataManager {
 			  		    public void run(){
 			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 			  		    	  try {
-			  		    		  Query builded = finalQuery.build();
+			  		    		Query builded = finalQuery.build();
 						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
 			  			        	arr[index] = collector.getTotalHits();
@@ -1428,7 +1436,7 @@ public class DataManager {
 	      for(int val : arr) {
 	    	  result.add(val);
 	      }
-	
+			  DataManager.getImplProv().getLogger().info("------------------");
 	      return result;
 	}
 	

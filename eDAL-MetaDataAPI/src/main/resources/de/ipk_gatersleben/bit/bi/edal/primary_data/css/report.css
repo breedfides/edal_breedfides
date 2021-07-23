@@ -144,8 +144,10 @@ div#edal-report-filter{
   max-width:100%;
   text-align: center;
   display: grid;
+  overflow-y: scroll;
+  overflow-x: hidden;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(20, 1fr);
+  grid-template-rows: repeat(8, 40px) 1fr;
   border-right: 1px solid #2596be;
 }
 
@@ -153,7 +155,7 @@ div#edal-report-filter{
   display: grid;
   grid-template-columns: 320px 1fr;
   grid-template-rows: 20px 1fr;
-  max-height: 100%;
+  height: 100%;
 }
 
 div#report_wrapper {
@@ -412,6 +414,7 @@ footer {
   grid-row-end: 4;
   grid-column-start: 1;
   grid-column-end: 2;
+  width:95%;
 }
 
 .datepickerhighcontainer{
@@ -419,6 +422,7 @@ footer {
   grid-row-end: 4;
   grid-column-start: 3;
   grid-column-end: 4;
+  width:90%;
 }
 
 #datepickerlow {
@@ -426,7 +430,6 @@ footer {
 }
 
 #datepickerhigh {
-  font-weight: normal;
 }
 
 .filetypelabel {
@@ -486,83 +489,32 @@ footer {
   width: 90%;
 }
 
-.addableterms{
+.facetedContainer{
   grid-row-start: 9;
   grid-row-end: 10;
   grid-column-start: 1;
   grid-column-end: 4;
-  font-weight: normal;
-  text-align: center;
+  width: 100%;
 }
 
-.creatorsLabel{
-  grid-row-start: 10;
-  grid-row-end: 11;
-  font-weight: normal;
-}
-.creatorsSelect{
-  grid-row-start: 10;
-  grid-row-end: 11;
-  grid-column-start: 3;
-  grid-column-end: 4;
-  font-weight: normal;
-  width: 90%;
+#edal-report-filter::-webkit-scrollbar{
+  width: 5px;
 }
 
-.contributorLabel{
-  grid-row-start: 12;
-  grid-row-end: 13;
-  font-weight: normal;
-}
-.contributorSelect{
-  grid-row-start: 12;
-  grid-row-end: 13;
-  grid-column-start: 3;
-  grid-column-end: 4;
-  font-weight: normal;
-  width: 90%;
+#edal-report-filter::-webkit-scrollbar{
+  height: 5px;
 }
 
-.subjectsLabel{
-  grid-row-start: 14;
-  grid-row-end: 15;
-  font-weight: normal;
+#edal-report-filter::-webkit-scrollbar-track{
+  background: #f9f9f9;
 }
-.subjectsSelect{
-  grid-row-start: 14;
-  grid-row-end: 15;
-  grid-column-start: 3;
-  grid-column-end: 4;
-  font-weight: normal;
-  width: 90%;
+#edal-report-filter::-webkit-scrollbar-thumb{
+  border-radius: 8px;
+  background: #00b3db;
 }
 
-.titlesLabel{
-  grid-row-start: 16;
-  grid-row-end: 17;
-  font-weight: normal;
-}
-.titlesSelect{
-  grid-row-start: 16;
-  grid-row-end: 17;
-  grid-column-start: 3;
-  grid-column-end: 4;
-  font-weight: normal;
-  width: 90%;
-}
-
-.descriptionsLabel{
-  grid-row-start: 18;
-  grid-row-end: 19;
-  font-weight: normal;
-}
-.descriptionsSelect{
-  grid-row-start: 18;
-  grid-row-end: 19;
-  grid-column-start: 3;
-  grid-column-end: 4;
-  font-weight: normal;
-  width: 90%;
+.facetedContainer.button-thumb{
+  height:40px;
 }
 
 .filesizeinputnumbers{
@@ -805,8 +757,11 @@ footer {
 .clearable{
   background: #fff url(http://i.stack.imgur.com/mJotv.gif) no-repeat right -10px center;
   border: 1px solid #999;
-  border-radius: 3px;
+  border-radius: 20px;
   transition: background 0.4s;
+}
+.clearable:hover{
+  box-shadow: 1px 1px 8px 1px #0b81ae;
 }
 .clearable.x  { background-position: right 5px center; } /* (jQ) Show icon */
 .clearable.onX{ cursor: pointer; } /* (jQ) hover cursor style */
@@ -840,7 +795,7 @@ footer {
   cursor: pointer;
   color: black;
   background-color: #f9f9f9;
-  border-color: black; /*set the color you want here*/
+  border-color: black;
 }
 
 /* Style the collapsible content. Note: hidden by default */
@@ -864,7 +819,9 @@ footer {
 }
 
 /* Modal Body */
-.modal-body {padding: 2px 6px;}
+.modal-body {
+  padding: 2px 6px;
+}
 
 .list-group li:hover{
   background-color: #dfe6e9;
@@ -891,4 +848,52 @@ footer {
 @keyframes animatetop {
   from {top: -300px; opacity: 0}
   to {top: 0; opacity: 1}
+}
+
+/* Remove default bullets */
+ul, #myUL {
+  list-style-type: none;
+}
+
+/* Remove margins and padding from the parent ul */
+#myUL {
+  margin: 0;
+  padding: 0;
+  text-align: justify;
+  text-overflow: ellipsis;
+}
+
+/* Style the caret/arrow */
+.caret {
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+}
+
+/* Create the caret/arrow with a unicode, and style it */
+.caret::before {
+  content: "\25B6";
+  color: black;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Rotate the caret/arrow icon when clicked on (using JavaScript) */
+.caret-down::before {
+  transform: rotate(90deg);
+}
+
+/* Hide the nested list */
+.nested {
+  display: none;
+}
+
+
+/* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
+.active {
+  display: block;
+}
+
+.decoration-underline:hover{
+  text-decoration: underline;
+  cursor:pointer;
 }
