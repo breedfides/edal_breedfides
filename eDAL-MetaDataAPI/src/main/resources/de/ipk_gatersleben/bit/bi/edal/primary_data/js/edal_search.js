@@ -151,20 +151,20 @@ let EdalReport = new function() {
       var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
       let requestId = ID;
       ul.innerHTML = "";
-      $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+      $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
 
         if(requestId == ID){
           var tempList = [];
           for(i = 0; i < data.length; i++){
-            if(data[i] > 0){
-              tempList.push([terms[i],data[i]]);
+            if(data[i][1] > 0){
+              tempList.push(data[i]);
             }
           }
           for(i = 0; i < 4; i++){
             if(i < data.length){
               var li = document.createElement("li");
-              const term = tempList[i][0];
-              const count = tempList[i][1];
+              const term = data[i][0];
+              const count = data[i][1];
               li.classList.add("decoration-underline");
               li.innerHTML = term+'('+count+")";
               li.onclick = function(){
@@ -239,14 +239,13 @@ let EdalReport = new function() {
       console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption+" length of array: "+list.length);
       console.log(slice);
       var terms = self.terms[type];
-      if(terms.length > 0){
         for (i = 0; i < terms.length; i++) {
           var li = document.createElement("li");
           li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
           li.style.textOverflow = "ellipsis";
           li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i][0]+'</p><span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
           const term = terms[i][0];
-          const value = terms[i];
+          const value = terms[i][1];
           li.onclick = function(){
             var searchInput = document.getElementById("query");
             if(!searchInput.value){
@@ -269,50 +268,13 @@ let EdalReport = new function() {
           }
           unorderedList.appendChild(li);
         }
-      }else{
-        $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
-          console.log("returned data: ");
-          console.log(data);
-          for (i = 0; i < data.length; i++) {
-            if(data[i] == 0){
-              continue;
-            }
-            var li = document.createElement("li");
-            li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-            li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-            const term = slice[i];
-            li.onclick = function(){
-              var searchInput = document.getElementById("query");
-              if(!searchInput.value){
-                searchInput.classList.add("x");
-              }
-              let obj = {
-                "type":type,
-                "searchterm":term,
-                "occur":"MUST",
-                "fuzzy":false
-              }
-              let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
-              $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-                document.getElementById("query").value = "";
-                document.getElementById("query").value = data;
-                let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-                self.search();
-                document.getElementById("myModal").style.display = "none";
-              });
-            }
-            unorderedList.appendChild(li);
-          }
-          const incrementedPageNo = ++currentPageNo;
-          if(document.getElementById("myModal").style.display == "flex" && ((currentPageNo - 1) * 5) < list.length){
-            self.loadTerms(incrementedPageNo, type, unorderedList, list);
-          }
-        });
-      }
     }
 
     this.listCreatorTerms = function(){
       let self = this;
+      if(self.terms[PERSON].length == 0){
+        return;
+      }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Creators";
@@ -326,6 +288,9 @@ let EdalReport = new function() {
 
     this.listContributorTerms = function(){
       let self = this;
+      if(self.terms[CONTRIBUTOR].length == 0){
+        return;
+      }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Contributors";
@@ -339,6 +304,9 @@ let EdalReport = new function() {
 
     this.listSubjectTerms = function(){
       let self = this;
+      if(self.terms[SUBJECT].length == 0){
+        return;
+      }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Subjects";
@@ -352,6 +320,9 @@ let EdalReport = new function() {
 
     this.listTitleTerms = function(){
       let self = this;
+      if(self.terms[TITLE].length == 0){
+        return;
+      }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Titles";
@@ -365,6 +336,9 @@ let EdalReport = new function() {
 
     this.listDescritionTerms = function(){
       let self = this;
+      if(self.terms[DESCRIPTION].length == 0){
+        return;
+      }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Descriptions";
@@ -377,7 +351,7 @@ let EdalReport = new function() {
     }
 
     this.testCount = function(term){
-      $.post("/rest/extendedSearch/countHits2", term, function(data){
+      $.post("/rest/extendedSearch/countHits", term, function(data){
         console.log(data);
       });
     }
@@ -392,7 +366,7 @@ let EdalReport = new function() {
         //   var request = {"termType":type, "terms":slice};
         //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
         //   console.log(slice);
-        //   $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        //   $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
         //     console.log("returned data: ");
         //     console.log(data);
         //     for (i = 0; i < data.length; i++) {
@@ -418,7 +392,7 @@ let EdalReport = new function() {
         //   var request = {"termType":type, "terms":slice};
         //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
         //   console.log(slice);
-        //   $.post("/rest/extendedSearch/countHits2", JSON.stringify(request), function(data){
+        //   $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
         //     console.log("returned data: ");
         //     console.log(data);
         //     for (i = 0; i < data.length; i++) {
@@ -531,19 +505,6 @@ let EdalReport = new function() {
       }
       this.search();
     }
-
-    // this.queryChange = function(){
-    //   alert("queryChange");
-    //   let self = this;
-    //   ID++;
-    //   let requestId = ID;
-    //   let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":document.getElementById('query').value, "filters":self.filters };
-    //   $.post("/rest/extendedSearch/countHits", JSON.stringify(requestData), function(data){
-    //     if(ID == requestId){
-    //       this.query = data;
-    //     }
-    //   });
-    // };
 
     this.init = function(reportData, mapData) {
         this.initReportData = this.reportData = reportData;

@@ -120,14 +120,14 @@ public class EdalMessageExtendedSearch {
 	}
 	
 	
-	@Path("/countHits2")
+	@Path("/countHits")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONArray countHits2(String json) throws JsonParseException, JsonMappingException, IOException {
+	public JSONArray countHits(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
-			return DataManager.countHits2((JSONObject)parser.parse(json));
+			return DataManager.countHits((JSONObject)parser.parse(json));
 		} catch (ParseException e) {
 			return new JSONArray();
 		}

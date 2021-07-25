@@ -1318,10 +1318,9 @@ public class DataManager {
 		}
 	}
 	
-	public static JSONArray countHits2(JSONObject jsonObject) {
-		JSONArray result = new JSONArray();
+	public static JSONArray countHits(JSONObject jsonObject) {
 		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
-	    int[] arr = new int[jsonArray.size()];
+	    Object[][] arr = new Object[jsonArray.size()][2];
 	    CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
 		String type = (String) jsonObject.get("termType");
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
@@ -1409,7 +1408,8 @@ public class DataManager {
 			  		    		Query builded = finalQuery.build();
 						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
-			  			        	arr[index] = collector.getTotalHits();
+			  			        	arr[index][0] = currentType;
+			  			        	arr[index][1] = collector.getTotalHits();
 			  			        }
 			  				} catch (IOException e) {
 			  					// TODO Auto-generated catch block
@@ -1423,7 +1423,8 @@ public class DataManager {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 	  			        synchronized (arr) {
-	  			        	arr[index] = 0;
+	  			        	arr[index][0] = currentType;
+	  			        	arr[index][1] = 0;
 	  			        }
 					}
 	      }
@@ -1433,10 +1434,10 @@ public class DataManager {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	      for(int val : arr) {
+		  JSONArray result = new JSONArray();
+	      for(Object[] val : arr) {
 	    	  result.add(val);
 	      }
-			  DataManager.getImplProv().getLogger().info("------------------");
 	      return result;
 	}
 	
