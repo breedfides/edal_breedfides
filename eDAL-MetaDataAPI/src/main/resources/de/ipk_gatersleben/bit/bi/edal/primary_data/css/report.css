@@ -818,6 +818,11 @@ footer {
   text-shadow:2px
 }
 
+#modal-headline{
+  font-size: 14px;
+  font-size: 1.2vw;
+}
+
 /* Modal Body */
 .modal-body {
   padding: 2px 6px;
@@ -838,7 +843,8 @@ footer {
   margin: auto;
   padding: 0;
   border: 1px solid #888;
-  width: 25%;
+  width: 20%;
+  min-width: 250px;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
   animation-name: animatetop;
   animation-duration: 0.4s

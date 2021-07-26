@@ -216,16 +216,18 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					Document doc = searcher.doc(scoreDoc.doc);
 					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
 					for(String string : strings) {
-						contributors.add(string);
+						contributors.add(string.replaceAll("\\s+", " ").trim());
+					}
+					strings = doc.getValues(MetaDataImplementation.CREATORNAME);
+					for(String string : strings) {
+						if(string != null) {
+							creators.add(string.replaceAll("\\s+", " ").trim());
+						}
 					}
 					String s = null;
-					s = doc.get(MetaDataImplementation.CREATORNAME);
-					if(s != null) {
-						creators.add(s);
-					}
 					s = doc.get(MetaDataImplementation.LEGALPERSON);
 					if(s != null) {
-						legalPersons.add(s);
+						legalPersons.add(s.replaceAll("\\s+", " ").trim());
 					}
 					TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
 					ts.reset();

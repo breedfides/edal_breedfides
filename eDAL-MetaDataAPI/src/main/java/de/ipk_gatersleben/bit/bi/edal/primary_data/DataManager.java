@@ -35,12 +35,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -1318,7 +1321,7 @@ public class DataManager {
 		}
 	}
 	
-	public static JSONArray countHits(JSONObject jsonObject) {
+	public static JSONObject countHits(JSONObject jsonObject) {
 		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
 	    Object[][] arr = new Object[jsonArray.size()][2];
 	    CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
@@ -1434,10 +1437,36 @@ public class DataManager {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		  JSONArray result = new JSONArray();
+		  JSONObject result = new JSONObject();
+		  Set<Object[]> hitSet = new TreeSet<>(new Comparator<Object[]>() {
+		        @Override
+		        public int compare(Object[] o1, Object[] o2) {
+		            if((int)o1[1] < (int)o2[1]) {
+		            	return 1;
+		            }else if((int)o1[1] > (int)o2[1]){
+		            	return -1;
+		            }else {
+		            	if(((String)o1[0]).equals((String)o2[0])) {
+		            		return 0;
+		            	}
+		            	return 1;
+		            }
+		        }
+		    });
+		  Set<Object[]> nameSet = new TreeSet<>(new Comparator<Object[]>() {
+		        @Override
+		        public int compare(Object[] o1, Object[] o2) {
+		            return ((String)o1[0]).compareTo((String)o2[0]);
+		        }
+		    });
 	      for(Object[] val : arr) {
-	    	  result.add(val);
+	    	  if((int)val[1] > 0) {
+	    		  hitSet.add(val);
+	    		  nameSet.add(val);
+	    	  }
 	      }
+	      result.put("sortedByHits", hitSet);
+	      result.put("sortedByNames", nameSet);
 	      return result;
 	}
 	

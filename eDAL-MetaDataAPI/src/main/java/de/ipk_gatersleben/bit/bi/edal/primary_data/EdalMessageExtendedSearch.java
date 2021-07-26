@@ -124,12 +124,12 @@ public class EdalMessageExtendedSearch {
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONArray countHits(String json) throws JsonParseException, JsonMappingException, IOException {
+	public JSONObject countHits(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
 			return DataManager.countHits((JSONObject)parser.parse(json));
 		} catch (ParseException e) {
-			return new JSONArray();
+			return new JSONObject();
 		}
 	}
 	@Path("/getTermLists")
@@ -138,11 +138,11 @@ public class EdalMessageExtendedSearch {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
 		JSONObject result = new JSONObject();
-		result.put("Creator", NativeLuceneIndexWriterThread.getCreators());
-		result.put("Contributor", NativeLuceneIndexWriterThread.getContributors());
-		result.put("Subject", NativeLuceneIndexWriterThread.getSubjects());
-		result.put("Title", NativeLuceneIndexWriterThread.getTitles());
-		result.put("Description", NativeLuceneIndexWriterThread.getDescriptions());		
+		result.put(MetaDataImplementation.PERSON, NativeLuceneIndexWriterThread.getCreators());
+		result.put(MetaDataImplementation.CONTRIBUTOR, NativeLuceneIndexWriterThread.getContributors());
+		result.put(MetaDataImplementation.SUBJECT, NativeLuceneIndexWriterThread.getSubjects());
+		result.put(MetaDataImplementation.TITLE, NativeLuceneIndexWriterThread.getTitles());
+		result.put(MetaDataImplementation.DESCRIPTION, NativeLuceneIndexWriterThread.getDescriptions());		
 		return result;
 	}
 

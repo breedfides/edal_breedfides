@@ -154,17 +154,12 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
 
         if(requestId == ID){
-          var tempList = [];
-          for(i = 0; i < data.length; i++){
-            if(data[i][1] > 0){
-              tempList.push(data[i]);
-            }
-          }
+          var tempList = data.sortedByHits;
           for(i = 0; i < 4; i++){
-            if(i < data.length){
+            if(i < tempList.length){
               var li = document.createElement("li");
-              const term = data[i][0];
-              const count = data[i][1];
+              const term = tempList[i][0];
+              const count = tempList[i][1];
               li.classList.add("decoration-underline");
               li.innerHTML = term+'('+count+")";
               li.onclick = function(){
@@ -190,55 +185,66 @@ let EdalReport = new function() {
               ul.appendChild(li);
             }
           }
-          var li = document.createElement("li");
-          li.style.fontWeight = "bold";
-          li.innerHTML = "More ("+tempList.length+")";
-          li.classList.add("decoration-underline");
-          switch(type){
-            case PERSON:
-              li.onclick = function(){
-                self.listCreatorTerms();
-              };
-              break;
-            case CONTRIBUTOR:
-              li.onclick = function(){
-                self.listContributorTerms();
-              };
-              break;
-            case SUBJECT:
-              li.onclick = function(){
-                self.listSubjectTerms();
-              };
-              break;
-            case TITLE:
-              li.onclick = function(){
-                self.listTitleTerms();
-              };
-              break;
-            case DESCRIPTION:
-              li.onclick = function(){
-                self.listDescritionTerms();
-              };
-              break;
+          if(tempList.length > 4){
+            var li = document.createElement("li");
+            li.style.fontWeight = "bold";
+            li.innerHTML = "More ("+tempList.length+")";
+            li.classList.add("decoration-underline");
+            switch(type){
+              case PERSON:
+                li.onclick = function(){
+                  self.listCreatorTerms();
+                };
+                break;
+              case CONTRIBUTOR:
+                li.onclick = function(){
+                  self.listContributorTerms();
+                };
+                break;
+              case SUBJECT:
+                li.onclick = function(){
+                  self.listSubjectTerms();
+                };
+                break;
+              case TITLE:
+                li.onclick = function(){
+                  self.listTitleTerms();
+                };
+                break;
+              case DESCRIPTION:
+                li.onclick = function(){
+                  self.listDescritionTerms();
+                };
+                break;
+            }
+            ul.appendChild(li);
           }
-          ul.appendChild(li);
-          self.terms[type] = tempList;
-          /**visual animation for the number of available faceted terms**/
-          animateCountUp(li, tempList.length);
+          self.terms[type] = {"sortedByHits":data.sortedByHits, "sortedByNames":data.sortedByNames};
+
         }
       });
     }
 
-    this.loadTerms = async function(currentPageNo, type, unorderedList, list){
+    this.loadTerms = async function(type, unorderedList, terms){
       let self = this;
-      const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
-      const upperBound = startOption + 5;
-      const endOption = upperBound < list.length ? upperBound : list.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
-      const slice = list.slice(startOption, endOption);
-      var request = {"termType":type, "terms":slice, "requestData":self.currentRequestData};
-      console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption+" length of array: "+list.length);
-      console.log(slice);
-      var terms = self.terms[type];
+      var radioButton = document.getElementById("radioBtnNames");
+      if(radioButton.checked){
+        radioButton.removeAttribute("onclick");
+      }else{
+        radioButton.onclick = function(){
+          unorderedList.innerHTML = "";
+          self.loadTerms(type, unorderedList, self.terms[type].sortedByNames);
+        }
+      }
+      radioButton = document.getElementById("radioBtnHits");
+      if(radioButton.checked){
+        radioButton.removeAttribute("onclick");
+      }else{
+        radioButton.onclick = function(){
+          unorderedList.innerHTML = "";
+          self.loadTerms(type, unorderedList, self.terms[type].sortedByHits);
+        }
+      }
         for (i = 0; i < terms.length; i++) {
           var li = document.createElement("li");
           li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
@@ -272,30 +278,31 @@ let EdalReport = new function() {
 
     this.listCreatorTerms = function(){
       let self = this;
-      if(self.terms[PERSON].length == 0){
+      if(self.terms[PERSON].sortedByHits.length == 0){
         return;
       }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Creators";
       var ulCreator = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,PERSON, ulCreator, self.creators);
+      self.loadTerms(PERSON, ulCreator, self.terms[PERSON].sortedByHits);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
       document.getElementById("modal-list").appendChild(ulCreator);
     }
+    
 
     this.listContributorTerms = function(){
       let self = this;
-      if(self.terms[CONTRIBUTOR].length == 0){
+      if(self.terms[CONTRIBUTOR].sortedByHits.length == 0){
         return;
       }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Contributors";
       var ulContributor = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,CONTRIBUTOR, ulContributor, self.contributors);
+      self.loadTerms(CONTRIBUTOR, ulContributor, self.terms[CONTRIBUTOR].sortedByHits);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -304,14 +311,14 @@ let EdalReport = new function() {
 
     this.listSubjectTerms = function(){
       let self = this;
-      if(self.terms[SUBJECT].length == 0){
+      if(self.terms[SUBJECT].sortedByHits.length == 0){
         return;
       }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Subjects";
       var ulSubjects = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,SUBJECT, ulSubjects, self.subjects);
+      self.loadTerms(SUBJECT, ulSubjects, self.terms[SUBJECT].sortedByHits);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -320,14 +327,14 @@ let EdalReport = new function() {
 
     this.listTitleTerms = function(){
       let self = this;
-      if(self.terms[TITLE].length == 0){
+      if(self.terms[TITLE].sortedByHits.length == 0){
         return;
       }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Titles";
       var ulTitles = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,TITLE, ulTitles, self.titles);
+      self.loadTerms(TITLE, ulTitles, self.terms[TITLE].sortedByHits);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
@@ -336,14 +343,14 @@ let EdalReport = new function() {
 
     this.listDescritionTerms = function(){
       let self = this;
-      if(self.terms[DESCRIPTION].length == 0){
+      if(self.terms[DESCRIPTION].sortedByHits.length == 0){
         return;
       }
       self.currentRequestData["hitType"] = document.getElementById("hitType").value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Descriptions";
       var ulDescriptoions = self.ulDummy.cloneNode(false);
-      self.loadTerms(1,DESCRIPTION, ulDescriptoions, self.descriptions);
+      self.loadTerms(DESCRIPTION, ulDescriptoions, self.terms[DESCRIPTION].sortedByHits);
       document.getElementById("myModal").style.display = "flex";
       var modalList = document.getElementById("modal-list");
       modalList.innerHTML = "";
