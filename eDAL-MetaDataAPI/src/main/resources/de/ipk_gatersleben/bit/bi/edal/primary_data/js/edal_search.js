@@ -87,7 +87,7 @@ let EdalReport = new function() {
         console.log(data);
         document.getElementById("query").value = "";
         document.getElementById("query").value = data;
-        let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
         self.resetTermList();
       });
     }
@@ -111,7 +111,7 @@ let EdalReport = new function() {
       document.getElementById("loading-indicator").style.display="block";
       ID++;
       let requestId = ID;
-      let requestData = { "hitType":document.getElementById("hitType").value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
+      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
       self.currentRequestData = requestData;
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
@@ -177,7 +177,7 @@ let EdalReport = new function() {
                 $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
                   document.getElementById("query").value = "";
                   document.getElementById("query").value = data;
-                  let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+                  let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
                   self.search();
                   document.getElementById("myModal").style.display = "none";
                 });
@@ -267,7 +267,7 @@ let EdalReport = new function() {
             $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
               document.getElementById("query").value = "";
               document.getElementById("query").value = data;
-              let requestData = { "hitType":document.getElementById("hitType").value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
+              let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
               self.search();
               document.getElementById("myModal").style.display = "none";
             });
@@ -281,7 +281,7 @@ let EdalReport = new function() {
       if(self.terms[PERSON].sortedByHits.length == 0){
         return;
       }
-      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Creators";
       var ulCreator = self.ulDummy.cloneNode(false);
@@ -291,14 +291,14 @@ let EdalReport = new function() {
       modalList.innerHTML = "";
       document.getElementById("modal-list").appendChild(ulCreator);
     }
-    
+
 
     this.listContributorTerms = function(){
       let self = this;
       if(self.terms[CONTRIBUTOR].sortedByHits.length == 0){
         return;
       }
-      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Contributors";
       var ulContributor = self.ulDummy.cloneNode(false);
@@ -314,7 +314,7 @@ let EdalReport = new function() {
       if(self.terms[SUBJECT].sortedByHits.length == 0){
         return;
       }
-      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Subjects";
       var ulSubjects = self.ulDummy.cloneNode(false);
@@ -330,7 +330,7 @@ let EdalReport = new function() {
       if(self.terms[TITLE].sortedByHits.length == 0){
         return;
       }
-      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Titles";
       var ulTitles = self.ulDummy.cloneNode(false);
@@ -346,7 +346,7 @@ let EdalReport = new function() {
       if(self.terms[DESCRIPTION].sortedByHits.length == 0){
         return;
       }
-      self.currentRequestData["hitType"] = document.getElementById("hitType").value;
+      self.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       self.currentRequestData["filters"] = self.filters;
       document.getElementById("modal-headline").innerHTML = "Descriptions";
       var ulDescriptoions = self.ulDummy.cloneNode(false);
@@ -486,12 +486,12 @@ let EdalReport = new function() {
     this.filterChange = function(){
       this.filters = [];
       let periodbox = document.getElementById("period");
-      this.currentRequestData["hitType"] = document.getElementById("hitType").value;
-      if(periodbox.checked){
-        let lowbound = document.getElementById("datepickerlow").value;
-        let highbound = document.getElementById("datepickerhigh").value;
+      this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
+      if($('#slider-range').slider("values")[0] > 2010 || $('#slider-range').slider("values")[1] < 2021){
+        let lowbound = $('#slider-range').slider("values")[0]+"-01-01";
+        let highbound = $('#slider-range').slider("values")[1]+"-12-31";
         if(lowbound != "" && highbound != ""){
-          this.filters.push({"type":STARTDATE,"lower":lowbound.replaceAll('/', '-'),"upper":highbound.replaceAll('/', '-'),"fuzzy":false,"Occur":"And"});
+          this.filters.push({"type":STARTDATE,"lower":lowbound,"upper":highbound,"fuzzy":false,"Occur":"And"});
         }
       }
       let filesize = document.getElementById("filesize");
@@ -553,7 +553,7 @@ let EdalReport = new function() {
       let self = this;
       self.currentRequestData.existingQuery = document.getElementById("query").value;
       self.currentRequestData.filters = self.filters;
-      self.currentRequestData.hitType = document.getElementById("hitType").value;
+      self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
       $.post("/rest/extendedSearch/getTermLists", function(data){
         self.creators = data[PERSON];
         self.contributors = data[CONTRIBUTOR];

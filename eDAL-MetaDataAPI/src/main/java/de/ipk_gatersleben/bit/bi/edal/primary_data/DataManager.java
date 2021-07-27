@@ -1359,7 +1359,6 @@ public class DataManager {
   		    			
   		    			BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
   		    			finalQuery.add(parsedQuery, Occur.MUST);
-  		    			
   		    			JSONArray filters = (JSONArray) requestData.get("filters");
   		    			for(Object obj : filters) {
   		    				JSONObject queryData = (JSONObject) obj;

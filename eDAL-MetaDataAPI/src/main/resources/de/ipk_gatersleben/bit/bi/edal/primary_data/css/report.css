@@ -142,12 +142,8 @@ div#edal-report-filter{
   grid-row-end: 3;
   height:100%;
   max-width:100%;
-  text-align: center;
-  display: grid;
   overflow-y: scroll;
   overflow-x: hidden;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(8, 40px) 1fr;
   border-right: 1px solid #2596be;
 }
 
@@ -450,7 +446,7 @@ footer {
 .centerclass{
   max-height: 50px;
   display: flex;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: center;
 }
 
@@ -459,6 +455,8 @@ footer {
   grid-row-start: 1;
   grid-row-end: 2;
   font-weight: normal;
+  display: inline-block;
+  align-self: flex-end;
 }
 
 .hittypeinput{
@@ -467,7 +465,17 @@ footer {
   grid-column-start: 2;
   grid-column-end: 4;
   font-weight: normal;
-  width: 90%;
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(0,0,0,.1);
+}
+
+#radioContainer{
+  margin: 0 auto;
+  width: auto;
+  text-align: left;
+  display: table;
 }
 
 .halfinput{

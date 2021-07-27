@@ -659,8 +659,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 
 		@Override
-		public int compareTo(MyTerm term) {
-			return frequence < term.frequence ? 1 : frequence > term.frequence ? -1 : 0;
+		public int compareTo(MyTerm myTerm) {
+			return this.term.compareTo(myTerm.term);
 		}
 		
 	}
