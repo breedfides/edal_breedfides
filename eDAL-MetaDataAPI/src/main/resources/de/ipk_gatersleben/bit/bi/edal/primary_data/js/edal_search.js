@@ -88,7 +88,7 @@ let EdalReport = new function() {
         document.getElementById("query").value = "";
         document.getElementById("query").value = data;
         let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-        self.resetTermList();
+        self.search();
       });
     }
 
@@ -108,7 +108,7 @@ let EdalReport = new function() {
         self.facetedTerms();
         return;
       }
-      document.getElementById("loading-indicator").style.display="block";
+      document.getElementById("loading-indicator").style.display="inline-block";
       ID++;
       let requestId = ID;
       let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
@@ -417,7 +417,7 @@ let EdalReport = new function() {
         // }
 
     this.changePage = function(index, page, currentRequestData, history){
-      document.getElementById("loading-indicator").style.display="block";
+      document.getElementById("loading-indicator").style.display="inline-block";
       let self = this;
       ID++;
       let requestId = ID;
