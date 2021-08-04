@@ -109,7 +109,7 @@
                           <option>Legalperson</option>
                           <option>Subject</option>
                           <option>Language</option>
-                          <option>Filetype</option>
+                          <option value="Filetype">File extension</option>
                           <option>Checksum</option>
                           <option value="Allfields">Search All types</option>
                         </select>
@@ -164,7 +164,7 @@
                         <div class="form-check">
                           <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="rootDirectory" onclick="EdalReport.filterChange()" checked="checked">
                             <label class="form-check-label" for="exampleRadios1">
-                              Records
+                              Datasets
                             </label>
                           </div>
                           <div class="form-check">
@@ -186,22 +186,7 @@
                               <div id="slider-range"></div>
                             </div>
 
-                              <div>
-                                <div class="filetypelabel centerclass pl-2">
-                                  <input id="suffix" onchange="EdalReport.filterChange()" type="checkbox" class="mr-1" name="Ongoing">
-                                  <label style="margin-bottom:0;" for="">File extension:
-                                  </label></div>
-                                  <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <div class="filetypeinput centerclass pb-3" style="width: 60%;margin: 0 auto;">
-                                    <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pl-2" disabled="disabled" name="top5" size="1">
-                                      #foreach($obj in $filetypes)
-                                      <option value="$obj">$obj</option>
-                                      #end
-                                    </select>
-                                  </div>
-                                </div>
-                                </div>
-                                <div>
+                                <div class="mb-1">
 
                                   <div class="filesizelabel centerclass pl-2">
                                     <input id="filesize" onchange="EdalReport.filterChange()" class="mr-1" type="checkbox" name="Ongoing">
@@ -231,6 +216,23 @@
                                         </div>
                                       </div>
                                       </div>
+
+                                      <div>
+                                        <div class="filetypelabel centerclass pl-2" style="width:50%;float:left;">
+                                          <label style="margin-bottom:0;" for="">File extension:
+                                          </label></div>
+                                          <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                          <div class="filetypeinput centerclass pb-3" style="width: 50%;margin: 0 auto;">
+                                            <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pl-2" disabled name="top5" size="1">
+                                              <option>*</option>
+                                              #foreach($obj in $filetypes)
+                                              <option value="$obj">$obj</option>
+                                              #end
+                                            </select>
+                                          </div>
+                                        </div>
+                                        </div>
+
                                       <div>
                                         <div class="facetedContainer" id="jsTreeData">
 
@@ -349,9 +351,6 @@
                                 $('#report').DataTable().clear().draw();
                               });
 
-                              $('#suffix').change(function () {
-                                $('#suffixesSelect').prop('disabled', !this.checked);
-                              });
 
                               $('#filesize').change(function () {
                                 $('#filesizelow').prop('disabled', !this.checked);

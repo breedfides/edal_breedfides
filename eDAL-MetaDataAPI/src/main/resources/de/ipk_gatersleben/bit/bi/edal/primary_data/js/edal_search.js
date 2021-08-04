@@ -28,6 +28,7 @@ let EdalReport = new function() {
     this.subjects;
     this.titles;
     this.descriptions;
+    this.defaultFileType = "*";
 
 
     this.ulDummy = document.createElement("ul");
@@ -99,6 +100,30 @@ let EdalReport = new function() {
       self.countFacetedTerms(SUBJECT, self.subjects, document.getElementById("SubjectUl"));
       self.countFacetedTerms(TITLE, self.titles, document.getElementById("TitleUl"));
       self.countFacetedTerms(DESCRIPTION, self.descriptions, document.getElementById("DescriptionUl"));
+      self.loadFileExtensions();
+    }
+
+    this.loadFileExtensions = function(){
+      let self = this;
+      if(self.currentRequestData["hitType"] == "singleData"){
+        var select = document.getElementById("suffixesSelect");
+        select.innerHTML = "";
+        var option = document.createElement("option");
+        option.innerHTML = "*";
+        select.appendChild(option);
+        var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
+        $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
+          data.sortedByNames.forEach((term, i) => {
+            var opt = document.createElement("option");
+            opt.value = term[0];
+            opt.innerHTML = term[0] + " (" + term[1]+")";
+            select.appendChild(opt);
+            if(term[0] == self.defaultFileType){
+              select.selectedIndex = ++i;
+            }
+          });
+        });
+      }
     }
 
     this.search = function(){
@@ -487,6 +512,7 @@ let EdalReport = new function() {
       this.filters = [];
       let periodbox = document.getElementById("period");
       this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
+      document.getElementById("suffixesSelect").disabled = this.currentRequestData["hitType"] == "singleData" ? false : true;
       if($('#slider-range').slider("values")[0] > 2010 || $('#slider-range').slider("values")[1] < 2021){
         let lowbound = $('#slider-range').slider("values")[0]+"-01-01";
         let highbound = $('#slider-range').slider("values")[1]+"-12-31";
@@ -505,10 +531,12 @@ let EdalReport = new function() {
         }
       }
       let suffix = document.getElementById("suffix");
-      if(suffix.checked){
-        let suffixValue = document.getElementById("suffixesSelect").value;
-        if(suffixValue != "")
-          this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+      let suffixValue = document.getElementById("suffixesSelect").value;
+      if(suffixValue != "*"){
+        this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+        this.defaultFileType = suffixValue;
+      }else{
+        this.defaultFileType = "*";
       }
       this.search();
     }

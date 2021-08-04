@@ -1285,7 +1285,7 @@ public class DataManager {
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.OR);
+		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		JSONObject queryData = (JSONObject) jsonArray.get("newQuery");
 		Query query = null;
@@ -1321,6 +1321,150 @@ public class DataManager {
 		}
 	}
 	
+	public static JSONObject extensions(JSONObject jsonObject) {
+		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
+	    Object[][] arr = new Object[jsonArray.size()][2];
+	    CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
+		String type = (String) jsonObject.get("termType");
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(FileSystemImplementationProvider.STOPWORDS.size()+defaultStopWords.size(), false);
+		stopSet.addAll(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
+		QueryParser queryParser = new QueryParser(type, analyzer);
+		
+		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
+		String existing = (String) requestData.get("existingQuery");
+	      for(int i = 0; i < jsonArray.size(); i++) {
+	    	  final int index = i;
+	    	  final String currentType = (String) jsonArray.get(index);
+	  			  Query parsedQuery = null;
+	    			BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
+	  		    		if(!existing.equals(""))
+	  		  			try {
+	  		  				parsedQuery = queryParser.parse(existing);
+	  		  				finalQuery.add(parsedQuery, Occur.MUST);
+	  		  			} catch (ParseException e1) {
+	  		  				// TODO Auto-generated catch block
+	  		  				e1.printStackTrace();
+	  		  			}  			    			
+  		    			requestData.put("existingQuery", parsedQuery.toString());
+  		    			//final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
+  		    			
+  		    			finalQuery.add(parsedQuery, Occur.MUST);
+  		    			Query query = null;
+  		    			
+    					currentType.replace("\\", "");
+    					try {
+    						query = queryParser.parse(QueryParser.escape(currentType));
+    					} catch (ParseException e) {
+    						// TODO Auto-generated catch block
+    						e.printStackTrace();
+    					}
+	    				finalQuery.add(query, Occur.MUST);
+  		    			
+  		    			JSONArray filters = (JSONArray) requestData.get("filters");
+  		    			for(Object obj : filters) {
+  		    				JSONObject queryData = (JSONObject) obj;
+  		    				query = null;
+  		    				String filterType = ((String)queryData.get("type"));
+  		    				String keyword = (String) queryData.get("searchterm");
+  		    				if(filterType.equals(MetaDataImplementation.STARTDATE) || filterType.equals(MetaDataImplementation.ENDDATE)) {
+  		    					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",Locale.ENGLISH);
+  		    					LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
+  		    					LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();
+  		    					String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+  		    					String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+  		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
+
+  		    				}else if(filterType.equals(MetaDataImplementation.SIZE)) {
+  		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
+  		    				}else if(filterType.equals(MetaDataImplementation.FILETYPE)){
+  	  		    				QueryParser filterParser = new QueryParser(filterType, analyzer);
+  	  		    				filterParser.setDefaultOperator(Operator.AND);
+  		    					keyword.replace("\\", "");
+  		    					try {
+  		    						query = filterParser.parse(QueryParser.escape(keyword));
+  		    					} catch (ParseException e) {
+  		    						// TODO Auto-generated catch block
+  		    						e.printStackTrace();
+  		    					}
+  		    				}
+  		    				finalQuery.add(query, Occur.MUST);
+  		    			}	
+  		    			String hitType = (String) requestData.get("hitType");
+  		    			switch(hitType) {
+  		    			case PublicVersionIndexWriterThread.PUBLICREFERENCE:
+  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
+  		    				break;
+  		    			case PublicVersionIndexWriterThread.INDIVIDUALFILE:
+  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.FILTER);
+  		    				break;
+  		    			case PublicVersionIndexWriterThread.DIRECTORY:
+  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY)), Occur.MUST);
+  		    				break;
+  		    			default:
+  		    				return null;
+  		    			}
+  		    			BooleanQuery.setMaxClauseCount(10000);
+			  		    Thread innerThread = new Thread(){
+			  		    public void run(){
+			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
+			  		    	  try {
+			  		    		Query builded = finalQuery.build();
+						  		DataManager.globalSearcher.search(builded, collector);
+			  			        synchronized (arr) {
+			  			        	arr[index][0] = currentType;
+			  			        	arr[index][1] = collector.getTotalHits();
+			  			        }
+			  				} catch (IOException e) {
+			  					// TODO Auto-generated catch block
+			  					e.printStackTrace();
+			  				} 
+			  		    	internalCountDownLatch.countDown();
+			  		    }
+			  		   };
+			  		   innerThread.start();
+	      }
+	      try {
+			internalCountDownLatch.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		  JSONObject result = new JSONObject();
+		  Set<Object[]> hitSet = new TreeSet<>(new Comparator<Object[]>() {
+		        @Override
+		        public int compare(Object[] o1, Object[] o2) {
+		            if((int)o1[1] < (int)o2[1]) {
+		            	return 1;
+		            }else if((int)o1[1] > (int)o2[1]){
+		            	return -1;
+		            }else {
+		            	if(((String)o1[0]).equals((String)o2[0])) {
+		            		return 0;
+		            	}
+		            	return 1;
+		            }
+		        }
+		    });
+		  Set<Object[]> nameSet = new TreeSet<>(new Comparator<Object[]>() {
+		        @Override
+		        public int compare(Object[] o1, Object[] o2) {
+		            return ((String)o1[0]).compareTo((String)o2[0]);
+		        }
+		    });
+	      for(Object[] val : arr) {
+	    	  if((int)val[1] > 0) {
+	    		  hitSet.add(val);
+	    		  nameSet.add(val);
+	    	  }
+	      }
+	      result.put("sortedByHits", hitSet);
+	      result.put("sortedByNames", nameSet);
+	      return result;
+	}
+	
 	public static JSONObject countHits(JSONObject jsonObject) {
 		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
 	    Object[][] arr = new Object[jsonArray.size()][2];
@@ -1332,6 +1476,7 @@ public class DataManager {
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser queryParser = new QueryParser(type, analyzer);
+		queryParser.setDefaultOperator(Operator.AND);
 		
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
 		String existing = (String) requestData.get("existingQuery");
@@ -1344,7 +1489,7 @@ public class DataManager {
 	  		    			queryParser.setDefaultOperator(Operator.AND);
 	  		    			parsedQuery = queryParser.parse(currentType);
 	  		    		}else {
-	  		    			queryParser.setDefaultOperator(Operator.OR);
+	  		    			queryParser.setDefaultOperator(Operator.AND);
 	  						StringBuilder toParse = new StringBuilder(existing);
 	  						String[] words = currentType.split(" ");
 	  						for(String s : words) {
@@ -1353,6 +1498,7 @@ public class DataManager {
 	  							toParse.append(s);
 	  						}
 	  		    			parsedQuery = queryParser.parse(toParse.toString());
+	  		    			
 	  		    		}	  			    			
   		    			requestData.put("existingQuery", parsedQuery.toString());
   		    			//final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
@@ -1408,6 +1554,9 @@ public class DataManager {
 			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 			  		    	  try {
 			  		    		Query builded = finalQuery.build();
+		  		    			if(type.equals(MetaDataImplementation.FILETYPE)) {
+		  		    				int z = 0;
+		  		    			}
 						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
 			  			        	arr[index][0] = currentType;
@@ -1489,7 +1638,7 @@ public class DataManager {
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.OR);
+		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		if(!existing.equals(""))
 			try {
@@ -1547,5 +1696,6 @@ public class DataManager {
 		BooleanQuery.setMaxClauseCount(10000);
         return finalQuery.build();
 	}
+
 
 }
