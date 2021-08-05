@@ -522,15 +522,18 @@ let EdalReport = new function() {
         }
       }
       let filesize = document.getElementById("filesize");
-      // if(filesize.checked){
-      //   let lowbound = parseInt(document.getElementById("filesizelow").value);
-      //   let highbound = parseInt(document.getElementById("filesizehigh").value);
-      //   let lowerSize = document.getElementById("filesizelowbyte").value;
-      //   let higherSize = document.getElementById("filesizehighbyte").value;
-      //   if(lowbound != "" && highbound != ""){
-      //     this.filters.push({"type":SIZE,"lower":reverseNiceBytes(lowbound,lowerSize),"upper":reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
-      //   }
-      // }
+      let lower_handle_index = $('#slider-filesize').slider("values")[0];
+      let upper_handle_index = $('#slider-filesize').slider("values")[1];
+      console.log("lower: "+lower_handle_index+" upper: "+upper_handle_index);
+      if(lower_handle_index > $("#slider-filesize").slider("option", "min") || upper_handle_index < $("#slider-filesize").slider("option", "max")){
+        console.log("#################### adding filesize filter");
+        let lowbound = parseInt(this.rangeSizeValues[lower_handle_index][0]);
+        let highbound = parseInt(this.rangeSizeValues[upper_handle_index][0]);
+        let lowerSize = this.rangeSizeValues[lower_handle_index][1];
+        let higherSize = this.rangeSizeValues[upper_handle_index][1];
+        this.filters.push({"type":SIZE,"lower":this.reverseNiceBytes(lowbound,lowerSize),"upper":this.reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
+        console.log(this.filters);
+      }
       let suffix = document.getElementById("suffix");
       let suffixValue = document.getElementById("suffixesSelect").value;
       if(suffixValue != "*"){
@@ -589,21 +592,26 @@ let EdalReport = new function() {
               $("#date-label").val($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));
             });
             //populate Array with values for file size slider
+            var units_array = ["B",...self.units];
             for(i = 0; i < 4; i++){
               for(j = 0; j < 10; j++){
-                self.rangeSizeValues.push([Math.pow(2,j),self.units[i]]);
+                self.rangeSizeValues.push([Math.pow(2,j),units_array[i]]);
               }
             }
-            self.rangeSizeValues.push([1,self.units[4]]);
+            self.rangeSizeValues.push([1,units_array[4]]);
             $("#slider-filesize").slider({
                 range: true,
                 min: 0,
                 max: self.rangeSizeValues.length-1,
                 values: [0, self.rangeSizeValues.length-1],
                 slide: function(event, ui) {
-                $("#file-size-label").val(self.rangeSizeValues[ui.values[0]][0]+self.rangeSizeValues[ui.values[0]][1]+" - "+self.rangeSizeValues[ui.values[1]][0]+self.rangeSizeValues[ui.values[1]][1]);
+                  $("#file-size-label").val(self.rangeSizeValues[ui.values[0]][0]+self.rangeSizeValues[ui.values[0]][1]+" - "+self.rangeSizeValues[ui.values[1]][0]+self.rangeSizeValues[ui.values[1]][1]);
+                },
+                stop: function (event, ui) {
+                  EdalReport.filterChange();
                 }
             });
+            $('.selector').slider('disable');
             self.resetTermList();
             self.renderYearSelectOptions();
             self.renderDatatableReports();
@@ -1015,6 +1023,7 @@ let EdalReport = new function() {
     };
 
     this.niceBytes = function(bytes) {
+      let self = this;
       const thresh = 1024;
       const dp = 1;
       if (Math.abs(bytes) < thresh) {
@@ -1027,18 +1036,19 @@ let EdalReport = new function() {
       do {
         bytes /= thresh;
         ++u;
-      } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < this.units.length - 1);
+      } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < self.units.length - 1);
 
-      return bytes.toFixed(dp).replace(".", ",") + ' ' + this.units[u];
+      return bytes.toFixed(dp).replace(".", ",") + ' ' + self.units[u];
     };
 
-    function reverseNiceBytes(fileSize, unit){
+    this.reverseNiceBytes = function(fileSize, unit){
+      let self = this;
       if(unit === 'B')
         return fileSize;
       let multiplier = 1024;
-      for(let i = 0; i < this.units.length; i++){
+      for(let i = 0; i < self.units.length; i++){
         fileSize = fileSize * 1024;
-        if(this.units[i] === unit){
+        if(self.units[i] === unit){
           break;
         }
       }
