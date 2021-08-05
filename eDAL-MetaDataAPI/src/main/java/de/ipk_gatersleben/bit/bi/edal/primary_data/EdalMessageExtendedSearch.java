@@ -119,20 +119,6 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
-	@Path("/Extensions")
-	@POST
-	@ManagedAsync
-	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject extensions(String json) throws JsonParseException, JsonMappingException, IOException {
-		JSONParser parser = new JSONParser();
-		try {
-			return DataManager.extensions((JSONObject)parser.parse(json));
-		} catch (ParseException e) {
-			return new JSONObject();
-		}
-	}
-	
-	
 	@Path("/countHits")
 	@POST
 	@ManagedAsync

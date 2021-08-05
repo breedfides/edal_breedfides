@@ -128,7 +128,6 @@
                       <div class="col">
                         <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:135px">
                           <option value="MUST">Must occur</option>
-                          <option value="SHOULD">May occur</option>
                           <option value="MUST_NOT">Must not occur</option>
                         </select>
                       </div>
@@ -181,41 +180,15 @@
                               </div>
                             </div>
                           </div>
-                              <label class="pl-2" for="amount">Creation date:<input class="pl-1" type="text" id="amount" readonly="readonly" style="border:0; color:#333; font-weight:bold;"></label>
+                              <label class="pl-2" for="amount">Creation date:<input class="pl-1" type="text" id="date-label" readonly="readonly" style="border:0; color:#333; font-weight:bold;"></label>
                               <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                               <div id="slider-range"></div>
                             </div>
 
-                                <div class="mb-1">
-
-                                  <div class="filesizelabel centerclass pl-2">
-                                    <input id="filesize" onchange="EdalReport.filterChange()" class="mr-1" type="checkbox" name="Ongoing">
-                                    <label style="margin-bottom:0;" for="">File size:
-                                    </label></div>
-                                    <div style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                    <div class="filesizeinputs pb-3" style="width: 60%;margin: 0 auto;">
-                                      <div class="filesizeinputnumbers centerclass">
-                                        <input id="filesizelow" style="height:1.7rem;" placeholder="1" onchange="EdalReport.filterChange()" class="halfinput form-control form-control-sm" disabled="disabled" type="number" name="" value="">
-                                          <input id="filesizehigh" style="height:1.7rem;" placeholder="1000" onchange="EdalReport.filterChange()" class="halfinput form-control form-control-sm" disabled="disabled" type="number" name="" value=""></div>
-                                          <div class="filesizeinputnumbers centerclass">
-                                            <select id="filesizelowbyte" style="height:1.7rem;" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled="disabled" name="top5" size="1">
-                                              <option>B</option>
-                                              <option>KB</option>
-                                              <option>MB</option>
-                                              <option>GB</option>
-                                              <option>TB</option>
-                                            </select>
-                                            <select id="filesizehighbyte" style="height:1.7rem;" onchange="EdalReport.filterChange()" class="form-control form-control-sm" disabled="disabled" name="top5" size="1">
-                                              <option>B</option>
-                                              <option>KB</option>
-                                              <option>MB</option>
-                                              <option>GB</option>
-                                              <option>TB</option>
-                                            </select>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      </div>
+                            <label class="pl-2" for="amount">File size:<input class="pl-1" type="text" id="file-size-label" readonly="readonly" style="border:0; color:#333; font-weight:bold;"></label>
+                            <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                            <div id="slider-filesize"></div>
+                          </div>
 
                                       <div>
                                         <div class="filetypelabel centerclass pl-2" style="width:50%;float:left;">
@@ -223,7 +196,7 @@
                                           </label></div>
                                           <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                           <div class="filetypeinput centerclass pb-3" style="width: 50%;margin: 0 auto;">
-                                            <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pl-2" disabled name="top5" size="1">
+                                            <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled name="top5" size="1">
                                               <option>*</option>
                                               #foreach($obj in $filetypes)
                                               <option value="$obj">$obj</option>
@@ -306,23 +279,18 @@
                             <script>
                               EdalReport.init(reportData, mapData);
 
-                              $(function () {
-                                $("#slider-range").slider({
-                                  range: true,
-                                  min: 2010,
-                                  max: 2021,
-                                  values: [
-                                    2010, 2021
-                                  ],
-                                  slide: function (event, ui) {
-                                    $("#amount").val(ui.values[0] + " - " + ui.values[1]);
-                                  },
-                                  stop: function (event, ui) {
-                                    EdalReport.filterChange();
-                                  }
-                                });
-                                $("#amount").val($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));
-                              });
+
+                              function expon(val, min,max) {
+                                  var minv = Math.log(min);
+                                  var maxv = Math.log(max);
+                                  max = max / 2;
+
+                                  // calculate adjustment factor
+                                  var scale = (maxv - minv) / (max - min);
+
+                                  return Math.exp(minv + scale * (val - min));
+                              }
+
                               function collapse() {
                                 var element = document.getElementsByClassName("collapsible");
                                 var content = document.getElementById("collapsible-content");

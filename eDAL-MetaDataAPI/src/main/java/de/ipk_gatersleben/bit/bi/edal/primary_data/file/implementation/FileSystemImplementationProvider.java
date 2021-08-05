@@ -125,7 +125,7 @@ public class FileSystemImplementationProvider
 			"a", "about", "again", "all", "almost", "also", "although", "always", "among", 
 			"an", "and", "another", "any", "are", "as", "at", "be", 
 			"because", "been", "before", "being", "between", "both", "but", "by", 
-			"can", "could", "did", "do", "does", "done", "due", "during", 
+			"can", "could", "did", "do", "does", "done", "due", "during", "e!DAL", 
 			"each", "either", "enough", "especially", "etc", "for", "found", "from", 
 			"further", "had", "has", "have", "having", "here", "how", "however", 
 			"i", "if", "in", "into", "is", "it", "its", "itself", 
@@ -136,7 +136,7 @@ public class FileSystemImplementationProvider
 			"several", "should", "show", "showed", "shown", "shows", "significantly", "since", 
 			"so", "some", "such", "than", "that", "the", "their", "theirs", 
 			"them", "then", "there", "therefore", "these", "they", "this", "those", 
-			"through", "thus", "to", "upon", "various", "very", "was", "we", 
+			"through", "thus", "to", "upon", "using", "various", "very", "was", "we", 
 			"were", "what", "when", "which", "while", "with", "within", "without", "would");
 
 	private IndexWriter writer = null;
