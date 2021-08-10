@@ -153,7 +153,7 @@
             <div id="grid-container-table-and-map">
               <div id="edal-report-table-container" class="pr-3" style="overflow-y: hidden;">
                 <div id="edal-report-table-inner-container">
-                  <div id="edal-report-filter" class="flex-column">
+                  <div id="edal-report-filter" class="flex-column custom-scroll">
 
                     <div class="hittypelabel pl-2">
                       <label style="margin-bottom:0;" for="">Result types:</label>
@@ -188,7 +188,7 @@
 
                             <label class="pl-2" for="amount" style="width:38%;">File size:</label>
                             <span class="pl-1" id="file-size-label" style="color:#333; font-weight:bold;"></span>
-                            <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                            <div class="px-3 pb-3 mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                             <div id="slider-filesize"></div>
                           </div>
 
@@ -197,7 +197,7 @@
                               <label style="margin-bottom:0;" for="">File extension:
                               </label></div>
                               <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                              <div class="filetypeinput centerclass pb-3" style="width: 50%;margin: 0 auto;">
+                              <div class="filetypeinput centerclass pb-2" style="width: 50%;margin: 0 auto;">
                                 <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled name="top5" size="1">
                                   <option>*</option>
                                   #foreach($obj in $filetypes)
@@ -237,47 +237,25 @@
                             </div>
                           </div>
                         </div>
-                        <ul class="list-inline" style="width:auto; max-width:80%; margin: 0 auto;overflow-x:scroll;overflow-y:hidden;">
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
-                          <li class="list-inline-item">item 1</li>
-                          <li class="list-inline-item">item 2</li>
-                          <li class="list-inline-item">item 3</li>
-                          <li class="list-inline-item">item 4</li>
+                        <ul class="pt-1 mt-2 custom-scroll" id="query-ul">
+                          <li><span class="btn btn-outline-dark shadow-none" style="padding-top:0;padding-bottom:0;display: inline-flex;align-items: center;" onmouseover="hover(this);" onmouseleave="afterHover(this)">Link<span class="remove-query-btn ml-2" onclick="alert('test')">&times;</span></span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
                         </ul>
                         <div class="pl-3 mt-1 ">
                           <div id="result-stats"></div>
@@ -370,6 +348,14 @@
                                 $('#filesizelowbyte').prop('disabled', !this.checked);
                                 $('#filesizehighbyte').prop('disabled', !this.checked);
                               });
+
+                              function hover(button){
+                                console.log(button);
+                                button.firstElementChild.classList.add("hover");
+                              }
+                              function afterHover(button){
+                                button.firstElementChild.classList.remove("hover");
+                              }
                             </script>
 
                           </body>

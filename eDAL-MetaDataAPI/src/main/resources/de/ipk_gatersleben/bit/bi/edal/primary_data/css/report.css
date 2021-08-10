@@ -121,7 +121,7 @@ table#report tr td.edal-report-doi {
 
 #table-column{
   grid-column-start: 2;
-  grid-row-start: 2;
+  grid-row-start: 3;
 }
 
 #result-stats{
@@ -148,7 +148,7 @@ div#edal-report-filter{
 #edal-report-table-inner-container{
   display: grid;
   grid-template-columns: 320px 1fr;
-  grid-template-rows: 40px 20px 1fr;
+  grid-template-rows: 60px 20px 1fr;
   height: 100%;
 }
 
@@ -503,18 +503,18 @@ footer {
   width: 100%;
 }
 
-#edal-report-filter::-webkit-scrollbar{
+.custom-scroll::-webkit-scrollbar{
   width: 5px;
 }
 
-#edal-report-filter::-webkit-scrollbar{
+.custom-scroll::-webkit-scrollbar{
   height: 5px;
 }
 
-#edal-report-filter::-webkit-scrollbar-track{
+.custom-scroll::-webkit-scrollbar-track{
   background: #f9f9f9;
 }
-#edal-report-filter::-webkit-scrollbar-thumb{
+.custom-scroll::-webkit-scrollbar-thumb{
   border-radius: 8px;
   background: #00b3db;
 }
@@ -859,4 +859,42 @@ ul, #myUL {
 .decoration-underline:hover{
   text-decoration: underline;
   cursor:pointer;
+}
+ul#query-ul{
+  width: auto;
+  max-width: 50%;
+  min-width: 20%;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  margin: 0 auto;
+  white-space:nowrap;
+  text-align:center;
+  padding-left: 0;
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.1)
+}
+
+ul#query-ul li {
+  display:inline;
+}
+
+.btn-outline-dark{
+  background-color: white;
+  transition: 0.4s all ease;
+}
+
+.btn-outline-dark:hover{
+  background-color: white;
+  color: black;
+  transition: 0.4s all ease;
+}
+
+.remove-query-btn{
+  font-size: 1.4em;
+  line-height: 1.4em;
+  padding-bottom: 2px;
+}
+
+.hover{
+  color:#0275d8;
 }
