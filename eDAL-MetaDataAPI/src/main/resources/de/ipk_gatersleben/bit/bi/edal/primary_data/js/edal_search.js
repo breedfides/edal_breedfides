@@ -83,21 +83,6 @@ let EdalReport = new function() {
       }
       document.getElementById('searchterm').value = '';
       self.addQuery(obj);
-      if($("#query").val().length != 0){
-        alert("not empty");
-        let humanQuery = {
-          "type":"humanQuery",
-          "searchterm":$("#query").val(),
-        }
-        self.addQuery(humanQuery);
-      }
-      let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
-      $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-        document.getElementById("query").value = "";
-        document.getElementById("query").value = data;
-        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-        self.search();
-      });
     }
 
     this.facetedTerms = async function(){
@@ -137,10 +122,11 @@ let EdalReport = new function() {
       let self = this;
       $.post(serverURL+"/rest/extendedSearch/parsequery2", JSON.stringify(query), function(data){
         if(data != ""){
-          let index = self.queries.lenght;
+          const index = self.queries.length;
           self.queries.push(data);
           self.addTab(data, index);
         }
+        self.search();
       });
     }
 
@@ -160,7 +146,8 @@ let EdalReport = new function() {
       reportData = data.results;
       if(ID == requestId){
         self.queries.push(data.parsedQuery);
-        self.addTab(data.parsedQuery,self.queries.lenght-1);
+        const queryIndex = self.queries.length-1;
+        self.addTab(data.parsedQuery,queryIndex);
         self.currentRequestData.existingQuery = data["parsedQuery"];
         self.facetedTerms();
         var currentPage = 0;
@@ -199,7 +186,7 @@ let EdalReport = new function() {
       const i = index;
       const text = query;
       let span = document.createElement("span");
-      span.classList.add("btn", "btn-outline-dark", "shadow-none", "query-span");
+      span.classList.add("btn", "btn-outline-dark", "shadow-none", "query-span","mx-1");
       span.innerHTML = text;
       let innerSpan = document.createElement("span");
       span.onmouseover = hover(innerSpan);
@@ -207,10 +194,16 @@ let EdalReport = new function() {
       innerSpan.classList.add("remove-query-btn", "ml-2");
       innerSpan.innerHTML = '&times';
       innerSpan.onclick = function(){
-        self.queries = self.queries.splice(i,1);
+        console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
+        if(self.queries.length > 1){
+          self.queries.splice(i,1);
+        }else{
+          self.queries = [];
+        }
         parent.innerHTML = "";
-        self.queries.forEach((item, i) => {
-          self.addTab(item, i);
+        self.queries.forEach((item, j) => {
+          const indx = j;
+          self.addTab(item, indx);
         });
       }
       let li = document.createElement("li");

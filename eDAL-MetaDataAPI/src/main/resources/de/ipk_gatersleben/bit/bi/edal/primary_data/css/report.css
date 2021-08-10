@@ -886,7 +886,11 @@ ul#query-ul li {
 .btn-outline-dark:hover{
   background-color: white;
   color: black;
-  transition: 0.4s all ease;
+}
+
+.btn-outline-dark:active{
+  background-color: white;
+  color: black;
 }
 
 .remove-query-btn{
