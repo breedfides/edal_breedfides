@@ -87,6 +87,12 @@ public class FullExample {
 		PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class, "c26ba9ee-249c-42c9-a77d-1a93c809239e");
 		log(file.getName());
 		MimeTypes types = MimeTypes.getDefaultMimeTypes();
+		
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		builder.add(new TermQuery(new Term("test","termx")),Occur.MUST);
+		builder.add(new TermQuery(new Term("test2","termy")),Occur.MUST);
+		builder.add(new TermQuery(new Term("test","termx")),Occur.MUST_NOT);
+		log(builder.build().toString());
 //		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
 //		IndexSearcher searcher = new IndexSearcher(reader);

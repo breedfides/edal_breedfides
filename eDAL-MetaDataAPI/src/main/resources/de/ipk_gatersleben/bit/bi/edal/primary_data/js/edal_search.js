@@ -30,6 +30,7 @@ let EdalReport = new function() {
     this.defaultFileType = "*";
     this.rangeSizeValues = [];
     this.units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    this.queries = [];
 
 
     this.ulDummy = document.createElement("ul");
@@ -68,7 +69,6 @@ let EdalReport = new function() {
     this.build = function(){
       let self = this;
       if(document.getElementById("searchterm").value == ""){
-        console.log("no val in searchterm");
         return;
       }
       var searchInput = document.getElementById("query");
@@ -82,11 +82,17 @@ let EdalReport = new function() {
         "fuzzy":document.getElementById("fuzzy").checked
       }
       document.getElementById('searchterm').value = '';
-
+      self.queries.push(obj);
+      if($("#query").val().length != 0){
+        alert("not empty");
+        let existingQuery = {
+          "type":"existing",
+          "searchterm":$("#query").val(),
+        }
+        self.queries.push(existingQuery);
+      }
       let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
       $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-        console.log("data:");
-        console.log(data);
         document.getElementById("query").value = "";
         document.getElementById("query").value = data;
         let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
@@ -167,6 +173,8 @@ let EdalReport = new function() {
         document.getElementById("loading-indicator").style.display="none";
         if (typeof data.results !== 'undefined'){
             document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
+        }else{
+            document.getElementById("result-stats").innerHTML = 'No results found';
         }
       }
       });
@@ -583,13 +591,13 @@ let EdalReport = new function() {
                   2010, 2021
                 ],
                 slide: function (event, ui) {
-                  $("#date-label").val(ui.values[0] + " - " + ui.values[1]);
+                  $("#date-label").html(ui.values[0] + " - " + ui.values[1]);
                 },
                 stop: function (event, ui) {
                   EdalReport.filterChange();
                 }
               });
-              $("#date-label").val($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));
+              $("#date-label").html($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));
             });
             //populate Array with values for file size slider
             var units_array = ["B",...self.units];
@@ -605,12 +613,13 @@ let EdalReport = new function() {
                 max: self.rangeSizeValues.length-1,
                 values: [0, self.rangeSizeValues.length-1],
                 slide: function(event, ui) {
-                  $("#file-size-label").val(self.rangeSizeValues[ui.values[0]][0]+self.rangeSizeValues[ui.values[0]][1]+" - "+self.rangeSizeValues[ui.values[1]][0]+self.rangeSizeValues[ui.values[1]][1]);
+                  $("#file-size-label").html(self.rangeSizeValues[ui.values[0]][0]+self.rangeSizeValues[ui.values[0]][1]+" - "+self.rangeSizeValues[ui.values[1]][0]+self.rangeSizeValues[ui.values[1]][1]);
                 },
                 stop: function (event, ui) {
                   EdalReport.filterChange();
                 }
             });
+            $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
             $('.selector').slider('disable');
             self.resetTermList();
             self.renderYearSelectOptions();

@@ -1393,10 +1393,10 @@ public class DataManager {
   		    			String hitType = (String) requestData.get("hitType");
   		    			switch(hitType) {
   		    			case PublicVersionIndexWriterThread.PUBLICREFERENCE:
-  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
+  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.MUST);
   		    				break;
   		    			case PublicVersionIndexWriterThread.INDIVIDUALFILE:
-  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.FILTER);
+  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.MUST);
   		    				break;
   		    			case PublicVersionIndexWriterThread.DIRECTORY:
   		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY)), Occur.MUST);
@@ -1410,9 +1410,6 @@ public class DataManager {
 			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
 			  		    	  try {
 			  		    		Query builded = finalQuery.build();
-		  		    			if(type.equals(MetaDataImplementation.FILETYPE)) {
-		  		    				int z = 0;
-		  		    			}
 						  		DataManager.globalSearcher.search(builded, collector);
 			  			        synchronized (arr) {
 			  			        	arr[index][0] = currentType;
@@ -1539,9 +1536,9 @@ public class DataManager {
 				
 		String hitType = (String) jsonArray.get("hitType");
 		if(hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.FILTER);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.MUST);
 		}else if(hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.FILTER);
+			finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.MUST);
 			//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.FILETYPE, MetaDataImplementation.DIRECTORY.toLowerCase())), Occur.MUST_NOT);
 		}else if(hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)){
 			//finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)), Occur.FILTER);
