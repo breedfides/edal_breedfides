@@ -238,24 +238,7 @@
                           </div>
                         </div>
                         <ul class="pt-1 mt-2 custom-scroll" id="query-ul">
-                          <li><span class="btn btn-outline-dark shadow-none" style="padding-top:0;padding-bottom:0;display: inline-flex;align-items: center;" onmouseover="hover(this);" onmouseleave="afterHover(this)">Link<span class="remove-query-btn ml-2" onclick="alert('test')">&times;</span></span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
-                          <li><span class="btn btn-outline-dark shadow-none">Link</span></li>
+                          <!--li><span class="btn btn-outline-dark shadow-none query-span" onmouseover="hover(this);" onmouseleave="afterHover(this)">Link<span class="remove-query-btn ml-2" onclick="alert('test')">&times;</span></span></li-->
                         </ul>
                         <div class="pl-3 mt-1 ">
                           <div id="result-stats"></div>
@@ -351,10 +334,10 @@
 
                               function hover(button){
                                 console.log(button);
-                                button.firstElementChild.classList.add("hover");
+                                button.classList.add("hover");
                               }
                               function afterHover(button){
-                                button.firstElementChild.classList.remove("hover");
+                                button.classList.remove("hover");
                               }
                             </script>
 

@@ -82,14 +82,14 @@ let EdalReport = new function() {
         "fuzzy":document.getElementById("fuzzy").checked
       }
       document.getElementById('searchterm').value = '';
-      self.queries.push(obj);
+      self.addQuery(obj);
       if($("#query").val().length != 0){
         alert("not empty");
-        let existingQuery = {
-          "type":"existing",
+        let humanQuery = {
+          "type":"humanQuery",
           "searchterm":$("#query").val(),
         }
-        self.queries.push(existingQuery);
+        self.addQuery(humanQuery);
       }
       let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
       $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
@@ -133,6 +133,17 @@ let EdalReport = new function() {
       }
     }
 
+    this.addQuery = function(query){
+      let self = this;
+      $.post(serverURL+"/rest/extendedSearch/parsequery2", JSON.stringify(query), function(data){
+        if(data != ""){
+          let index = self.queries.lenght;
+          self.queries.push(data);
+          self.addTab(data, index);
+        }
+      });
+    }
+
     this.search = function(){
       let self = this;
       var queryValue = document.getElementById('query').value;
@@ -143,12 +154,13 @@ let EdalReport = new function() {
       document.getElementById("loading-indicator").style.display="inline-block";
       ID++;
       let requestId = ID;
-      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1 };
+      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
       self.currentRequestData = requestData;
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       if(ID == requestId){
-        document.getElementById("query").value = data["parsedQuery"];
+        self.queries.push(data.parsedQuery);
+        self.addTab(data.parsedQuery,self.queries.lenght-1);
         self.currentRequestData.existingQuery = data["parsedQuery"];
         self.facetedTerms();
         var currentPage = 0;
@@ -178,6 +190,33 @@ let EdalReport = new function() {
         }
       }
       });
+      $("#query").val("");
+    }
+
+    this.addTab = function(query, index){
+      let self = this;
+      let parent = document.getElementById("query-ul");
+      const i = index;
+      const text = query;
+      let span = document.createElement("span");
+      span.classList.add("btn", "btn-outline-dark", "shadow-none", "query-span");
+      span.innerHTML = text;
+      let innerSpan = document.createElement("span");
+      span.onmouseover = hover(innerSpan);
+      span.onmouseleave = afterHover(innerSpan);
+      innerSpan.classList.add("remove-query-btn", "ml-2");
+      innerSpan.innerHTML = '&times';
+      innerSpan.onclick = function(){
+        self.queries = self.queries.splice(i,1);
+        parent.innerHTML = "";
+        self.queries.forEach((item, i) => {
+          self.addTab(item, i);
+        });
+      }
+      let li = document.createElement("li");
+      span.appendChild(innerSpan);
+      li.appendChild(span);
+      parent.appendChild(li);
     }
 
     this.countFacetedTerms = async function(type, terms, ul){
@@ -207,10 +246,10 @@ let EdalReport = new function() {
                   "occur":"MUST",
                   "fuzzy":false
                 }
+                self.addQuery(obj);
                 let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
                 $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
                   document.getElementById("query").value = "";
-                  document.getElementById("query").value = data;
                   let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
                   self.search();
                   document.getElementById("myModal").style.display = "none";
@@ -300,7 +339,6 @@ let EdalReport = new function() {
             let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
             $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
               document.getElementById("query").value = "";
-              document.getElementById("query").value = data;
               let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
               self.search();
               document.getElementById("myModal").style.display = "none";
@@ -460,6 +498,7 @@ let EdalReport = new function() {
       currentRequestData["pageIndex"] = index;
       currentRequestData["pageArraySize"] = history.length;
       currentRequestData["displayedPage"] = page;
+      currentRequestData["queries"] = self.queries;
       console.log(currentRequestData);
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
       reportData = data.results;

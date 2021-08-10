@@ -898,3 +898,10 @@ ul#query-ul li {
 .hover{
   color:#0275d8;
 }
+
+.query-span{
+  padding-top:0;
+  padding-bottom:0;
+  display: inline-flex;
+  align-items: center;
+}

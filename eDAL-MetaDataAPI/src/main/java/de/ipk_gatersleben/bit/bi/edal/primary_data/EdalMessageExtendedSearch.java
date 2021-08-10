@@ -119,6 +119,24 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
+	@Path("/parsequery2")
+	@POST
+	@ManagedAsync
+	@Produces(MediaType.TEXT_PLAIN)
+	public String parseQuery2(String json) throws JsonParseException, JsonMappingException, IOException {
+		JSONParser parser = new JSONParser();
+		try {
+			Query query = DataManager.parseToLuceneQuery2((JSONObject) parser.parse(json));
+			if(query == null) {
+				return "";
+			}
+			return query.toString();
+		} catch (ParseException e) {
+			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
+			return "";
+		}
+	}
+	
 	@Path("/countHits")
 	@POST
 	@ManagedAsync

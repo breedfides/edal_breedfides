@@ -46,6 +46,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -86,13 +87,6 @@ public class FullExample {
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class, "c26ba9ee-249c-42c9-a77d-1a93c809239e");
 		log(file.getName());
-		MimeTypes types = MimeTypes.getDefaultMimeTypes();
-		
-		BooleanQuery.Builder builder = new BooleanQuery.Builder();
-		builder.add(new TermQuery(new Term("test","termx")),Occur.MUST);
-		builder.add(new TermQuery(new Term("test2","termy")),Occur.MUST);
-		builder.add(new TermQuery(new Term("test","termx")),Occur.MUST_NOT);
-		log(builder.build().toString());
 //		Directory index = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 //		IndexReader reader = DirectoryReader.open(((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter());
 //		IndexSearcher searcher = new IndexSearcher(reader);
