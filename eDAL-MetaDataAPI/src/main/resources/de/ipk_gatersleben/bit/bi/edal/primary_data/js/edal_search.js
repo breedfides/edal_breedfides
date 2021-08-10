@@ -133,10 +133,6 @@ let EdalReport = new function() {
     this.search = function(){
       let self = this;
       var queryValue = document.getElementById('query').value;
-      if(queryValue == ""){
-        self.facetedTerms();
-        return;
-      }
       document.getElementById("loading-indicator").style.display="inline-block";
       ID++;
       let requestId = ID;
@@ -145,9 +141,11 @@ let EdalReport = new function() {
       $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
       reportData = data.results;
       if(ID == requestId){
-        self.queries.push(data.parsedQuery);
-        const queryIndex = self.queries.length-1;
-        self.addTab(data.parsedQuery,queryIndex);
+        if(data.parsedQuery != null && data.parsedQuery != ""){
+          const queryIndex = self.queries.length-1;
+          self.queries.push(data.parsedQuery);
+          self.addTab(data.parsedQuery,queryIndex);
+        }
         self.currentRequestData.existingQuery = data["parsedQuery"];
         self.facetedTerms();
         var currentPage = 0;
@@ -240,13 +238,6 @@ let EdalReport = new function() {
                   "fuzzy":false
                 }
                 self.addQuery(obj);
-                let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
-                $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-                  document.getElementById("query").value = "";
-                  let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-                  self.search();
-                  document.getElementById("myModal").style.display = "none";
-                });
               }
               ul.appendChild(li);
             }
@@ -329,13 +320,8 @@ let EdalReport = new function() {
               "occur":"MUST",
               "fuzzy":false
             }
-            let requestData = { "existingQuery":document.getElementById('query').value, "newQuery":obj };
-            $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(requestData), function(data){
-              document.getElementById("query").value = "";
-              let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "filters":self.filters, "existingQuery":document.getElementById('query').value };
-              self.search();
-              document.getElementById("myModal").style.display = "none";
-            });
+            self.addQuery(obj);
+            document.getElementById("myModal").style.display = "none";
           }
           unorderedList.appendChild(li);
         }

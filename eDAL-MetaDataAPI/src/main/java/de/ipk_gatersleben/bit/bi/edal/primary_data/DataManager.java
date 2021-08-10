@@ -1128,6 +1128,9 @@ public class DataManager {
 		int currentPageNumber = ((int)(long)jsonArray.get("displayedPage"));
 		int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
 		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
+		if(pageIndex > 0) {
+			int lol = 420;
+		}
         if(pageArraySize == 0 || currentPageNumber == 1) {
         	try {
         		DataManager.getImplProv().getLogger().info("Builded QUery advanced search: "+buildedQuery.toString());
@@ -1285,7 +1288,6 @@ public class DataManager {
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
-		Query query = null;
 		String type = ((String)jsonArray.get("type"));
 		String keyword = (String) jsonArray.get("searchterm");
 		QueryParser queryParser = new QueryParser(type, analyzer);
@@ -1295,7 +1297,7 @@ public class DataManager {
 				if(keyword.charAt(0) != '+' && keyword.charAt(0) != '-') {
 					keyword = '+'+keyword;
 				}
-				return pars.parse((String) jsonArray.get("searchterm"));
+				return pars.parse(QueryParser.escape((String) jsonArray.get("searchterm")));
 			}
 			if((boolean) jsonArray.get("fuzzy")) {
 				keyword=keyword+'~';
@@ -1366,102 +1368,88 @@ public class DataManager {
 		queryParser.setDefaultOperator(Operator.AND);
 		
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
-		String existing = (String) requestData.get("existingQuery");
 	      for(int i = 0; i < jsonArray.size(); i++) {
 	    	  final int index = i;
 	    	  final String currentType = (String) jsonArray.get(index);
 	  			  Query parsedQuery = null;
-	  		    	  try {
-	  		    		if(existing == null || existing.equals("")) {
-	  		    			queryParser.setDefaultOperator(Operator.AND);
-	  		    			parsedQuery = queryParser.parse(currentType);
-	  		    		}else {
-	  		    			queryParser.setDefaultOperator(Operator.AND);
-	  						StringBuilder toParse = new StringBuilder(existing);
-	  						String[] words = currentType.split(" ");
-	  						for(String s : words) {
-	  							toParse.append(" ");
-	  							toParse.append('+');
-	  							toParse.append(s);
-	  						}
-	  		    			parsedQuery = queryParser.parse(toParse.toString());
-	  		    			
-	  		    		}	  			    			
-  		    			requestData.put("existingQuery", parsedQuery.toString());
-  		    			//final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
-  		    			
-  		    			BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
-  		    			finalQuery.add(parsedQuery, Occur.MUST);
-  		    			JSONArray filters = (JSONArray) requestData.get("filters");
-  		    			for(Object obj : filters) {
-  		    				JSONObject queryData = (JSONObject) obj;
-  		    				Query query = null;
-  		    				String filterType = ((String)queryData.get("type"));
-  		    				String keyword = (String) queryData.get("searchterm");
-  		    				if(filterType.equals(MetaDataImplementation.STARTDATE) || filterType.equals(MetaDataImplementation.ENDDATE)) {
-  		    					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",Locale.ENGLISH);
-  		    					LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
-  		    					LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();
-  		    					String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
-  		    					String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
-  		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
-
-  		    				}else if(filterType.equals(MetaDataImplementation.SIZE)) {
-  		    					query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
-  		    				}else if(filterType.equals(MetaDataImplementation.FILETYPE)){
-  	  		    				QueryParser filterParser = new QueryParser(filterType, analyzer);
-  	  		    				filterParser.setDefaultOperator(Operator.AND);
-  		    					keyword.replace("\\", "");
-  		    					try {
-  		    						query = filterParser.parse(QueryParser.escape(keyword));
-  		    					} catch (ParseException e) {
-  		    						// TODO Auto-generated catch block
-  		    						e.printStackTrace();
-  		    					}
-  		    				}
-  		    				finalQuery.add(query, Occur.MUST);
-  		    			}	
-  		    			String hitType = (String) requestData.get("hitType");
-  		    			switch(hitType) {
-  		    			case PublicVersionIndexWriterThread.PUBLICREFERENCE:
-  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.MUST);
-  		    				break;
-  		    			case PublicVersionIndexWriterThread.INDIVIDUALFILE:
-  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE)), Occur.MUST);
-  		    				break;
-  		    			case PublicVersionIndexWriterThread.DIRECTORY:
-  		    				finalQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY)), Occur.MUST);
-  		    				break;
-  		    			default:
-  		    				return null;
-  		    			}
-  		    			BooleanQuery.setMaxClauseCount(10000);
-			  		    Thread innerThread = new Thread(){
-			  		    public void run(){
-			  			  TotalHitCountCollector collector = new TotalHitCountCollector();
-			  		    	  try {
-			  		    		Query builded = finalQuery.build();
-						  		DataManager.globalSearcher.search(builded, collector);
-			  			        synchronized (arr) {
-			  			        	arr[index][0] = currentType;
-			  			        	arr[index][1] = collector.getTotalHits();
-			  			        }
-			  				} catch (IOException e) {
-			  					// TODO Auto-generated catch block
-			  					e.printStackTrace();
-			  				} 
-			  		    	internalCountDownLatch.countDown();
-			  		    }
-			  		   };
-			  		   innerThread.start();
-	  				}  catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-	  			        synchronized (arr) {
-	  			        	arr[index][0] = currentType;
-	  			        	arr[index][1] = 0;
-	  			        }
+	  		    	StringJoiner queryJoiner = new StringJoiner(" ");
+	  		    	queryJoiner.add(Occur.MUST.toString()+type+':'+QueryParser.escape(currentType));
+					JSONArray queries = (JSONArray) requestData.get("queries");
+					if(queries != null) {
+						for(Object query : queries) {
+							if(query instanceof String)
+								queryJoiner.add((String)query);
+						}
 					}
+					//final Query finalQuery = DataManager.buildQueryFromJSON(requestData); 		    	
+					JSONArray filters = (JSONArray) requestData.get("filters");
+					Query query = null;
+					for(Object obj : filters) {
+						JSONObject queryData = (JSONObject) obj;
+						String filterType = ((String)queryData.get("type"));
+						String keyword = (String) queryData.get("searchterm");
+						if(filterType.equals(MetaDataImplementation.STARTDATE) || filterType.equals(MetaDataImplementation.ENDDATE)) {
+							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",Locale.ENGLISH);
+							LocalDateTime lowerDate = LocalDate.parse((String)queryData.get("lower"), formatter).atStartOfDay();
+							LocalDateTime upperDate = LocalDate.parse((String)queryData.get("upper"), formatter).atStartOfDay();
+							String lower = DateTools.timeToString(ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+							String upper = DateTools.timeToString(ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(),Resolution.DAY);
+							query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower,upper, false, false);
+
+						}else if(filterType.equals(MetaDataImplementation.SIZE)) {
+							query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE, String.format("%014d",queryData.get("lower")),String.format("%014d",queryData.get("upper")),false,false);
+						}else if(filterType.equals(MetaDataImplementation.FILETYPE)){
+							QueryParser filterParser = new QueryParser(filterType, analyzer);
+							filterParser.setDefaultOperator(Operator.AND);
+							keyword.replace("\\", "");
+							try {
+								query = filterParser.parse(QueryParser.escape(keyword));
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						queryJoiner.add(Occur.MUST.toString()+query.toString());
+					}	
+					String hitType = (String) requestData.get("hitType");
+					switch(hitType) {
+					case PublicVersionIndexWriterThread.PUBLICREFERENCE:
+						query =new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
+						break;
+					case PublicVersionIndexWriterThread.INDIVIDUALFILE:
+						query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
+						break;
+					case PublicVersionIndexWriterThread.DIRECTORY:
+						query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
+						break;
+					default:
+						return null;
+					}
+					queryJoiner.add(query.toString());
+					Thread innerThread = new Thread(){
+					public void run(){
+					  TotalHitCountCollector collector = new TotalHitCountCollector();
+						  try {
+							QueryParser parser = new QueryParser(type, analyzer);
+							parser.setDefaultOperator(Operator.AND);
+							Query query = parser.parse(queryJoiner.toString());
+							//DataManager.getImplProv().getLogger().info("count Hits query:_ "+query.toString());
+					  		DataManager.globalSearcher.search(query, collector);
+					        synchronized (arr) {
+					        	arr[index][0] = currentType;
+					        	arr[index][1] = collector.getTotalHits();
+					        }
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} 
+						internalCountDownLatch.countDown();
+					}
+		   };
+		   innerThread.start();
 	      }
 	      try {
 			internalCountDownLatch.await();
@@ -1588,10 +1576,15 @@ public class DataManager {
 			return null;
 		}
 		finalQuery.add(query,Occur.MUST);
-		queryJoiner.add(Occur.MUST.toString()+query.toString());
+		queryJoiner.add(query.toString());
 		DataManager.getImplProv().getLogger().info("Builded queryjoiner_ "+queryJoiner.toString());
 		BooleanQuery.setMaxClauseCount(10000);
-        return finalQuery.build();
+        try {
+			return pars.parse(queryJoiner.toString());
+		} catch (ParseException e) {
+			DataManager.getImplProv().getLogger().debug("Parsing Error: "+e.getMessage());
+			return null;
+		}
 	}
 
 

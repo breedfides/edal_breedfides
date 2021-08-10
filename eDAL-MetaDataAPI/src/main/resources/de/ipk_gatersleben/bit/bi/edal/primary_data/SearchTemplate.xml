@@ -212,23 +212,23 @@
                             <div class="facetedContainer" id="jsTreeData">
 
                               <ul id="myUL">
-                                <li class="pl-5 mt-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                   <span class="caret decoration-underline caret-down">Creator</span>
                                   <ul class="nested active" id="CreatorUl"></ul>
                                 </li>
-                                <li class="pl-5 mt-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                   <span class="caret decoration-underline caret-down">Contributor</span>
                                   <ul class="nested active" id="ContributorUl"></ul>
                                 </li>
-                                <li class="pl-5 mt-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                   <span class="caret decoration-underline caret-down">Subject</span>
                                   <ul class="nested active" id="SubjectUl"></ul>
                                 </li>
-                                <li class="pl-5 mt-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                   <span class="caret decoration-underline caret-down">Title</span>
                                   <ul class="nested active" id="TitleUl"></ul>
                                 </li>
-                                <li class="pl-5 mt-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                   <span class="caret decoration-underline caret-down">Description</span>
                                   <ul class="nested active" id="DescriptionUl"></ul>
                                 </li>
