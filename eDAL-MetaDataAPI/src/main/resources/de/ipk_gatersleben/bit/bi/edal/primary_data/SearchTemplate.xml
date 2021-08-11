@@ -186,18 +186,18 @@
                               <div id="slider-range"></div>
                             </div>
 
-                            <label class="pl-2" for="amount" style="width:38%;">File size:</label>
-                            <span class="pl-1" id="file-size-label" style="color:#333; font-weight:bold;"></span>
+                            <label class="pl-2 opacity-change" for="amount" style="width:38%;">File size:</label>
+                            <span class="pl-1 opacity-change" id="file-size-label" style="color:#333; font-weight:bold;"></span>
                             <div class="px-3 pb-3 mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                             <div id="slider-filesize"></div>
                           </div>
 
                           <div>
-                            <div class="filetypelabel centerclass pl-2" style="width:50%;float:left;">
+                            <div class="filetypelabel centerclass pl-2 opacity-change" style="width:50%;float:left;">
                               <label style="margin-bottom:0;" for="">File extension:
                               </label></div>
                               <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                              <div class="filetypeinput centerclass pb-2" style="width: 50%;margin: 0 auto;">
+                              <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
                                 <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled name="top5" size="1">
                                   <option>*</option>
                                   #foreach($obj in $filetypes)

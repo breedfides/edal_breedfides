@@ -550,6 +550,7 @@ let EdalReport = new function() {
     this.filterChange = function(){
       this.filters = [];
       let periodbox = document.getElementById("period");
+      let oldHitType = this.currentRequestData.hitType;
       this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       document.getElementById("suffixesSelect").disabled = this.currentRequestData["hitType"] == "singleData" ? false : true;
       if($('#slider-range').slider("values")[0] > 2010 || $('#slider-range').slider("values")[1] < 2021){
@@ -559,26 +560,33 @@ let EdalReport = new function() {
           this.filters.push({"type":STARTDATE,"lower":lowbound,"upper":highbound,"fuzzy":false,"Occur":"And"});
         }
       }
-      let filesize = document.getElementById("filesize");
-      let lower_handle_index = $('#slider-filesize').slider("values")[0];
-      let upper_handle_index = $('#slider-filesize').slider("values")[1];
-      console.log("lower: "+lower_handle_index+" upper: "+upper_handle_index);
-      if(lower_handle_index > $("#slider-filesize").slider("option", "min") || upper_handle_index < $("#slider-filesize").slider("option", "max")){
-        console.log("#################### adding filesize filter");
-        let lowbound = parseInt(this.rangeSizeValues[lower_handle_index][0]);
-        let highbound = parseInt(this.rangeSizeValues[upper_handle_index][0]);
-        let lowerSize = this.rangeSizeValues[lower_handle_index][1];
-        let higherSize = this.rangeSizeValues[upper_handle_index][1];
-        this.filters.push({"type":SIZE,"lower":this.reverseNiceBytes(lowbound,lowerSize),"upper":this.reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
-        console.log(this.filters);
-      }
-      let suffix = document.getElementById("suffix");
-      let suffixValue = document.getElementById("suffixesSelect").value;
-      if(suffixValue != "*"){
-        this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
-        this.defaultFileType = suffixValue;
+      if(this.currentRequestData.hitType == "singleData"){
+        $('.opacity-change').css('opacity','1');
+        $('#slider-filesize').slider("enable");
+        let filesize = document.getElementById("filesize");
+        let lower_handle_index = $('#slider-filesize').slider("values")[0];
+        let upper_handle_index = $('#slider-filesize').slider("values")[1];
+        console.log("lower: "+lower_handle_index+" upper: "+upper_handle_index);
+        if(lower_handle_index > $("#slider-filesize").slider("option", "min") || upper_handle_index < $("#slider-filesize").slider("option", "max")){
+          console.log("#################### adding filesize filter");
+          let lowbound = parseInt(this.rangeSizeValues[lower_handle_index][0]);
+          let highbound = parseInt(this.rangeSizeValues[upper_handle_index][0]);
+          let lowerSize = this.rangeSizeValues[lower_handle_index][1];
+          let higherSize = this.rangeSizeValues[upper_handle_index][1];
+          this.filters.push({"type":SIZE,"lower":this.reverseNiceBytes(lowbound,lowerSize),"upper":this.reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
+          console.log(this.filters);
+        }
+        let suffix = document.getElementById("suffix");
+        let suffixValue = document.getElementById("suffixesSelect").value;
+        if(suffixValue != "*"){
+          this.filters.push({"type":FILETYPE,"searchterm":suffixValue,"fuzzy":false,"Occur":"And"});
+          this.defaultFileType = suffixValue;
+        }else{
+          this.defaultFileType = "*";
+        }
       }else{
-        this.defaultFileType = "*";
+        $('#slider-filesize').slider("disable");
+        $('.opacity-change').css('opacity','0.5');
       }
       this.search();
     }
@@ -650,7 +658,8 @@ let EdalReport = new function() {
                 }
             });
             $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
-            $('.selector').slider('disable');
+            $('#slider-filesize').slider("disable");
+            $('.opacity-change').css('opacity','0.5');
             self.resetTermList();
             self.renderYearSelectOptions();
             self.renderDatatableReports();
