@@ -1120,6 +1120,9 @@ public class DataManager {
 	
 	
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
+		if(((int)(long)jsonArray.get("pageIndex"))> 0) {
+			int lol = 420;
+		}
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
 		IndexSearcher searcher = DataManager.initSearcher();
@@ -1128,9 +1131,6 @@ public class DataManager {
 		int currentPageNumber = ((int)(long)jsonArray.get("displayedPage"));
 		int pageArraySize = ((int)(long) jsonArray.get("pageArraySize"));
 		int pageIndex = ((int)(long)jsonArray.get("pageIndex"));
-		if(pageIndex > 0) {
-			int lol = 420;
-		}
         if(pageArraySize == 0 || currentPageNumber == 1) {
         	try {
         		DataManager.getImplProv().getLogger().info("Builded QUery advanced search: "+buildedQuery.toString());

@@ -133,49 +133,59 @@ let EdalReport = new function() {
     this.search = function(){
       let self = this;
       var queryValue = document.getElementById('query').value;
-      document.getElementById("loading-indicator").style.display="inline-block";
-      ID++;
-      let requestId = ID;
-      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
-      self.currentRequestData = requestData;
-      $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
-      reportData = data.results;
-      if(ID == requestId){
-        if(data.parsedQuery != null && data.parsedQuery != ""){
-          const queryIndex = self.queries.length-1;
-          self.queries.push(data.parsedQuery);
-          self.addTab(data.parsedQuery,queryIndex);
+        document.getElementById("loading-indicator").style.display="inline-block";
+        ID++;
+        let requestId = ID;
+        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
+        self.currentRequestData = requestData;
+        if(self.queries.length > 0 || queryValue != "" || self.filters.length > 0){
+        $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
+        reportData = data.results;
+        if(ID == requestId){
+          if(data.parsedQuery != null && data.parsedQuery != ""){
+            const queryIndex = self.queries.length-1;
+            self.queries.push(data.parsedQuery);
+            self.addTab(data.parsedQuery,queryIndex);
+          }
+          self.currentRequestData.existingQuery = data["parsedQuery"];
+          self.facetedTerms();
+          var currentPage = 0;
+          var history = data.pageArray;
+          self.hitSize = data.hitSizeDescription+' '+data.hitSize;
+          self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+          self.reportData = data.results;
+          self.datatable.destroy();
+          $("#report tbody").empty();
+          $("#report thead").empty();
+          console.log("pagearray");
+          console.log(data.pageArray);
+          if(requestData.hitType == "rootDirectory"){
+            self.renderDatatableReports();
+          }else if(requestData.hitType == "singleData"){
+            self.renderDatatableFiles();
+          }else if(requestData.hitType == "directory"){
+            self.renderDatatableDirectories();
+          }
+          self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
+          document.getElementById("loading-indicator").style.display="none";
+          if (typeof data.results !== 'undefined'){
+              document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
+          }else{
+              document.getElementById("result-stats").innerHTML = 'No results found';
+          }
         }
-        self.currentRequestData.existingQuery = data["parsedQuery"];
-        self.facetedTerms();
-        var currentPage = 0;
-        var history = data.pageArray;
-        self.hitSize = data.hitSizeDescription+' '+data.hitSize;
-        self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-        self.reportData = data.results;
-        self.datatable.destroy();
-        var tableid = "#report";
-        $(tableid + " tbody").empty();
-        $(tableid + " thead").empty();
-        console.log("pagearray");
-        console.log(data.pageArray);
-        if(requestData.hitType == "rootDirectory"){
-          self.renderDatatableReports();
-        }else if(requestData.hitType == "singleData"){
-          self.renderDatatableFiles();
-        }else if(requestData.hitType == "directory"){
-          self.renderDatatableDirectories();
-        }
-        self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
-        document.getElementById("loading-indicator").style.display="none";
-        if (typeof data.results !== 'undefined'){
-            document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
-        }else{
-            document.getElementById("result-stats").innerHTML = 'No results found';
-        }
+        });
+        $("#query").val("");
+      }else{
+        self.reportData = [];
+        self.reportData = [];
+        self.currentRequestData = {};
+        self.resetTermList();
+        $('#report').DataTable().clear().draw();
+        $('#ul_pagination').empty();
+        $('#result-stats').text('No results found');
+        $('#loading-indicator').css('display','none');
       }
-      });
-      $("#query").val("");
     }
 
     this.addTab = function(query, index){
@@ -187,11 +197,12 @@ let EdalReport = new function() {
       span.classList.add("btn", "btn-outline-dark", "shadow-none", "query-span","mx-1");
       span.innerHTML = text;
       let innerSpan = document.createElement("span");
-      span.onmouseover = hover(innerSpan);
-      span.onmouseleave = afterHover(innerSpan);
       innerSpan.classList.add("remove-query-btn", "ml-2");
       innerSpan.innerHTML = '&times';
-      innerSpan.onclick = function(){
+      span.appendChild(innerSpan);
+      span.onmouseover = function(){this.firstElementChild.classList.add("hover")};
+      span.onmouseleave = function(){this.firstElementChild.classList.remove("hover")};
+      span.onclick = function(){
         console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
         if(self.queries.length > 1){
           self.queries.splice(i,1);
@@ -199,13 +210,13 @@ let EdalReport = new function() {
           self.queries = [];
         }
         parent.innerHTML = "";
+        self.search();
         self.queries.forEach((item, j) => {
           const indx = j;
           self.addTab(item, indx);
         });
       }
       let li = document.createElement("li");
-      span.appendChild(innerSpan);
       li.appendChild(span);
       parent.appendChild(li);
     }
@@ -477,6 +488,7 @@ let EdalReport = new function() {
       currentRequestData["pageIndex"] = index;
       currentRequestData["pageArraySize"] = history.length;
       currentRequestData["displayedPage"] = page;
+      currentRequestData["existingQuery"] = "";
       currentRequestData["queries"] = self.queries;
       console.log(currentRequestData);
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){

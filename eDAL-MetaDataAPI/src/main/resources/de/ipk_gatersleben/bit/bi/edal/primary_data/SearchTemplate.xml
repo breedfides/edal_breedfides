@@ -331,14 +331,6 @@
                                 $('#filesizelowbyte').prop('disabled', !this.checked);
                                 $('#filesizehighbyte').prop('disabled', !this.checked);
                               });
-
-                              function hover(button){
-                                console.log(button);
-                                button.classList.add("hover");
-                              }
-                              function afterHover(button){
-                                button.classList.remove("hover");
-                              }
                             </script>
 
                           </body>
