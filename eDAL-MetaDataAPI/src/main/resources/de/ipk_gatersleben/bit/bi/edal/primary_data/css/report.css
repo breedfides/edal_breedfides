@@ -848,6 +848,9 @@ ul, #myUL {
 /* Hide the nested list */
 .nested {
   display: none;
+  overflow: auto;
+  word-wrap: break-word;
+  text-align: start;
 }
 
 
@@ -862,8 +865,8 @@ ul, #myUL {
 }
 ul#query-ul{
   width: auto;
-  max-width: 50%;
-  min-width: 20%;
+  max-width: 70%;
+  min-width: 35%;
   overflow-x: scroll;
   overflow-y: hidden;
   margin: 0 auto;

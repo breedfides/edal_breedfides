@@ -97,7 +97,7 @@ let EdalReport = new function() {
 
     this.loadFileExtensions = function(){
       let self = this;
-      if(self.currentRequestData["hitType"] == "singleData"){
+      if(self.currentRequestData["hitType"] == "singledata"){
         var select = document.getElementById("suffixesSelect");
         select.innerHTML = "";
         var option = document.createElement("option");
@@ -138,7 +138,7 @@ let EdalReport = new function() {
         let requestId = ID;
         let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
         self.currentRequestData = requestData;
-        if(self.queries.length > 0 || queryValue != "" || self.filters.length > 0){
+        if(self.queries.length > 0 || queryValue != ""){
         $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
         reportData = data.results;
         if(ID == requestId){
@@ -159,9 +159,9 @@ let EdalReport = new function() {
           $("#report thead").empty();
           console.log("pagearray");
           console.log(data.pageArray);
-          if(requestData.hitType == "rootDirectory"){
+          if(requestData.hitType == "dataset"){
             self.renderDatatableReports();
-          }else if(requestData.hitType == "singleData"){
+          }else if(requestData.hitType == "singledata"){
             self.renderDatatableFiles();
           }else if(requestData.hitType == "directory"){
             self.renderDatatableDirectories();
@@ -194,14 +194,34 @@ let EdalReport = new function() {
       const i = index;
       const text = query;
       let span = document.createElement("span");
-      span.classList.add("btn", "btn-outline-dark", "shadow-none", "query-span","mx-1");
-      span.innerHTML = text;
+      span.classList.add("btn", "btn-outline-dark","btn-sm", "shadow-none", "query-span","mx-1");
+      var innerHtmlString = "";
+      var closeTag = false;
+      for(j = 0; j < text.length;j++){
+        let tempChar = text.charAt(j);
+        innerHtmlString += tempChar;
+        if(tempChar == ':'){
+          if(j > 0 && text.charAt(j-1) != '\\'){
+            innerHtmlString += "<b>";
+            closeTag = true;
+          }
+          //whiteSpace?
+        }else if(closeTag && tempChar.trim() === ''){
+          innerHtmlString += "</b>&nbsp";
+          closeTag = false;
+        }
+      }
+      span.innerHTML = innerHtmlString;
       let innerSpan = document.createElement("span");
       innerSpan.classList.add("remove-query-btn", "ml-2");
       innerSpan.innerHTML = '&times';
       span.appendChild(innerSpan);
-      span.onmouseover = function(){this.firstElementChild.classList.add("hover")};
-      span.onmouseleave = function(){this.firstElementChild.classList.remove("hover")};
+      span.onmouseover = function(){
+        this.getElementsByTagName('span')[0].classList.add("hover");
+      };
+      span.onmouseleave = function(){
+        this.getElementsByTagName('span')[0].classList.remove("hover");
+      };
       span.onclick = function(){
         console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
         if(self.queries.length > 1){
@@ -534,9 +554,9 @@ let EdalReport = new function() {
         var tableid = "#report";
         $(tableid + " tbody").empty();
         $(tableid + " thead").empty();
-        if(currentRequestData.hitType == "rootDirectory"){
+        if(currentRequestData.hitType == "dataset"){
           self.renderDatatableReports();
-        }else if(currentRequestData.hitType == "singleData"){
+        }else if(currentRequestData.hitType == "singledata"){
           self.renderDatatableFiles();
         }else if(currentRequestData.hitType == "directory"){
           self.renderDatatableDirectories();
@@ -552,7 +572,7 @@ let EdalReport = new function() {
       let periodbox = document.getElementById("period");
       let oldHitType = this.currentRequestData.hitType;
       this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
-      document.getElementById("suffixesSelect").disabled = this.currentRequestData["hitType"] == "singleData" ? false : true;
+      document.getElementById("suffixesSelect").disabled = this.currentRequestData["hitType"] == "singledata" ? false : true;
       if($('#slider-range').slider("values")[0] > 2010 || $('#slider-range').slider("values")[1] < 2021){
         let lowbound = $('#slider-range').slider("values")[0]+"-01-01";
         let highbound = $('#slider-range').slider("values")[1]+"-12-31";
@@ -560,7 +580,7 @@ let EdalReport = new function() {
           this.filters.push({"type":STARTDATE,"lower":lowbound,"upper":highbound,"fuzzy":false,"Occur":"And"});
         }
       }
-      if(this.currentRequestData.hitType == "singleData"){
+      if(this.currentRequestData.hitType == "singledata"){
         $('.opacity-change').css('opacity','1');
         $('#slider-filesize').slider("enable");
         let filesize = document.getElementById("filesize");
@@ -623,10 +643,10 @@ let EdalReport = new function() {
             $(function () {
               $("#slider-range").slider({
                 range: true,
-                min: 2010,
-                max: 2021,
+                min: Number(minYear),
+                max: Number(maxYear),
                 values: [
-                  2010, 2021
+                  Number(minYear), Number(maxYear)
                 ],
                 slide: function (event, ui) {
                   $("#date-label").html(ui.values[0] + " - " + ui.values[1]);
@@ -635,7 +655,7 @@ let EdalReport = new function() {
                   EdalReport.filterChange();
                 }
               });
-              $("#date-label").html($("#slider-range").slider("values", 0) + " - " + $("#slider-range").slider("values", 1));
+              $("#date-label").html(minYear + " - " + maxYear);
             });
             //populate Array with values for file size slider
             var units_array = ["B",...self.units];
@@ -733,7 +753,7 @@ let EdalReport = new function() {
                     class: "edal-report-title"
                 },
                 {
-                    title: "Record",
+                    title: "Dataset",
                     data: "title",
                     class: "edal-report-title"
                 }
@@ -779,7 +799,7 @@ let EdalReport = new function() {
                     }
                 },
                 {
-                    title: "Record",
+                    title: "Dataset",
                     data: "title",
                     class: "edal-report-title"
                 }
@@ -888,7 +908,7 @@ let EdalReport = new function() {
                     }
                 },
                 {
-                    title: "Record",
+                    title: "Dataset",
                     data: "title",
                     class: "edal-report-title"
                 }

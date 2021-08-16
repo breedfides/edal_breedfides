@@ -161,19 +161,19 @@
                     <div class="hittypeinput mb-1 pb-2">
                       <div id="radioContainer">
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="rootDirectory" onclick="EdalReport.filterChange()" checked="checked">
+                          <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
                             <label class="form-check-label" for="exampleRadios1">
                               Datasets
                             </label>
                           </div>
                           <div class="form-check">
-                            <input class="form-check-input" type="radio" name="hitType" id="exampleRadios2" value="singleData" onclick="EdalReport.filterChange()">
+                            <input class="form-check-input" type="radio" name="hitType" id="exampleRadios2" value="$file" onclick="EdalReport.filterChange()">
                               <label class="form-check-label" for="exampleRadios2">
                                 Files
                               </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="hitType" id="exampleRadios3" value="directory" onclick="EdalReport.filterChange()">
+                              <input class="form-check-input" type="radio" name="hitType" id="exampleRadios3" value="$directory" onclick="EdalReport.filterChange()">
                                 <label class="form-check-label" for="exampleRadios3">
                                   Directories
                                 </label>
@@ -262,6 +262,9 @@
                             <script>
 
                               var serverURL = "$serverURL";
+                              var minYear = "$minYear";
+                              var maxYear = "$maxYear";
+                              var maxFileSize = "$maxFileSize";
                               var reportData = [];
                               var mapData = [];
                               var filetypes = [

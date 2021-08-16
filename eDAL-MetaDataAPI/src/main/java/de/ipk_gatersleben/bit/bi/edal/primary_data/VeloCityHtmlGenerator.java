@@ -69,6 +69,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumCCLicense;
@@ -1475,6 +1476,18 @@ class VeloCityHtmlGenerator {
 		context.put("titlesSize", NativeLuceneIndexWriterThread.getTitles().size());
 		
 		context.put("descriptionsSize", NativeLuceneIndexWriterThread.getDescriptions().size());
+		
+		context.put("publicreference", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		
+		context.put("file", PublicVersionIndexWriterThread.INDIVIDUALFILE);
+		
+		context.put("directory", PublicVersionIndexWriterThread.DIRECTORY);
+		
+		context.put("minYear", NativeLuceneIndexWriterThread.getMinYear());
+		
+		context.put("maxYear", NativeLuceneIndexWriterThread.getMaxYear());
+		
+		context.put("maxFileSize", NativeLuceneIndexWriterThread.getMaxFileSize());
 		
 		if(DataManager.globalSearcher == null) {
 			DataManager.globalSearcher = DataManager.initSearcher();

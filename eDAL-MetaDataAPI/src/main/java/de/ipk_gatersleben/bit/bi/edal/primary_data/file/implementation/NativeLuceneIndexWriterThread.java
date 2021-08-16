@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -131,6 +132,9 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private static HashSet<String> legalPersons = new HashSet<>();
 	private static HashSet<String> titles = new HashSet<>();
 	private static HashSet<String> descriptions = new HashSet<>();
+	private static long maxFileSize = 0;
+	private static int minYear = Calendar.getInstance().get(Calendar.YEAR);
+	private static int maxYear = 0;
 	
 
 	IndexWriter writer = null;
@@ -206,6 +210,23 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				} catch (IOException e) {
 					this.implementationProviderLogger.debug("Error in createFileTypeList(): "+e.getMessage());
 				}
+				
+				terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
+				//find highest file size
+				try {
+					it = terms.iterator();
+					while(it.next() != null) {
+						String term = it.term().utf8ToString();
+						if(!term.equals("")) {
+							long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
+							if(size > maxFileSize) {
+								maxFileSize = size;
+							}
+						}							
+					}
+				} catch (IOException e) {
+					this.implementationProviderLogger.debug("Error while searching for the highest file size: "+e.getMessage());
+				}
 				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
 				IndexSearcher searcher = new IndexSearcher(reader);
 				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
@@ -253,6 +274,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 							subjects.add(ta.toString());
 					}
 					ts.close();
+					int year = Integer.valueOf(doc.get(MetaDataImplementation.STARTDATE).substring(0,4));
+					if(year <= minYear) {
+						minYear = year;
+					}else if(year > maxYear) {
+						maxYear = year;
+					}
 				}
 				//Obtaining the Metadata of Titles/Description requires analysis and tokenizing
 				docs = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, "b8497c99-8d2a-4a91-9fea-3a634c1afae8-74")), 1);
@@ -693,4 +720,17 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	public static List<String> getTerms() {
 		return fileTypes;
 	}
+
+	public static long getMaxFileSize() {
+		return maxFileSize;
+	}
+
+	public static int getMinYear() {
+		return minYear;
+	}
+
+	public static int getMaxYear() {
+		return maxYear;
+	}
+	
 }

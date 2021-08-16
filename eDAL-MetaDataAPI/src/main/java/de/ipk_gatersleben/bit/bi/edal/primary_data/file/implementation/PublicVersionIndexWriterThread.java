@@ -116,8 +116,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String PUBLICID = "PublicReference";
 	public static final String INTERNALID = "internalId";
 	public static final String REVISION = "revision";
-	public static final String PUBLICREFERENCE = "rootDirectory";
-	public static final String INDIVIDUALFILE = "singleData";
+	public static final String PUBLICREFERENCE = "dataset";
+	public static final String INDIVIDUALFILE = "singledata";
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
