@@ -1551,7 +1551,7 @@ class VeloCityHtmlGenerator {
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		
-		context.put("title", "PGP-Home");
+		context.put("title", "e!DAL");
 		
 		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
 

@@ -144,7 +144,7 @@
                 <div class="mr-5" style="display:flex;color:white;width:100%;">
                       <input class="form-control form-control-sm clearable mr-2" style="width:35%;" id="query" type="text" name="query" placeholder="Search..."></input>
                       <div class="row">
-                      <button class="col form-control form-control-sm builder-Button ml-3" id="searchButton" style="width:8em" type="button" name="searchbutton" onclick="EdalReport.search()">search<i id="loading-indicator" class="fa fa-circle-o-notch fa-spin ml-1" style="display:none;"></i></button>
+                      <button class="col form-control form-control-sm builder-Button ml-3" id="searchButton" style="width:8em" type="button" name="searchbutton" onclick="EdalReport.search()">Search<i id="loading-indicator" class="fa fa-circle-o-notch fa-spin ml-1" style="display:none;"></i></button>
 
                       <button class="col form-control form-control-sm builder-Button ml-2" id="clear-tabs-filters" style="width:auto" type="button" name="clear-button" onclick="EdalReport.clearFiltersTabs()">Clear filters</button>
                     </div>

@@ -23,7 +23,10 @@
     }
 
     .main-content {
-      padding: 280px 100px 280px 100px;
+      width: 80vh;
+      height: 80vh;
+      margin: auto;
+      padding: 20% 10% 20% 10%;
       display:grid;
       grid-template-columns: 1fr;
       grid-template-rows: 1fr 50px 1fr;
@@ -40,7 +43,7 @@
     #report-container{
       grid-column-start: 2;
       grid-column-end: 3;
-      background-color:#74b9ff;
+      background-color:#59c3ed;
     }
 
     #grid-container {
@@ -100,13 +103,13 @@
       font-size: 2rem;
       outline:none;
       border: 3px solid white;
-      background-color: #74b9ff;
+      background-color: #59c3ed;
       position: relative;
       z-index: 1;
     }
 
     .btn-2:hover{
-      color:#74b9ff;
+      color:#59c3ed;
       cursor: pointer;
     }
 
@@ -161,18 +164,18 @@
 
       <main class="flex-container">
         <section class="main-content" id="search-container">
-          <h1 class="search-header inner-main-container" style="color:white;">PGP Search</h2>
+          <h1 class="search-header inner-main-container" style="color:white;">$repositoryNameShort </br>Search</h2>
           <p >
-            Browse the Database of the PGP Repository with the power of Lucene!
+            Browse the Database of the $repositoryNameShort with the power of Lucene!
           </p>
           <div class="inner-main-container">
             <button class="btn-1" onclick="location.href='$serverURL/search'">Search</button>
           </div>
         </section>
         <section class="main-content" id="report-container">
-          <h1 class="search-header inner-main-container" style="color:white;">PGP Report</h2>
+          <h1 class="search-header inner-main-container" style="color:white;">$repositoryNameShort </br>Report</h2>
           <p >
-            Review the statistics of all available reports of the PGP Repository!
+            Review the statistics of all available reports of the $repositoryNameShort!
           </p>
           <div class="inner-main-container">
             <button class="btn-2" onclick="location.href='$serverURL/report'">Statistics</button>
