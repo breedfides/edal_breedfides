@@ -865,6 +865,8 @@ ul, #myUL {
 }
 ul#query-ul{
   width: auto;
+  height: fit-content;
+  display:none;
   max-width: 70%;
   min-width: 35%;
   overflow-x: scroll;
@@ -884,6 +886,7 @@ ul#query-ul li {
 .btn-outline-dark{
   background-color: white;
   transition: 0.4s all ease;
+  border-color: #0275d8;
 }
 
 .btn-outline-dark:hover{
@@ -893,18 +896,53 @@ ul#query-ul li {
 }
 
 .btn-outline-dark:active{
+  background-color: white !important;
+  color: black !important;
+  border-color: #0275d8 !important;
+}
+
+.btn-outline-dark:active:focus{
   background-color: white;
   color: black;
+  border-color: #0275d8;
+}
+
+.btn-success:active:focus {
+  background-color: white;
+  color: black;
+  border-color: #0275d8;
 }
 
 .remove-query-btn{
-  font-size: 1.4em;
-  line-height: 1.4em;
-  padding-bottom: 2px;
+  text-align: center;
+  margin-top: .1em;
+  margin-bottom: .1em;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 100%;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 1em;
+  font-weight: bold;
+  text-decoration: none
+  color:black;
+  background: white;
+  border: 1px solid rgba(2, 117, 216,.8);
+  transition: 0.3s;
 }
 
-.hover{
-  color:#0275d8;
+.remove-query-btn:hover{
+  background: rgba(2, 117, 216,1);
+  border-style: none;
+  color: white;
+  cursor: pointer;
+}
+
+.remove-query-btn:focus{
+  outline: none;
+  box-shadow: none;
 }
 
 .query-span{

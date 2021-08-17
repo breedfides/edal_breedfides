@@ -143,8 +143,11 @@
               <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
                 <div class="mr-5" style="display:flex;color:white;width:100%;">
                       <input class="form-control form-control-sm clearable mr-2" style="width:35%;" id="query" type="text" name="query" placeholder="Search..."></input>
+                      <div class="row">
+                      <button class="col form-control form-control-sm builder-Button ml-3" id="searchButton" style="width:8em" type="button" name="searchbutton" onclick="EdalReport.search()">search<i id="loading-indicator" class="fa fa-circle-o-notch fa-spin ml-1" style="display:none;"></i></button>
 
-                      <button class="form-control form-control-sm builder-Button" id="searchButton" style="width:auto" type="button" name="searchbutton" onclick="EdalReport.search()"><i class="fa fa-circle-o-notch fa-spin" style="display:none;" id="loading-indicator"></i> search</button>
+                      <button class="col form-control form-control-sm builder-Button ml-2" id="clear-tabs-filters" style="width:auto" type="button" name="clear-button" onclick="EdalReport.clearFiltersTabs()">Clear filters</button>
+                    </div>
                   <!-- <div id="edal-report-filter-container" class="mr-3"> <span class="mr-2">Filter:</span> <select id="edal-report-year-filter"> <option value="All">All</option> </select> </div> -->
                 </div>
               </div>
@@ -183,13 +186,13 @@
                               <label class="pl-2" for="amount" style="width:38%;">Creation date:</label>
                               <span class="pl-1" id="date-label"  style="color:#333; font-weight:bold;"></span>
                               <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                              <div id="slider-range"></div>
+                              <div id="slider-range" class="jqslider"></div>
                             </div>
 
                             <label class="pl-2 opacity-change" for="amount" style="width:38%;">File size:</label>
                             <span class="pl-1 opacity-change" id="file-size-label" style="color:#333; font-weight:bold;"></span>
                             <div class="px-3 pb-3 mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                            <div id="slider-filesize"></div>
+                            <div id="slider-filesize" class="jqslider"></div>
                           </div>
 
                           <div>
@@ -237,7 +240,7 @@
                             </div>
                           </div>
                         </div>
-                        <ul class="pt-1 mt-2 custom-scroll" id="query-ul">
+                        <ul class="p-1 mt-2 custom-scroll" id="query-ul">
                           <!--li><span class="btn btn-outline-dark shadow-none query-span" onmouseover="hover(this);" onmouseleave="afterHover(this)">Link<span class="remove-query-btn ml-2" onclick="alert('test')">&times;</span></span></li-->
                         </ul>
                         <div class="pl-3 mt-1 ">

@@ -133,12 +133,23 @@ let EdalReport = new function() {
     this.search = function(){
       let self = this;
       var queryValue = document.getElementById('query').value;
-        document.getElementById("loading-indicator").style.display="inline-block";
-        ID++;
-        let requestId = ID;
-        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
-        self.currentRequestData = requestData;
-        if(self.queries.length > 0 || queryValue != ""){
+      document.getElementById("loading-indicator").style.display="inline-block";
+      ID++;
+      let requestId = ID;
+      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
+      self.currentRequestData = requestData;
+      //check if search is meaningful because of a potential selected file type
+      var fileTypeSelected = false;
+      if(self.filters.length > 0){
+        for(i = 0; i < self.filters.length; i++){
+          fileTypeSelected = self.filters[i].type == FILETYPE;
+          if(fileTypeSelected){
+            break;
+          }
+        }
+      }
+      console.log("boolean: "+fileTypeSelected);
+      if(self.queries.length > 0 || queryValue != "" || fileTypeSelected){
         $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
         reportData = data.results;
         if(ID == requestId){
@@ -178,7 +189,6 @@ let EdalReport = new function() {
         $("#query").val("");
       }else{
         self.reportData = [];
-        self.reportData = [];
         self.currentRequestData = {};
         self.resetTermList();
         $('#report').DataTable().clear().draw();
@@ -188,13 +198,28 @@ let EdalReport = new function() {
       }
     }
 
+    this.clearFiltersTabs = function(){
+      let self = this;
+      self.queries = [];
+      $("#query-ul").html("");
+      $("#query-ul").css("display","none");
+      $('.jqslider').each(function(){
+        var options = $(this).slider( 'option' );
+        $(this).slider( 'values', [ options.min, options.max ] );
+      });
+      $("#suffixesSelect").val("*");
+      self.filterChange();
+      self.resetTermList();
+    }
+
     this.addTab = function(query, index){
       let self = this;
       let parent = document.getElementById("query-ul");
       const i = index;
       const text = query;
-      let span = document.createElement("span");
+      let span = document.createElement("a");
       span.classList.add("btn", "btn-outline-dark","btn-sm", "shadow-none", "query-span","mx-1");
+      span.style.cursor = "default";
       var innerHtmlString = "";
       var closeTag = false;
       for(j = 0; j < text.length;j++){
@@ -212,22 +237,17 @@ let EdalReport = new function() {
         }
       }
       span.innerHTML = innerHtmlString;
-      let innerSpan = document.createElement("span");
+      let innerSpan = document.createElement("button");
       innerSpan.classList.add("remove-query-btn", "ml-2");
       innerSpan.innerHTML = '&times';
       span.appendChild(innerSpan);
-      span.onmouseover = function(){
-        this.getElementsByTagName('span')[0].classList.add("hover");
-      };
-      span.onmouseleave = function(){
-        this.getElementsByTagName('span')[0].classList.remove("hover");
-      };
-      span.onclick = function(){
+      innerSpan.onclick = function(){
         console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
         if(self.queries.length > 1){
           self.queries.splice(i,1);
         }else{
           self.queries = [];
+          document.getElementById("query-ul").style.display = "none";
         }
         parent.innerHTML = "";
         self.search();
@@ -239,6 +259,9 @@ let EdalReport = new function() {
       let li = document.createElement("li");
       li.appendChild(span);
       parent.appendChild(li);
+      if(self.queries.length == 1){
+        document.getElementById("query-ul").style.display = "block";
+      }
     }
 
     this.countFacetedTerms = async function(type, terms, ul){
@@ -256,7 +279,7 @@ let EdalReport = new function() {
               const term = tempList[i][0];
               const count = tempList[i][1];
               li.classList.add("decoration-underline");
-              li.innerHTML = term+'('+count+")";
+              li.innerHTML = term+' ('+count+")";
               li.onclick = function(){
                 var searchInput = document.getElementById("query");
                 if(!searchInput.value){
@@ -333,29 +356,29 @@ let EdalReport = new function() {
           self.loadTerms(type, unorderedList, self.terms[type].sortedByHits);
         }
       }
-        for (i = 0; i < terms.length; i++) {
-          var li = document.createElement("li");
-          li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-          li.style.textOverflow = "ellipsis";
-          li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i][0]+'</p><span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
-          const term = terms[i][0];
-          const value = terms[i][1];
-          li.onclick = function(){
-            var searchInput = document.getElementById("query");
-            if(!searchInput.value){
-              searchInput.classList.add("x");
-            }
-            let obj = {
-              "type":type,
-              "searchterm":term,
-              "occur":"MUST",
-              "fuzzy":false
-            }
-            self.addQuery(obj);
-            document.getElementById("myModal").style.display = "none";
+      for (i = 0; i < terms.length; i++) {
+        var li = document.createElement("li");
+        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
+        li.style.textOverflow = "ellipsis";
+        li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i][0]+'</p><span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
+        const term = terms[i][0];
+        const value = terms[i][1];
+        li.onclick = function(){
+          var searchInput = document.getElementById("query");
+          if(!searchInput.value){
+            searchInput.classList.add("x");
           }
-          unorderedList.appendChild(li);
+          let obj = {
+            "type":type,
+            "searchterm":term,
+            "occur":"MUST",
+            "fuzzy":false
+          }
+          self.addQuery(obj);
+          document.getElementById("myModal").style.display = "none";
         }
+        unorderedList.appendChild(li);
+      }
     }
 
     this.listCreatorTerms = function(){
@@ -572,8 +595,7 @@ let EdalReport = new function() {
       let periodbox = document.getElementById("period");
       let oldHitType = this.currentRequestData.hitType;
       this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
-      document.getElementById("suffixesSelect").disabled = this.currentRequestData["hitType"] == "singledata" ? false : true;
-      if($('#slider-range').slider("values")[0] > 2010 || $('#slider-range').slider("values")[1] < 2021){
+      if($('#slider-range').slider("values")[0] > minYear || $('#slider-range').slider("values")[1] < maxYear){
         let lowbound = $('#slider-range').slider("values")[0]+"-01-01";
         let highbound = $('#slider-range').slider("values")[1]+"-12-31";
         if(lowbound != "" && highbound != ""){
@@ -581,6 +603,7 @@ let EdalReport = new function() {
         }
       }
       if(this.currentRequestData.hitType == "singledata"){
+        document.getElementById("suffixesSelect").disabled = false;
         $('.opacity-change').css('opacity','1');
         $('#slider-filesize').slider("enable");
         let filesize = document.getElementById("filesize");
@@ -605,6 +628,7 @@ let EdalReport = new function() {
           this.defaultFileType = "*";
         }
       }else{
+        document.getElementById("suffixesSelect").disabled = true;
         $('#slider-filesize').slider("disable");
         $('.opacity-change').css('opacity','0.5');
       }
