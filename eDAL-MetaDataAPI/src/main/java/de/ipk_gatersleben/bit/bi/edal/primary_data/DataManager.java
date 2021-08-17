@@ -1241,7 +1241,7 @@ public class DataManager {
 				for (int i = 1; i < additionalPages; i++) {
 					page = new JSONObject();
 					int index = i * pageSize - 1;
-					if (index < scoreDocs.length) {
+					if (index < scoreDocs.length-1) {
 						try {
 							page.put("bottomResult",
 									searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));

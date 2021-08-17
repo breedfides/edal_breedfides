@@ -886,31 +886,31 @@ ul#query-ul li {
 .btn-outline-dark{
   background-color: white;
   transition: 0.4s all ease;
-  border-color: #0275d8;
+  border-color: black;
 }
 
 .btn-outline-dark:hover{
   background-color: white;
   color: black;
-  border-color: #0275d8;
+  border-color: black;
 }
 
 .btn-outline-dark:active{
   background-color: white !important;
   color: black !important;
-  border-color: #0275d8 !important;
+  border-color: black !important;
 }
 
 .btn-outline-dark:active:focus{
   background-color: white;
   color: black;
-  border-color: #0275d8;
+  border-color: black;
 }
 
 .btn-success:active:focus {
   background-color: white;
   color: black;
-  border-color: #0275d8;
+  border-color: black;
 }
 
 .remove-query-btn{

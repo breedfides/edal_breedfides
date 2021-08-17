@@ -243,7 +243,7 @@
                         <ul class="p-1 mt-2 custom-scroll" id="query-ul">
                           <!--li><span class="btn btn-outline-dark shadow-none query-span" onmouseover="hover(this);" onmouseleave="afterHover(this)">Link<span class="remove-query-btn ml-2" onclick="alert('test')">&times;</span></span></li-->
                         </ul>
-                        <div class="pl-3 mt-1 ">
+                        <div class="pl-3 mt-1" style="grid-column-start: 2;grid-row-start: 2;">
                           <div id="result-stats"></div>
                         </div>
                         <div id="table-column" class="pl-3">
