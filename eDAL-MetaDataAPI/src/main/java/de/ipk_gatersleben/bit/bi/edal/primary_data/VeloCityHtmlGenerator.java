@@ -46,8 +46,17 @@ import javax.mail.internet.InternetAddress;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.MultiTerms;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
@@ -67,6 +76,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -111,6 +121,17 @@ class VeloCityHtmlGenerator {
 	public static final Map<String, Long> downloadedVolume = new HashMap<String, Long>();
 
 	public static final Map<String, Long> uniqueAccessNumbers = new HashMap<String, Long>();
+	
+	private static List<String> fileTypes = new ArrayList<>();
+	private static HashSet<String> subjects = new HashSet<>();
+	private static HashSet<String> contributors = new HashSet<>();;
+	private static HashSet<String> creators = new HashSet<>();
+	private static HashSet<String> legalPersons = new HashSet<>();
+	private static HashSet<String> titles = new HashSet<>();
+	private static HashSet<String> descriptions = new HashSet<>();
+	private static long maxFileSize = 0;
+	private static int minYear = Calendar.getInstance().get(Calendar.YEAR);
+	private static int maxYear = 0;
 
 	/**
 	 * Default constructor to load all VeloCity properties.
@@ -1451,6 +1472,13 @@ class VeloCityHtmlGenerator {
 	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
 			throws EdalException {
 		
+		try {
+			initializeTermSets();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", "UTF-8");
@@ -1465,17 +1493,17 @@ class VeloCityHtmlGenerator {
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		
-		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
+		context.put("filetypes", fileTypes);
 		
-		context.put("subjectsSize", NativeLuceneIndexWriterThread.getSubjects().size());
+		context.put("subjectsSize", subjects.size());
 		
-		context.put("creatorsSize", NativeLuceneIndexWriterThread.getCreators().size());
+		context.put("creatorsSize", creators.size());
 		
-		context.put("contributorsSize", NativeLuceneIndexWriterThread.getContributors().size());
+		context.put("contributorsSize", contributors.size());
 		
-		context.put("titlesSize", NativeLuceneIndexWriterThread.getTitles().size());
+		context.put("titlesSize", titles.size());
 		
-		context.put("descriptionsSize", NativeLuceneIndexWriterThread.getDescriptions().size());
+		context.put("descriptionsSize", descriptions.size());
 		
 		context.put("publicreference", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		
@@ -1483,15 +1511,11 @@ class VeloCityHtmlGenerator {
 		
 		context.put("directory", PublicVersionIndexWriterThread.DIRECTORY);
 		
-		context.put("minYear", NativeLuceneIndexWriterThread.getMinYear());
+		context.put("minYear", minYear);
 		
-		context.put("maxYear", NativeLuceneIndexWriterThread.getMaxYear());
+		context.put("maxYear", maxYear);
 		
-		context.put("maxFileSize", NativeLuceneIndexWriterThread.getMaxFileSize());
-		
-		if(DataManager.globalSearcher == null) {
-			DataManager.globalSearcher = DataManager.initSearcher();
-		}
+		context.put("maxFileSize", maxFileSize);
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		
@@ -1553,7 +1577,7 @@ class VeloCityHtmlGenerator {
 		
 		context.put("title", "e!DAL");
 		
-		context.put("filetypes", NativeLuceneIndexWriterThread.getTerms());
+		context.put("filetypes", fileTypes);
 
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
@@ -1574,6 +1598,167 @@ class VeloCityHtmlGenerator {
 			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
 		}
 		return output;
+	}
+	
+	private void initializeTermSets() throws IOException {
+		IndexReader reader = ((FileSystemImplementationProvider)DataManager.getImplProv()).getPublicVersionWriter().getReader();
+		if(reader != null) {
+			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
+			if(reader.numDocs() > 0) {
+				//Fills the fileTypes list with all existing file types found in the index in descending order
+				TermsEnum it;
+				try {
+					it = terms.iterator();
+					int count = 0;
+					List<MyTerm> termList = new ArrayList<MyTerm>();
+					while(it.next() != null) {
+						String term = it.term().utf8ToString();
+						if(!term.equals(""))
+							termList.add(new MyTerm(term,it.docFreq()));
+						count++;
+					}
+					Collections.sort(termList);
+					int size = termList.size();
+					for(int i = 0; i < size; i++) {
+						fileTypes.add(termList.get(i).getTerm());
+					}
+				} catch (IOException e) {
+					DataManager.getImplProv().getLogger().debug("Error in createFileTypeList(): "+e.getMessage());
+				}
+				
+				terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
+				//find highest file size
+				try {
+					it = terms.iterator();
+					while(it.next() != null) {
+						String term = it.term().utf8ToString();
+						if(!term.equals("")) {
+							long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
+							if(size > maxFileSize) {
+								maxFileSize = size;
+							}
+						}							
+					}
+				} catch (IOException e) {
+					DataManager.getImplProv().getLogger().debug("Error while searching for the highest file size: "+e.getMessage());
+				}
+				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
+				IndexSearcher searcher =  DataManager.getSearcher();
+				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
+				DataManager.getImplProv().getLogger().info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
+				ScoreDoc[] scoreDocs = docs.scoreDocs;
+				Analyzer myAnalyzer = ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer();
+				for(ScoreDoc scoreDoc : scoreDocs) {
+					Document doc = searcher.doc(scoreDoc.doc);
+					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
+					for(String string : strings) {
+						contributors.add(string.replaceAll("\\s+", " ").trim());
+					}
+					strings = doc.getValues(MetaDataImplementation.CREATORNAME);
+					for(String string : strings) {
+						if(string != null) {
+							creators.add(string.replaceAll("\\s+", " ").trim());
+						}
+					}
+					String s = null;
+					s = doc.get(MetaDataImplementation.LEGALPERSON);
+					if(s != null) {
+						legalPersons.add(s.replaceAll("\\s+", " ").trim());
+					}
+					TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+							if(ta.toString().length() > 1)
+								descriptions.add(ta.toString());
+					}
+					ts.close();
+					ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+						if(ta.toString().length() > 1)
+							titles.add(ta.toString());
+					}
+					ts.close();
+					ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+					ts.reset();
+					while (ts.incrementToken()) {
+						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+						if(ta.toString().length() > 1)
+							subjects.add(ta.toString());
+					}
+					ts.close();
+					int year = Integer.valueOf(doc.get(MetaDataImplementation.STARTDATE).substring(0,4));
+					if(year <= minYear) {
+						minYear = year;
+					}else if(year > maxYear) {
+						maxYear = year;
+					}
+				}
+			}
+		}
+	}
+	
+	class MyTerm implements Comparable<MyTerm>{
+		
+		private String term;
+		private int frequence;
+		
+		public MyTerm(String term, int frequence) {
+			this.term = term;
+			this.frequence = frequence;
+		}
+		
+		public String getTerm() {
+			return term;
+		}
+
+		@Override
+		public int compareTo(MyTerm myTerm) {
+			return this.term.compareTo(myTerm.term);
+		}
+		
+	}
+	public static HashSet<String> getTitles() {
+		return titles;
+	}
+
+	public static HashSet<String> getDescriptions() {
+		return descriptions;
+	}
+
+	public static HashSet<String> getLegalPersons() {
+		return legalPersons;
+	}
+
+	public static HashSet<String> getSubjects() {
+		return subjects;
+	}
+
+	public static HashSet<String> getContributors() {
+		return contributors;
+	}
+
+
+	public static HashSet<String> getCreators() {
+		return creators;
+	}
+	
+	public static List<String> getTerms() {
+		return fileTypes;
+	}
+
+	public static long getMaxFileSize() {
+		return maxFileSize;
+	}
+
+	public static int getMinYear() {
+		return minYear;
+	}
+
+	public static int getMaxYear() {
+		return maxYear;
 	}
 
 

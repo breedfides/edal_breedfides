@@ -125,16 +125,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
-	private static List<String> fileTypes = new ArrayList<>();
-	private static HashSet<String> subjects = new HashSet<>();
-	private static HashSet<String> contributors = new HashSet<>();;
-	private static HashSet<String> creators = new HashSet<>();
-	private static HashSet<String> legalPersons = new HashSet<>();
-	private static HashSet<String> titles = new HashSet<>();
-	private static HashSet<String> descriptions = new HashSet<>();
-	private static long maxFileSize = 0;
-	private static int minYear = Calendar.getInstance().get(Calendar.YEAR);
-	private static int maxYear = 0;
+
 	
 
 	IndexWriter writer = null;
@@ -152,7 +143,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		try {
 			IndexReader reader = DirectoryReader.open(writer);
 			numberDocs = reader.numDocs();
-			initializeTermSets(reader);
 			reader.close();
 			reader = null;
 		} catch (IOException e) {
@@ -184,107 +174,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 
 		
-	}
-	
-	private void initializeTermSets(IndexReader reader) throws IOException {
-		if(reader != null) {
-			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
-			if(reader.numDocs() > 0) {
-				//Fills the fileTypes list with all existing file types found in the index in descending order
-				TermsEnum it;
-				try {
-					it = terms.iterator();
-					int count = 0;
-					List<MyTerm> termList = new ArrayList<MyTerm>();
-					while(it.next() != null) {
-						String term = it.term().utf8ToString();
-						if(!term.equals(""))
-							termList.add(new MyTerm(term,it.docFreq()));
-						count++;
-					}
-					Collections.sort(termList);
-					int size = termList.size();
-					for(int i = 0; i < size; i++) {
-						fileTypes.add(termList.get(i).getTerm());
-					}
-				} catch (IOException e) {
-					this.implementationProviderLogger.debug("Error in createFileTypeList(): "+e.getMessage());
-				}
-				
-				terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
-				//find highest file size
-				try {
-					it = terms.iterator();
-					while(it.next() != null) {
-						String term = it.term().utf8ToString();
-						if(!term.equals("")) {
-							long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
-							if(size > maxFileSize) {
-								maxFileSize = size;
-							}
-						}							
-					}
-				} catch (IOException e) {
-					this.implementationProviderLogger.debug("Error while searching for the highest file size: "+e.getMessage());
-				}
-				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
-				IndexSearcher searcher = new IndexSearcher(reader);
-				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
-				this.implementationProviderLogger.info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
-				ScoreDoc[] scoreDocs = docs.scoreDocs;
-				Analyzer myAnalyzer = writer.getAnalyzer();
-				for(ScoreDoc scoreDoc : scoreDocs) {
-					Document doc = searcher.doc(scoreDoc.doc);
-					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
-					for(String string : strings) {
-						contributors.add(string.replaceAll("\\s+", " ").trim());
-					}
-					strings = doc.getValues(MetaDataImplementation.CREATORNAME);
-					for(String string : strings) {
-						if(string != null) {
-							creators.add(string.replaceAll("\\s+", " ").trim());
-						}
-					}
-					String s = null;
-					s = doc.get(MetaDataImplementation.LEGALPERSON);
-					if(s != null) {
-						legalPersons.add(s.replaceAll("\\s+", " ").trim());
-					}
-					TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-							if(ta.toString().length() > 1)
-								descriptions.add(ta.toString());
-					}
-					ts.close();
-					ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						if(ta.toString().length() > 1)
-							titles.add(ta.toString());
-					}
-					ts.close();
-					ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						if(ta.toString().length() > 1)
-							subjects.add(ta.toString());
-					}
-					ts.close();
-					int year = Integer.valueOf(doc.get(MetaDataImplementation.STARTDATE).substring(0,4));
-					if(year <= minYear) {
-						minYear = year;
-					}else if(year > maxYear) {
-						maxYear = year;
-					}
-				}
-				//Obtaining the Metadata of Titles/Description requires analysis and tokenizing
-				docs = searcher.search(new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, "b8497c99-8d2a-4a91-9fea-3a634c1afae8-74")), 1);
-			}
-		}
 	}
 
 	protected void executeIndexing() {
@@ -511,15 +400,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			doc.add(new TextField(MetaDataImplementation.MIMETYPE,
 					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
 			doc.add(new TextField(MetaDataImplementation.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
-		}
-		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
-		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
-		
+		}		
 		StringJoiner allFieldsJoiner = new StringJoiner(" ");
 		for(IndexableField field : doc.getFields()){	
 			allFieldsJoiner.add(field.stringValue());
 		}
 		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
+		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
+		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {
@@ -669,68 +557,5 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	public void run() {
 		super.run();
 		this.countDownLatch.countDown();
-	}
-	
-	class MyTerm implements Comparable<MyTerm>{
-		
-		private String term;
-		private int frequence;
-		
-		public MyTerm(String term, int frequence) {
-			this.term = term;
-			this.frequence = frequence;
-		}
-		
-		public String getTerm() {
-			return term;
-		}
-
-		@Override
-		public int compareTo(MyTerm myTerm) {
-			return this.term.compareTo(myTerm.term);
-		}
-		
-	}
-	
-	public static HashSet<String> getTitles() {
-		return titles;
-	}
-
-	public static HashSet<String> getDescriptions() {
-		return descriptions;
-	}
-
-	public static HashSet<String> getLegalPersons() {
-		return legalPersons;
-	}
-
-	public static HashSet<String> getSubjects() {
-		return subjects;
-	}
-
-	public static HashSet<String> getContributors() {
-		return contributors;
-	}
-
-
-	public static HashSet<String> getCreators() {
-		return creators;
-	}
-	
-	public static List<String> getTerms() {
-		return fileTypes;
-	}
-
-	public static long getMaxFileSize() {
-		return maxFileSize;
-	}
-
-	public static int getMinYear() {
-		return minYear;
-	}
-
-	public static int getMaxYear() {
-		return maxYear;
-	}
-	
+	}	
 }

@@ -155,11 +155,11 @@ public class EdalMessageExtendedSearch {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
 		JSONObject result = new JSONObject();
-		result.put(MetaDataImplementation.PERSON, NativeLuceneIndexWriterThread.getCreators());
-		result.put(MetaDataImplementation.CONTRIBUTOR, NativeLuceneIndexWriterThread.getContributors());
-		result.put(MetaDataImplementation.SUBJECT, NativeLuceneIndexWriterThread.getSubjects());
-		result.put(MetaDataImplementation.TITLE, NativeLuceneIndexWriterThread.getTitles());
-		result.put(MetaDataImplementation.DESCRIPTION, NativeLuceneIndexWriterThread.getDescriptions());		
+		result.put(MetaDataImplementation.PERSON, VeloCityHtmlGenerator.getCreators());
+		result.put(MetaDataImplementation.CONTRIBUTOR, VeloCityHtmlGenerator.getContributors());
+		result.put(MetaDataImplementation.SUBJECT, VeloCityHtmlGenerator.getSubjects());
+		result.put(MetaDataImplementation.TITLE, VeloCityHtmlGenerator.getTitles());
+		result.put(MetaDataImplementation.DESCRIPTION, VeloCityHtmlGenerator.getDescriptions());		
 		return result;
 	}
 

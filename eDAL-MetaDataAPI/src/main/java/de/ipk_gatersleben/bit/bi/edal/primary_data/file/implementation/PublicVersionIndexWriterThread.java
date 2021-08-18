@@ -661,6 +661,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		return PublicVersionIndexWriterThread.lastIndexedID;
 	}
 	
+	public IndexReader getReader() {
+		return reader;
+	}
+	
 	@Override
 	public void run() {
 		super.run();

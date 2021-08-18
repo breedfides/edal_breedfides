@@ -78,7 +78,11 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.MultiTerms;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -232,7 +236,10 @@ public class DataManager {
 	private static ExecutorService listExecutorService = null;
 	private static ExecutorService velocityExecutorService = null;
 
-	public static IndexSearcher globalSearcher = null;
+	private static IndexSearcher globalSearcher = null;
+	private static IndexReader reader = null;
+	private static DirectoryReader directoryReader = null;
+	
 
 	static {
 
@@ -439,7 +446,15 @@ public class DataManager {
 		if (DataManager.stopLatch.getCount() == 0) {
 			DataManager.stopLatch = new CountDownLatch(1);
 		}
-
+		IndexWriter writer = ((FileSystemImplementationProvider)implementationProvider).getWriter();
+		try {
+			directoryReader = DirectoryReader.open(writer);
+			reader = DirectoryReader.open(writer);
+			globalSearcher = new IndexSearcher(reader);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		/**
 		 * set the current subject and implementation provider in ThreadLocal variable
 		 * to bound both to the thread
@@ -1101,8 +1116,7 @@ public class DataManager {
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM, standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
 		booleanQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)), Occur.FILTER);
-
-		IndexSearcher searcher = new IndexSearcher(reader);
+		IndexSearcher searcher = DataManager.getSearcher();
 		ScoreDoc[] hits2 = null;
 		// BooleanQuery booleanQuery2 = booleanQuery.build();
 		try {
@@ -1133,7 +1147,7 @@ public class DataManager {
 		}
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
-		IndexSearcher searcher = DataManager.initSearcher();
+		IndexSearcher searcher = DataManager.getSearcher();
 		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
 		TopDocs topDocs = null;
 		int currentPageNumber = ((int) (long) jsonArray.get("displayedPage"));
@@ -1390,6 +1404,7 @@ public class DataManager {
 		queryParser.setDefaultOperator(Operator.AND);
 
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
+		IndexSearcher searcher = DataManager.getSearcher();
 		for (int i = 0; i < jsonArray.size(); i++) {
 			final int index = i;
 			final String currentType = (String) jsonArray.get(index);
@@ -1466,7 +1481,7 @@ public class DataManager {
 				Query query2 = parser.parse(queryJoiner.toString());
 				// DataManager.getImplProv().getLogger().info("count Hits query:_
 				// "+query.toString());
-				DataManager.globalSearcher.search(query2, collector);
+				searcher.search(query2, collector);
 				arr[index][0] = currentType;
 				arr[index][1] = collector.getTotalHits();
 			} catch (IOException e) {
@@ -1510,20 +1525,6 @@ public class DataManager {
 		result.put("sortedByHits", hitSet);
 		result.put("sortedByNames", nameSet);
 		return result;
-	}
-
-	public static IndexSearcher initSearcher() {
-		IndexReader reader = null;
-		try {
-			Directory indexDirectory = FSDirectory.open(Paths.get(
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getIndexDirectory().toString(),
-					"Master_Index"));
-			reader = DirectoryReader.open(indexDirectory);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		BooleanQuery.setMaxClauseCount(10000);
-		return new IndexSearcher(reader);
 	}
 
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
@@ -1616,6 +1617,28 @@ public class DataManager {
 			DataManager.getImplProv().getLogger().debug("Parsing Error: " + e.getMessage());
 			return null;
 		}
+	}
+	
+	public static IndexSearcher getSearcher() {
+		if(directoryReader != null) {
+			IndexReader newReader = null;
+			try {
+				newReader = DirectoryReader.openIfChanged(directoryReader);
+				if(newReader != null) {
+					DataManager.getImplProv().getLogger().info("Index changed -> creating new Reader/Searcher");
+					reader.close();
+					reader = newReader;
+					globalSearcher = new IndexSearcher(reader);
+				}
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			return globalSearcher;
+		}else {
+			return null;
+		}
+
 	}
 
 }

@@ -209,7 +209,6 @@ let EdalReport = new function() {
       });
       $("#suffixesSelect").val("*");
       self.filterChange();
-      self.resetTermList();
     }
 
     this.addTab = function(query, index){
