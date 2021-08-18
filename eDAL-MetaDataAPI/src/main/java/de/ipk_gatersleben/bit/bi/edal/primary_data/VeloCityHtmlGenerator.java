@@ -1608,8 +1608,8 @@ class VeloCityHtmlGenerator {
 					"Master_Index"));
 			reader = DirectoryReader.open(indexDirectory);
 		} catch (IOException e1) {
-			e1.printStackTrace();
-			return "Server was not able to communicate with the index";
+			DataManager.getImplProv().getLogger().debug("Couldnt instantiate Indexreader in initializeTermSets(): "+e1.getMessage());
+			reader = ((FileSystemImplementationProvider) DataManager.getImplProv()).getPublicVersionWriter().getReader();
 		}
 		if(reader != null) {
 			if(reader.numDocs() > 0) {
