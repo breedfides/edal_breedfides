@@ -113,6 +113,7 @@ allprojects {
 	
 	shadowJar {
    		classifier = 'jar-with-dependencies'
+		zip64 true
 	}
 	
 	artifacts {
@@ -361,6 +362,11 @@ project(':eDAL-MetaDataAPI-Client') {
     	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
     	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+    	
+    	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+    	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
+    	
+    	
     }
 	
 	artifacts{

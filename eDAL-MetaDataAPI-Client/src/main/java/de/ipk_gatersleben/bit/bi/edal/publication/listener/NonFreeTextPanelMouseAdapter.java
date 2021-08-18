@@ -13,27 +13,54 @@
 package de.ipk_gatersleben.bit.bi.edal.publication.listener;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.border.EmptyBorder;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import de.ipk_gatersleben.bit.bi.edal.publication.AttributeLabel;
+import de.ipk_gatersleben.bit.bi.edal.publication.AttributeLableAttributeTextAreaPanel;
 import de.ipk_gatersleben.bit.bi.edal.publication.AttributeSplitPane;
 import de.ipk_gatersleben.bit.bi.edal.publication.AttributeTextArea;
 import de.ipk_gatersleben.bit.bi.edal.publication.PropertyLoader;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationFrame;
 import de.ipk_gatersleben.bit.bi.edal.publication.PublicationMainPanel;
+import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.AuthorsPanel;
+import de.ipk_gatersleben.bit.bi.edal.publication.attribute.panel.RelatedIdentifierPanel;
 
 public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 
 	private static String lastUploadPath = "";
+	private static String lastRelatedIdentifierPath = "";
 
 	private static final String MESSAGE_OF_UPLOAD_HINT = "<html>Please note: <ul><li>to upload a set of files, please supply and select a directory</li><li>please upload only uncompressed folders and files</li></ul></html>";
 	private static final int HOURS_TO_SHOW_HINT_DIALOG_AGAIN = 24;
@@ -268,6 +295,150 @@ public class NonFreeTextPanelMouseAdapter extends MouseAdapter {
 			break;
 
 		case RELATED_IDENTIFIER_PANEL:
+
+			PropertyLoader.RELATED_IDENTIFIER_LABEL.setForeground(PropertyLoader.LABEL_COLOR);
+
+			AttributeTextArea focusedFieldForRelatedIdentifier = (AttributeTextArea) mouseEvent.getComponent();
+
+			String pathForRelatedIdentifier = "";
+			if (!PublicationMainPanel.relatedIdentifierPathField.getText()
+					.equals(PropertyLoader.props.getProperty("DEFAULT_RELATED_IDNETIFIER_PATH_STRING"))) {
+				pathForRelatedIdentifier = PublicationMainPanel.relatedIdentifierPathField.getText();
+			}
+
+			if (!NonFreeTextPanelMouseAdapter.lastRelatedIdentifierPath.equals("none")) {
+				pathForRelatedIdentifier = NonFreeTextPanelMouseAdapter.lastRelatedIdentifierPath;
+			}
+
+			final JFileChooser chooserForRelatedIdentifier = new JFileChooser(pathForRelatedIdentifier);
+
+			chooserForRelatedIdentifier.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+
+			boolean readyForRelatedIdentifier = false;
+
+			while (!readyForRelatedIdentifier) {
+
+				if (chooserForRelatedIdentifier.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+
+					pathForRelatedIdentifier = chooserForRelatedIdentifier.getSelectedFile().getAbsolutePath();
+					if (pathForRelatedIdentifier != null) {
+
+						if (chooserForRelatedIdentifier.getSelectedFile().isFile()) {
+							System.out.println(pathForRelatedIdentifier);
+							readyForRelatedIdentifier = true;
+
+							try {
+
+								FileInputStream fileInputStream = new FileInputStream(
+										chooserForRelatedIdentifier.getSelectedFile());
+
+								Workbook workbook = new XSSFWorkbook(fileInputStream);
+
+								Sheet sheet = workbook.getSheetAt(0);
+
+								XSSFRow firstRow = (XSSFRow) sheet.getRow(0);
+
+								int colNum = firstRow.getLastCellNum();
+
+								// with +1 to start also with header
+								int rowNum = sheet.getLastRowNum();// + 1;
+
+								Object[][] datatable = new Object[rowNum][colNum];
+								String[] colNames = new String[colNum];
+
+								// to separate colNames from data
+								int skipHeader = 0;
+
+								for (Row row : sheet) {
+
+									if (skipHeader != 0) {
+										// fill data table
+										for (Cell cell : row) {
+
+											System.out.println("Zeile: " + (row.getRowNum() - 1) + " Spalte: "
+													+ cell.getColumnIndex());
+											switch (cell.getCellType()) {
+
+											case STRING:
+												System.out.println(cell.getStringCellValue());
+												datatable[row.getRowNum() - 1][cell.getColumnIndex()] = cell
+														.getStringCellValue();
+												break;
+											default:
+												;
+											}
+										}
+									} else {
+										// fill header array
+										for (Cell cell : row) {
+											colNames[cell.getColumnIndex()] = cell.getStringCellValue();
+										}
+										skipHeader++;
+
+									}
+
+								}
+								workbook.close();
+
+								for (int zeilennummer = 0; zeilennummer < datatable.length; zeilennummer++) {
+									for (int spaltennummer = 0; spaltennummer < datatable[zeilennummer].length; spaltennummer++) {
+										System.out.println("DATA (" + zeilennummer + ")(" + spaltennummer + ")"
+												+ datatable[zeilennummer][spaltennummer]);
+									}
+
+								}
+
+								JScrollPane scrollPane = new JScrollPane(new JTable(datatable, colNames));
+
+								scrollPane.setBackground(PropertyLoader.MAIN_BACKGROUND_COLOR);
+								scrollPane.setPreferredSize(new Dimension(PropertyLoader.ATTRIBUTE_PANEL_WIDTH,
+										PropertyLoader.AUTHOR_PANEL_HEIGHT));
+
+								final EmptyBorder inBorder = new EmptyBorder(5, 5, 0, 5);
+								final EmptyBorder outBorder = new EmptyBorder(5, 5, 0, 5);
+								scrollPane.setBorder(BorderFactory.createCompoundBorder(outBorder, inBorder));
+
+								PublicationMainPanel.relatedIdentifierPanel.setScrollPane(scrollPane);
+
+								((AttributeSplitPane) PublicationMainPanel.subjectsRelatedIdentiferPanel)
+										.setRightComponent(PublicationMainPanel.relatedIdentifierPanel);
+
+								final JPanel attributePanel = new JPanel(new GridLayout());
+
+								RelatedIdentifierPanel.RELATED_IDENTIFIER_LABEL
+										.setForeground(PropertyLoader.LABEL_COLOR);
+
+								attributePanel.add(RelatedIdentifierPanel.RELATED_IDENTIFIER_LABEL);
+								attributePanel.setBackground(PropertyLoader.MAIN_BACKGROUND_COLOR);
+								attributePanel.setPreferredSize(new Dimension(PropertyLoader.ATTRIBUTE_LABEL_WIDTH,
+										PropertyLoader.RELATED_IDENTIFIER_PANEL_HEIGHT));
+
+								PublicationMainPanel.relatedIdentifierPanel.add(attributePanel, BorderLayout.WEST);
+								PublicationMainPanel.relatedIdentifierPanel.add(scrollPane, BorderLayout.CENTER);
+
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+						} else {
+							readyForRelatedIdentifier = true;
+						}
+						if (readyForRelatedIdentifier) {
+							if (Files.exists(chooserForRelatedIdentifier.getSelectedFile().toPath(),
+									LinkOption.NOFOLLOW_LINKS)) {
+								focusedFieldForRelatedIdentifier.setText(pathForRelatedIdentifier);
+								focusedFieldForRelatedIdentifier.setToolTipText(pathForRelatedIdentifier);
+								NonFreeTextPanelMouseAdapter.lastRelatedIdentifierPath = pathForRelatedIdentifier;
+							}
+						}
+					}
+				} else {
+					ready = true;
+				}
+			}
+
+			PropertyLoader.RELATED_IDENTIFIER_LABEL.setForeground(PropertyLoader.LABEL_COLOR);
+			PropertyLoader.setUserValue("RELATED_IDENTIFIER_PATH", lastRelatedIdentifierPath);
 
 			break;
 		}

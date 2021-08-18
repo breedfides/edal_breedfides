@@ -329,9 +329,10 @@ public class ORCID implements Serializable {
 					client.close();
 				}
 			} catch (ParserConfigurationException | SAXException | IOException e) {
+				e.printStackTrace();
 				throw new ORCIDException("Unable ro request ORCID API");
 			}
-			return null;
+			return new ArrayList<ORCID>(0);
 		}
 
 		private void searchForOrcid(String orcid) throws ORCIDException {
