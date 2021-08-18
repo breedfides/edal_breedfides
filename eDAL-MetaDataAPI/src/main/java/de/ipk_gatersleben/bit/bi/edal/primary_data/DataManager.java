@@ -1148,14 +1148,14 @@ public class DataManager {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
 		IndexSearcher searcher = DataManager.getSearcher();
-		DataManager.getImplProv().getLogger().info(buildedQuery.toString());
+		DataManager.getImplProv().getLogger().debug(buildedQuery.toString());
 		TopDocs topDocs = null;
 		int currentPageNumber = ((int) (long) jsonArray.get("displayedPage"));
 		int pageArraySize = ((int) (long) jsonArray.get("pageArraySize"));
 		int pageIndex = ((int) (long) jsonArray.get("pageIndex"));
 		if (pageArraySize == 0 || currentPageNumber == 1) {
 			try {
-				DataManager.getImplProv().getLogger().info("Builded QUery advanced search: " + buildedQuery.toString());
+				DataManager.getImplProv().getLogger().debug("Builded QUery advanced search: " + buildedQuery.toString());
 				topDocs = searcher.search(buildedQuery, 5000000);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
@@ -1590,7 +1590,7 @@ public class DataManager {
 					e.printStackTrace();
 				}
 			}
-			DataManager.getImplProv().getLogger().info(query.toString());
+			DataManager.getImplProv().getLogger().debug(query.toString());
 			queryJoiner.add(Occur.MUST.toString() + query.toString());
 			finalQuery.add(query, Occur.MUST);
 		}
@@ -1609,7 +1609,7 @@ public class DataManager {
 		}
 		finalQuery.add(query, Occur.MUST);
 		queryJoiner.add(query.toString());
-		DataManager.getImplProv().getLogger().info("Builded queryjoiner_ " + queryJoiner.toString());
+		DataManager.getImplProv().getLogger().debug("Builded queryjoiner_ " + queryJoiner.toString());
 		BooleanQuery.setMaxClauseCount(10000);
 		try {
 			return pars.parse(queryJoiner.toString());
@@ -1625,7 +1625,7 @@ public class DataManager {
 			try {
 				newReader = DirectoryReader.openIfChanged(directoryReader);
 				if(newReader != null) {
-					DataManager.getImplProv().getLogger().info("Index changed -> creating new Reader/Searcher");
+					DataManager.getImplProv().getLogger().debug("Index changed -> creating new Reader/Searcher");
 					reader.close();
 					reader = newReader;
 					globalSearcher = new IndexSearcher(reader);
