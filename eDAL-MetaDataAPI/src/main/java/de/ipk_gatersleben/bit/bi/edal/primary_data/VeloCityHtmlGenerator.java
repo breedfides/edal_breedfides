@@ -1588,7 +1588,7 @@ class VeloCityHtmlGenerator {
 		
 		final StringWriter output = new StringWriter();
 
-		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/Home.xml",
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HomeTemplate.xml",
 				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
