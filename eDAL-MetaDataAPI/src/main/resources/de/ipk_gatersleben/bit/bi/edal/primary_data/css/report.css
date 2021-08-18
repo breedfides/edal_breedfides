@@ -73,10 +73,6 @@ a.edal-report-year-filter {
         display:none;
     }
 }
-
-tr {
-  height: 35px;
-}
 table.dataTable tbody td {
   vertical-align: middle;
 }
@@ -111,6 +107,10 @@ table#report tr td.edal-report-doi {
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
+}
+
+.search-table tr{
+  height: 35px;
 }
 
 @supports ( -moz-appearance:none ){

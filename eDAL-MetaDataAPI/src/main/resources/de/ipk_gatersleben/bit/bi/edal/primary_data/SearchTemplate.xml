@@ -247,7 +247,7 @@
                           <div id="result-stats"></div>
                         </div>
                         <div id="table-column" class="pl-3">
-                          <table id="report" class="table table-hover table-bordered table-sm" width="100%"></table>
+                          <table id="report" class="table table-hover table-bordered table-sm search-table" width="100%"></table>
                         </div>
                       </div>
                     </div>
@@ -289,6 +289,9 @@
 
                             <script>
                               EdalReport.init(reportData, mapData);
+                              if("$backendMessage" != ""){
+                                alert("$backendMessage");
+                              }
 
 
                               function expon(val, min,max) {

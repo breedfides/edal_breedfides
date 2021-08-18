@@ -50,6 +50,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiTerms;
 import org.apache.lucene.index.Term;
@@ -60,6 +61,8 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -1472,19 +1475,14 @@ class VeloCityHtmlGenerator {
 	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
 			throws EdalException {
 		
-		try {
-			initializeTermSets();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
+		
+		context.put("backendMessage", initializeTermSets());
 		
 		context.put("title", "PGP-Search");
 
@@ -1600,104 +1598,134 @@ class VeloCityHtmlGenerator {
 		return output;
 	}
 	
-	private void initializeTermSets() throws IOException {
-		IndexReader reader = ((FileSystemImplementationProvider)DataManager.getImplProv()).getPublicVersionWriter().getReader();
+	private String initializeTermSets() {
+		//creating a new Indexreader for safety
+		String msg = "";
+		IndexReader reader = null;
+		try {
+			Directory indexDirectory = FSDirectory.open(Paths.get(
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getIndexDirectory().toString(),
+					"Master_Index"));
+			reader = DirectoryReader.open(indexDirectory);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return "Server was not able to communicate with the index";
+		}
 		if(reader != null) {
-			Terms terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
 			if(reader.numDocs() > 0) {
 				//Fills the fileTypes list with all existing file types found in the index in descending order
-				TermsEnum it;
+				Terms terms = null;
 				try {
-					it = terms.iterator();
-					int count = 0;
-					List<MyTerm> termList = new ArrayList<MyTerm>();
-					while(it.next() != null) {
-						String term = it.term().utf8ToString();
-						if(!term.equals(""))
-							termList.add(new MyTerm(term,it.docFreq()));
-						count++;
+					terms = MultiTerms.getTerms(reader, MetaDataImplementation.FILETYPE);
+					TermsEnum it;
+					try {
+						it = terms.iterator();
+						int count = 0;
+						List<MyTerm> termList = new ArrayList<MyTerm>();
+						while(it.next() != null) {
+							String term = it.term().utf8ToString();
+							if(!term.equals(""))
+								termList.add(new MyTerm(term,it.docFreq()));
+							count++;
+						}
+						Collections.sort(termList);
+						int size = termList.size();
+						for(int i = 0; i < size; i++) {
+							fileTypes.add(termList.get(i).getTerm());
+						}
+					} catch (IOException e) {
+						DataManager.getImplProv().getLogger().debug("Error in createFileTypeList(): "+e.getMessage());
 					}
-					Collections.sort(termList);
-					int size = termList.size();
-					for(int i = 0; i < size; i++) {
-						fileTypes.add(termList.get(i).getTerm());
-					}
-				} catch (IOException e) {
-					DataManager.getImplProv().getLogger().debug("Error in createFileTypeList(): "+e.getMessage());
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";
 				}
-				
-				terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
-				//find highest file size
 				try {
-					it = terms.iterator();
-					while(it.next() != null) {
-						String term = it.term().utf8ToString();
-						if(!term.equals("")) {
-							long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
-							if(size > maxFileSize) {
-								maxFileSize = size;
-							}
-						}							
+					terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
+					TermsEnum it;
+					//find highest file size
+					try {
+						it = terms.iterator();
+						while(it.next() != null) {
+							String term = it.term().utf8ToString();
+							if(!term.equals("")) {
+								long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
+								if(size > maxFileSize) {
+									maxFileSize = size;
+								}
+							}							
+						}
+					} catch (IOException e) {
+						DataManager.getImplProv().getLogger().debug("Error while searching for the highest file size: "+e.getMessage());
 					}
-				} catch (IOException e) {
-					DataManager.getImplProv().getLogger().debug("Error while searching for the highest file size: "+e.getMessage());
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";
+
 				}
 				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
 				IndexSearcher searcher =  DataManager.getSearcher();
-				TopDocs docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
-				DataManager.getImplProv().getLogger().info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
-				ScoreDoc[] scoreDocs = docs.scoreDocs;
-				Analyzer myAnalyzer = ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer();
-				for(ScoreDoc scoreDoc : scoreDocs) {
-					Document doc = searcher.doc(scoreDoc.doc);
-					String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
-					for(String string : strings) {
-						contributors.add(string.replaceAll("\\s+", " ").trim());
-					}
-					strings = doc.getValues(MetaDataImplementation.CREATORNAME);
-					for(String string : strings) {
-						if(string != null) {
-							creators.add(string.replaceAll("\\s+", " ").trim());
+				TopDocs docs;
+				try {
+					docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
+					DataManager.getImplProv().getLogger().info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
+					ScoreDoc[] scoreDocs = docs.scoreDocs;
+					Analyzer myAnalyzer = ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer();
+					for(ScoreDoc scoreDoc : scoreDocs) {
+						Document doc = searcher.doc(scoreDoc.doc);
+						String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
+						for(String string : strings) {
+							contributors.add(string.replaceAll("\\s+", " ").trim());
+						}
+						strings = doc.getValues(MetaDataImplementation.CREATORNAME);
+						for(String string : strings) {
+							if(string != null) {
+								creators.add(string.replaceAll("\\s+", " ").trim());
+							}
+						}
+						String s = null;
+						s = doc.get(MetaDataImplementation.LEGALPERSON);
+						if(s != null) {
+							legalPersons.add(s.replaceAll("\\s+", " ").trim());
+						}
+						TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
+						ts.reset();
+						while (ts.incrementToken()) {
+							CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+								if(ta.toString().length() > 1)
+									descriptions.add(ta.toString());
+						}
+						ts.close();
+						ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+						ts.reset();
+						while (ts.incrementToken()) {
+							CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+							if(ta.toString().length() > 1)
+								titles.add(ta.toString());
+						}
+						ts.close();
+						ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+						ts.reset();
+						while (ts.incrementToken()) {
+							CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+							if(ta.toString().length() > 1)
+								subjects.add(ta.toString());
+						}
+						ts.close();
+						int year = Integer.valueOf(doc.get(MetaDataImplementation.STARTDATE).substring(0,4));
+						if(year <= minYear) {
+							minYear = year;
+						}else if(year > maxYear) {
+							maxYear = year;
 						}
 					}
-					String s = null;
-					s = doc.get(MetaDataImplementation.LEGALPERSON);
-					if(s != null) {
-						legalPersons.add(s.replaceAll("\\s+", " ").trim());
-					}
-					TokenStream ts = myAnalyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-							if(ta.toString().length() > 1)
-								descriptions.add(ta.toString());
-					}
-					ts.close();
-					ts = myAnalyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						if(ta.toString().length() > 1)
-							titles.add(ta.toString());
-					}
-					ts.close();
-					ts = myAnalyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
-					ts.reset();
-					while (ts.incrementToken()) {
-						CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-						if(ta.toString().length() > 1)
-							subjects.add(ta.toString());
-					}
-					ts.close();
-					int year = Integer.valueOf(doc.get(MetaDataImplementation.STARTDATE).substring(0,4));
-					if(year <= minYear) {
-						minYear = year;
-					}else if(year > maxYear) {
-						maxYear = year;
-					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";
 				}
 			}
 		}
+		return msg;
 	}
 	
 	class MyTerm implements Comparable<MyTerm>{
