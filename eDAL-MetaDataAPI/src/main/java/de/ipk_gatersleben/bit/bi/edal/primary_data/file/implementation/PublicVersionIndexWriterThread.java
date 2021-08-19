@@ -246,6 +246,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				updateIndex(publicRef,internalId, session);
 				this.setLastID(publicRef);
 				this.implementationProviderLogger.info("[PublicVersionIndexWriterThread] Indexing time: "+(System.currentTimeMillis()-startTime)+"ms for "+this.filesCounter+" files");
+				try {
+					DataManager.getSearchManager().maybeRefresh();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 			results.close();
 			session.getTransaction().commit();

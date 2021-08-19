@@ -125,9 +125,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
-
-	
-
 	IndexWriter writer = null;
 	protected static int lastIndexedID = 0;
 

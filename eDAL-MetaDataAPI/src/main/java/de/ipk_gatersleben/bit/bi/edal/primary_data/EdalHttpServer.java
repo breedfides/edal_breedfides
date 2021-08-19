@@ -142,6 +142,7 @@ public class EdalHttpServer {
 		resourceHandler.setResourceBase(".");
 
 		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		//restHandler.setInitParameter("com.ws.rs.ext.WriterInterceptor", "de.ipk_gatersleben.bit.bi.edal.primary_data.JerseyWriterInterceptor");
 		restHandler.setContextPath("/rest");
 		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		jerseyServlet.setInitOrder(1);

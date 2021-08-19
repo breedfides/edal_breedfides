@@ -96,6 +96,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherFactory;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
@@ -236,10 +238,12 @@ public class DataManager {
 	private static ExecutorService listExecutorService = null;
 	private static ExecutorService velocityExecutorService = null;
 
-	private static IndexSearcher globalSearcher = null;
-	private static IndexReader reader = null;
-	private static DirectoryReader directoryReader = null;
+	private static SearcherManager searchManager = null;
 	
+
+	public static SearcherManager getSearchManager() {
+		return searchManager;
+	}
 
 	static {
 
@@ -448,9 +452,7 @@ public class DataManager {
 		}
 		IndexWriter writer = ((FileSystemImplementationProvider)implementationProvider).getWriter();
 		try {
-			directoryReader = DirectoryReader.open(writer);
-			reader = DirectoryReader.open(writer);
-			globalSearcher = new IndexSearcher(reader);
+			searchManager = new SearcherManager(writer,new SearcherFactory());
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -1112,33 +1114,29 @@ public class DataManager {
 //			e2.printStackTrace();
 //		}		
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-
 		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM, standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
 		booleanQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)), Occur.FILTER);
-		IndexSearcher searcher = DataManager.getSearcher();
-		ScoreDoc[] hits2 = null;
-		// BooleanQuery booleanQuery2 = booleanQuery.build();
 		try {
-			hits2 = searcher.search(booleanQuery.build(), 50000).scoreDocs;
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		HashSet<Integer> ids = new HashSet<>();
-		for (int i = 0; i < hits2.length; i++) {
-			Document doc = null;
-			try {
-				doc = searcher.doc(hits2[i].doc);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			IndexSearcher searcher = searchManager.acquire();
+			ScoreDoc[] hits2 = searcher.search(booleanQuery.build(), 50000).scoreDocs;
+			HashSet<Integer> ids = new HashSet<>();
+			for (int i = 0; i < hits2.length; i++) {
+				Document doc = null;
+				try {
+					doc = searcher.doc(hits2[i].doc);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				ids.add(Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
 			}
-			ids.add(Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+			return ids;
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
-//		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(entities);
-//		return Collections.unmodifiableList(results);
-		return ids;
+		return new HashSet<Integer>();
 	}
 
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
@@ -1147,7 +1145,13 @@ public class DataManager {
 		}
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
-		IndexSearcher searcher = DataManager.getSearcher();
+		IndexSearcher searcher = null;
+		try {
+			searcher = searchManager.acquire();		
+		} catch (IOException e2) {
+			e2.printStackTrace();
+			return result;
+		}
 		DataManager.getImplProv().getLogger().debug(buildedQuery.toString());
 		TopDocs topDocs = null;
 		int currentPageNumber = ((int) (long) jsonArray.get("displayedPage"));
@@ -1307,6 +1311,14 @@ public class DataManager {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}finally {
+			try {
+				if(searcher != null)
+					searchManager.release(searcher);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		result.put("bottomResultScore", scoreDocs[pageSize - 1].score);
 		return result;
@@ -1404,94 +1416,108 @@ public class DataManager {
 		queryParser.setDefaultOperator(Operator.AND);
 
 		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
-		IndexSearcher searcher = DataManager.getSearcher();
-		for (int i = 0; i < jsonArray.size(); i++) {
-			final int index = i;
-			final String currentType = (String) jsonArray.get(index);
-			Query parsedQuery = null;
-			StringJoiner queryJoiner = new StringJoiner(" ");
-			queryJoiner.add(Occur.MUST.toString() + type + ':' + QueryParser.escape(currentType));
-			JSONArray queries = (JSONArray) requestData.get("queries");
-			if (queries != null) {
-				for (Object query : queries) {
-					if (query instanceof String)
-						queryJoiner.add((String) query);
-				}
-			}
-			// final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
-			JSONArray filters = (JSONArray) requestData.get("filters");
-			Query query = null;
-			for (Object obj : filters) {
-				JSONObject queryData = (JSONObject) obj;
-				String filterType = ((String) queryData.get("type"));
-				String keyword = (String) queryData.get("searchterm");
-				if (filterType.equals(MetaDataImplementation.STARTDATE)
-						|| filterType.equals(MetaDataImplementation.ENDDATE)) {
-					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-					LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter)
-							.atStartOfDay();
-					LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter)
-							.atStartOfDay();
-					String lower = DateTools.timeToString(
-							ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
-					String upper = DateTools.timeToString(
-							ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
-					query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
-
-				} else if (filterType.equals(MetaDataImplementation.SIZE)) {
-					query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
-							String.format("%014d", queryData.get("lower")),
-							String.format("%014d", queryData.get("upper")), false, false);
-				} else if (filterType.equals(MetaDataImplementation.FILETYPE)) {
-					QueryParser filterParser = new QueryParser(filterType, analyzer);
-					filterParser.setDefaultOperator(Operator.AND);
-					keyword.replace("\\", "");
-					try {
-						query = filterParser.parse(QueryParser.escape(keyword));
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+		IndexSearcher searcher = null;
+		try {
+			searcher = searchManager.acquire();
+			for (int i = 0; i < jsonArray.size(); i++) {
+				final int index = i;
+				final String currentType = (String) jsonArray.get(index);
+				Query parsedQuery = null;
+				StringJoiner queryJoiner = new StringJoiner(" ");
+				queryJoiner.add(Occur.MUST.toString() + type + ':' + QueryParser.escape(currentType));
+				JSONArray queries = (JSONArray) requestData.get("queries");
+				if (queries != null) {
+					for (Object query : queries) {
+						if (query instanceof String)
+							queryJoiner.add((String) query);
 					}
 				}
-				queryJoiner.add(Occur.MUST.toString() + query.toString());
-			}
-			String hitType = (String) requestData.get("hitType");
-			switch (hitType) {
-			case PublicVersionIndexWriterThread.PUBLICREFERENCE:
-				query = new TermQuery(
-						new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
-				break;
-			case PublicVersionIndexWriterThread.INDIVIDUALFILE:
-				query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
-				break;
-			case PublicVersionIndexWriterThread.DIRECTORY:
-				query = new TermQuery(
-						new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
-				break;
-			default:
-				return null;
-			}
-			queryJoiner.add(query.toString());
+				// final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
+				JSONArray filters = (JSONArray) requestData.get("filters");
+				Query query = null;
+				for (Object obj : filters) {
+					JSONObject queryData = (JSONObject) obj;
+					String filterType = ((String) queryData.get("type"));
+					String keyword = (String) queryData.get("searchterm");
+					if (filterType.equals(MetaDataImplementation.STARTDATE)
+							|| filterType.equals(MetaDataImplementation.ENDDATE)) {
+						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+						LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter)
+								.atStartOfDay();
+						LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter)
+								.atStartOfDay();
+						String lower = DateTools.timeToString(
+								ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+						String upper = DateTools.timeToString(
+								ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+						query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
 
-			TotalHitCountCollector collector = new TotalHitCountCollector();
-			QueryParser parser = new QueryParser(type, analyzer);
-			parser.setDefaultOperator(Operator.AND);
+					} else if (filterType.equals(MetaDataImplementation.SIZE)) {
+						query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
+								String.format("%014d", queryData.get("lower")),
+								String.format("%014d", queryData.get("upper")), false, false);
+					} else if (filterType.equals(MetaDataImplementation.FILETYPE)) {
+						QueryParser filterParser = new QueryParser(filterType, analyzer);
+						filterParser.setDefaultOperator(Operator.AND);
+						keyword.replace("\\", "");
+						try {
+							query = filterParser.parse(QueryParser.escape(keyword));
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					queryJoiner.add(Occur.MUST.toString() + query.toString());
+				}
+				String hitType = (String) requestData.get("hitType");
+				switch (hitType) {
+				case PublicVersionIndexWriterThread.PUBLICREFERENCE:
+					query = new TermQuery(
+							new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
+					break;
+				case PublicVersionIndexWriterThread.INDIVIDUALFILE:
+					query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
+					break;
+				case PublicVersionIndexWriterThread.DIRECTORY:
+					query = new TermQuery(
+							new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
+					break;
+				default:
+					return null;
+				}
+				queryJoiner.add(query.toString());
 
+				TotalHitCountCollector collector = new TotalHitCountCollector();
+				QueryParser parser = new QueryParser(type, analyzer);
+				parser.setDefaultOperator(Operator.AND);
+
+				try {
+					Query query2 = parser.parse(queryJoiner.toString());
+					// DataManager.getImplProv().getLogger().info("count Hits query:_
+					// "+query.toString());
+					searcher.search(query2, collector);
+					arr[index][0] = currentType;
+					arr[index][1] = collector.getTotalHits();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}finally {
 			try {
-				Query query2 = parser.parse(queryJoiner.toString());
-				// DataManager.getImplProv().getLogger().info("count Hits query:_
-				// "+query.toString());
-				searcher.search(query2, collector);
-				arr[index][0] = currentType;
-				arr[index][1] = collector.getTotalHits();
+				if(searcher != null)
+					searchManager.release(searcher);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
-
 		}
 
 		JSONObject result = new JSONObject();
@@ -1617,28 +1643,6 @@ public class DataManager {
 			DataManager.getImplProv().getLogger().debug("Parsing Error: " + e.getMessage());
 			return null;
 		}
-	}
-	
-	public static IndexSearcher getSearcher() {
-		if(directoryReader != null) {
-			IndexReader newReader = null;
-			try {
-				newReader = DirectoryReader.openIfChanged(directoryReader);
-				if(newReader != null) {
-					DataManager.getImplProv().getLogger().debug("Index changed -> creating new Reader/Searcher");
-					reader.close();
-					reader = newReader;
-					globalSearcher = new IndexSearcher(reader);
-				}
-			} catch (IOException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			}
-			return globalSearcher;
-		}else {
-			return null;
-		}
-
 	}
 
 }

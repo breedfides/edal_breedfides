@@ -1664,11 +1664,11 @@ class VeloCityHtmlGenerator {
 
 				}
 				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
-				IndexSearcher searcher =  DataManager.getSearcher();
-				TopDocs docs;
+				IndexSearcher searcher;
 				try {
+					searcher = DataManager.getSearchManager().acquire();
+					TopDocs docs;
 					docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
-					DataManager.getImplProv().getLogger().info("Number of PublicReference docs at Startup: " + docs.totalHits.value);
 					ScoreDoc[] scoreDocs = docs.scoreDocs;
 					Analyzer myAnalyzer = ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer();
 					for(ScoreDoc scoreDoc : scoreDocs) {
@@ -1719,8 +1719,9 @@ class VeloCityHtmlGenerator {
 							maxYear = year;
 						}
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
+					DataManager.getSearchManager().release(searcher);
+				} catch (IOException e1) {
+					e1.printStackTrace();
 					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";
 				}
 			}
