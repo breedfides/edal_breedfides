@@ -1,14 +1,5 @@
 let EdalReport = new function() {
     this.datatable = null;
-    this.doiMarkers = {};
-    this.doiColor = {};
-    this.allMarkers = [];
-    this.yearFilter = null;
-    this.searchFilter = null;
-    this.stateEntriesShown = 0;
-    this.stateShowAllMarkers = false;
-    this.allYears = [];
-    this.initReportData = null;
     this.ID = 0;
     this.searchID = 0;
     this.buildID = 0;
@@ -120,7 +111,7 @@ let EdalReport = new function() {
 
     this.addQuery = function(query){
       let self = this;
-      $.post(serverURL+"/rest/extendedSearch/parsequery2", JSON.stringify(query), function(data){
+      $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(query), function(data){
         if(data != ""){
           const index = self.queries.length;
           self.queries.push(data);
@@ -138,7 +129,7 @@ let EdalReport = new function() {
       let requestId = ID;
       let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
       self.currentRequestData = requestData;
-      //check if search is meaningful because of a potential selected file type
+      //check if search is useful because of a potential selected file type
       var fileTypeSelected = false;
       if(self.filters.length > 0){
         for(i = 0; i < self.filters.length; i++){
@@ -154,7 +145,7 @@ let EdalReport = new function() {
         reportData = data.results;
         if(ID == requestId){
           if(data.parsedQuery != null && data.parsedQuery != ""){
-            const queryIndex = self.queries.length-1;
+            const queryIndex = self.queries.length;
             self.queries.push(data.parsedQuery);
             self.addTab(data.parsedQuery,queryIndex);
           }
@@ -244,6 +235,7 @@ let EdalReport = new function() {
         console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
         if(self.queries.length > 1){
           self.queries.splice(i,1);
+          console.log("spliced queries to: "+self.queries);
         }else{
           self.queries = [];
           document.getElementById("query-ul").style.display = "none";
@@ -264,6 +256,7 @@ let EdalReport = new function() {
     }
 
     this.countFacetedTerms = async function(type, terms, ul){
+      console.log("countingfacetedTerms for type: "+type+" ("+terms.length+")");
       let self = this;
       var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
       let requestId = ID;
@@ -635,10 +628,9 @@ let EdalReport = new function() {
     }
 
     this.init = function(reportData, mapData) {
-        this.initReportData = this.reportData = reportData;
+        this.reportData = reportData;
         this.mapData = mapData;
         this.reportDataKeyed = _.keyBy(reportData, 'doi');
-        this.allYears = _.uniq(_.map(reportData, 'year')).sort().reverse();
         let self = this;
         if(self.pageSize > 5){
           console.log("height > 5 :"+self.pageSize+" getting subtracted by "+self.pageSize%5);
@@ -704,10 +696,8 @@ let EdalReport = new function() {
             $('#slider-filesize').slider("disable");
             $('.opacity-change').css('opacity','0.5');
             self.resetTermList();
-            self.renderYearSelectOptions();
             self.renderDatatableReports();
             self.manipulateDataTable([],null,[]);
-            self.addObservers();
         });
     };
 
@@ -724,13 +714,6 @@ let EdalReport = new function() {
         self.descriptions = data[DESCRIPTION];
         self.facetedTerms();
       });
-    }
-
-    this.renderYearSelectOptions = async function() {
-        let selectElem = $('#edal-report-year-filter');
-        _.forEach(this.allYears, function(year) {
-            selectElem.append('<option value="'+year+'">'+year+'</a>&nbsp;');
-        });
     }
 
     this.renderDatatableFiles = function() {
@@ -961,157 +944,6 @@ let EdalReport = new function() {
           }
           searchTerm.appendChild(dl);
     }
-
-    this.addObservers = function() {
-        let self = this;
-
-        $(document).on('change', '#edal-report-year-filter', function(event) {
-            event.preventDefault();
-            let elem = $(this);
-            let year = parseInt(elem.val());
-            if (self.searchFilter === null) {
-                if (isNaN(year)) {
-                    self.datatable.search('').columns().search('').draw();
-                    self.yearFilter = null;
-                } else {
-                    self.datatable.columns(5).search(year).draw();
-                    self.yearFilter = year;
-                }
-            } else {
-                if (isNaN(year)) {
-                    self.datatable.search(self.searchFilter).columns().search('').draw();
-                    self.yearFilter = null;
-                } else {
-                    self.datatable.search(self.searchFilter).columns(5).search(year).draw();
-                    self.yearFilter = year;
-                }
-            }
-            var dataArray = self.datatable.rows({ search: 'applied' }).data().toArray();
-            var totalAccesses = 0;
-            var totalDownloadVolume = 0;
-            dataArray.forEach((item) => {
-              var accesses = parseInt(item.accesses);
-              if(!isNaN(accesses)){
-                totalAccesses += accesses;
-              }
-              var vol = parseInt(item.downloads);
-              if(!isNaN(vol)){
-                totalDownloadVolume += parseInt(item.downloads);
-              }
-            });
-            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+dataArray.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-        });
-
-        $(document).on('keyup', '#edal-report-search', function(event) {
-              event.preventDefault();
-              let searchword = $(this).val();
-              if (searchword === '') {
-                  searchword = null;
-              }
-              self.searchFilter = searchword;
-              if (self.yearFilter !== null) {
-                  if (searchword === null) {
-                      //self.datatable.search('').columns(5).search(self.yearFilter).draw();
-                      self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
-                      self.datatable.destroy();
-                      self.renderDatatable();
-                      var totalAccesses = 0;
-                      var totalDownloadVolume = 0;
-                      self.reportData.forEach((item) => {
-                        var accesses = parseInt(item.accesses);
-                        if(!isNaN(accesses)){
-                          totalAccesses += accesses;
-                        }
-                        var vol = parseInt(item.downloads);
-                        if(!isNaN(vol)){
-                          totalDownloadVolume += parseInt(item.downloads);
-                        }
-                      });
-                      document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                  } else {
-                      //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
-                      //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
-                      self.ID++;
-                      var requestId = self.ID;
-                      $.get( serverURL+"/rest/keywordsearch/"+self.yearFilter, function( data ) {
-                          self.reportData = data;
-                          console.log("Data:")
-                          console.log(self.reportData);
-                          if(self.ID == requestId){
-                            self.datatable.destroy();
-                            self.renderDatatable();
-                            var totalAccesses = 0;
-                            var totalDownloadVolume = 0;
-                            console.log("stringContent: "+data[1].downloads);
-                            self.reportData.forEach((item) => {
-                              var accesses = parseInt(item.accesses);
-                              if(!isNaN(accesses)){
-                                totalAccesses += accesses;
-                              }
-                              var vol = parseInt(item.downloads);
-                              if(!isNaN(vol)){
-                                totalDownloadVolume += parseInt(item.downloads);
-                              }
-                            });
-                            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                        }
-                      });
-                  }
-              } else {
-                  if (searchword === null) {
-                      //self.datatable.search('').columns().search('').draw();
-                      self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
-                      self.datatable.destroy();
-                      self.renderDatatable();
-                      var totalAccesses = 0;
-                      var totalDownloadVolume = 0;
-                      self.reportData.forEach((item) => {
-                        var accesses = parseInt(item.accesses);
-                        if(!isNaN(accesses)){
-                          totalAccesses += accesses;
-                        }
-                        var vol = parseInt(item.downloads);
-                        if(!isNaN(vol)){
-                          totalDownloadVolume += parseInt(item.downloads);
-                        }
-                        console.log("totalVolume: "+totalDownloadVolume)
-                      });
-                      document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                  } else {
-                      self.ID++;
-                      var requestId = self.ID;
-                      $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
-                          self.reportData = data;
-                          console.log("ID: "+requestId+"Data:")
-                          console.log(self.reportData);
-                          if(self.ID == requestId){
-                            self.datatable.destroy();
-                            self.renderDatatable();
-                            var totalAccesses = 0;
-                            var totalDownloadVolume = 0;
-                            console.log("stringContent: "+data[1].downloads);
-                            self.reportData.forEach((item) => {
-                              var accesses = parseInt(item.accesses);
-                              if(!isNaN(accesses)){
-                                totalAccesses += accesses;
-                              }
-                              var vol = parseInt(item.downloads);
-                              if(!isNaN(vol)){
-                                totalDownloadVolume += parseInt(item.downloads);
-                              }
-                            });
-                            document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
-                        }
-                      });
-                  }
-              }
-        });
-
-    };
 
     this.niceBytes = function(bytes) {
       let self = this;

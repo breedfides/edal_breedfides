@@ -1324,7 +1324,7 @@ public class DataManager {
 		return result;
 	}
 
-	public static Query parseToLuceneQuery2(JSONObject jsonArray) {
+	public static Query parseToLuceneQuery(JSONObject jsonArray) {
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 		final CharArraySet stopSet = new CharArraySet(
 				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
@@ -1354,51 +1354,6 @@ public class DataManager {
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	public static Query parseToLuceneQuery(JSONObject jsonArray) {
-		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
-		final CharArraySet stopSet = new CharArraySet(
-				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
-		stopSet.addAll(defaultStopWords);
-		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
-		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
-		pars.setDefaultOperator(Operator.AND);
-		String existing = (String) jsonArray.get("existingQuery");
-		JSONObject queryData = (JSONObject) jsonArray.get("newQuery");
-		Query query = null;
-		String type = ((String) queryData.get("type"));
-		String keyword = (String) queryData.get("searchterm");
-		QueryParser queryParser = new QueryParser(type, analyzer);
-		queryParser.setDefaultOperator(Operator.AND);
-		try {
-			if ((boolean) queryData.get("fuzzy")) {
-				keyword = keyword + '~';
-			}
-			if (existing.equals("")) {
-				keyword = Occur.valueOf((String) queryData.get("occur")) + keyword;
-			}
-			query = queryParser.parse(keyword);
-		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		if (existing.equals("")) {
-			return query;
-		} else {
-			try {
-				if (query.toString().charAt(0) == '+') {
-					return pars.parse(existing + " " + query.toString());
-				} else {
-					return pars
-							.parse(existing + " " + Occur.valueOf((String) queryData.get("occur")) + query.toString());
-				}
-			} catch (ParseException e) {
-				e.printStackTrace();
-				return null;
-			}
-		}
 	}
 
 	public static JSONObject countHits(JSONObject jsonObject) {
@@ -1447,9 +1402,9 @@ public class DataManager {
 						LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter)
 								.atStartOfDay();
 						String lower = DateTools.timeToString(
-								ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+								ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 						String upper = DateTools.timeToString(
-								ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+								ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 						query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
 
 					} else if (filterType.equals(MetaDataImplementation.SIZE)) {
@@ -1597,9 +1552,9 @@ public class DataManager {
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
 				String lower = DateTools.timeToString(
-						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
-						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.DAY);
+						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
 			} else if (type.equals(MetaDataImplementation.SIZE)) {
 				query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
@@ -1635,7 +1590,7 @@ public class DataManager {
 		}
 		finalQuery.add(query, Occur.MUST);
 		queryJoiner.add(query.toString());
-		DataManager.getImplProv().getLogger().debug("Builded queryjoiner_ " + queryJoiner.toString());
+		DataManager.getImplProv().getLogger().info("Builded queryjoiner_ " + queryJoiner.toString());
 		BooleanQuery.setMaxClauseCount(10000);
 		try {
 			return pars.parse(queryJoiner.toString());

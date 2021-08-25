@@ -383,11 +383,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
-			doc.add(new TextField(MetaDataImplementation.STARTDATE,
-					DateTools.timeToString(date.getStartDate().getTimeInMillis(), Resolution.DAY),Store.YES));
+			doc.add(new TextField(MetaDataImplementation.STARTDATE,Integer.toString(date.getStartDate().get(Calendar.YEAR)),Store.YES));
 			if (date instanceof EdalDateRange) {
-				doc.add(new LongPoint(MetaDataImplementation.ENDDATE,
-						((EdalDateRange) date).getEndDate().getTimeInMillis()));
+				doc.add(new TextField(MetaDataImplementation.ENDDATE,
+						Integer.toString(((EdalDateRange) date).getEndDate().get(Calendar.YEAR)),Store.YES));
 			}
 		}
 		if (metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {

@@ -19,15 +19,14 @@
     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-
       <style>
         div#report_wrapper {
           height: 100%;
           box-sizing: border-box;
           margin-bottom: 0;
         }
+        #if( $MatomoTemplate) $MatomoTemplate #end
       </style>
-      #if( $MatomoTemplate) $MatomoTemplate #end
 
     </head>
 
@@ -260,87 +259,87 @@
                   </footer>
                 </div>
 
-                            <!----------------------------------- -------- Edal Report Javascript ------- -------------------------------------->
-                            <script src="$serverURL/JS/edal_search.js"></script>
-                            <script>
+                <!----------------------------------- -------- Edal Report Javascript ------- -------------------------------------->
+                <script src="$serverURL/JS/edal_search.js"></script>
+                <script>
 
-                              var serverURL = "$serverURL";
-                              var minYear = "$minYear";
-                              var maxYear = "$maxYear";
-                              var maxFileSize = "$maxFileSize";
-                              var reportData = [];
-                              var mapData = [];
-                              var filetypes = [
-                                #foreach($obj in $filetypes)"$obj",
-                                #end
-                              ];
+                  var serverURL = "$serverURL";
+                  var minYear = "$minYear";
+                  var maxYear = "$maxYear";
+                  var maxFileSize = "$maxFileSize";
+                  var reportData = [];
+                  var mapData = [];
+                  var filetypes = [
+                    #foreach($obj in $filetypes)"$obj",
+                    #end
+                  ];
 
-                              function hideModalDialog() {
-                                document.getElementById("myModal").style.display = "none";
-                              }
+                  function hideModalDialog() {
+                    document.getElementById("myModal").style.display = "none";
+                  }
 
-                              window.onclick = function (event) {
-                                var modal = document.getElementById("myModal");
-                                if (event.target == modal) {
-                                  modal.style.display = "none";
-                                }
-                              }
-                            </script>
+                  window.onclick = function (event) {
+                    var modal = document.getElementById("myModal");
+                    if (event.target == modal) {
+                      modal.style.display = "none";
+                    }
+                  }
+                </script>
 
-                            <script>
-                              EdalReport.init(reportData, mapData);
-                              if("$backendMessage" != ""){
-                                alert("$backendMessage");
-                              }
-
-
-                              function expon(val, min,max) {
-                                  var minv = Math.log(min);
-                                  var maxv = Math.log(max);
-                                  max = max / 2;
-
-                                  // calculate adjustment factor
-                                  var scale = (maxv - minv) / (max - min);
-
-                                  return Math.exp(minv + scale * (val - min));
-                              }
-
-                              function collapse() {
-                                var element = document.getElementsByClassName("collapsible");
-                                var content = document.getElementById("collapsible-content");
-                                if (content.style.display === "block") {
-                                  content.style.display = "none";
-                                } else {
-                                  content.style.display = "block";
-                                }
-                              }
-
-                              function tog(v) {
-                                return v
-                                  ? "addClass"
-                                  : "removeClass";
-                              }
-                              $(document).on("input", ".clearable", function () {
-                                $(this)[tog(this.value)]("x");
-                              }).on("mousemove", ".x", function (e) {
-                                $(this)[tog(this.offsetWidth - 18 < e.clientX - this.getBoundingClientRect().left)]("onX");
-                              }).on("touchstart click", ".onX", function (ev) {
-                                ev.preventDefault();
-                                $(this).removeClass("x onX").val("").change();
-                                EdalReport.reportData = [];
-                                EdalReport.currentRequestData = {};
-                                EdalReport.resetTermList();
-                                $('#report').DataTable().clear().draw();
-                              });
+                <script>
+                  EdalReport.init(reportData, mapData);
+                  if("$backendMessage" != ""){
+                    alert("$backendMessage");
+                  }
 
 
-                              $('#filesize').change(function () {
-                                $('#filesizelow').prop('disabled', !this.checked);
-                                $('#filesizehigh').prop('disabled', !this.checked);
-                                $('#filesizelowbyte').prop('disabled', !this.checked);
-                                $('#filesizehighbyte').prop('disabled', !this.checked);
-                              });
-                            </script>
+                  function expon(val, min,max) {
+                      var minv = Math.log(min);
+                      var maxv = Math.log(max);
+                      max = max / 2;
 
-                          </body>
-                        </html>
+                      // calculate adjustment factor
+                      var scale = (maxv - minv) / (max - min);
+
+                      return Math.exp(minv + scale * (val - min));
+                  }
+
+                  function collapse() {
+                    var element = document.getElementsByClassName("collapsible");
+                    var content = document.getElementById("collapsible-content");
+                    if (content.style.display === "block") {
+                      content.style.display = "none";
+                    } else {
+                      content.style.display = "block";
+                    }
+                  }
+
+                  function tog(v) {
+                    return v
+                      ? "addClass"
+                      : "removeClass";
+                  }
+                  $(document).on("input", ".clearable", function () {
+                    $(this)[tog(this.value)]("x");
+                  }).on("mousemove", ".x", function (e) {
+                    $(this)[tog(this.offsetWidth - 18 < e.clientX - this.getBoundingClientRect().left)]("onX");
+                  }).on("touchstart click", ".onX", function (ev) {
+                    ev.preventDefault();
+                    $(this).removeClass("x onX").val("").change();
+                    EdalReport.reportData = [];
+                    EdalReport.currentRequestData = {};
+                    EdalReport.resetTermList();
+                    $('#report').DataTable().clear().draw();
+                  });
+
+
+                  $('#filesize').change(function () {
+                    $('#filesizelow').prop('disabled', !this.checked);
+                    $('#filesizehigh').prop('disabled', !this.checked);
+                    $('#filesizelowbyte').prop('disabled', !this.checked);
+                    $('#filesizehighbyte').prop('disabled', !this.checked);
+                  });
+                </script>
+
+              </body>
+            </html>
