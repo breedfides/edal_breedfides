@@ -1,36 +1,50 @@
 let EdalReport = new function() {
+    //jquery table container
     this.datatable = null;
+    //ID to only process current REST responses
     this.ID = 0;
-    this.searchID = 0;
-    this.buildID = 0;
+    //for pagination (used on REST side to continue the search from the bottomResult)
     this.bottomResultId = null;
     this.previousBottomResultId = null;
+    //tableRow pixel height
     this.rowHeight = 35;
+    //indicates the number of displayed tableRows
     this.pageSize = Math.floor((document.getElementById("table-column").clientHeight - 3*this.rowHeight) / this.rowHeight);
+    //contains Objects that are used to filter for dates/ filesizes and filetypes
     this.filters = [];
+    //number of totalhits
     this.hitSize = 0;
+    //number of available pages
     this.pageNumbers = 0;
+    //holds information that is used for searching and calculation of facetedTerms
     this.currentRequestData = {};
+    //modal dialog element that shows all facetedTerms for a category
     this.myModal = document.getElementById("myModal");
+    //list for the category lists with all facetedTerms
     this.terms = {"Creator":[], "Contributor":[], "Subject":[], "Title":[], "Description":[]};
+    //lists that hold all at the start recevied facetedTerms (via REST)
     this.creators;
     this.contributors;
     this.subjects;
     this.titles;
     this.descriptions;
+    //symbol to indicate that no filetype is selected
     this.defaultFileType = "*";
+    //contains fileSizes that relate to the currently selected slider filsize value
     this.rangeSizeValues = [];
+    //for calculation of readable filesizes instead of raw bits and bytes
     this.units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    //list for current queries (the information is displayed as tabs above the datatable)
     this.queries = [];
-
-
+    //dummy element that is used to clone new elements when facetedTerms-uls are calculated and appended to the dom
     this.ulDummy = document.createElement("ul");
     this.ulDummy.classList.add("list-group");
     this.ulDummy.style.maxHeight = "250px";
     this.ulDummy.style.overflowY = "auto";
     this.ulDummy.style.overflowX = "hidden";
-    let searchTerms = [];
+    //ID to only process current REST responses (for search()
     let ID = 0;
+    //holds data that is needed if the datatables is created/changed
     let reportData = null;
 
     /*  For REST-ExtendedSearch
@@ -57,6 +71,8 @@ let EdalReport = new function() {
     const FILETYPE = "Filetype";
     const CONTRIBUTOR = "Contributor";
 
+    /** used to append a Query from the advanced Search bar to the
+     currentRequestData and to the displayed tabs */
     this.build = function(){
       let self = this;
       if(document.getElementById("searchterm").value == ""){
@@ -76,6 +92,7 @@ let EdalReport = new function() {
       self.addQuery(obj);
     }
 
+    /* helper function to trigger an upate for every factedTerm-ul and for available fileTypes */
     this.facetedTerms = async function(){
       let self = this;
       self.countFacetedTerms(PERSON, self.creators, document.getElementById("CreatorUl"));
@@ -86,9 +103,13 @@ let EdalReport = new function() {
       self.loadFileExtensions();
     }
 
+    /* updates the select with filetypes that provide at least 1 hit
+     (depending on the current queries) */
     this.loadFileExtensions = function(){
       let self = this;
+      //only continue if user searches for files
       if(self.currentRequestData["hitType"] == "singledata"){
+        //reconstruct the select
         var select = document.getElementById("suffixesSelect");
         select.innerHTML = "";
         var option = document.createElement("option");
@@ -96,6 +117,7 @@ let EdalReport = new function() {
         select.appendChild(option);
         var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
         $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
+          //fill select with fileTypes and the number of hits
           data.sortedByNames.forEach((term, i) => {
             var opt = document.createElement("option");
             opt.value = term[0];
@@ -109,6 +131,8 @@ let EdalReport = new function() {
       }
     }
 
+    /*triggers a REST call to parse a Query and passes the response to a helper
+     function to add a new displayed tab*/
     this.addQuery = function(query){
       let self = this;
       $.post(serverURL+"/rest/extendedSearch/parsequery", JSON.stringify(query), function(data){
@@ -121,6 +145,7 @@ let EdalReport = new function() {
       });
     }
 
+    /* used to search with the currentRequestData and to process the results */
     this.search = function(){
       let self = this;
       var queryValue = document.getElementById('query').value;
@@ -189,9 +214,11 @@ let EdalReport = new function() {
       }
     }
 
+    /* clears the queries, filtetypes select, factedTerms */
     this.clearFiltersTabs = function(){
       let self = this;
       self.queries = [];
+      $("#query").val("");
       $("#query-ul").html("");
       $("#query-ul").css("display","none");
       $('.jqslider').each(function(){
@@ -202,6 +229,7 @@ let EdalReport = new function() {
       self.filterChange();
     }
 
+    /* creates and adds a "tab" to the displayed container of queries */
     this.addTab = function(query, index){
       let self = this;
       let parent = document.getElementById("query-ul");
@@ -255,6 +283,7 @@ let EdalReport = new function() {
       }
     }
 
+    /* count hits for a list of terms and a specific ul and appends <li> elements to that list */
     this.countFacetedTerms = async function(type, terms, ul){
       console.log("countingfacetedTerms for type: "+type+" ("+terms.length+")");
       let self = this;
@@ -328,6 +357,7 @@ let EdalReport = new function() {
       });
     }
 
+    /* calculate new faceted Terms and adds them to a specific ul element */
     this.loadTerms = async function(type, unorderedList, terms){
       let self = this;
       var radioButton = document.getElementById("radioBtnNames");
@@ -373,6 +403,8 @@ let EdalReport = new function() {
       }
     }
 
+    /* creates ul inside the modal dialoge, fills it with facetedTerms and displays it
+      for creators*/
     this.listCreatorTerms = function(){
       let self = this;
       if(self.terms[PERSON].sortedByHits.length == 0){
@@ -389,7 +421,8 @@ let EdalReport = new function() {
       document.getElementById("modal-list").appendChild(ulCreator);
     }
 
-
+    /* creates ul inside the modal dialoge, fills it with facetedTerms and displays it
+      for contributors*/
     this.listContributorTerms = function(){
       let self = this;
       if(self.terms[CONTRIBUTOR].sortedByHits.length == 0){
@@ -406,6 +439,8 @@ let EdalReport = new function() {
       document.getElementById("modal-list").appendChild(ulContributor);
     }
 
+    /* creates ul inside the modal dialoge, fills it with facetedTerms and displays it
+      for subjects*/
     this.listSubjectTerms = function(){
       let self = this;
       if(self.terms[SUBJECT].sortedByHits.length == 0){
@@ -422,6 +457,8 @@ let EdalReport = new function() {
       document.getElementById("modal-list").appendChild(ulSubjects);
     }
 
+    /* creates ul inside the modal dialoge, fills it with facetedTerms and displays it
+      for titles*/
     this.listTitleTerms = function(){
       let self = this;
       if(self.terms[TITLE].sortedByHits.length == 0){
@@ -438,6 +475,8 @@ let EdalReport = new function() {
       document.getElementById("modal-list").appendChild(ulTitles);
     }
 
+    /* creates ul inside the modal dialoge, fills it with facetedTerms and displays it
+      for descriptions*/
     this.listDescritionTerms = function(){
       let self = this;
       if(self.terms[DESCRIPTION].sortedByHits.length == 0){
@@ -453,65 +492,6 @@ let EdalReport = new function() {
       modalList.innerHTML = "";
       document.getElementById("modal-list").appendChild(ulDescriptoions);
     }
-
-    this.testCount = function(term){
-      $.post("/rest/extendedSearch/countHits", term, function(data){
-        console.log(data);
-      });
-    }
-
-
-        // this.loadContributorTerms = async function(currentPageNo, type){
-        //   let self = this;
-        //   const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
-        //   const upperBound = startOption + 5;
-        //   const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
-        //   const slice = subjects.slice(startOption, endOption);
-        //   var request = {"termType":type, "terms":slice};
-        //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
-        //   console.log(slice);
-        //   $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
-        //     console.log("returned data: ");
-        //     console.log(data);
-        //     for (i = 0; i < data.length; i++) {
-        //         var li = document.createElement("li");
-        //         li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-        //         li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-        //         self.ulContributor.appendChild(li);
-        //         console.log(slice[i]+" "+data[i]);
-        //     }
-        //     const incrementedPageNo = ++currentPageNo;
-        //     if(((currentPageNo - 1) * 5) < subjects.length){
-        //       self.loadContributorTerms(incrementedPageNo, type);
-        //     }
-        //   });
-        // }
-
-        // this.loadSubjectTerms = async function(currentPageNo, type){
-        //   let self = this;
-        //   const startOption = ((currentPageNo - 1) * 5); //for example if pageNo is 2 then startOption = (2-1)*10 + 1 = 11
-        //   const upperBound = startOption + 5;
-        //   const endOption = upperBound < subjects.length ? upperBound : subjects.length;//for example if pageNo is 2 then endOption = 11 + 10 = 21
-        //   const slice = subjects.slice(startOption, endOption);
-        //   var request = {"termType":type, "terms":slice};
-        //   console.log("loadingSubjectTerms with page: "+currentPageNo+" start "+startOption+" end_ "+endOption);
-        //   console.log(slice);
-        //   $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
-        //     console.log("returned data: ");
-        //     console.log(data);
-        //     for (i = 0; i < data.length; i++) {
-        //         var li = document.createElement("li");
-        //         li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
-        //         li.innerHTML = slice[i]+'<span class="badge badge-primary badge-pill">'+data[i]+'</span>';
-        //         self.ulSubjects.appendChild(li);
-        //         console.log(slice[i]+" "+data[i]);
-        //     }
-        //     const incrementedPageNo = ++currentPageNo;
-        //     if(((currentPageNo - 1) * 5) < subjects.length){
-        //       self.loadSubjectTerms(incrementedPageNo, type);
-        //     }
-        //   });
-        // }
 
     this.changePage = function(index, page, currentRequestData, history){
       document.getElementById("loading-indicator").style.display="inline-block";
