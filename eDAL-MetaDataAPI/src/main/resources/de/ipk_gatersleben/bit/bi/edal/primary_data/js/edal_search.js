@@ -562,6 +562,7 @@ let EdalReport = new function() {
       });
     }
 
+    /* creates list with filter data and triggers a search() */
     this.filterChange = function(){
       this.filters = [];
       let periodbox = document.getElementById("period");
@@ -607,6 +608,7 @@ let EdalReport = new function() {
       this.search();
     }
 
+    /* initializes some variables and jquery elements (sliders, datatable) */
     this.init = function(reportData, mapData) {
         this.reportData = reportData;
         this.mapData = mapData;
@@ -681,6 +683,8 @@ let EdalReport = new function() {
         });
     };
 
+    /* resets term lists and calls EdalReport.facetedTerms() to count hits for
+     every search term which depend on the current set queries*/
     this.resetTermList = function(){
       let self = this;
       self.currentRequestData.existingQuery = document.getElementById("query").value;
@@ -696,6 +700,7 @@ let EdalReport = new function() {
       });
     }
 
+    /* renders the datatable with columns for files */
     this.renderDatatableFiles = function() {
         let self = this;
 
@@ -734,7 +739,8 @@ let EdalReport = new function() {
                     }
                 },
                 {
-                    title: "Extension",
+                    title: "File type",
+                    width: "10%",
                     data: "ext",
                     class: "edal-report-title"
                 },
@@ -747,6 +753,7 @@ let EdalReport = new function() {
         });
     };
 
+    /* renders the datatable with columns for directories */
     this.renderDatatableDirectories = function() {
         let self = this;
 
@@ -793,6 +800,60 @@ let EdalReport = new function() {
         });
     };
 
+    /* renders the datatable with columns for directories */
+    this.renderDatatableReports = function() {
+      $('tr').css('height','10px');
+        let self = this;
+
+        this.datatable = $('#report').DataTable({
+
+            data: self.reportData,
+            dom: 't',
+            //dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+                {
+                    extend: 'csvHtml5',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3]
+                    }
+                },
+            ],
+            "pagingType": "simple",
+            "pageLength": self.pageSize,
+            info: false,
+            "order": [],
+            "language": {
+              "emptyTable": ""
+            },
+            fixedColumns:   {
+                heightMatch: 'none'
+            },
+            columns: [
+                {
+                    title: "DOI",
+                    data: "doi",
+                    width: "10%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+                    }
+                },
+                {
+                    title: "Dataset",
+                    data: "title",
+                    class: "edal-report-title"
+                }
+            ]
+        });
+    };
+
+    /* creates and appends pagination to the dom */
     this.manipulateDataTable = function(numbers, currentRequestData, history){
       if(typeof numbers == 'undefined' || numbers.length == 0){
         return;
@@ -850,81 +911,31 @@ let EdalReport = new function() {
       }
     }
 
-    this.renderDatatableReports = function() {
-      $('tr').css('height','10px');
-        let self = this;
+    // /*  */
+    // this.typeChange = function() {
+    //       //clear old recommendations
+    //       var searchTerm = document.getElementById("searchterm");
+    //       var dl = document.getElementById("auto-complete");
+    //       dl.parentNode.removeChild(dl);
+    //       //add new recommendations
+    //       dl = document.createElement('datalist');
+    //       dl.id="auto-complete";
+    //       var type = document.getElementById("element").value;
+    //       switch(type){
+    //         case FILETYPE:
+    //           for (i = 0; i < 8; i++) {
+    //             console.log(filetypes[i]);
+    //             var el = document.createElement("option");
+    //             el.textContent = filetypes[i];
+    //             dl.appendChild(el);
+    //           }
+    //           break;
+    //         default:
+    //       }
+    //       searchTerm.appendChild(dl);
+    // }
 
-        this.datatable = $('#report').DataTable({
-
-            data: self.reportData,
-            dom: 't',
-            //dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'copyHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3]
-                    }
-                },
-            ],
-            "pagingType": "simple",
-            "pageLength": self.pageSize,
-            info: false,
-            "order": [],
-            "language": {
-              "emptyTable": ""
-            },
-            fixedColumns:   {
-                heightMatch: 'none'
-            },
-            columns: [
-                {
-                    title: "DOI",
-                    data: "doi",
-                    width: "10%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
-                    }
-                },
-                {
-                    title: "Dataset",
-                    data: "title",
-                    class: "edal-report-title"
-                }
-            ]
-        });
-    };
-
-    this.typeChange = function() {
-          //clear old recommendations
-          var searchTerm = document.getElementById("searchterm");
-          var dl = document.getElementById("auto-complete");
-          dl.parentNode.removeChild(dl);
-          //add new recommendations
-          dl = document.createElement('datalist');
-          dl.id="auto-complete";
-          var type = document.getElementById("element").value;
-          switch(type){
-            case FILETYPE:
-              for (i = 0; i < 8; i++) {
-                console.log(filetypes[i]);
-                var el = document.createElement("option");
-                el.textContent = filetypes[i];
-                dl.appendChild(el);
-              }
-              break;
-            default:
-          }
-          searchTerm.appendChild(dl);
-    }
-
+    /* converts bytes to the human readable equivalent */
     this.niceBytes = function(bytes) {
       let self = this;
       const thresh = 1024;
@@ -944,6 +955,7 @@ let EdalReport = new function() {
       return bytes.toFixed(dp).replace(".", ",") + ' ' + self.units[u];
     };
 
+    /* converts a the human readable  file to the rare bytes*/
     this.reverseNiceBytes = function(fileSize, unit){
       let self = this;
       if(unit === 'B')

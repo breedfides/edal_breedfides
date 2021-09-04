@@ -100,7 +100,7 @@
                       </div>
 
                       <div class="col">
-                        <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px" onchange="EdalReport.typeChange()">
+                        <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px">
                           <option value="Title">Title/Filename</option>
                           <option>Description</option>
                           <option>Creator</option>
