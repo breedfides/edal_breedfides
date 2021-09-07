@@ -405,7 +405,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
 		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
 		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
-		doc.add(new TextField(PublicVersionIndexWriterThread.REVISION,Long.toString(version.getRevision()), Store.YES));
+		doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,Long.toString(version.getRevision()), Store.YES));
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {
