@@ -10,9 +10,7 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
-
-
+package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
 import java.util.Locale;
 
 import org.hibernate.search.mapper.pojo.bridge.ValueBridge;
@@ -20,13 +18,11 @@ import org.hibernate.search.mapper.pojo.bridge.runtime.ValueBridgeToIndexedValue
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
 
-public class LongBridge implements ValueBridge<Long, String> {
+public class LanguageBridge implements ValueBridge<Locale, String> {
+
 
 	@Override
-	public String toIndexedValue(Long value, ValueBridgeToIndexedValueContext context) {
-		if(value != null) {
-			return Long.toString(value);
-		}else
-			return null;
+	public String toIndexedValue(Locale value, ValueBridgeToIndexedValueContext context) {
+		return value == null ? null : value.toString();
 	}
 } 

@@ -31,7 +31,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordFie
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
 
 /**
  * Internal representation of {@link EdalLanguage} for persistence with

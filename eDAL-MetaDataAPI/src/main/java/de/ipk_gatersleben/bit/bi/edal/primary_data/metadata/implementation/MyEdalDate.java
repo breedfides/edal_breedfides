@@ -32,7 +32,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDatePrecision;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
 @Entity
 @Indexed
 public class MyEdalDate implements Serializable {

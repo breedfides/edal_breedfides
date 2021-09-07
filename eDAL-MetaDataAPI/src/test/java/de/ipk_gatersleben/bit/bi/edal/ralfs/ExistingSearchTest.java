@@ -85,7 +85,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.review.ReviewStatus.ReviewerType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.StoreDataScript;
 
 class ExistingSearchTest {
 	

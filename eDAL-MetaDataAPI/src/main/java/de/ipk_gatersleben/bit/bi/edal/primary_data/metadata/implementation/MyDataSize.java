@@ -29,8 +29,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LanguageBridge;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.LongBridge;
 
 /**
  * Internal representation of {@link DataSize} for persistence with

@@ -34,7 +34,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
-import ralfs.de.ipk_gatersleben.bit.bi.edal.examples.TextDataBase;
 
 import javax.ws.rs.Produces;
 

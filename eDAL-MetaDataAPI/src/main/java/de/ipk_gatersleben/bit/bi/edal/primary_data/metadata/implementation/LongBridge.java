@@ -1,4 +1,3 @@
-package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
 /**
  * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -11,30 +10,23 @@ package ralfs.de.ipk_gatersleben.bit.bi.edal.examples;
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-import java.util.HashSet;
-import java.util.Iterator;
+package de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation;
+
+
+import java.util.Locale;
 
 import org.hibernate.search.mapper.pojo.bridge.ValueBridge;
 import org.hibernate.search.mapper.pojo.bridge.runtime.ValueBridgeToIndexedValueContext;
-public class StringSetBridge implements ValueBridge<HashSet<String>, String> {
+
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyEdalLanguage;
+
+public class LongBridge implements ValueBridge<Long, String> {
 
 	@Override
-	public String toIndexedValue(HashSet<String> value, ValueBridgeToIndexedValueContext context) {
-        if(value != null)
-        {
-        	StringBuilder  buf = new StringBuilder ();
-
-            HashSet<?> col = (HashSet<?>)value;
-            Iterator<?> it = col.iterator();
-            while(it.hasNext())
-            {
-                String next = it.next().toString();
-                buf.append(next);
-                if(it.hasNext())
-                    buf.append(", ");
-            }
-            return buf.toString();
-        }
-        return null;
+	public String toIndexedValue(Long value, ValueBridgeToIndexedValueContext context) {
+		if(value != null) {
+			return Long.toString(value);
+		}else
+			return null;
 	}
 } 

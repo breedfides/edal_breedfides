@@ -12,6 +12,8 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -83,6 +85,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
@@ -125,6 +128,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private final short REVISIONDIRECTORY = 0;
 	private final short REVISIONPUBLICREFERENCE = 2;
 	protected static int lastIndexedID = 0;
+	Boolean indexedData = false;
 	int counterValue = 0;
 	IndexWriter writer = null;
 	IndexSearcher searcher = null;
@@ -204,6 +208,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 			final long queryStartTime = System.currentTimeMillis();
 			
+			countNewReferences(session);
 			/** Load all new PublicReference.IDs */
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = criteriaBuilder
@@ -237,20 +242,28 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			final long indexStartTime = System.currentTimeMillis();
 			Integer publicRef = null;
 			String internalId = null;
+			long startTime = System.currentTimeMillis();
+			this.filesCounter = 0;
 			while (results.next()) {
-				long startTime = System.currentTimeMillis();
 				Object[] objs = (Object[]) results.get(0);
 				publicRef = (Integer) objs[0];
 				internalId = (String) objs[1];
 				/** index all associated Files/Directories */
 				updateIndex(publicRef,internalId, session);
 				this.setLastID(publicRef);
-				this.implementationProviderLogger.info("[PublicVersionIndexWriterThread] Indexing time: "+(System.currentTimeMillis()-startTime)+"ms for "+this.filesCounter+" files");
 				try {
 					DataManager.getSearchManager().maybeRefresh();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+			if(this.filesCounter > 0) {
+				DataManager.getImplProv().getLogger().info("[PublicVersionIndexWriterThread] Indexing time: "+(System.currentTimeMillis()-startTime)+"ms");
+				indexedData = true;
+			}else {
+				if(indexedData)
+					DataManager.getImplProv().getLogger().info("[PublicVersionIndexWriterThread] Indexing finished");
+				indexedData = false;
 			}
 			results.close();
 			session.getTransaction().commit();
@@ -313,6 +326,28 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 	}
 	
+	private void countNewReferences(Session session) {
+		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<Long> criteriaLong = criteriaBuilder
+				.createQuery(Long.class);
+		Root<PublicReferenceImplementation> root = criteriaLong
+				.from(PublicReferenceImplementation.class);
+		criteriaLong.select(criteriaBuilder.count(root));
+		Predicate predicateId = criteriaBuilder.gt(root.get("id"),
+				PublicVersionIndexWriterThread.getLastID());
+		Predicate predicateAccepted = criteriaBuilder.equal(
+				root.get("publicationStatus"), PublicationStatus.ACCEPTED);
+		Predicate predicateType = criteriaBuilder.equal(
+				root.get("identifierType"), PersistentIdentifier.DOI);		
+		criteriaLong.where(criteriaBuilder.and(predicateId, predicateAccepted,
+				predicateType)); 
+		long l = session.createQuery(criteriaLong).getSingleResult();
+		if(l > 0) {
+			DataManager.getImplProv().getLogger().info("Publicreferences to index "+l);	
+		}
+	}
+
+
 	private void updateIndex(Integer pubRef, String internalId, Session session) {
 		this.filesCounter = 0;	
 		//Alternative way to fetch the PrimaryDataFileImplementation associated with the publicReference (requieres entire publicReference)
@@ -383,20 +418,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 	
 	private void updateVersions(String file, Session session, Integer pubRef, String internalId, String entityType, int revision) {
-		//String hql = "from PrimaryDataEntityVersionImplementation where primaryEntityId = :id";
-		//List<PrimaryDataEntityVersionImplementation> versions = session.createQuery(hql,PrimaryDataEntityVersionImplementation.class).setParameter("id", file.getID()).getResultList();
-//		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//		CriteriaQuery<Integer> versionCriteria = 
-//				criteriaBuilder
-//				.createQuery(Integer.class);
-//		Root<PrimaryDataEntityVersionImplementation> versionRoot = versionCriteria
-//				.from(PrimaryDataEntityVersionImplementation.class);
-//		versionCriteria.select(versionRoot.get("id"));
-//		versionCriteria.where(criteriaBuilder.equal(
-//				versionRoot.get("primaryEntityId"), file.getID()));
-//		versionCriteria.orderBy(criteriaBuilder.desc(
-//				versionRoot.get("revision")));
-//		Integer version = session.createQuery(versionCriteria).setMaxResults(1).getSingleResult();		
 		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n" + 
 				"where primaryentityid =:file and revision = "
 				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
@@ -407,7 +428,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					Integer.toString(version));
 			hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
 			if(hits2 == null || hits2.length == 0) {
-				this.implementationProviderLogger.info("(public) waiting for NativeLuceneIndexWriter");
 				do {
 					try {
 						Thread.sleep(Math.min(
@@ -440,22 +460,33 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			String pID = String.valueOf(pubRef);
 			doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID,
 					internalId, Store.YES));
-			doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,
-					Integer.toString(revision), Store.YES));
 			StringBuilder docIDBuilder = new StringBuilder(doc.get(MetaDataImplementation.PRIMARYENTITYID))
 					.append("-").append(pID);
 			doc.add(new StringField(PublicVersionIndexWriterThread.DOCID,
 					docIDBuilder.toString(), Store.YES));
 			String title = doc.get(MetaDataImplementation.TITLE);
 			if(entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-				if(revision == 1) {
+				if(revision == REVISIONFILE) {
 					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
 							PublicVersionIndexWriterThread.FILE, Store.YES));
 					if(title != null) {
+						String filetype = FilenameUtils.getExtension(title);
 						doc.add(new TextField(MetaDataImplementation.FILETYPE,
-								FilenameUtils.getExtension(title), Store.YES));
+								filetype, Store.YES));
+//						if(filetype.equals("txt")) {
+//							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class, file);
+//							ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//							try {
+//								pdfile.read(stream);
+//								String out = new String(stream.toByteArray(), "UTF-8");
+//								DataManager.getImplProv().getLogger().info("TEST STRING: "+out);
+//							} catch (PrimaryDataFileException e) {
+//								// TODO Auto-generated catch block
+//								e.printStackTrace();
+//							}
+//						}
 					}
-				}else if(revision == 0) {
+				}else if(revision == REVISIONDIRECTORY) {
 					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
 							PublicVersionIndexWriterThread.DIRECTORY, Store.YES));
 				}
