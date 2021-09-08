@@ -1590,7 +1590,7 @@ public class DataManager {
 		}
 		finalQuery.add(query, Occur.MUST);
 		queryJoiner.add(query.toString());
-		DataManager.getImplProv().getLogger().info("Builded queryjoiner_ " + queryJoiner.toString());
+		DataManager.getImplProv().getLogger().debug("Builded queryjoiner_ " + queryJoiner.toString());
 		BooleanQuery.setMaxClauseCount(10000);
 		try {
 			return pars.parse(queryJoiner.toString());
