@@ -141,6 +141,11 @@ let EdalReport = new function() {
                     render: function (data, type, row) {
                         return '<a class="worldmap-link" data-doi="'+row['doi']+'" href="#" target="_blank">Show</a>';
                     }
+                },
+                {
+                    title: "Year",
+                    data: "year",
+                    visible: false
                 }
             ]
         });
@@ -194,6 +199,7 @@ let EdalReport = new function() {
                     self.yearFilter = year;
                 }
             }
+            //calculate displayed statistics
             var dataArray = self.datatable.rows({ search: 'applied' }).data().toArray();
             var totalAccesses = 0;
             var totalDownloadVolume = 0;
@@ -207,6 +213,7 @@ let EdalReport = new function() {
                 totalDownloadVolume += parseInt(item.downloads);
               }
             });
+            //update displayed statistics
             document.getElementById("statisticsSpan").innerHTML = "DOIs: "+dataArray.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
         });
 
