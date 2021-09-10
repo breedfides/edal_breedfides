@@ -100,7 +100,7 @@
                       </div>
 
                       <div class="col">
-                        <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:120px">
+                        <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:140px">
                           <option value="Title">Title/Filename</option>
                           <option>Description</option>
                           <option>Creator</option>
@@ -119,13 +119,13 @@
                       </div>
 
                       <div class="col">
-                        <input class="form-control form-control-sm" list="auto-complete" style="min-width:150px;height:28px" id="searchterm" type="text" name="searchterm">
+                        <input class="form-control form-control-sm" list="auto-complete" style="min-width:140px;height:28px" id="searchterm" type="text" name="searchterm">
                           <datalist id="auto-complete"></datalist>
                         </input>
                       </div>
 
                       <div class="col">
-                        <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:135px">
+                        <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:140px">
                           <option value="MUST">Must occur</option>
                           <option value="MUST_NOT">Must not occur</option>
                         </select>

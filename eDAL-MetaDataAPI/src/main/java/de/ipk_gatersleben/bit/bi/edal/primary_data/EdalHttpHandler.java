@@ -118,7 +118,7 @@ public class EdalHttpHandler extends AbstractHandler {
 		} else {
 			if (request.getMethod().equalsIgnoreCase("GET")) {
 
-				final String url = request.getRequestURI().toString();
+				final String url = request.getRequestURI().toString();			
 
 				DataManager.getImplProv().getLogger().debug(url);
 
@@ -602,7 +602,12 @@ public class EdalHttpHandler extends AbstractHandler {
 							break;
 						
 						case SEARCH:
-							this.sendSearch(response, HttpStatus.Code.OK);
+							String searchBarQuery = request.getParameter("q");
+							if(searchBarQuery == null || searchBarQuery == "") {
+								this.sendSearch(response, HttpStatus.Code.OK);
+							}else {
+								this.sendSearch(response, HttpStatus.Code.OK, searchBarQuery);
+							}
 							break;
 							
 						case HOME:
@@ -1341,6 +1346,11 @@ public class EdalHttpHandler extends AbstractHandler {
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
+	}
+	
+	private void sendSearch(HttpServletResponse response, Code ok, String searchBarQuery) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode) {
