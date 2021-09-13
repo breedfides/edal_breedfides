@@ -82,7 +82,7 @@
           <div class="pl-3 form-row pb-1" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
             <span class="flex-col h2 mr-1 my-auto">Search</span>
             <div class="flex-col my-auto">
-              <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" data-tooltip="Hier könnte ihre Werbung stehen" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()">Advanced
+              <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" data-tooltip="tooltip" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()">Advanced
               </Button>
             </div>
             <span class="col h6 collapsible pl-4 my-auto" id="statisticsSpan" style="display:inline-block;">
