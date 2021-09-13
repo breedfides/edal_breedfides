@@ -16,7 +16,7 @@
     <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
+      #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/HeaderTemplate.xml")
     <link rel="stylesheet" href="$serverURL/CSS/report.css">
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
       <style>
@@ -25,319 +25,323 @@
           box-sizing: border-box;
           margin-bottom: 0;
         }
-        #if( $MatomoTemplate) $MatomoTemplate #end
+        #if($MatomoTemplate) $MatomoTemplate #end
       </style>
 
-    </head>
+  </head>
 
-    <body>
-      <div id="myModal" class="modal">
+  <body>
+    <div id="myModal" class="modal">
 
-        <!-- Modal content -->
-        <div class="modal-content">
-          <div class="modal-header">
-            <div id="modal-headline"></div>
-            <div class="pl-2" style="width: 90%;margin:auto;float:right;">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <div id="modal-headline"></div>
+          <div class="pl-2" style="width: 90%;margin:auto;float:right;">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="radioGroup" id="radioBtnHits" value="option1" checked="checked">
+                <label class="form-check-label" for="inlineRadio1">Hits</label>
+              </div>
               <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="radioGroup" id="radioBtnHits" value="option1" checked="checked">
-                  <label class="form-check-label" for="inlineRadio1">Hits</label>
+                <input class="form-check-input" type="radio" name="radioGroup" id="radioBtnNames" value="option2">
+                  <label class="form-check-label" for="inlineRadio2">Search terms</label>
                 </div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="radioGroup" id="radioBtnNames" value="option2">
-                    <label class="form-check-label" for="inlineRadio2">Search terms</label>
+              </div>
+              <span style="float:right" class="close" onclick="hideModalDialog()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-list"></ul>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="search-counter"></div>
+      <div id="grid-container">
+        <nav>
+          <div class="container-fluid">
+            <div class="row header">
+              <div class="col my-auto">
+                <a target="_blank" href="http://edal.ipk-gatersleben.de"><img id="logo-edal" src="$serverURL/LOGO/edal_logo.png"/></a>
+              </div>
+              <div id="edal-report-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
+              <div id="edal-report-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
+              #if( $InstituteLogo)
+              <div class="col text-right pt-1">
+                <a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png"/></a>
+              </div>
+              #else
+              <div class="col text-right pt-1">
+                <a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg"/></a>
+              </div>
+              #end
+
+            </div>
+          </div>
+        </nav>
+        <div id="controls" class="pb-2 pt-1">
+          <div class="pl-3 form-row pb-1" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
+            <span class="flex-col h2 mr-1 my-auto">Search</span>
+            <div class="flex-col my-auto">
+              <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" data-tooltip="Hier könnte ihre Werbung stehen" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()">Advanced
+              </Button>
+            </div>
+            <span class="col h6 collapsible pl-4 my-auto" id="statisticsSpan" style="display:inline-block;">
+              <div class="content" id="collapsible-content">
+
+                <div class="form-row" style="max-width:800px">
+                  <div class="col">
+                    <label class="h5" for="scales">Fuzzy</label>
+                  </div>
+                  <div class="col">
+                    <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales"></div>
+
+                    <div class="col">
+                      <label class="h5" for="fname">Type:</label>
+                    </div>
+
+                    <div class="col">
+                      <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:140px">
+                        <option value="Title">Title/Filename</option>
+                        <option>Description</option>
+                        <option>Creator</option>
+                        <option>Contributor</option>
+                        <option>Legalperson</option>
+                        <option>Subject</option>
+                        <option>Language</option>
+                        <option value="Filetype">File extension</option>
+                        <option>Checksum</option>
+                        <option value="Allfields">Search All types</option>
+                      </select>
+                    </div>
+
+                    <div class="col">
+                      <label class="h5" style="white-space: nowrap;">Search term:</label>
+                    </div>
+
+                    <div class="col">
+                      <input class="form-control form-control-sm" list="auto-complete" style="min-width:140px;height:28px" id="searchterm" type="text" name="searchterm">
+                        <datalist id="auto-complete"></datalist>
+                      </input>
+                    </div>
+
+                    <div class="col">
+                      <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:140px">
+                        <option value="MUST">Must occur</option>
+                        <option value="MUST_NOT">Must not occur</option>
+                      </select>
+                    </div>
+
+                    <div class="col">
+                      <button class="form-control form-control-sm builder-Button" style="height:28px" id="addButton" type="button" name="button" onclick="EdalReport.build()">+</button>
+                    </div>
+
                   </div>
                 </div>
-                <span style="float:right" class="close" onclick="hideModalDialog()">&times;</span>
+              </span>
+            </div>
+            <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
+              <div class="mr-5" style="display:flex;color:white;width:100%;">
+                <input class="form-control form-control-sm clearable mr-2" style="width:35%;" id="query" type="text" name="query" placeholder="Search..."></input>
+                <div class="row">
+                  <button class="col form-control form-control-sm builder-Button ml-3" id="searchButton" style="width:8em" type="button" name="searchbutton" onclick="EdalReport.search()">Search<i id="loading-indicator" class="fa fa-circle-o-notch fa-spin ml-1" style="display:none;"></i>
+                  </button>
+
+                  <button class="col form-control form-control-sm builder-Button ml-2" id="clear-tabs-filters" style="width:auto" type="button" name="clear-button" onclick="EdalReport.clearFiltersTabs()">Clear filters</button>
+                </div>
+                <!-- <div id="edal-report-filter-container" class="mr-3"> <span class="mr-2">Filter:</span> <select id="edal-report-year-filter"> <option value="All">All</option> </select> </div> -->
               </div>
-              <div class="modal-body" id="modal-list"></ul>
             </div>
           </div>
 
-        </div>
+          <div id="grid-container-table-and-map">
+            <div id="edal-report-table-container" class="pr-3" style="overflow-y: hidden;">
+              <div id="edal-report-table-inner-container">
+                <div id="edal-report-filter" class="flex-column custom-scroll">
 
-        <div id="search-counter"></div>
-        <div id="grid-container">
-          <nav>
-            <div class="container-fluid">
-              <div class="row header">
-                <div class="col my-auto">
-                  <a target="_blank" href="http://edal.ipk-gatersleben.de"><img id="logo-edal" src="$serverURL/LOGO/edal_logo.png"/></a>
-                </div>
-                <div id="edal-report-title-long" class="col-auto text-center my-auto">$repositoryNameLong</div>
-                <div id="edal-report-title-short" class="col-auto text-center my-auto">$repositoryNameShort</div>
-                #if( $InstituteLogo)
-                <div class="col text-right pt-1">
-                  <a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="/institute_logo.png"/></a>
-                </div>
-                #else
-                <div class="col text-right pt-1">
-                  <a target="_blank" href="$publisherUrl"><img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg"/></a>
-                </div>
-                #end
-
-              </div>
-            </div>
-          </nav>
-          <div id="controls" class="pb-2 pt-1">
-            <div class="pl-3 form-row pb-1" style="color:white;text-shadow:2px 2px 2px rgba(0,0,0,0.2);">
-              <span class="flex-col h2 mr-1 my-auto">Search</span>
-              <div class="flex-col my-auto">
-                <Button class="form-control form-control-sm ml-2 builder-Button" id="collapseButton" data-tooltip="Hier könnte ihre Werbung stehen" style="cursor: pointer;height:28px" type="button" name="collapseButton" onclick="collapse()">Advanced
-                </Button>
-              </div>
-              <span class="col h6 collapsible pl-4 my-auto" id="statisticsSpan" style="display:inline-block;">
-                <div class="content" id="collapsible-content">
-
-                  <div class="form-row" style="max-width:800px">
-                    <div class="col">
-                      <label class="h5" for="scales">Fuzzy</label>
-                    </div>
-                    <div class="col">
-                      <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales"></div>
-
-                      <div class="col">
-                        <label class="h5" for="fname">Type:</label>
-                      </div>
-
-                      <div class="col">
-                        <select class="form-control form-control-sm" id="element" name="element" size="1" style="min-width:140px">
-                          <option value="Title">Title/Filename</option>
-                          <option>Description</option>
-                          <option>Creator</option>
-                          <option>Contributor</option>
-                          <option>Legalperson</option>
-                          <option>Subject</option>
-                          <option>Language</option>
-                          <option value="Filetype">File extension</option>
-                          <option>Checksum</option>
-                          <option value="Allfields">Search All types</option>
-                        </select>
-                      </div>
-
-                      <div class="col">
-                        <label class="h5" style="white-space: nowrap;">Search term:</label>
-                      </div>
-
-                      <div class="col">
-                        <input class="form-control form-control-sm" list="auto-complete" style="min-width:140px;height:28px" id="searchterm" type="text" name="searchterm">
-                          <datalist id="auto-complete"></datalist>
-                        </input>
-                      </div>
-
-                      <div class="col">
-                        <select class="form-control form-control-sm" id="occur" name="occur" size="1" style="min-width:140px">
-                          <option value="MUST">Must occur</option>
-                          <option value="MUST_NOT">Must not occur</option>
-                        </select>
-                      </div>
-
-                      <div class="col">
-                        <button class="form-control form-control-sm builder-Button" style="height:28px" id="addButton" type="button" name="button" onclick="EdalReport.build()">+</button>
-                      </div>
-
-                    </div>
+                  <div class="hittypelabel pl-2">
+                    <label style="margin-bottom:0;" for="">Result types:</label>
                   </div>
-                </span>
-              </div>
-              <div class="px-3 clearfix" style="background:rgba(255,255,255,0.2);padding:4px 0 3px 0;">
-                <div class="mr-5" style="display:flex;color:white;width:100%;">
-                      <input class="form-control form-control-sm clearable mr-2" style="width:35%;" id="query" type="text" name="query" placeholder="Search..."></input>
-                      <div class="row">
-                      <button class="col form-control form-control-sm builder-Button ml-3" id="searchButton" style="width:8em" type="button" name="searchbutton" onclick="EdalReport.search()">Search<i id="loading-indicator" class="fa fa-circle-o-notch fa-spin ml-1" style="display:none;"></i></button>
-
-                      <button class="col form-control form-control-sm builder-Button ml-2" id="clear-tabs-filters" style="width:auto" type="button" name="clear-button" onclick="EdalReport.clearFiltersTabs()">Clear filters</button>
-                    </div>
-                  <!-- <div id="edal-report-filter-container" class="mr-3"> <span class="mr-2">Filter:</span> <select id="edal-report-year-filter"> <option value="All">All</option> </select> </div> -->
-                </div>
-              </div>
-            </div>
-
-            <div id="grid-container-table-and-map">
-              <div id="edal-report-table-container" class="pr-3" style="overflow-y: hidden;">
-                <div id="edal-report-table-inner-container">
-                  <div id="edal-report-filter" class="flex-column custom-scroll">
-
-                    <div class="hittypelabel pl-2">
-                      <label style="margin-bottom:0;" for="">Result types:</label>
-                    </div>
-                    <div class="hittypeinput mb-1 pb-2">
-                      <div id="radioContainer">
+                  <div class="hittypeinput mb-1 pb-2">
+                    <div id="radioContainer">
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
+                          <label class="form-check-label" for="exampleRadios1">
+                            Datasets
+                          </label>
+                        </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
-                            <label class="form-check-label" for="exampleRadios1">
-                              Datasets
+                          <input class="form-check-input" type="radio" name="hitType" id="exampleRadios2" value="$file" onclick="EdalReport.filterChange()">
+                            <label class="form-check-label" for="exampleRadios2">
+                              Files
                             </label>
                           </div>
                           <div class="form-check">
-                            <input class="form-check-input" type="radio" name="hitType" id="exampleRadios2" value="$file" onclick="EdalReport.filterChange()">
-                              <label class="form-check-label" for="exampleRadios2">
-                                Files
+                            <input class="form-check-input" type="radio" name="hitType" id="exampleRadios3" value="$directory" onclick="EdalReport.filterChange()">
+                              <label class="form-check-label" for="exampleRadios3">
+                                Directories
                               </label>
                             </div>
-                            <div class="form-check">
-                              <input class="form-check-input" type="radio" name="hitType" id="exampleRadios3" value="$directory" onclick="EdalReport.filterChange()">
-                                <label class="form-check-label" for="exampleRadios3">
-                                  Directories
-                                </label>
-                              </div>
-                            </div>
                           </div>
-                              <label class="pl-2" for="amount" style="width:38%;">Creation year:</label>
-                              <span class="pl-1" id="date-label"  style="color:#333; font-weight:bold;"></span>
-                              <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                              <div id="slider-range" class="jqslider"></div>
-                            </div>
+                        </div>
+                        <label class="pl-2" for="amount" style="width:38%;">Creation year:</label>
+                        <span class="pl-1" id="date-label" style="color:#333; font-weight:bold;"></span>
+                        <div class="px-3 pb-3 mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                          <div id="slider-range" class="jqslider"></div>
+                        </div>
 
-                            <label class="pl-2 opacity-change" for="amount" style="width:38%;">File size:</label>
-                            <span class="pl-1 opacity-change" id="file-size-label" style="color:#333; font-weight:bold;"></span>
-                            <div class="px-3 pb-3 mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                            <div id="slider-filesize" class="jqslider"></div>
+                        <label class="pl-2 opacity-change" for="amount" style="width:38%;">File size:</label>
+                        <span class="pl-1 opacity-change" id="file-size-label" style="color:#333; font-weight:bold;"></span>
+                        <div class="px-3 pb-3 mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                          <div id="slider-filesize" class="jqslider"></div>
+                        </div>
+
+                        <div>
+                          <div class="filetypelabel centerclass pl-2 opacity-change" style="width:50%;float:left;">
+                            <label style="margin-bottom:0;" for="">File extension:
+                            </label>
                           </div>
-
-                          <div>
-                            <div class="filetypelabel centerclass pl-2 opacity-change" style="width:50%;float:left;">
-                              <label style="margin-bottom:0;" for="">File extension:
-                              </label></div>
-                              <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                              <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
-                                <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled name="top5" size="1">
-                                  <option>*</option>
-                                  #foreach($obj in $filetypes)
-                                  <option value="$obj">$obj</option>
-                                  #end
-                                </select>
-                              </div>
-                            </div>
-                            </div>
-
-                          <div>
-                            <div class="facetedContainer" id="jsTreeData">
-
-                              <ul id="myUL">
-                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <span class="caret decoration-underline caret-down">Creator</span>
-                                  <ul class="nested active" id="CreatorUl"></ul>
-                                </li>
-                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <span class="caret decoration-underline caret-down">Contributor</span>
-                                  <ul class="nested active" id="ContributorUl"></ul>
-                                </li>
-                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <span class="caret decoration-underline caret-down">Subject</span>
-                                  <ul class="nested active" id="SubjectUl"></ul>
-                                </li>
-                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <span class="caret decoration-underline caret-down">Title</span>
-                                  <ul class="nested active" id="TitleUl"></ul>
-                                </li>
-                                <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                                  <span class="caret decoration-underline caret-down">Description</span>
-                                  <ul class="nested active" id="DescriptionUl"></ul>
-                                </li>
-                              </ul>
-
+                          <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                            <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
+                              <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled="disabled" name="top5" size="1">
+                                <option>*</option>
+                                #foreach($obj in $filetypes)
+                                <option value="$obj">$obj</option>
+                                #end
+                              </select>
                             </div>
                           </div>
                         </div>
-                        <ul class="p-1 mt-2 custom-scroll" id="query-ul"></ul>
-                        <div class="pl-3 mt-1" style="grid-column-start: 2;grid-row-start: 2;">
-                          <div id="result-stats"></div>
+
+                        <div>
+                          <div class="facetedContainer" id="jsTreeData">
+
+                            <ul id="myUL">
+                              <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <span class="caret decoration-underline caret-down">Creator</span>
+                                <ul class="nested active" id="CreatorUl"></ul>
+                              </li>
+                              <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <span class="caret decoration-underline caret-down">Contributor</span>
+                                <ul class="nested active" id="ContributorUl"></ul>
+                              </li>
+                              <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <span class="caret decoration-underline caret-down">Subject</span>
+                                <ul class="nested active" id="SubjectUl"></ul>
+                              </li>
+                              <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <span class="caret decoration-underline caret-down">Title</span>
+                                <ul class="nested active" id="TitleUl"></ul>
+                              </li>
+                              <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
+                                <span class="caret decoration-underline caret-down">Description</span>
+                                <ul class="nested active" id="DescriptionUl"></ul>
+                              </li>
+                            </ul>
+
+                          </div>
                         </div>
-                        <div id="table-column" class="pl-3">
-                          <table id="report" class="table table-hover table-bordered table-sm search-table" width="100%"></table>
-                        </div>
+                      </div>
+                      <ul class="p-1 mt-2 custom-scroll" id="query-ul"></ul>
+                      <div class="pl-3 mt-1" style="grid-column-start: 2;grid-row-start: 2;">
+                        <div id="result-stats"></div>
+                      </div>
+                      <div id="table-column" class="pl-3">
+                        <table id="report" class="table table-hover table-bordered table-sm search-table" width="100%"></table>
                       </div>
                     </div>
                   </div>
-
-                  <footer class="footer">
-                    <div class="container">
-                      <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort()</span>
-                    </div>
-                  </footer>
                 </div>
 
-                <!----------------------------------- -------- Edal Report Javascript ------- -------------------------------------->
-                <script src="$serverURL/JS/edal_search.js"></script>
-                <script>
+                <footer class="footer">
+                  <div class="container">
+                    <span class="text-muted">e!DAL-Server at $serverURL.getHost():$serverURL.getPort()</span>
+                  </div>
+                </footer>
+              </div>
 
-                  var serverURL = "$serverURL";
-                  var minYear = "$minYear";
-                  var maxYear = "$maxYear";
-                  var maxFileSize = "$maxFileSize";
-                  var reportData = [];
-                  var mapData = [];
-                  var filetypes = [
-                    #foreach($obj in $filetypes)"$obj",
-                    #end
-                  ];
+              <!----------------------------------- -------- Edal Report Javascript ------- -------------------------------------->
+              <script src="$serverURL/JS/edal_search.js"></script>
+              <script>
+                #if($initQuery)
+                var initQuery = "$initQuery";
+                #else
+                var initQuery = null;
+                #end
+                var serverURL = "$serverURL";
+                var minYear = "$minYear";
+                var maxYear = "$maxYear";
+                var maxFileSize = "$maxFileSize";
+                var reportData = [];
+                var mapData = [];
+                var filetypes = [
+                  #foreach($obj in $filetypes)"$obj",
+                  #end
+                ];
 
-                  function hideModalDialog() {
-                    document.getElementById("myModal").style.display = "none";
+                function hideModalDialog() {
+                  document.getElementById("myModal").style.display = "none";
+                }
+
+                window.onclick = function (event) {
+                  var modal = document.getElementById("myModal");
+                  if (event.target == modal) {
+                    modal.style.display = "none";
                   }
+                }
+              </script>
 
-                  window.onclick = function (event) {
-                    var modal = document.getElementById("myModal");
-                    if (event.target == modal) {
-                      modal.style.display = "none";
-                    }
+              <script>
+                EdalReport.init(reportData, mapData);
+                if ("$backendMessage" != "") {
+                  alert("$backendMessage");
+                }
+
+                function expon(val, min, max) {
+                  var minv = Math.log(min);
+                  var maxv = Math.log(max);
+                  max = max / 2;
+
+                  // calculate adjustment factor
+                  var scale = (maxv - minv) / (max - min);
+
+                  return Math.exp(minv + scale * (val - min));
+                }
+
+                function collapse() {
+                  var element = document.getElementsByClassName("collapsible");
+                  var content = document.getElementById("collapsible-content");
+                  if (content.style.display === "block") {
+                    content.style.display = "none";
+                  } else {
+                    content.style.display = "block";
                   }
-                </script>
+                }
 
-                <script>
-                  EdalReport.init(reportData, mapData);
-                  if("$backendMessage" != ""){
-                    alert("$backendMessage");
-                  }
+                function tog(v) {
+                  return v
+                    ? "addClass"
+                    : "removeClass";
+                }
+                $(document).on("input", ".clearable", function () {
+                  $(this)[tog(this.value)]("x");
+                }).on("mousemove", ".x", function (e) {
+                  $(this)[tog(this.offsetWidth - 18 < e.clientX - this.getBoundingClientRect().left)]("onX");
+                }).on("touchstart click", ".onX", function (ev) {
+                  ev.preventDefault();
+                  $(this).removeClass("x onX").val("").change();
+                  EdalReport.reportData = [];
+                  EdalReport.currentRequestData = {};
+                  EdalReport.resetTermList();
+                  $('#report').DataTable().clear().draw();
+                });
 
+                $('#filesize').change(function () {
+                  $('#filesizelow').prop('disabled', !this.checked);
+                  $('#filesizehigh').prop('disabled', !this.checked);
+                  $('#filesizelowbyte').prop('disabled', !this.checked);
+                  $('#filesizehighbyte').prop('disabled', !this.checked);
+                });
+              </script>
 
-                  function expon(val, min,max) {
-                      var minv = Math.log(min);
-                      var maxv = Math.log(max);
-                      max = max / 2;
-
-                      // calculate adjustment factor
-                      var scale = (maxv - minv) / (max - min);
-
-                      return Math.exp(minv + scale * (val - min));
-                  }
-
-                  function collapse() {
-                    var element = document.getElementsByClassName("collapsible");
-                    var content = document.getElementById("collapsible-content");
-                    if (content.style.display === "block") {
-                      content.style.display = "none";
-                    } else {
-                      content.style.display = "block";
-                    }
-                  }
-
-                  function tog(v) {
-                    return v
-                      ? "addClass"
-                      : "removeClass";
-                  }
-                  $(document).on("input", ".clearable", function () {
-                    $(this)[tog(this.value)]("x");
-                  }).on("mousemove", ".x", function (e) {
-                    $(this)[tog(this.offsetWidth - 18 < e.clientX - this.getBoundingClientRect().left)]("onX");
-                  }).on("touchstart click", ".onX", function (ev) {
-                    ev.preventDefault();
-                    $(this).removeClass("x onX").val("").change();
-                    EdalReport.reportData = [];
-                    EdalReport.currentRequestData = {};
-                    EdalReport.resetTermList();
-                    $('#report').DataTable().clear().draw();
-                  });
-
-
-                  $('#filesize').change(function () {
-                    $('#filesizelow').prop('disabled', !this.checked);
-                    $('#filesizehigh').prop('disabled', !this.checked);
-                    $('#filesizelowbyte').prop('disabled', !this.checked);
-                    $('#filesizehighbyte').prop('disabled', !this.checked);
-                  });
-                </script>
-
-              </body>
-            </html>
+            </body>
+          </html>

@@ -147,71 +147,75 @@ let EdalReport = new function() {
 
     /* used to search with the currentRequestData and to process the results */
     this.search = function(){
-      let self = this;
-      var queryValue = document.getElementById('query').value;
-      document.getElementById("loading-indicator").style.display="inline-block";
-      ID++;
-      let requestId = ID;
-      let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
-      self.currentRequestData = requestData;
-      //check if search is useful because of a potential selected file type
-      var fileTypeSelected = false;
-      if(self.filters.length > 0){
-        for(i = 0; i < self.filters.length; i++){
-          fileTypeSelected = self.filters[i].type == FILETYPE;
-          if(fileTypeSelected){
-            break;
+      return new Promise((resolve, reject)=>{
+        let self = this;
+        var queryValue = document.getElementById('query').value;
+        document.getElementById("loading-indicator").style.display="inline-block";
+        ID++;
+        let requestId = ID;
+        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
+        self.currentRequestData = requestData;
+        //check if search is useful because of a potential selected file type
+        var fileTypeSelected = false;
+        if(self.filters.length > 0){
+          for(i = 0; i < self.filters.length; i++){
+            fileTypeSelected = self.filters[i].type == FILETYPE;
+            if(fileTypeSelected){
+              break;
+            }
           }
         }
-      }
-      console.log("boolean: "+fileTypeSelected);
-      if(self.queries.length > 0 || queryValue != "" || fileTypeSelected){
-        $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
-        reportData = data.results;
-        if(ID == requestId){
-          if(data.parsedQuery != null && data.parsedQuery != ""){
-            const queryIndex = self.queries.length;
-            self.queries.push(data.parsedQuery);
-            self.addTab(data.parsedQuery,queryIndex);
+        console.log("boolean: "+fileTypeSelected);
+        if(self.queries.length > 0 || queryValue != "" || fileTypeSelected){
+          $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
+          reportData = data.results;
+          if(ID == requestId){
+            if(data.parsedQuery != null && data.parsedQuery != ""){
+              const queryIndex = self.queries.length;
+              self.queries.push(data.parsedQuery);
+              self.addTab(data.parsedQuery,queryIndex);
+            }
+            self.currentRequestData.existingQuery = data["parsedQuery"];
+            self.facetedTerms();
+            var currentPage = 0;
+            var history = data.pageArray;
+            self.hitSize = data.hitSizeDescription+' '+data.hitSize;
+            self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
+            self.reportData = data.results;
+            self.datatable.destroy();
+            $("#report tbody").empty();
+            $("#report thead").empty();
+            console.log("pagearray");
+            console.log(data.pageArray);
+            if(requestData.hitType == "dataset"){
+              self.renderDatatableReports();
+            }else if(requestData.hitType == "singledata"){
+              self.renderDatatableFiles();
+            }else if(requestData.hitType == "directory"){
+              self.renderDatatableDirectories();
+            }
+            self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
+            document.getElementById("loading-indicator").style.display="none";
+            if (typeof data.results !== 'undefined'){
+                document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
+            }else{
+                document.getElementById("result-stats").innerHTML = 'No results found';
+            }
           }
-          self.currentRequestData.existingQuery = data["parsedQuery"];
-          self.facetedTerms();
-          var currentPage = 0;
-          var history = data.pageArray;
-          self.hitSize = data.hitSizeDescription+' '+data.hitSize;
-          self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
-          self.reportData = data.results;
-          self.datatable.destroy();
-          $("#report tbody").empty();
-          $("#report thead").empty();
-          console.log("pagearray");
-          console.log(data.pageArray);
-          if(requestData.hitType == "dataset"){
-            self.renderDatatableReports();
-          }else if(requestData.hitType == "singledata"){
-            self.renderDatatableFiles();
-          }else if(requestData.hitType == "directory"){
-            self.renderDatatableDirectories();
-          }
-          self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
-          document.getElementById("loading-indicator").style.display="none";
-          if (typeof data.results !== 'undefined'){
-              document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
-          }else{
-              document.getElementById("result-stats").innerHTML = 'No results found';
-          }
+          });
+          $("#query").val("");
+        }else{
+          self.reportData = [];
+          self.currentRequestData = {};
+          self.resetTermList();
+          $('#report').DataTable().clear().draw();
+          $('#ul_pagination').empty();
+          $('#result-stats').text('No results found');
+          $('#loading-indicator').css('display','none');
         }
-        });
-        $("#query").val("");
-      }else{
-        self.reportData = [];
-        self.currentRequestData = {};
-        self.resetTermList();
-        $('#report').DataTable().clear().draw();
-        $('#ul_pagination').empty();
-        $('#result-stats').text('No results found');
-        $('#loading-indicator').css('display','none');
-      }
+        resolve();
+      });
+
     }
 
     /* clears the queries, filtetypes select, factedTerms */
@@ -619,7 +623,7 @@ let EdalReport = new function() {
           self.pageSize = self.pageSize - self.pageSize%5;
           console.log("new height :"+self.pageSize);
         }
-        $(document).ready(function() {
+        $(document).ready(async function() {
             $.fn.isInViewport = function() {
                 var elem = $(this);
                 var elementTop = elem.position().top;
@@ -677,9 +681,16 @@ let EdalReport = new function() {
             $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
             $('#slider-filesize').slider("disable");
             $('.opacity-change').css('opacity','0.5');
-            self.resetTermList();
+            self.initTermLists();
             self.renderDatatableReports();
-            self.manipulateDataTable([],null,[]);
+            if(initQuery !== ""){
+              console.log("change query val to "+initQuery);
+              $('#query').val(initQuery);
+              await self.search();
+            }else{
+              self.manipulateDataTable([],null,[]);
+            }
+            window.history.replaceState(null, null, window.location.pathname);
         });
     };
 
@@ -697,6 +708,22 @@ let EdalReport = new function() {
         self.titles = data[TITLE];
         self.descriptions = data[DESCRIPTION];
         self.facetedTerms();
+      });
+    }
+
+    /* resets term lists and calls EdalReport.facetedTerms() to count hits for
+     every search term which depend on the current set queries*/
+    this.initTermLists = function(){
+      let self = this;
+      self.currentRequestData.existingQuery = document.getElementById("query").value;
+      self.currentRequestData.filters = self.filters;
+      self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
+      $.post("/rest/extendedSearch/getTermLists", function(data){
+        self.creators = data[PERSON];
+        self.contributors = data[CONTRIBUTOR];
+        self.subjects = data[SUBJECT];
+        self.titles = data[TITLE];
+        self.descriptions = data[DESCRIPTION];
       });
     }
 

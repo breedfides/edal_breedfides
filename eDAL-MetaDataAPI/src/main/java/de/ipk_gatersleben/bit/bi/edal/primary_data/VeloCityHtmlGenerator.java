@@ -1473,10 +1473,12 @@ class VeloCityHtmlGenerator {
 	 * @return the HTML output in a {@link StringWriter}.
 	 * @throws EdalException if unable to create output.
 	 */
-	protected StringWriter generateHtmlForSearch(final HttpStatus.Code responseCode, final Code responseCode2)
-			throws EdalException {
-		
+	public Object generateHtmlForSearch(Code responseCode, String searchBarQuery) throws EdalException {
 		final VelocityContext context = new VelocityContext();
+		
+
+		context.put("initQuery", searchBarQuery);
+		
 		/* set the charset */
 		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
@@ -1531,6 +1533,7 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
+	
 
 	/**
 	 * @return
@@ -1790,6 +1793,5 @@ class VeloCityHtmlGenerator {
 	public static int getMaxYear() {
 		return maxYear;
 	}
-
 
 }

@@ -1348,9 +1348,25 @@ public class EdalHttpHandler extends AbstractHandler {
 		}
 	}
 	
-	private void sendSearch(HttpServletResponse response, Code ok, String searchBarQuery) {
-		// TODO Auto-generated method stub
-		
+	//create and send search template if there is a query set as parameter
+	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode, String searchBarQuery) {
+		try {
+
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, searchBarQuery).toString();
+
+			response.setStatus(responseCode.getCode());
+
+			response.setContentType("text/html");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
+
+		} catch (EofException eof) {
+			// Do nothing, because response was already send
+		} catch (IOException | EdalException e) {
+			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
+		}		
 	}
 	
 	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode) {
@@ -1358,7 +1374,7 @@ public class EdalHttpHandler extends AbstractHandler {
 		
 		try {
 
-			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, responseCode).toString();
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, null).toString();
 
 			response.setStatus(responseCode.getCode());
 
