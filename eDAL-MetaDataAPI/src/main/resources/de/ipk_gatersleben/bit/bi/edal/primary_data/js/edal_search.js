@@ -149,6 +149,7 @@ let EdalReport = new function() {
     this.search = function(){
       return new Promise((resolve, reject)=>{
         let self = this;
+        self.build();
         var queryValue = document.getElementById('query').value;
         document.getElementById("loading-indicator").style.display="inline-block";
         ID++;
@@ -165,7 +166,6 @@ let EdalReport = new function() {
             }
           }
         }
-        console.log("boolean: "+fileTypeSelected);
         if(self.queries.length > 0 || queryValue != "" || fileTypeSelected){
           $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
           reportData = data.results;
@@ -185,8 +185,6 @@ let EdalReport = new function() {
             self.datatable.destroy();
             $("#report tbody").empty();
             $("#report thead").empty();
-            console.log("pagearray");
-            console.log(data.pageArray);
             if(requestData.hitType == "dataset"){
               self.renderDatatableReports();
             }else if(requestData.hitType == "singledata"){
@@ -264,10 +262,8 @@ let EdalReport = new function() {
       innerSpan.innerHTML = '&times';
       span.appendChild(innerSpan);
       innerSpan.onclick = function(){
-        console.log("trying to delete tab with index: "+i +" fro marray with_ elemnts "+self.queries.length);
         if(self.queries.length > 1){
           self.queries.splice(i,1);
-          console.log("spliced queries to: "+self.queries);
         }else{
           self.queries = [];
           document.getElementById("query-ul").style.display = "none";
@@ -289,7 +285,6 @@ let EdalReport = new function() {
 
     /* count hits for a list of terms and a specific ul and appends <li> elements to that list */
     this.countFacetedTerms = async function(type, terms, ul){
-      console.log("countingfacetedTerms for type: "+type+" ("+terms.length+")");
       let self = this;
       var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
       let requestId = ID;
@@ -509,7 +504,6 @@ let EdalReport = new function() {
       currentRequestData["displayedPage"] = page;
       currentRequestData["existingQuery"] = "";
       currentRequestData["queries"] = self.queries;
-      console.log(currentRequestData);
       $.post("/rest/extendedSearch/search", JSON.stringify(currentRequestData), function(data){
       reportData = data.results;
       if(ID == requestId){
@@ -530,13 +524,11 @@ let EdalReport = new function() {
               history.push(data.pageArray[j]);
             }
           offset = index+4;
-          console.log("index= "+index+"offset= "+offset+" history.length_"+history.length);
           if(offset > history.length){
             i -= offset-history.length;
             if(history.length > 10){
               i--;
             }
-            console.log("index adjusted to: "+i);
           }
           }
         }else{
@@ -586,15 +578,12 @@ let EdalReport = new function() {
         let filesize = document.getElementById("filesize");
         let lower_handle_index = $('#slider-filesize').slider("values")[0];
         let upper_handle_index = $('#slider-filesize').slider("values")[1];
-        console.log("lower: "+lower_handle_index+" upper: "+upper_handle_index);
         if(lower_handle_index > $("#slider-filesize").slider("option", "min") || upper_handle_index < $("#slider-filesize").slider("option", "max")){
-          console.log("#################### adding filesize filter");
           let lowbound = parseInt(this.rangeSizeValues[lower_handle_index][0]);
           let highbound = parseInt(this.rangeSizeValues[upper_handle_index][0]);
           let lowerSize = this.rangeSizeValues[lower_handle_index][1];
           let higherSize = this.rangeSizeValues[upper_handle_index][1];
           this.filters.push({"type":SIZE,"lower":this.reverseNiceBytes(lowbound,lowerSize),"upper":this.reverseNiceBytes(highbound,higherSize),"fuzzy":false,"Occur":"And"});
-          console.log(this.filters);
         }
         let suffix = document.getElementById("suffix");
         let suffixValue = document.getElementById("suffixesSelect").value;
@@ -619,9 +608,7 @@ let EdalReport = new function() {
         this.reportDataKeyed = _.keyBy(reportData, 'doi');
         let self = this;
         if(self.pageSize > 5){
-          console.log("height > 5 :"+self.pageSize+" getting subtracted by "+self.pageSize%5);
           self.pageSize = self.pageSize - self.pageSize%5;
-          console.log("new height :"+self.pageSize);
         }
         $(document).ready(async function() {
             $.fn.isInViewport = function() {
@@ -684,12 +671,21 @@ let EdalReport = new function() {
             self.initTermLists();
             self.renderDatatableReports();
             if(initQuery !== ""){
-              console.log("change query val to "+initQuery);
               $('#query').val(initQuery);
               await self.search();
             }else{
               self.manipulateDataTable([],null,[]);
             }
+            $('#query').on('keypress',function(e) {
+                if(e.which == 13) {
+                    self.search();
+                }
+            });
+            $('#searchterm').on('keypress',function(e) {
+                if(e.which == 13) {
+                    self.search();
+                }
+            });
             window.history.replaceState(null, null, window.location.pathname);
         });
     };
@@ -762,7 +758,7 @@ let EdalReport = new function() {
                     width: "25%",
                     class: "edal-report-doi",
                     render: function (data, type, row) {
-                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                        return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
                     }
                 },
                 {
@@ -770,6 +766,28 @@ let EdalReport = new function() {
                     width: "10%",
                     data: "ext",
                     class: "edal-report-title"
+                },
+                {
+                    title: "File size",
+                    width: "10%",
+                    data: "size",
+                    class: "text-center",
+                    render: function (data, type, row) {
+                        if (type === "display") {
+                            return self.niceBytes(parseInt(data));
+                        } else {
+                            return data;
+                        }
+                    }
+                },
+                {
+                    title: "DOI",
+                    data: "doi",
+                    width: "10%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+                    }
                 },
                 {
                     title: "Dataset",
@@ -816,6 +834,15 @@ let EdalReport = new function() {
                     class: "edal-report-doi",
                     render: function (data, type, row) {
                         return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                    }
+                },
+                {
+                    title: "DOI",
+                    data: "doi",
+                    width: "10%",
+                    class: "edal-report-doi",
+                    render: function (data, type, row) {
+                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
                     }
                 },
                 {
@@ -885,8 +912,6 @@ let EdalReport = new function() {
       if(typeof numbers == 'undefined' || numbers.length == 0){
         return;
       }
-      console.log("number array when creating pagination ");
-      console.log(numbers);
       let self = this;
       self.currentRequestData = currentRequestData;
       var currentPage = currentRequestData.displayedPage;
@@ -910,7 +935,6 @@ let EdalReport = new function() {
       for(i = 0; i < numbers.length; i++){
         if(history[currentIndex].page != numbers[i].page){
           const index = i;
-          console.log("numbers["+index+"].page == "+numbers[index].page);
           document.getElementById("page"+numbers[index].page).onclick = function(){
             self.changePage(numbers[index].index, numbers[index].page, currentRequestData, history);
           }
@@ -922,7 +946,6 @@ let EdalReport = new function() {
         nextBtn.onclick = function(){
           var nextIndex = currentIndex+1;
           var nextPage = currentPage+1;
-          console.log("nextIndex = "+nextIndex+" nextpage="+nextPage)
           self.changePage(nextIndex, nextPage, currentRequestData, history);
         };
       }
@@ -932,36 +955,10 @@ let EdalReport = new function() {
         nextBtn.onclick = function(){
           var prevIndex = currentIndex-1;
           var prevPage = currentPage-1;
-          console.log("prevIndex = "+prevIndex+" prevpage="+prevPage)
           self.changePage(prevIndex, prevPage, currentRequestData, history);
         };
       }
     }
-
-    // /*  */
-    // this.typeChange = function() {
-    //       //clear old recommendations
-    //       var searchTerm = document.getElementById("searchterm");
-    //       var dl = document.getElementById("auto-complete");
-    //       dl.parentNode.removeChild(dl);
-    //       //add new recommendations
-    //       dl = document.createElement('datalist');
-    //       dl.id="auto-complete";
-    //       var type = document.getElementById("element").value;
-    //       switch(type){
-    //         case FILETYPE:
-    //           for (i = 0; i < 8; i++) {
-    //             console.log(filetypes[i]);
-    //             var el = document.createElement("option");
-    //             el.textContent = filetypes[i];
-    //             dl.appendChild(el);
-    //           }
-    //           break;
-    //         default:
-    //       }
-    //       searchTerm.appendChild(dl);
-    // }
-
     /* converts bytes to the human readable equivalent */
     this.niceBytes = function(bytes) {
       let self = this;

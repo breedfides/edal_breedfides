@@ -1139,6 +1139,7 @@ public class DataManager {
 		return new HashSet<Integer>();
 	}
 
+	@SuppressWarnings("unchecked")
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
 		if (((int) (long) jsonArray.get("pageIndex")) > 0) {
 			int lol = 420;
@@ -1222,15 +1223,22 @@ public class DataManager {
 				obj.put("ext", "");
 				obj.put("type", "record");
 			} else {
+				try {
+					obj.put("doi", reference.getAssignedID());
+				} catch (PublicReferenceException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				String ext = doc.get(MetaDataImplementation.FILETYPE);
-				String doi = doc.get(PublicVersionIndexWriterThread.INTERNALID) + "/"
+				String link = doc.get(PublicVersionIndexWriterThread.INTERNALID) + "/"
 						+ doc.get(MetaDataImplementation.PRIMARYENTITYID) + "/"
 						+ doc.get(PublicVersionIndexWriterThread.REVISION);
 				PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class,
 						doc.get(MetaDataImplementation.PRIMARYENTITYID));
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
-				obj.put("doi", doi);
+				obj.put("link", link);
 				obj.put("fileName", file.toString());
+				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");

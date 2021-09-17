@@ -25,9 +25,8 @@
           box-sizing: border-box;
           margin-bottom: 0;
         }
-        #if($MatomoTemplate) $MatomoTemplate #end
       </style>
-
+        #if($MatomoTemplate) $MatomoTemplate #end
   </head>
 
   <body>
@@ -93,7 +92,7 @@
                     <label class="h5" for="scales">Fuzzy</label>
                   </div>
                   <div class="col">
-                    <input class="form-control form-control-sm" style="min-height:1%" type="checkbox" id="fuzzy" name="scales"></div>
+                    <input class="form-control form-control-sm" style="min-height:1%;box-shadow:none !important;" type="checkbox" id="fuzzy" name="scales"></div>
 
                     <div class="col">
                       <label class="h5" for="fname">Type:</label>
@@ -132,7 +131,7 @@
                     </div>
 
                     <div class="col">
-                      <button class="form-control form-control-sm builder-Button" style="height:28px" id="addButton" type="button" name="button" onclick="EdalReport.build()">+</button>
+                      <button class="form-control form-control-sm builder-Button" style="height:28px;width:32px;font-weight: bold;" id="addButton" type="button" name="button" onclick="EdalReport.build()">+</button>
                     </div>
 
                   </div>
