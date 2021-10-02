@@ -40,6 +40,7 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.TieredMergePolicy;
@@ -140,19 +141,8 @@ public class FileSystemImplementationProvider
 			"were", "what", "when", "which", "while", "with", "within", "without", "would");
 
 	private IndexWriter writer = null;
-	public IndexWriter getWriter() {
-		return writer;
-	}
 
 	private boolean hibernateIndexing = false;
-
-	public boolean isHibernateIndexing() {
-		return hibernateIndexing;
-	}
-
-	public void setHibernateIndexing(boolean hibernateIndexing) {
-		this.hibernateIndexing = hibernateIndexing;
-	}
 
 	private boolean autoIndexing;
 
@@ -165,10 +155,8 @@ public class FileSystemImplementationProvider
 	private SessionFactory sessionFactory = null;
 	private Path indexDirectory = null;
 	private CacheManager cacheManager = null;
-
-	public Path getIndexDirectory() {
-		return this.indexDirectory;
-	}
+	
+	private Directory facetDirectory = null;
 
 	public FileSystemImplementationProvider(
 			EdalConfiguration configuration) {
@@ -454,6 +442,13 @@ public class FileSystemImplementationProvider
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				DirectoryTaxonomyWriter taxoWriter = null;
+				try {
+					this.facetDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(), "Facets"));
+					taxoWriter = new DirectoryTaxonomyWriter(facetDirectory);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				indexWriterThreads
 						.add(new NativeLuceneIndexWriterThread(
 								this.getSessionFactory(),
@@ -463,7 +458,7 @@ public class FileSystemImplementationProvider
 						.add(new PublicVersionIndexWriterThread(
 								this.getSessionFactory(),
 								this.indexDirectory, this.logger,
-								writer));
+								writer,taxoWriter));
 				this.countDownLatch = new CountDownLatch(
 						indexWriterThreads.size());
 				indexWriterThreads.get(0).setCountDownLatch(this.countDownLatch);
@@ -830,6 +825,27 @@ public class FileSystemImplementationProvider
 			return existingRootDirectoryOrg;
 		}
 
+	}
+	
+	public boolean isHibernateIndexing() {
+		return hibernateIndexing;
+	}
+	
+	public IndexWriter getWriter() {
+		return writer;
+	}
+
+
+	public void setHibernateIndexing(boolean hibernateIndexing) {
+		this.hibernateIndexing = hibernateIndexing;
+	}
+	
+	public Directory getFacetDirectory() {
+		return facetDirectory;
+	}
+
+	public Path getIndexDirectory() {
+		return this.indexDirectory;
 	}
 
 	/**

@@ -771,7 +771,7 @@ let EdalReport = new function() {
                     title: "File size",
                     width: "10%",
                     data: "size",
-                    class: "text-center",
+                    class: "edal-report-title",
                     render: function (data, type, row) {
                         if (type === "display") {
                             return self.niceBytes(parseInt(data));

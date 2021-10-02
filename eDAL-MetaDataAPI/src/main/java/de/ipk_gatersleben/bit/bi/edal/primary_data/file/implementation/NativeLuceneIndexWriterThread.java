@@ -287,20 +287,20 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new TextField(MetaDataImplementation.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
 		doc.add(new TextField(MetaDataImplementation.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
 				Store.YES));
-		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.YES));
+		doc.add(new TextField(MetaDataImplementation.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.NO));
 		StringBuilder builder = new StringBuilder();
 		doc.add(new TextField(MetaDataImplementation.IDENTIFIER,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.YES));		
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.NO));		
 		doc.add(new TextField(MetaDataImplementation.RELATEDIDENTIFIERTYPE,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.YES));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.NO));
 		doc.add(new TextField(MetaDataImplementation.RELATIONTYPE,
-				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.YES));
+				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.NO));
 		
 		doc.add(new TextField(MetaDataImplementation.SIZE,
 				String.format("%014d",((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
 		
 		doc.add(new TextField(MetaDataImplementation.LANGUAGE,
-				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.YES));
+				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.NO));
 		Persons creators = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
 		for (Person currentPerson : creators) {
 			builder.setLength(0);
@@ -357,12 +357,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(" ");
 				builder.append(checkSum.getCheckSum());
 				builder.append(", ");
-				doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getAlgorithm(), Store.YES));
+				doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getAlgorithm(), Store.NO));
 			}
 		}else if(checkSums.size() == 1) {
 			CheckSumType checkSum = checkSums.iterator().next();
-			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.YES));
-			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.ALGORITHM, checkSum.getAlgorithm(), Store.NO));
+			doc.add(new TextField(MetaDataImplementation.CHECKSUM, checkSum.getCheckSum(), Store.NO));
 		}
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
 		builder.setLength(0);
@@ -380,7 +380,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(" ");
 			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
 			builder.append(", ");
-			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.YES));
+			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.NO));
 		}
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
@@ -411,7 +411,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		} catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Error when adding Document to IndexWriter" + e.getMessage());
 		}
-		doc = null;
+		doc = null;		
 	}
 
 	private String getString(UntypedData data) {
@@ -514,7 +514,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		try {
 			this.latch.await();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			this.indexWriterThreadLogger.debug("Thread interrupted while waiting for latch count down: "+e.getMessage());
 		}
 
 		this.implementationProviderLogger.info("Start reseting index structure...");
@@ -526,7 +526,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			numberDocs += reader.numDocs();
 			reader.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.indexWriterThreadLogger.debug("Attempt to obtain the number of indexed Documents failed: "+e.getMessage());
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 
