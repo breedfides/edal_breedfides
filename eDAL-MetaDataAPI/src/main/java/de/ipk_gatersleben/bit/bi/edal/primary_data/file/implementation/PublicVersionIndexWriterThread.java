@@ -42,11 +42,17 @@ import javax.security.auth.Subject;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.facet.FacetField;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
@@ -116,6 +122,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  * @author arendd
  */
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
+	/* constants for indexed lucene fields that are used for public searching */
 	public static final String PUBLICID = "PublicReference";
 	public static final String INTERNALID = "internalId";
 	public static final String REVISION = "revision";
@@ -124,19 +131,24 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
+	
 	private final short REVISIONFILE = 1;
 	private final short REVISIONDIRECTORY = 0;
 	private final short REVISIONPUBLICREFERENCE = 2;
 	protected static int lastIndexedID = 0;
-	Boolean indexedData = false;
+	private Analyzer analyzer = null;
 	int counterValue = 0;
+	int indexedVersions = 0;
+	int flushedObjects = 0;
+	int filesCounter = 0;
+	Boolean indexedData = false;
 	IndexWriter writer = null;
 	IndexSearcher searcher = null;
 	IndexReader reader = null;
-	int indexedVersions = 0;
-	int flushedObjects = 0;
+	DirectoryTaxonomyWriter taxoWriter = null;
+	private final FacetsConfig config = new FacetsConfig();
+
 	Directory index;
-	int filesCounter = 0;
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(10, 5);
 	final int directoryFetchSize = (int) Math.pow(10, 5);
@@ -147,11 +159,18 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger, IndexWriter writer) {
+			Logger implementationProviderLogger, IndexWriter writer, DirectoryTaxonomyWriter taxoWriter) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
 		this.writer = writer;
+		this.analyzer = writer.getAnalyzer();
 		int numberDocs = 0;
-		try {					
+		try {	
+			this.taxoWriter = taxoWriter;
+			config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
+			config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
+			config.setMultiValued(MetaDataImplementation.TITLE, true);
+			config.setMultiValued(MetaDataImplementation.SUBJECT, true);
+			config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
 			index = FSDirectory.open(Paths.get(this.indexDirectory.toString(),"Master_Index"));
 			reader = DirectoryReader.open(writer);
 			searcher = new IndexSearcher(reader);
@@ -275,6 +294,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			if (indexedVersions > 0 || flushedObjects > 0) {
 				try {
 					this.writer.commit();
+					this.taxoWriter.commit();
 					try {
 						FileOutputStream fos = new FileOutputStream(
 								Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
@@ -456,6 +476,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 		try {
 			Document doc = searcher.doc(hits2[0].doc);
+			addFacets(doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			String pID = String.valueOf(pubRef);
 			doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID,
@@ -497,7 +518,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			
 			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,
 					pID, Store.YES));
-			writer.addDocument(doc);
+			writer.addDocument(config.build(taxoWriter, doc));
 			indexedVersions++;
 			this.filesCounter++;
 //				this.implementationProviderLogger
@@ -510,6 +531,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
+				this.taxoWriter.commit();
 				try {
 					FileOutputStream fos = new FileOutputStream(
 							Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
@@ -542,6 +564,43 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //			.info("(public) NOW CLEANING SESSION");
 //			session.clear();
 //		}
+	}
+
+
+	private void addFacets(Document doc) throws IOException {
+		TokenStream ts = analyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
+		ts.reset();
+		while (ts.incrementToken()) {
+			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+				if(ta.toString().length() > 1)
+					doc.add(new FacetField(MetaDataImplementation.DESCRIPTION,ta.toString()));
+		}
+		ts.close();
+		ts = analyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+		ts.reset();
+		while (ts.incrementToken()) {
+			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+			if(ta.toString().length() > 1)
+				doc.add(new FacetField(MetaDataImplementation.TITLE,ta.toString()));
+		}
+		ts.close();
+		ts = analyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+		ts.reset();
+		while (ts.incrementToken()) {
+			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+			if(ta.toString().length() > 1)
+				doc.add(new FacetField(MetaDataImplementation.SUBJECT,ta.toString()));
+		}
+		ts.close();
+		
+		String[] strings = doc.getValues(MetaDataImplementation.CREATORNAME);
+		for(String s : strings) {
+			doc.add(new FacetField(MetaDataImplementation.CREATORNAME,s));
+		}
+		strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
+		for(String s : strings) {
+			doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME,s));
+		}
 	}
 
 
@@ -705,6 +764,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public void run() {
 		super.run();
 		try {
+			taxoWriter.close();
 			reader.close();
 		} catch (IOException e) {
 			e.printStackTrace();

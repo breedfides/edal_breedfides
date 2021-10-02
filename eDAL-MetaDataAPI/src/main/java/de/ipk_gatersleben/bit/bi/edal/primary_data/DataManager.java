@@ -454,7 +454,6 @@ public class DataManager {
 		try {
 			searchManager = new SearcherManager(writer,new SearcherFactory());
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		/**
@@ -1141,9 +1140,6 @@ public class DataManager {
 
 	@SuppressWarnings("unchecked")
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
-		if (((int) (long) jsonArray.get("pageIndex")) > 0) {
-			int lol = 420;
-		}
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
 		IndexSearcher searcher = null;
