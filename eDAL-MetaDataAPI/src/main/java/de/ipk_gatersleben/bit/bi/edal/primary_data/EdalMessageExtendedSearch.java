@@ -128,18 +128,20 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
-	@Path("/countHits")
+	@Path("/drillDown")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject countHits(String json) throws JsonParseException, JsonMappingException, IOException {
+	public JSONArray drillDown(String json) {
 		JSONParser parser = new JSONParser();
 		try {
-			return DataManager.countHits((JSONObject)parser.parse(json));
-		} catch (ParseException e) {
-			return new JSONObject();
+			return DataManager.builQueryAndDrillDown((JSONObject)parser.parse(json));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
+	
 	@Path("/getTermLists")
 	@POST
 	@ManagedAsync

@@ -76,6 +76,14 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DateTools.Resolution;
+import org.apache.lucene.facet.DrillDownQuery;
+import org.apache.lucene.facet.FacetResult;
+import org.apache.lucene.facet.Facets;
+import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
+import org.apache.lucene.facet.taxonomy.TaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -238,8 +246,13 @@ public class DataManager {
 	private static ExecutorService listExecutorService = null;
 	private static ExecutorService velocityExecutorService = null;
 
+	/**
+	 * Manages the reopining and sharing of IndexSearcher instances
+	 */
 	private static SearcherManager searchManager = null;
 	
+	private static TaxonomyReader taxoReader = null;
+	private static FacetsConfig config = new FacetsConfig();
 
 	public static SearcherManager getSearchManager() {
 		return searchManager;
@@ -276,6 +289,12 @@ public class DataManager {
 		DataManager.DEFAULT_PERMISSIONS.put(new ALLPrincipal(), methods);
 
 		DataManager.resetDefaultPermissions();
+		
+		config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
+		config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
+		config.setMultiValued(MetaDataImplementation.SUBJECT, true);
+		config.setMultiValued(MetaDataImplementation.TITLE, true);
+		config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
 
 		try {
 			DataManager.rootCheat = new InternetAddress(ROOT_CHEAT);
@@ -285,7 +304,6 @@ public class DataManager {
 		DataManager.stopLatch = new CountDownLatch(1);
 
 	}
-
 	/**
 	 * Getter for the available space in the mount path of eDAL.
 	 * 
@@ -1142,6 +1160,23 @@ public class DataManager {
 	static public JSONObject advancedSearch(JSONObject jsonArray) {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
+		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
+		Thread innerThread = new Thread(){
+			public void run(){
+				try {
+					result.put("facets", DataManager.drillDown(buildedQuery.toString()));
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				internalCountDownLatch.countDown();
+				DataManager.getImplProv().getLogger().info("finishde drillDown!");
+			}
+		};
+		innerThread.start();
 		IndexSearcher searcher = null;
 		try {
 			searcher = searchManager.acquire();		
@@ -1325,6 +1360,13 @@ public class DataManager {
 			}
 		}
 		result.put("bottomResultScore", scoreDocs[pageSize - 1].score);
+		try {
+			DataManager.getImplProv().getLogger().info("finishde search!");
+			internalCountDownLatch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return result;
 	}
 
@@ -1359,157 +1401,108 @@ public class DataManager {
 		}
 		return null;
 	}
-
-	public static JSONObject countHits(JSONObject jsonObject) {
-		JSONArray jsonArray = (JSONArray) jsonObject.get("terms");
-		Object[][] arr = new Object[jsonArray.size()][2];
-		CountDownLatch internalCountDownLatch = new CountDownLatch(jsonArray.size());
-		String type = (String) jsonObject.get("termType");
-		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
-		final CharArraySet stopSet = new CharArraySet(
-				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
-		stopSet.addAll(defaultStopWords);
-		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
-		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser queryParser = new QueryParser(type, analyzer);
-		queryParser.setDefaultOperator(Operator.AND);
-
-		JSONObject requestData = (JSONObject) jsonObject.get("requestData");
-		IndexSearcher searcher = null;
-		try {
-			searcher = searchManager.acquire();
-			for (int i = 0; i < jsonArray.size(); i++) {
-				final int index = i;
-				final String currentType = (String) jsonArray.get(index);
-				Query parsedQuery = null;
-				StringJoiner queryJoiner = new StringJoiner(" ");
-				queryJoiner.add(Occur.MUST.toString() + type + ':' + QueryParser.escape(currentType));
-				JSONArray queries = (JSONArray) requestData.get("queries");
-				if (queries != null) {
-					for (Object query : queries) {
-						if (query instanceof String)
-							queryJoiner.add((String) query);
-					}
-				}
-				// final Query finalQuery = DataManager.buildQueryFromJSON(requestData);
-				JSONArray filters = (JSONArray) requestData.get("filters");
-				Query query = null;
-				for (Object obj : filters) {
-					JSONObject queryData = (JSONObject) obj;
-					String filterType = ((String) queryData.get("type"));
-					String keyword = (String) queryData.get("searchterm");
-					if (filterType.equals(MetaDataImplementation.STARTDATE)
-							|| filterType.equals(MetaDataImplementation.ENDDATE)) {
-						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-						LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter)
-								.atStartOfDay();
-						LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter)
-								.atStartOfDay();
-						String lower = DateTools.timeToString(
-								ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-						String upper = DateTools.timeToString(
-								ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-						query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
-
-					} else if (filterType.equals(MetaDataImplementation.SIZE)) {
-						query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
-								String.format("%014d", queryData.get("lower")),
-								String.format("%014d", queryData.get("upper")), false, false);
-					} else if (filterType.equals(MetaDataImplementation.FILETYPE)) {
-						QueryParser filterParser = new QueryParser(filterType, analyzer);
-						filterParser.setDefaultOperator(Operator.AND);
-						keyword.replace("\\", "");
-						try {
-							query = filterParser.parse(QueryParser.escape(keyword));
-						} catch (ParseException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					queryJoiner.add(Occur.MUST.toString() + query.toString());
-				}
-				String hitType = (String) requestData.get("hitType");
-				switch (hitType) {
-				case PublicVersionIndexWriterThread.PUBLICREFERENCE:
-					query = new TermQuery(
-							new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
-					break;
-				case PublicVersionIndexWriterThread.INDIVIDUALFILE:
-					query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
-					break;
-				case PublicVersionIndexWriterThread.DIRECTORY:
-					query = new TermQuery(
-							new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
-					break;
-				default:
-					return null;
-				}
-				queryJoiner.add(query.toString());
-
-				TotalHitCountCollector collector = new TotalHitCountCollector();
-				QueryParser parser = new QueryParser(type, analyzer);
-				parser.setDefaultOperator(Operator.AND);
-
+	
+	public static JSONArray builQueryAndDrillDown(JSONObject json) throws ParseException, IOException {
+		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		pars.setDefaultOperator(Operator.AND);
+		StringJoiner queryJoiner = new StringJoiner(" ");
+		JSONArray filters = (JSONArray) json.get("filters");
+		Query luceneQuery = null;
+		for (Object obj : filters) {
+			JSONObject queryData = (JSONObject) obj;
+			String type = ((String) queryData.get("type"));
+			String keyword = (String) queryData.get("searchterm");
+			if (type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
+				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
+				String lower = DateTools.timeToString(
+						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				String upper = DateTools.timeToString(
+						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
+			} else if (type.equals(MetaDataImplementation.SIZE)) {
+				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
+						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
+						false, false);
+			} else if (type.equals(MetaDataImplementation.FILETYPE)) {
+				keyword.replace("\\", "");
+				String fileTypeQuery = MetaDataImplementation.FILETYPE+":"+keyword;
 				try {
-					Query query2 = parser.parse(queryJoiner.toString());
-					// DataManager.getImplProv().getLogger().info("count Hits query:_
-					// "+query.toString());
-					searcher.search(query2, collector);
-					arr[index][0] = currentType;
-					arr[index][1] = collector.getTotalHits();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
 				} catch (ParseException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}finally {
-			try {
-				if(searcher != null)
-					searchManager.release(searcher);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if(luceneQuery != null) {
+				DataManager.getImplProv().getLogger().debug(luceneQuery.toString());
+				queryJoiner.add(Occur.MUST.toString() + luceneQuery.toString());
 			}
 		}
-
-		JSONObject result = new JSONObject();
-		Set<Object[]> hitSet = new TreeSet<>(new Comparator<Object[]>() {
-			@Override
-			public int compare(Object[] o1, Object[] o2) {
-				if ((int) o1[1] < (int) o2[1]) {
-					return 1;
-				} else if ((int) o1[1] > (int) o2[1]) {
-					return -1;
-				} else {
-					if (((String) o1[0]).equals((String) o2[0])) {
-						return 0;
-					}
-					return 1;
+		String hitType = (String) json.get("hitType");
+		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+			luceneQuery = new TermQuery(
+					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+			luceneQuery = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+			luceneQuery = new TermQuery(
+					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
+		} else {
+			return null;
+		}
+		queryJoiner.add(luceneQuery.toString());
+		return drillDown(queryJoiner.toString());
+	}
+	
+	public static JSONArray drillDown(String query) throws ParseException, IOException {
+		QueryParser queryParser = new QueryParser(MetaDataImplementation.ALL, 
+				((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		queryParser.setDefaultOperator(Operator.AND);
+		IndexSearcher searcher = searchManager.acquire();
+		try {
+			if(taxoReader != null) {
+				TaxonomyReader newReader = TaxonomyReader.openIfChanged(taxoReader);
+				if(newReader != null) {
+					taxoReader = newReader;
 				}
+			}else {
+				taxoReader = new DirectoryTaxonomyReader(FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Facets")));
 			}
-		});
-		Set<Object[]> nameSet = new TreeSet<>(new Comparator<Object[]>() {
-			@Override
-			public int compare(Object[] o1, Object[] o2) {
-				return ((String) o1[0]).compareTo((String) o2[0]);
-			}
-		});
-		for (Object[] val : arr) {
-			if ((int) val[1] > 0) {
-				hitSet.add(val);
-				nameSet.add(val);
-			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		result.put("sortedByHits", hitSet);
-		result.put("sortedByNames", nameSet);
-		return result;
+		
+		DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
+	    FacetsCollector fc = new FacetsCollector();
+	    FacetsCollector.search(searcher,drillQuery, 50000, fc);
+
+	    List<FacetResult> results = new ArrayList<>();
+
+	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
+	    results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+		JSONArray result = new JSONArray();
+	    for(FacetResult facet : results) {
+	    	if(facet == null)
+	    		continue;
+	    	JSONObject jsonFacet = new JSONObject();
+	    	if(facet.dim.equals(MetaDataImplementation.CREATORNAME))
+	    		jsonFacet.put("category", MetaDataImplementation.PERSON);
+	    	else if(facet.dim.equals(MetaDataImplementation.CONTRIBUTORNAME))
+	    		jsonFacet.put("category", MetaDataImplementation.CONTRIBUTOR);
+	    	else
+	    		jsonFacet.put("category",facet.dim);
+	    	jsonFacet.put("sortedByHits",facet.labelValues);
+	    	result.add(jsonFacet);
+	    }
+	    getSearchManager().release(searcher);
+	    return result;
 	}
 
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {

@@ -203,9 +203,6 @@
                             <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
                               <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled="disabled" name="top5" size="1">
                                 <option>*</option>
-                                #foreach($obj in $filetypes)
-                                <option value="$obj">$obj</option>
-                                #end
                               </select>
                             </div>
                           </div>
@@ -217,23 +214,23 @@
                             <ul id="myUL">
                               <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                 <span class="caret decoration-underline caret-down">Creator</span>
-                                <ul class="nested active" id="CreatorUl"></ul>
+                                <ul class="nested active" id="Creator"></ul>
                               </li>
                               <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                 <span class="caret decoration-underline caret-down">Contributor</span>
-                                <ul class="nested active" id="ContributorUl"></ul>
+                                <ul class="nested active" id="Contributor"></ul>
                               </li>
                               <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                 <span class="caret decoration-underline caret-down">Subject</span>
-                                <ul class="nested active" id="SubjectUl"></ul>
+                                <ul class="nested active" id="Subject"></ul>
                               </li>
                               <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                 <span class="caret decoration-underline caret-down">Title</span>
-                                <ul class="nested active" id="TitleUl"></ul>
+                                <ul class="nested active" id="Title"></ul>
                               </li>
                               <li class="pl-5 mt-2 pb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
                                 <span class="caret decoration-underline caret-down">Description</span>
-                                <ul class="nested active" id="DescriptionUl"></ul>
+                                <ul class="nested active" id="Description"></ul>
                               </li>
                             </ul>
 

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Stack;
+import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -280,8 +281,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				DataManager.getImplProv().getLogger().info("[PublicVersionIndexWriterThread] Indexing time: "+(System.currentTimeMillis()-startTime)+"ms");
 				indexedData = true;
 			}else {
-				if(indexedData)
+				if(indexedData) {
 					DataManager.getImplProv().getLogger().info("[PublicVersionIndexWriterThread] Indexing finished");
+				}
 				indexedData = false;
 			}
 			results.close();
@@ -363,7 +365,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				predicateType)); 
 		long l = session.createQuery(criteriaLong).getSingleResult();
 		if(l > 0) {
-			DataManager.getImplProv().getLogger().info("Publicreferences to index "+l);	
+			DataManager.getImplProv().getLogger().info("Publicreferences that still have to be indexed "+l);	
 		}
 	}
 
@@ -492,8 +494,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							PublicVersionIndexWriterThread.FILE, Store.YES));
 					if(title != null) {
 						String filetype = FilenameUtils.getExtension(title);
-						doc.add(new TextField(MetaDataImplementation.FILETYPE,
-								filetype, Store.YES));
+						//skip this field, if file has no extension
+						if(filetype != null && filetype.length() > 0) {
+							doc.add(new TextField(MetaDataImplementation.FILETYPE,
+									filetype, Store.YES));
+							doc.add(new FacetField(MetaDataImplementation.FILETYPE,filetype));
+						}
 //						if(filetype.equals("txt")) {
 //							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class, file);
 //							ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -566,7 +572,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //		}
 	}
 
-
+	/**
+	 * Uses and nalyzes existing Lucene fields of a Document to add FacetFields to the Doc that allow faceted searching.
+	 * @param doc The Lucene document that must contain fields like (Description, title..)
+	 * @throws IOException
+	 */
 	private void addFacets(Document doc) throws IOException {
 		TokenStream ts = analyzer.tokenStream(MetaDataImplementation.DESCRIPTION, doc.get(MetaDataImplementation.DESCRIPTION));
 		ts.reset();
@@ -595,11 +605,35 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		
 		String[] strings = doc.getValues(MetaDataImplementation.CREATORNAME);
 		for(String s : strings) {
-			doc.add(new FacetField(MetaDataImplementation.CREATORNAME,s));
+			ts = analyzer.tokenStream(MetaDataImplementation.CREATORNAME, s);
+			ts.reset();
+			StringJoiner creator = new StringJoiner(" ");
+			while (ts.incrementToken()) {
+				CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+				String token = ta.toString();
+				if(token.length() > 1)
+					creator.add(token.substring(0, 1).toUpperCase() + token.substring(1));
+			}
+			ts.close();
+			if(creator.length() > 0) {
+				doc.add(new FacetField(MetaDataImplementation.CREATORNAME,creator.toString()));
+			}
 		}
 		strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
 		for(String s : strings) {
-			doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME,s));
+			ts = analyzer.tokenStream(MetaDataImplementation.CONTRIBUTORNAME, s);
+			ts.reset();
+			StringJoiner contributor = new StringJoiner(" ");
+			while (ts.incrementToken()) {
+				CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
+				String token = ta.toString();
+				if(token.length() > 1)
+					contributor.add(token.substring(0, 1).toUpperCase() + token.substring(1));
+			}
+			ts.close();
+			if(contributor.length() > 0) {
+				doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME,contributor.toString()));
+			}
 		}
 	}
 

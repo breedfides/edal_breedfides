@@ -92,45 +92,6 @@ let EdalReport = new function() {
       self.addQuery(obj);
     }
 
-    /* helper function to trigger an upate for every factedTerm-ul and for available fileTypes */
-    this.facetedTerms = async function(){
-      let self = this;
-      self.countFacetedTerms(PERSON, self.creators, document.getElementById("CreatorUl"));
-      self.countFacetedTerms(CONTRIBUTOR, self.contributors, document.getElementById("ContributorUl"));
-      self.countFacetedTerms(SUBJECT, self.subjects, document.getElementById("SubjectUl"));
-      self.countFacetedTerms(TITLE, self.titles, document.getElementById("TitleUl"));
-      self.countFacetedTerms(DESCRIPTION, self.descriptions, document.getElementById("DescriptionUl"));
-      self.loadFileExtensions();
-    }
-
-    /* updates the select with filetypes that provide at least 1 hit
-     (depending on the current queries) */
-    this.loadFileExtensions = function(){
-      let self = this;
-      //only continue if user searches for files
-      if(self.currentRequestData["hitType"] == "singledata"){
-        //reconstruct the select
-        var select = document.getElementById("suffixesSelect");
-        select.innerHTML = "";
-        var option = document.createElement("option");
-        option.innerHTML = "*";
-        select.appendChild(option);
-        var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
-        $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
-          //fill select with fileTypes and the number of hits
-          data.sortedByNames.forEach((term, i) => {
-            var opt = document.createElement("option");
-            opt.value = term[0];
-            opt.innerHTML = term[0] + " (" + term[1]+")";
-            select.appendChild(opt);
-            if(term[0] == self.defaultFileType){
-              select.selectedIndex = ++i;
-            }
-          });
-        });
-      }
-    }
-
     /*triggers a REST call to parse a Query and passes the response to a helper
      function to add a new displayed tab*/
     this.addQuery = function(query){
@@ -170,13 +131,13 @@ let EdalReport = new function() {
           $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
           reportData = data.results;
           if(ID == requestId){
+            self.updateTerms(data.facets);
             if(data.parsedQuery != null && data.parsedQuery != ""){
               const queryIndex = self.queries.length;
               self.queries.push(data.parsedQuery);
               self.addTab(data.parsedQuery,queryIndex);
             }
             self.currentRequestData.existingQuery = data["parsedQuery"];
-            self.facetedTerms();
             var currentPage = 0;
             var history = data.pageArray;
             self.hitSize = data.hitSizeDescription+' '+data.hitSize;
@@ -205,7 +166,12 @@ let EdalReport = new function() {
         }else{
           self.reportData = [];
           self.currentRequestData = {};
-          self.resetTermList();
+          let hitType = document.querySelector('input[name="hitType"]:checked').value;
+          self.currentRequestData.hitType = hitType;
+            // /* count hits for a list of terms and a specific ul and appends <li> elements to that list Parameter = JSON string with optional filters and a hitType */
+          $.post("/rest/extendedSearch/drillDown",JSON.stringify({"filters":self.filters,"hitType":hitType}), function(data){
+            self.updateTerms(data);
+          });
           $('#report').DataTable().clear().draw();
           $('#ul_pagination').empty();
           $('#result-stats').text('No results found');
@@ -283,76 +249,109 @@ let EdalReport = new function() {
       }
     }
 
-    /* count hits for a list of terms and a specific ul and appends <li> elements to that list */
-    this.countFacetedTerms = async function(type, terms, ul){
+    this.updateTerms = function(data){
       let self = this;
-      var request = {"termType":type, "terms":terms, "requestData":self.currentRequestData};
-      let requestId = ID;
-      ul.innerHTML = "";
-      $.post("/rest/extendedSearch/countHits", JSON.stringify(request), function(data){
-
-        if(requestId == ID){
-          var tempList = data.sortedByHits;
-          for(i = 0; i < 4; i++){
-            if(i < tempList.length){
-              var li = document.createElement("li");
-              const term = tempList[i][0];
-              const count = tempList[i][1];
-              li.classList.add("decoration-underline");
-              li.innerHTML = term+' ('+count+")";
-              li.onclick = function(){
-                var searchInput = document.getElementById("query");
-                if(!searchInput.value){
-                  searchInput.classList.add("x");
-                }
-                let obj = {
-                  "type":type,
-                  "searchterm":term,
-                  "occur":"MUST",
-                  "fuzzy":false
-                }
-                self.addQuery(obj);
-              }
-              ul.appendChild(li);
+      document.getElementById(PERSON).innerHTML = "";
+      document.getElementById(CONTRIBUTOR).innerHTML = "";
+      document.getElementById(SUBJECT).innerHTML = "";
+      document.getElementById(TITLE).innerHTML = "";
+      document.getElementById(DESCRIPTION).innerHTML = "";
+      console.log(data);
+      console.log(self.terms)
+      data.forEach(function(facet){
+      let tempList = facet.sortedByHits;
+      //facet for filetypes ? -> fill select with values
+      if(facet.category == "Filetype"){
+        if(self.currentRequestData["hitType"] == "singledata"){
+          //reset select values
+          var select = document.getElementById("suffixesSelect");
+          select.innerHTML = "";
+          var option = document.createElement("option");
+          option.innerHTML = "*";
+          select.appendChild(option);
+          var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
+          //sort values lexicographicaly for there labels
+          tempList.sort((a, b) => {
+              if (a.label > b.label)
+                  return 1;
+              if (a.label < b.label)
+                  return -1;
+              return 0;
+          });
+          //fill select with fileTypes and the number of hits
+          for (i = 0; i < tempList.length; i++) {
+            var opt = document.createElement("option");
+            opt.value = tempList[i].label;
+            opt.innerHTML = tempList[i].label + " (" + tempList[i].value+")";
+            select.appendChild(opt);
+            //first fileType = "*", skip this value
+            if(tempList[0].label == self.defaultFileType){
+              select.selectedIndex = ++i;
             }
           }
-          if(tempList.length > 4){
+        }
+      }else{
+        //Add faceted terms to DOM
+        let ul = document.getElementById(facet.category);
+        for(i = 0; i < 4; i++){
+          if(i < tempList.length){
             var li = document.createElement("li");
-            li.style.fontWeight = "bold";
-            li.innerHTML = "More ("+tempList.length+")";
+            const term = tempList[i].label;
+            const count = tempList[i].value;
             li.classList.add("decoration-underline");
-            switch(type){
-              case PERSON:
-                li.onclick = function(){
-                  self.listCreatorTerms();
-                };
-                break;
-              case CONTRIBUTOR:
-                li.onclick = function(){
-                  self.listContributorTerms();
-                };
-                break;
-              case SUBJECT:
-                li.onclick = function(){
-                  self.listSubjectTerms();
-                };
-                break;
-              case TITLE:
-                li.onclick = function(){
-                  self.listTitleTerms();
-                };
-                break;
-              case DESCRIPTION:
-                li.onclick = function(){
-                  self.listDescritionTerms();
-                };
-                break;
+            li.innerHTML = term+' ('+count+")";
+            li.onclick = function(){
+              var searchInput = document.getElementById("query");
+              if(!searchInput.value){
+                searchInput.classList.add("x");
+              }
+              let obj = {
+                "type":facet.category,
+                "searchterm":term,
+                "occur":"MUST",
+                "fuzzy":false
+              }
+              self.addQuery(obj);
             }
             ul.appendChild(li);
           }
-          self.terms[type] = {"sortedByHits":data.sortedByHits, "sortedByNames":data.sortedByNames};
-
         }
+        if(tempList.length > 4){
+          var li = document.createElement("li");
+          li.style.fontWeight = "bold";
+          li.innerHTML = "More ("+tempList.length+")";
+          li.classList.add("decoration-underline");
+          switch(facet.category){
+            case PERSON:
+              li.onclick = function(){
+                self.listCreatorTerms();
+              };
+              break;
+            case CONTRIBUTOR:
+              li.onclick = function(){
+                self.listContributorTerms();
+              };
+              break;
+            case SUBJECT:
+              li.onclick = function(){
+                self.listSubjectTerms();
+              };
+              break;
+            case TITLE:
+              li.onclick = function(){
+                self.listTitleTerms();
+              };
+              break;
+            case DESCRIPTION:
+              li.onclick = function(){
+                self.listDescritionTerms();
+              };
+              break;
+            }
+            ul.appendChild(li);
+          }
+          self.terms[facet.category] = {"sortedByHits":facet.sortedByHits, "sortedByNames":facet.sortedByNames};
+      }
       });
     }
 
@@ -365,6 +364,17 @@ let EdalReport = new function() {
       }else{
         radioButton.onclick = function(){
           unorderedList.innerHTML = "";
+          if(!self.terms[type].sortedByNames){
+            console.log("need to sort faceted terms..");
+            const sorted = [...terms].sort((a, b) => {
+                if (a.label > b.label)
+                    return 1;
+                if (a.label < b.label)
+                    return -1;
+                return 0;
+            });
+            self.terms[type].sortedByNames = sorted;
+          }
           self.loadTerms(type, unorderedList, self.terms[type].sortedByNames);
         }
       }
@@ -381,14 +391,10 @@ let EdalReport = new function() {
         var li = document.createElement("li");
         li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "liHover");
         li.style.textOverflow = "ellipsis";
-        li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i][0]+'</p><span class="badge badge-primary badge-pill">'+terms[i][1]+'</span>';
-        const term = terms[i][0];
-        const value = terms[i][1];
+        li.innerHTML = '<p style="max-width:90%;overflow:hidden;padding: 0;margin: 0;">'+terms[i].label+'</p><span class="badge badge-primary badge-pill">'+terms[i].value+'</span>';
+        const term = terms[i].label;
+        const value = terms[i].value;
         li.onclick = function(){
-          var searchInput = document.getElementById("query");
-          if(!searchInput.value){
-            searchInput.classList.add("x");
-          }
           let obj = {
             "type":type,
             "searchterm":term,
@@ -399,6 +405,10 @@ let EdalReport = new function() {
           document.getElementById("myModal").style.display = "none";
         }
         unorderedList.appendChild(li);
+      }
+      var searchInput = document.getElementById("query");
+      if(!searchInput.value){
+        searchInput.classList.add("x");
       }
     }
 
@@ -668,7 +678,6 @@ let EdalReport = new function() {
             $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
             $('#slider-filesize').slider("disable");
             $('.opacity-change').css('opacity','0.5');
-            self.initTermLists();
             self.renderDatatableReports();
             if(initQuery !== ""){
               $('#query').val(initQuery);
@@ -690,38 +699,38 @@ let EdalReport = new function() {
         });
     };
 
-    /* resets term lists and calls EdalReport.facetedTerms() to count hits for
-     every search term which depend on the current set queries*/
-    this.resetTermList = function(){
-      let self = this;
-      self.currentRequestData.existingQuery = document.getElementById("query").value;
-      self.currentRequestData.filters = self.filters;
-      self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
-      $.post("/rest/extendedSearch/getTermLists", function(data){
-        self.creators = data[PERSON];
-        self.contributors = data[CONTRIBUTOR];
-        self.subjects = data[SUBJECT];
-        self.titles = data[TITLE];
-        self.descriptions = data[DESCRIPTION];
-        self.facetedTerms();
-      });
-    }
+    // /* resets term lists and calls EdalReport.facetedTerms() to count hits for
+    //  every search term which depend on the current set queries*/
+    // this.resetTermList = function(){
+    //   let self = this;
+    //   self.currentRequestData.existingQuery = document.getElementById("query").value;
+    //   self.currentRequestData.filters = self.filters;
+    //   self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
+    //   $.post("/rest/extendedSearch/getTermLists", function(data){
+    //     self.creators = data[PERSON];
+    //     self.contributors = data[CONTRIBUTOR];
+    //     self.subjects = data[SUBJECT];
+    //     self.titles = data[TITLE];
+    //     self.descriptions = data[DESCRIPTION];
+    //     self.facetedTerms();
+    //   });
+    // }
 
-    /* resets term lists and calls EdalReport.facetedTerms() to count hits for
-     every search term which depend on the current set queries*/
-    this.initTermLists = function(){
-      let self = this;
-      self.currentRequestData.existingQuery = document.getElementById("query").value;
-      self.currentRequestData.filters = self.filters;
-      self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
-      $.post("/rest/extendedSearch/getTermLists", function(data){
-        self.creators = data[PERSON];
-        self.contributors = data[CONTRIBUTOR];
-        self.subjects = data[SUBJECT];
-        self.titles = data[TITLE];
-        self.descriptions = data[DESCRIPTION];
-      });
-    }
+    // /* resets term lists and calls EdalReport.facetedTerms() to count hits for
+    //  every search term which depend on the current set queries*/
+    // this.initTermLists = function(){
+    //   let self = this;
+    //   self.currentRequestData.existingQuery = document.getElementById("query").value;
+    //   self.currentRequestData.filters = self.filters;
+    //   self.currentRequestData.hitType = document.querySelector('input[name = "hitType"]:checked').value;
+    //   $.post("/rest/extendedSearch/getTermLists", function(data){
+    //     self.creators = data[PERSON];
+    //     self.contributors = data[CONTRIBUTOR];
+    //     self.subjects = data[SUBJECT];
+    //     self.titles = data[TITLE];
+    //     self.descriptions = data[DESCRIPTION];
+    //   });
+    // }
 
     /* renders the datatable with columns for files */
     this.renderDatatableFiles = function() {
@@ -991,7 +1000,6 @@ let EdalReport = new function() {
           break;
         }
       }
-      console.log(fileSize);
       return fileSize;
     }
 }

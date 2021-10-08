@@ -45,43 +45,55 @@ public class ServerStart {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		IndexSearcher searcher = DataManager.getSearchManager().acquire();
-		TaxonomyReader taxoReader = new DirectoryTaxonomyReader(FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Facets")));
-		FacetsConfig config = new FacetsConfig();
-		config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
-		config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
-	    FacetsCollector fc = new FacetsCollector();
-	    
-	    CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
-		final CharArraySet stopSet = new CharArraySet(
-				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
-		stopSet.addAll(defaultStopWords);
-		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
-		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-	    QueryParser parser = new QueryParser(MetaDataImplementation.CREATORNAME, analyzer);
-		parser.setDefaultOperator(Operator.AND);
-
-
-	    // MatchAllDocsQuery is for "browsing" (counts facets
-	    // for all non-deleted docs in the index); normally
-	    // you'd use a "normal" query:
-	    Query q  = new TermQuery(
-				new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
-	    String query = q+" "+MetaDataImplementation.CREATORNAME+":Daniel Arend";
-	    DrillDownQuery drillQuery = new DrillDownQuery(config, parser.parse(query));
-	    FacetsCollector.search(searcher,drillQuery, 50000, fc);
-
-	    // Retrieve results
-	    List<FacetResult> results = new ArrayList<>();
-
-	    // Count both "Publish Date" and "Author" dimensions
-	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
-	    results.add(facets.getTopChildren(10, MetaDataImplementation.TITLE));
-	    results.add(facets.getTopChildren(150, MetaDataImplementation.SUBJECT));
-	    results.add(facets.getTopChildren(150, MetaDataImplementation.CREATORNAME));
-	    DataManager.getImplProv().getLogger().info(results.get(0));
-	    DataManager.getImplProv().getLogger().info(results.get(1));
-	    DataManager.getImplProv().getLogger().info(results.get(2));
+//		IndexSearcher searcher = DataManager.getSearchManager().acquire();
+//		TaxonomyReader taxoReader = new DirectoryTaxonomyReader(FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Facets")));
+//		FacetsConfig config = new FacetsConfig();
+//		config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
+//		config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
+//		config.setMultiValued(MetaDataImplementation.SUBJECT, true);
+//		config.setMultiValued(MetaDataImplementation.TITLE, true);
+//		config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
+//	    
+//	    CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+//		final CharArraySet stopSet = new CharArraySet(
+//				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
+//		stopSet.addAll(defaultStopWords);
+//		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+//		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
+//	    QueryParser parser = new QueryParser(MetaDataImplementation.CREATORNAME, analyzer);
+//		parser.setDefaultOperator(Operator.AND);
+//
+//
+//	    // MatchAllDocsQuery is for "browsing" (counts facets
+//	    // for all non-deleted docs in the index); normally
+//	    // you'd use a "normal" query:
+//	    Query q  = new TermQuery(
+//				new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
+//	    String query = q+" "+MetaDataImplementation.CREATORNAME+":Daniel Arend";
+//	    DrillDownQuery drillQuery = new DrillDownQuery(config, q);
+//	    FacetsCollector fc = new FacetsCollector();
+//	    FacetsCollector.search(searcher,drillQuery, 50000, fc);
+//
+//	    // Retrieve results
+//	    List<FacetResult> results = new ArrayList<>();
+//
+//	    // Count both "Publish Date" and "Author" dimensions
+//	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
+//	    results.add(facets.getTopChildren(150, MetaDataImplementation.CREATORNAME));
+//	    results.add(facets.getTopChildren(150, MetaDataImplementation.CONTRIBUTORNAME));
+//	    results.add(facets.getTopChildren(150, MetaDataImplementation.SUBJECT));
+//	    results.add(facets.getTopChildren(10, MetaDataImplementation.TITLE));
+//	    results.add(facets.getTopChildren(150, MetaDataImplementation.DESCRIPTION));
+//	    DataManager.getImplProv().getLogger().info(results.get(0).childCount);
+//	    DataManager.getImplProv().getLogger().info(results.get(0));
+//	    DataManager.getImplProv().getLogger().info(results.get(1).childCount);
+//	    DataManager.getImplProv().getLogger().info(results.get(1));
+//	    DataManager.getImplProv().getLogger().info(results.get(2).childCount);
+//	    DataManager.getImplProv().getLogger().info(results.get(2));
+//	    DataManager.getImplProv().getLogger().info(results.get(3).childCount);
+//	    DataManager.getImplProv().getLogger().info(results.get(3));
+//	    DataManager.getImplProv().getLogger().info(results.get(4).childCount);
+//	    DataManager.getImplProv().getLogger().info(results.get(4));
 	}
 
 	public static PrimaryDataDirectory getRoot() throws Exception{
