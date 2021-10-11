@@ -1173,7 +1173,6 @@ public class DataManager {
 					e.printStackTrace();
 				}
 				internalCountDownLatch.countDown();
-				DataManager.getImplProv().getLogger().info("finishde drillDown!");
 			}
 		};
 		innerThread.start();
@@ -1361,7 +1360,6 @@ public class DataManager {
 		}
 		result.put("bottomResultScore", scoreDocs[pageSize - 1].score);
 		try {
-			DataManager.getImplProv().getLogger().info("finishde search!");
 			internalCountDownLatch.await();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
