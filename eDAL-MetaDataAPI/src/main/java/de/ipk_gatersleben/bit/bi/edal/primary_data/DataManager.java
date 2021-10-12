@@ -1466,10 +1466,15 @@ public class DataManager {
 					taxoReader = newReader;
 				}
 			}else {
-				taxoReader = new DirectoryTaxonomyReader(FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Facets")));
+				taxoReader = new DirectoryTaxonomyReader(((FileSystemImplementationProvider)DataManager.getImplProv()).getFacetDirectory());
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error when creating DirectoryTaxonomyReader.. "+e.getMessage());
+			searchManager.release(searcher);
+			if(taxoReader != null) {
+				taxoReader.close();	
+			}
+			return new JSONArray();
 		}
 		
 		DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));

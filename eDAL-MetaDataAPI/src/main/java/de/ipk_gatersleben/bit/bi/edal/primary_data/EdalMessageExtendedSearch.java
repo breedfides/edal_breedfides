@@ -136,9 +136,8 @@ public class EdalMessageExtendedSearch {
 		JSONParser parser = new JSONParser();
 		try {
 			return DataManager.builQueryAndDrillDown((JSONObject)parser.parse(json));
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+		} catch (org.apache.lucene.queryparser.classic.ParseException | ParseException | IOException e) {
+			return new JSONArray();
 		}
 	}
 	
