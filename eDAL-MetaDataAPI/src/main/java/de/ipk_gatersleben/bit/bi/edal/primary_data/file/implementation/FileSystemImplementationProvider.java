@@ -438,6 +438,7 @@ public class FileSystemImplementationProvider
 					stopSet.addAll(STOPWORDS);
 					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
+					writerConfig.setRAMBufferSizeMB(512);
 					writer = new IndexWriter(indexingDirectory, writerConfig);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -911,10 +912,8 @@ public class FileSystemImplementationProvider
 			}
 			try {
 				this.getLogger()
-						.info("waiting for (INDEXTHREADS)");
+						.info("Waiting for indexing to finish");
 				this.countDownLatch.await();
-				this.getLogger().info(
-						"finished waiting for (INDEXTHREADS)");
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

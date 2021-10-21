@@ -257,6 +257,13 @@ project(':eDAL-MetaDataAPI') {
 		//compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'*/
 		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Beta10'
     	compile group: 'org.hibernate.search', name: 'hibernate-search-backend-lucene', version: '6.0.0.Beta11'
+    	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-highlighter
+		compile group: 'org.apache.lucene', name: 'lucene-highlighter', version: '8.7.0'
+		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-backward-codecs
+		compile group: 'org.apache.lucene', name: 'lucene-backward-codecs', version: '8.7.0'
+		
+    	
+    	
 		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.22.Final'
 		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.4.22.Final'
 		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.4.22.Final'

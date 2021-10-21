@@ -12,15 +12,18 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +64,9 @@ import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -71,6 +76,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.apache.tika.io.IOUtils;
 import org.hibernate.CacheMode;
 import org.hibernate.FetchMode;
@@ -132,7 +138,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
-	
+	int docCount = 0;
 	private final short REVISIONFILE = 1;
 	private final short REVISIONDIRECTORY = 0;
 	private final short REVISIONPUBLICREFERENCE = 2;
@@ -151,8 +157,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	Directory index;
 	/** high value fetch objects faster, but more memory is needed */
-	final int fetchSize = (int) Math.pow(10, 5);
-	final int directoryFetchSize = (int) Math.pow(10, 5);
+	final int fetchSize = 200;
+	final int directoryFetchSize = 200;
 	
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
@@ -290,7 +296,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			session.getTransaction().commit();
 			session.close();
 			indexingTime = System.currentTimeMillis() - indexStartTime;
-			//this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 
 			if (indexedVersions > 0 || flushedObjects > 0) {
@@ -476,8 +481,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
 		}
+		long indexingTimeForOneDocument = 0;
 		try {
 			Document doc = searcher.doc(hits2[0].doc);
+			String filetype = FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE));
 			addFacets(doc);
 			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID,Integer.toString(version)));
 			String pID = String.valueOf(pubRef);
@@ -493,25 +500,25 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
 							PublicVersionIndexWriterThread.FILE, Store.YES));
 					if(title != null) {
-						String filetype = FilenameUtils.getExtension(title);
 						//skip this field, if file has no extension
 						if(filetype != null && filetype.length() > 0) {
 							doc.add(new TextField(MetaDataImplementation.FILETYPE,
 									filetype, Store.YES));
 							doc.add(new FacetField(MetaDataImplementation.FILETYPE,filetype));
+						}						
+						if(filetype.equals("txt")) {
+							DataManager.getImplProv().getLogger().info(title);
+							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class, file);
+							ByteArrayOutputStream stream = new ByteArrayOutputStream();
+							try {
+								pdfile.read(stream);
+								String content = new String(stream.toByteArray(), "UTF-8");
+								doc.add(new TextField("Content",content,Store.YES));
+							} catch (PrimaryDataFileException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
-//						if(filetype.equals("txt")) {
-//							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class, file);
-//							ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//							try {
-//								pdfile.read(stream);
-//								String out = new String(stream.toByteArray(), "UTF-8");
-//								DataManager.getImplProv().getLogger().info("TEST STRING: "+out);
-//							} catch (PrimaryDataFileException e) {
-//								// TODO Auto-generated catch block
-//								e.printStackTrace();
-//							}
-//						}
 					}
 				}else if(revision == REVISIONDIRECTORY) {
 					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
@@ -524,7 +531,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			
 			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID,
 					pID, Store.YES));
+			indexingTimeForOneDocument = System.currentTimeMillis();
 			writer.addDocument(config.build(taxoWriter, doc));
+			long finishedAdding = System.currentTimeMillis();
+			indexingTimeForOneDocument = finishedAdding-indexingTimeForOneDocument;
+			DataManager.getImplProv().getLogger().info("DocNr. "+(++docCount)+" ms:"+indexingTimeForOneDocument+" sec: "+indexingTimeForOneDocument/1000+" BYTES: "+writer.ramBytesUsed());
 			indexedVersions++;
 			this.filesCounter++;
 //				this.implementationProviderLogger
@@ -533,7 +544,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}		
-		//}
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
@@ -573,7 +583,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 
 	/**
-	 * Uses and nalyzes existing Lucene fields of a Document to add FacetFields to the Doc that allow faceted searching.
+	 * Uses and analyzes existing Lucene fields of a Document to add FacetFields to the Doc that allow faceted searching.
 	 * @param doc The Lucene document that must contain fields like (Description, title..)
 	 * @throws IOException
 	 */
