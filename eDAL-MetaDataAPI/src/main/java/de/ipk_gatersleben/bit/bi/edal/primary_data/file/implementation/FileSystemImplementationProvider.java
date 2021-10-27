@@ -438,7 +438,6 @@ public class FileSystemImplementationProvider
 					stopSet.addAll(STOPWORDS);
 					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
-					writerConfig.setRAMBufferSizeMB(512);
 					writer = new IndexWriter(indexingDirectory, writerConfig);
 				} catch (IOException e) {
 					e.printStackTrace();

@@ -120,6 +120,51 @@ public class ServerStart {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void hightlightExample() {
+//			IndexSearcher searcher = DataManager.getSearchManager().acquire();
+//			Query query = new TermQuery(new Term("Content", "organic"));
+//			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);
+//			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+//					.getAnalyzer();
+//			SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
+//			Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
+//			for (int i = 0; i < 1; i++) {
+//				int id = hits.scoreDocs[i].doc;
+////				TermsEnum enum2 =searcher.getIndexReader().getTermVector(id, "Content").iterator();
+////				enum2.seekExact(new BytesRef("organic"));	
+////				PostingsEnum posting = enum2.postings(null, PostingsEnum.FREQS);
+////				int freq = posting.freq();
+//				
+//				
+//				Document doc = searcher.doc(id);
+//				String text = doc.get("Content");
+//				TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), id, "Content",
+//						analyzer);
+//				TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, text, false, 10);// highlighter.getBestFragments(tokenStream,
+//																										// text, 3,
+//																										// "...");
+//				for (int j = 0; j < frag.length; j++) {
+//					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+//						System.out.println((frag[j].toString()));
+//					}
+//				}
+//			}
+//			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer) {
+//				@Override
+//				protected BreakIterator getBreakIterator(String field) {
+//					return new WholeBreakIterator();
+//				}
+//			};
+//			unifiedHighlighter.setMaxLength(Integer.MAX_VALUE-2);
+//			String[] snipets = unifiedHighlighter.highlight("Content", query, hits);
+//		    FileOutputStream outputStream = new FileOutputStream("testfile.txt");
+//		    byte[] strToBytes = snipets[0].getBytes();
+//		    outputStream.write(strToBytes);
+//
+//		    outputStream.close();
+//			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
+	}
 
 	public static PrimaryDataDirectory getRoot() throws Exception {
 		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",

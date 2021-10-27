@@ -1161,6 +1161,7 @@ public class DataManager {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
+		result.put("facets", new JSONArray());
 		Thread innerThread = new Thread(){
 			public void run(){
 				try {
@@ -1510,13 +1511,14 @@ public class DataManager {
 
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
+		String whereToSearch = (String) jsonArray.get("whereToSearch");
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 		final CharArraySet stopSet = new CharArraySet(
 				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
+		QueryParser pars = whereToSearch.equals("Content") ? new QueryParser("Content", analyzer) : new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		StringJoiner queryJoiner = new StringJoiner(" ");

@@ -157,8 +157,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	Directory index;
 	/** high value fetch objects faster, but more memory is needed */
-	final int fetchSize = 200;
-	final int directoryFetchSize = 200;
+	final int fetchSize = (int) Math.pow(10, 5);
+	final int directoryFetchSize = (int) Math.pow(10, 5);
 	
 	DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
@@ -448,7 +448,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n" + 
 				"where primaryentityid =:file and revision = "
 				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
+		long hibernateQueryStart = System.currentTimeMillis();
 		Integer version = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
+		hibernateQueryStart = System.currentTimeMillis() - hibernateQueryStart;
 	    ScoreDoc[] hits2 = null;
 		try {
 			Term term = new Term(MetaDataImplementation.VERSIONID,
@@ -481,6 +483,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Querry Error: "+e.getMessage());
 		}
+	
 		long indexingTimeForOneDocument = 0;
 		try {
 			Document doc = searcher.doc(hits2[0].doc);
@@ -518,6 +521,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
+							//needed to not slow down hibernate session
+							session.evict(pdfile);
 						}
 					}
 				}else if(revision == REVISIONDIRECTORY) {
@@ -535,7 +540,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			writer.addDocument(config.build(taxoWriter, doc));
 			long finishedAdding = System.currentTimeMillis();
 			indexingTimeForOneDocument = finishedAdding-indexingTimeForOneDocument;
-			DataManager.getImplProv().getLogger().info("DocNr. "+(++docCount)+" ms:"+indexingTimeForOneDocument+" sec: "+indexingTimeForOneDocument/1000+" BYTES: "+writer.ramBytesUsed());
+			DataManager.getImplProv().getLogger().info("DocNr. "+(++docCount)+" ms:"+indexingTimeForOneDocument+" hibernteQuery: "+hibernateQueryStart+ "BYTES: "+writer.ramBytesUsed());
 			indexedVersions++;
 			this.filesCounter++;
 //				this.implementationProviderLogger
@@ -543,7 +548,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //								+ " ID:" + doc.get(MetaDataImplementation.VERSIONID));
 		} catch (IOException e) {
 			e.printStackTrace();
-		}		
+		}
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
@@ -575,11 +580,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					}
 				}
 		}
-//		if(indexedVersions != 0 && indexedVersions % 1000 == 0) {
-//			this.implementationProviderLogger
-//			.info("(public) NOW CLEANING SESSION");
-//			session.clear();
-//		}
 	}
 
 	/**

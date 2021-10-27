@@ -36,6 +36,7 @@ let EdalReport = new function() {
     this.units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     //list for current queries (the information is displayed as tabs above the datatable)
     this.queries = [];
+    this.contentQueries = [];
     //dummy element that is used to clone new elements when facetedTerms-uls are calculated and appended to the dom
     this.ulDummy = document.createElement("ul");
     this.ulDummy.classList.add("list-group");
@@ -115,7 +116,8 @@ let EdalReport = new function() {
         document.getElementById("loading-indicator").style.display="inline-block";
         ID++;
         let requestId = ID;
-        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters, "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries };
+        let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters,
+         "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries, "whereToSearch":document.getElementById("searchContextSelect").value };
         self.currentRequestData = requestData;
         //check if search is useful because of a potential selected file type
         var fileTypeSelected = false;
@@ -256,102 +258,100 @@ let EdalReport = new function() {
       document.getElementById(SUBJECT).innerHTML = "";
       document.getElementById(TITLE).innerHTML = "";
       document.getElementById(DESCRIPTION).innerHTML = "";
-      console.log(data);
-      console.log(self.terms)
       data.forEach(function(facet){
-      let tempList = facet.sortedByHits;
-      //facet for filetypes ? -> fill select with values
-      if(facet.category == "Filetype"){
-        if(self.currentRequestData["hitType"] == "singledata"){
-          //reset select values
-          var select = document.getElementById("suffixesSelect");
-          select.innerHTML = "";
-          var option = document.createElement("option");
-          option.innerHTML = "*";
-          select.appendChild(option);
-          var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
-          //sort values lexicographicaly for there labels
-          tempList.sort((a, b) => {
-              if (a.label > b.label)
-                  return 1;
-              if (a.label < b.label)
-                  return -1;
-              return 0;
-          });
-          //fill select with fileTypes and the number of hits
-          for (i = 0; i < tempList.length; i++) {
-            var opt = document.createElement("option");
-            opt.value = tempList[i].label;
-            opt.innerHTML = tempList[i].label + " (" + tempList[i].value+")";
-            select.appendChild(opt);
-            //first fileType = "*", skip this value
-            if(tempList[0].label == self.defaultFileType){
-              select.selectedIndex = ++i;
+        let tempList = facet.sortedByHits;
+        //facet for filetypes ? -> fill select with values
+        if(facet.category == "Filetype"){
+          if(self.currentRequestData["hitType"] == "singledata"){
+            //reset select values
+            var select = document.getElementById("suffixesSelect");
+            select.innerHTML = "";
+            var option = document.createElement("option");
+            option.innerHTML = "*";
+            select.appendChild(option);
+            var request = {"termType":FILETYPE, "terms":filetypes, "requestData":self.currentRequestData};
+            //sort values lexicographicaly for there labels
+            tempList.sort((a, b) => {
+                if (a.label > b.label)
+                    return 1;
+                if (a.label < b.label)
+                    return -1;
+                return 0;
+            });
+            //fill select with fileTypes and the number of hits
+            for (i = 0; i < tempList.length; i++) {
+              var opt = document.createElement("option");
+              opt.value = tempList[i].label;
+              opt.innerHTML = tempList[i].label + " (" + tempList[i].value+")";
+              select.appendChild(opt);
+              //first fileType = "*", skip this value
+              if(tempList[0].label == self.defaultFileType){
+                select.selectedIndex = ++i;
+              }
             }
           }
-        }
-      }else{
-        //Add faceted terms to DOM
-        let ul = document.getElementById(facet.category);
-        for(i = 0; i < 4; i++){
-          if(i < tempList.length){
+        }else{
+          //Add faceted terms to DOM
+          let ul = document.getElementById(facet.category);
+          for(i = 0; i < 4; i++){
+            if(i < tempList.length){
+              var li = document.createElement("li");
+              const term = tempList[i].label;
+              const count = tempList[i].value;
+              li.classList.add("decoration-underline");
+              li.innerHTML = term+' ('+count+")";
+              li.onclick = function(){
+                var searchInput = document.getElementById("query");
+                if(!searchInput.value){
+                  searchInput.classList.add("x");
+                }
+                let obj = {
+                  "type":facet.category,
+                  "searchterm":term,
+                  "occur":"MUST",
+                  "fuzzy":false
+                }
+                self.addQuery(obj);
+              }
+              ul.appendChild(li);
+            }
+          }
+          if(tempList.length > 4){
             var li = document.createElement("li");
-            const term = tempList[i].label;
-            const count = tempList[i].value;
+            li.style.fontWeight = "bold";
+            li.innerHTML = "More ("+tempList.length+")";
             li.classList.add("decoration-underline");
-            li.innerHTML = term+' ('+count+")";
-            li.onclick = function(){
-              var searchInput = document.getElementById("query");
-              if(!searchInput.value){
-                searchInput.classList.add("x");
+            switch(facet.category){
+              case PERSON:
+                li.onclick = function(){
+                  self.listCreatorTerms();
+                };
+                break;
+              case CONTRIBUTOR:
+                li.onclick = function(){
+                  self.listContributorTerms();
+                };
+                break;
+              case SUBJECT:
+                li.onclick = function(){
+                  self.listSubjectTerms();
+                };
+                break;
+              case TITLE:
+                li.onclick = function(){
+                  self.listTitleTerms();
+                };
+                break;
+              case DESCRIPTION:
+                li.onclick = function(){
+                  self.listDescritionTerms();
+                };
+                break;
               }
-              let obj = {
-                "type":facet.category,
-                "searchterm":term,
-                "occur":"MUST",
-                "fuzzy":false
-              }
-              self.addQuery(obj);
+              ul.appendChild(li);
             }
-            ul.appendChild(li);
-          }
+            self.terms[facet.category] = {"sortedByHits":facet.sortedByHits, "sortedByNames":facet.sortedByNames};
         }
-        if(tempList.length > 4){
-          var li = document.createElement("li");
-          li.style.fontWeight = "bold";
-          li.innerHTML = "More ("+tempList.length+")";
-          li.classList.add("decoration-underline");
-          switch(facet.category){
-            case PERSON:
-              li.onclick = function(){
-                self.listCreatorTerms();
-              };
-              break;
-            case CONTRIBUTOR:
-              li.onclick = function(){
-                self.listContributorTerms();
-              };
-              break;
-            case SUBJECT:
-              li.onclick = function(){
-                self.listSubjectTerms();
-              };
-              break;
-            case TITLE:
-              li.onclick = function(){
-                self.listTitleTerms();
-              };
-              break;
-            case DESCRIPTION:
-              li.onclick = function(){
-                self.listDescritionTerms();
-              };
-              break;
-            }
-            ul.appendChild(li);
-          }
-          self.terms[facet.category] = {"sortedByHits":facet.sortedByHits, "sortedByNames":facet.sortedByNames};
-      }
       });
     }
 
