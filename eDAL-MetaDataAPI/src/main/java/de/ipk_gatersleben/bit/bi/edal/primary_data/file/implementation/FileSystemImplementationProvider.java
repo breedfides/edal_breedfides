@@ -38,6 +38,8 @@ import javax.persistence.criteria.Root;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
+import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
@@ -438,7 +440,7 @@ public class FileSystemImplementationProvider
 					stopSet.addAll(STOPWORDS);
 					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
-					writer = new IndexWriter(indexingDirectory, writerConfig);
+					writer = new IndexWriter(indexingDirectory, writerConfig);		
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

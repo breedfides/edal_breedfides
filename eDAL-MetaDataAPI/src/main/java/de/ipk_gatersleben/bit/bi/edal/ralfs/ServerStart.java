@@ -72,7 +72,7 @@ public class ServerStart {
 	public static void main(String[] args) {
 		try {
 			PrimaryDataDirectory root = getRoot();
-//			Thread.sleep(5000);
+//			Thread.sleep(2000);
 //			IndexSearcher searcher = DataManager.getSearchManager().acquire();
 //			Query query = new TermQuery(new Term("Content", "organic"));
 //			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);
@@ -115,7 +115,7 @@ public class ServerStart {
 //
 //		    outputStream.close();
 //			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
-//			uploadZip(root);
+			//uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -182,7 +182,7 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("MyPrimaryDataFileTitle023021229999");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("MyPrimleTi6769");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
 		NaturalPerson np = new NaturalPerson("Andrea", "Bräutigam",
@@ -203,9 +203,9 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("Results of genie3 analyis for wheat001223299"));
+				new UntypedData("Results of genie3 analyis for 329452343239"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
-				"This file contains the detailed results of the genie3 analysis for wheat gene expression networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
+				"This file contains the detailed results of the genie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);
 		Path pathToRessource = Paths.get(System.getProperty("user.home") + File.separator + "textfiles23");
 		EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(entity, pathToRessource,

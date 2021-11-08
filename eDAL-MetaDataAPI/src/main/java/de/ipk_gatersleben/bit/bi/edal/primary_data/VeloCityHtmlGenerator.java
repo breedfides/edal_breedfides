@@ -1646,21 +1646,23 @@ class VeloCityHtmlGenerator {
 				}
 				try {
 					terms = MultiTerms.getTerms(reader, MetaDataImplementation.SIZE);
-					TermsEnum it;
-					//find highest file size
-					try {
-						it = terms.iterator();
-						while(it.next() != null) {
-							String term = it.term().utf8ToString();
-							if(!term.equals("")) {
-								long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
-								if(size > maxFileSize) {
-									maxFileSize = size;
-								}
-							}							
-						}
-					} catch (IOException e) {
-						DataManager.getImplProv().getLogger().debug("Error while searching for the highest file size: "+e.getMessage());
+					if(terms!=null) {
+						TermsEnum it;
+						//find highest file size
+						try {
+							it = terms.iterator();
+							while(it.next() != null) {
+								String term = it.term().utf8ToString();
+								if(!term.equals("")) {
+									long size = Long.valueOf(term.replaceFirst("^0+(?!$)", ""));
+									if(size > maxFileSize) {
+										maxFileSize = size;
+									}
+								}							
+							}
+						} catch (IOException e) {
+							DataManager.getImplProv().getLogger().debug("Error while searching for the highest file size: "+e.getMessage());
+						}	
 					}
 				} catch (IOException e1) {
 					e1.printStackTrace();

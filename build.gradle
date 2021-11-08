@@ -255,7 +255,7 @@ project(':eDAL-MetaDataAPI') {
         	exclude group: 'org.apache.lucene'
     	}*/
 		//compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'*/
-		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Beta10'
+		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Beta11'
     	compile group: 'org.hibernate.search', name: 'hibernate-search-backend-lucene', version: '6.0.0.Beta11'
     	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-highlighter
 		compile group: 'org.apache.lucene', name: 'lucene-highlighter', version: '8.7.0'
@@ -287,6 +287,7 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
+	    
 		compile group: 'org.bidib.com.github.markusbernhardt', name: 'proxy-vole', version: '1.0.10'
 				  
 	 	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'

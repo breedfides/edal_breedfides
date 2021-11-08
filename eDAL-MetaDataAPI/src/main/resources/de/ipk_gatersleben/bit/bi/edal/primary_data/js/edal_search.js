@@ -43,6 +43,101 @@ let EdalReport = new function() {
     this.ulDummy.style.maxHeight = "250px";
     this.ulDummy.style.overflowY = "auto";
     this.ulDummy.style.overflowX = "hidden";
+
+    this.reportColumns = [
+                    {
+                        title: "DOI",
+                        data: "doi",
+                        width: "10%",
+                        class: "edal-report-doi",
+                        render: function (data, type, row) {
+                            return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+                        }
+                    },
+                    {
+                        title: "Dataset",
+                        data: "title",
+                        class: "edal-report-title"
+                    }
+                ];
+
+    this.fileColumns = [
+        {
+            title: "Filename",
+            width: "25%",
+            class: "edal-report-doi",
+            render: function (data, type, row) {
+                return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
+            }
+        },
+        {
+            title: "File type",
+            width: "10%",
+            data: "ext",
+            class: "edal-report-title"
+        },
+        {
+            title: "File size",
+            width: "10%",
+            data: "size",
+            class: "edal-report-title",
+            render: function (data, type, row) {
+                if (type === "display") {
+                    return EdalReport.niceBytes(parseInt(data));
+                } else {
+                    return data;
+                }
+            }
+        },
+        {
+            title: "DOI",
+            data: "doi",
+            width: "10%",
+            class: "edal-report-doi",
+            render: function (data, type, row) {
+                return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+            }
+        },
+        {
+            title: "Dataset",
+            data: "title",
+            class: "edal-report-title"
+        },
+        {
+          title: "DL",
+          class: "edal-report-title",
+          width: "35px",
+          render: function (data, type, row) {
+              return '<a href="'+serverURL+'/DOI/'+row.link+'/DOWNLOAD" target="_blank" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span>';
+          }
+        }
+    ];
+
+    this.directoriesColumns = [
+        {
+            title: "Directory",
+            width: "25%",
+            class: "edal-report-doi",
+            render: function (data, type, row) {
+                return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+            }
+        },
+        {
+            title: "DOI",
+            data: "doi",
+            width: "10%",
+            class: "edal-report-doi",
+            render: function (data, type, row) {
+                return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+            }
+        },
+        {
+            title: "Dataset",
+            data: "title",
+            class: "edal-report-title"
+        }
+    ];
+
     //ID to only process current REST responses (for search()
     let ID = 0;
     //holds data that is needed if the datatables is created/changed
@@ -149,11 +244,11 @@ let EdalReport = new function() {
             $("#report tbody").empty();
             $("#report thead").empty();
             if(requestData.hitType == "dataset"){
-              self.renderDatatableReports();
+              self.renderDatatableReports(self.reportColumns);
             }else if(requestData.hitType == "singledata"){
-              self.renderDatatableFiles();
+              self.renderDatatableReports(self.fileColumns);
             }else if(requestData.hitType == "directory"){
-              self.renderDatatableDirectories();
+              self.renderDatatableReports(self.directoriesColumns);
             }
             self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
             document.getElementById("loading-indicator").style.display="none";
@@ -556,11 +651,11 @@ let EdalReport = new function() {
         $(tableid + " tbody").empty();
         $(tableid + " thead").empty();
         if(currentRequestData.hitType == "dataset"){
-          self.renderDatatableReports();
+          self.renderDatatableReports(self.reportColumns);
         }else if(currentRequestData.hitType == "singledata"){
-          self.renderDatatableFiles();
+          self.renderDatatableReports(self.fileColumns);
         }else if(currentRequestData.hitType == "directory"){
-          self.renderDatatableDirectories();
+          self.renderDatatableReports(self.directoriesColumns);
         }
         document.getElementById("loading-indicator").style.display="none";
         self.manipulateDataTable(pageArray, self.currentRequestData, history);
@@ -678,7 +773,7 @@ let EdalReport = new function() {
             $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
             $('#slider-filesize').slider("disable");
             $('.opacity-change').css('opacity','0.5');
-            self.renderDatatableReports();
+            self.renderDatatableReports(self.reportColumns);
             if(initQuery !== ""){
               $('#query').val(initQuery);
               await self.search();
@@ -732,139 +827,8 @@ let EdalReport = new function() {
     //   });
     // }
 
-    /* renders the datatable with columns for files */
-    this.renderDatatableFiles = function() {
-        let self = this;
-
-        this.datatable = $('#report').DataTable({
-          data: self.reportData,
-          dom: 't',
-          //dom: 'Bfrtip',
-          buttons: [
-              {
-                  extend: 'copyHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-              {
-                  extend: 'csvHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-          ],
-          "pagingType": "simple",
-          "pageLength": self.pageSize,
-          info: false,
-          "order": [],
-          "language": {
-            "emptyTable": ""
-          },
-            columns: [
-                {
-                    title: "Filename",
-                    width: "25%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
-                    }
-                },
-                {
-                    title: "File type",
-                    width: "10%",
-                    data: "ext",
-                    class: "edal-report-title"
-                },
-                {
-                    title: "File size",
-                    width: "10%",
-                    data: "size",
-                    class: "edal-report-title",
-                    render: function (data, type, row) {
-                        if (type === "display") {
-                            return self.niceBytes(parseInt(data));
-                        } else {
-                            return data;
-                        }
-                    }
-                },
-                {
-                    title: "DOI",
-                    data: "doi",
-                    width: "10%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
-                    }
-                },
-                {
-                    title: "Dataset",
-                    data: "title",
-                    class: "edal-report-title"
-                }
-            ]
-        });
-    };
-
     /* renders the datatable with columns for directories */
-    this.renderDatatableDirectories = function() {
-        let self = this;
-
-        this.datatable = $('#report').DataTable({
-          data: self.reportData,
-          dom: 't',
-          //dom: 'Bfrtip',
-          buttons: [
-              {
-                  extend: 'copyHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-              {
-                  extend: 'csvHtml5',
-                  exportOptions: {
-                      columns: [0, 1, 2, 3]
-                  }
-              },
-          ],
-          "pagingType": "simple",
-          "pageLength": self.pageSize,
-          info: false,
-          "order": [],
-          "language": {
-            "emptyTable": ""
-          },
-            columns: [
-                {
-                    title: "Directory",
-                    width: "25%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
-                    }
-                },
-                {
-                    title: "DOI",
-                    data: "doi",
-                    width: "10%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
-                    }
-                },
-                {
-                    title: "Dataset",
-                    data: "title",
-                    class: "edal-report-title"
-                }
-            ]
-        });
-    };
-
-    /* renders the datatable with columns for directories */
-    this.renderDatatableReports = function() {
+    this.renderDatatableReports = function(cols) {
       $('tr').css('height','10px');
         let self = this;
 
@@ -897,22 +861,7 @@ let EdalReport = new function() {
             fixedColumns:   {
                 heightMatch: 'none'
             },
-            columns: [
-                {
-                    title: "DOI",
-                    data: "doi",
-                    width: "10%",
-                    class: "edal-report-doi",
-                    render: function (data, type, row) {
-                        return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
-                    }
-                },
-                {
-                    title: "Dataset",
-                    data: "title",
-                    class: "edal-report-title"
-                }
-            ]
+            columns: cols
         });
     };
 
