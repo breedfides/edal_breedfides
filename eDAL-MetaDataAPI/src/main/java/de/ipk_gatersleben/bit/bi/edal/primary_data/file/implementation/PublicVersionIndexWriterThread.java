@@ -526,17 +526,37 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							fileSize = PublicVersionIndexWriterThread.MAXDOCSIZE;
 						}
 						String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
+						DataManager.getImplProv().getLogger().info(title+" size: "+fileSize);
 						if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize < PublicVersionIndexWriterThread.MAXDOCSIZE) {						
-							DataManager.getImplProv().getLogger().info(title);
+							DataManager.getImplProv().getLogger().info("Indexing Content for "+title);
 							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class,
 									file);
 							if(pdfile.getPathToLocalFile(pdfile.getCurrentVersion()).toFile().exists()) {
-								ByteArrayOutputStream stream = new ByteArrayOutputStream();
-								pdfile.read(stream);
-								if(stream.size() > 0) {
-									doc.add(new TextField("Content",stream.toString(),Store.YES));
+								
+								char[] myBuffer = new char[512];
+								BufferedReader in = new BufferedReader(new FileReader(pdfile.getPathToLocalFile(pdfile.getCurrentVersion()).toFile()));
+								StringBuilder builder = new StringBuilder();
+								int bytesRead = in.read(myBuffer,0,myBuffer.length);
+								int size = 0;
+								while (bytesRead != -1)
+								{
+									String string= new String(myBuffer, 0, bytesRead);
+								    
+								    if((size += bytesRead) < IndexWriter.MAX_STORED_STRING_LENGTH) {
+									    builder.append(string);
+									    size += bytesRead;
+								    }else {
+								    	DataManager.getImplProv().getLogger().info("1datasize: "+size);
+								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+								    	builder.setLength(0);
+								    	size = bytesRead;
+								    	builder.append(string);
+								    }
+								    bytesRead = in.read(myBuffer,0,myBuffer.length);
 								}
-								stream.close();
+						    	DataManager.getImplProv().getLogger().info("2datasize: "+size);
+								doc.add(new TextField("Content",builder.toString(),Store.YES));
+								in.close();
 								// needed to not slow down hibernate session
 							}
 							session.evict(pdfile);
@@ -563,9 +583,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //						.info("UPDATED VERSION: " + doc.get(MetaDataImplementation.TITLE)
 //								+ " ID:" + doc.get(MetaDataImplementation.VERSIONID));
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (PrimaryDataFileException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
