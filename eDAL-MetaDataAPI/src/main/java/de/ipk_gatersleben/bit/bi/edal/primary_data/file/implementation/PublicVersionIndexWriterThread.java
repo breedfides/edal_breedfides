@@ -536,27 +536,47 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								char[] myBuffer = new char[512];
 								BufferedReader in = new BufferedReader(new FileReader(pdfile.getPathToLocalFile(pdfile.getCurrentVersion()).toFile()));
 								StringBuilder builder = new StringBuilder();
-								int bytesRead = in.read(myBuffer,0,myBuffer.length);
-								int size = 0;
-								while (bytesRead != -1)
-								{
-									String string= new String(myBuffer, 0, bytesRead);
-								    
-								    if((size += bytesRead) < IndexWriter.MAX_STORED_STRING_LENGTH) {
-									    builder.append(string);
-									    size += bytesRead;
-								    }else {
-								    	DataManager.getImplProv().getLogger().info("1datasize: "+size);
-								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
-								    	builder.setLength(0);
-								    	size = bytesRead;
-								    	builder.append(string);
+								
+								int ch;
+								char lastSeperator;
+								while((ch = in.read()) != -1) {
+								    char theChar = (char) ch;
+								    if(Character.isWhitespace(theChar)) {
+								    	//in.mar
 								    }
-								    bytesRead = in.read(myBuffer,0,myBuffer.length);
+								    if((builder.length()+1) == IndexWriter.MAX_STORED_STRING_LENGTH) {
+								    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
+
+								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+								    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+								    }
+							    	builder.append(theChar);
 								}
-						    	DataManager.getImplProv().getLogger().info("2datasize: "+size);
-								doc.add(new TextField("Content",builder.toString(),Store.YES));
+								if(builder.length() > 0) {
+									String c = builder.toString();
+							    	DataManager.getImplProv().getLogger().info("2datasize: string length: "+c.length() +" vs builder.length: "+builder.length()+"last part: "+c.substring(c.length()-70,c.length()-1));
+							    	doc.add(new TextField("Content",c,Store.YES));
+								}
 								in.close();
+								
+//								int bytesRead = in.read(myBuffer,0,myBuffer.length);
+//								while (bytesRead != -1)
+//								{
+//									String string= new String(myBuffer, 0, bytesRead);
+//								    if((builder.length() + string.length()) < MAX_FIELD_SIZE) {
+//									    builder.append(string);
+//								    }else {
+//								    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
+//								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+//								    	builder.setLength(0);
+//								    	builder.append(string);
+//								    }
+//								    bytesRead = in.read(myBuffer,0,myBuffer.length);
+//								}
+//								String c = builder.toString();
+//						    	DataManager.getImplProv().getLogger().info("2datasize: string length: "+c.length() +" vs builder.length: "+builder.length()+"last part: "+c.substring(c.length()-70,c.length()-1));
+//								doc.add(new TextField("Content",builder.toString(),Store.YES));
+//								in.close();
 								// needed to not slow down hibernate session
 							}
 							session.evict(pdfile);
