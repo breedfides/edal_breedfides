@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +30,9 @@ class PublicVersionIndexWriterTest extends EdalDefaultTestCase{
 	//@Test
 	void testStoreAndIndexingLargeData() throws PrimaryDataDirectoryException, EdalException, EdalAuthenticateException {
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(true, this.configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
-
+		
+		
+		//publish dataset
 	}
 	
 	@BeforeEach
@@ -47,12 +51,13 @@ class PublicVersionIndexWriterTest extends EdalDefaultTestCase{
 		bufferedWriter.write("last words");	
 		myWriter.close();
 		for(int i = 0; i < 5; i++) {
-			Files.copy(Paths.get("custom.txt"), Paths.get("copy_"+i+".txt"));
+			Files.copy(Paths.get("custom.txt"), Paths.get("copy_"+i+".txt"),StandardCopyOption.REPLACE_EXISTING);
 		}
 	}
 	@AfterEach
-	void deleteDataset() {
-		
+	void deleteDataset() throws IOException {
+	    FileUtils.deleteDirectory(PATH.toFile());
 	}
+	
 
 }
