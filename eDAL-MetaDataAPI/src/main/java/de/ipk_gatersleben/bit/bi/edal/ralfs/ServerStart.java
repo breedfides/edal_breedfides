@@ -73,17 +73,18 @@ public class ServerStart {
 	public static void main(String[] args) {
 		try {
 			PrimaryDataDirectory root = getRoot();
-//			Thread.sleep(2000);
+			Thread.sleep(2000);
 			IndexSearcher searcher = DataManager.getSearchManager().acquire();
 			ScoreDoc[] hits = searcher.search(new TermQuery(new Term("Content","test")), 500000).scoreDocs;
 			int fgdf = 0;
 			for(ScoreDoc doc : hits) {
 				Document doc2 = searcher.doc(doc.doc);
 				for(String content : doc2.getValues("Content")) {
-					DataManager.getImplProv().getLogger().info("start "+content.substring(0, 50));
-					DataManager.getImplProv().getLogger().info("end "+content.substring(content.length()-50, content.length()-1));
+					DataManager.getImplProv().getLogger().info("start "+content.substring(0, 80));
+					DataManager.getImplProv().getLogger().info("end "+content.substring(content.length()-80, content.length()));
 				}
 
+			
 			}
 //			Query query = new TermQuery(new Term("Content", "organic"));
 //			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);

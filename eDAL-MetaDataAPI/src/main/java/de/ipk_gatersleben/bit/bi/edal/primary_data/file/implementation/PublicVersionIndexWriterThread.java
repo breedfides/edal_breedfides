@@ -539,18 +539,32 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								
 								int ch;
 								char lastSeperator;
+								int pos = -1;
 								while((ch = in.read()) != -1) {
 								    char theChar = (char) ch;
-								    if(Character.isWhitespace(theChar)) {
-								    	//in.mar
-								    }
 								    if((builder.length()+1) == IndexWriter.MAX_STORED_STRING_LENGTH) {
-								    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
-
-								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
-								    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+								    	//if last appended char is a whitespace or if no whitespace found.. just store the string in a content field
+								    	if(pos == builder.length()-1 || pos < 1) {
+									    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
+									    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+									    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+									    	pos = -1;
+								    	}else {
+								    		//split up the last part of the string to the last whitespace for a clean cut between stored Fields
+									    	String builderString = builder.toString();
+//									    	DataManager.getImplProv().getLogger().info("3datasize: "+builder.length());
+//									    	DataManager.getImplProv().getLogger().info("start|"+builderString.substring(0,80));
+//									    	DataManager.getImplProv().getLogger().info("end|"+builderString.substring(pos-80,pos));
+									    	doc.add(new TextField("Content",builderString.substring(0,pos),Store.YES));
+									    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+									    	builder.append(builderString.substring(pos));
+								    		pos = -1;
+								    	}
 								    }
 							    	builder.append(theChar);
+								    if(Character.isWhitespace(theChar)) {
+								    	pos = builder.length()-1;
+								    }
 								}
 								if(builder.length() > 0) {
 									String c = builder.toString();
