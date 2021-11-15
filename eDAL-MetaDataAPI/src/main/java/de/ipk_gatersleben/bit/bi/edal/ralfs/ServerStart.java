@@ -1,15 +1,18 @@
 package de.ipk_gatersleben.bit.bi.edal.ralfs;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.BreakIterator;
 import java.util.Locale;
@@ -69,23 +72,26 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class ServerStart {
+	
+	private static Path PATH = Paths.get(System.getProperty("user.home"), "TEST_DATASET");
 
 	public static void main(String[] args) {
 		try {
 			PrimaryDataDirectory root = getRoot();
-			Thread.sleep(2000);
-			IndexSearcher searcher = DataManager.getSearchManager().acquire();
-			ScoreDoc[] hits = searcher.search(new TermQuery(new Term("Content","test")), 500000).scoreDocs;
-			int fgdf = 0;
-			for(ScoreDoc doc : hits) {
-				Document doc2 = searcher.doc(doc.doc);
-				for(String content : doc2.getValues("Content")) {
-					DataManager.getImplProv().getLogger().info("start "+content.substring(0, 80));
-					DataManager.getImplProv().getLogger().info("end "+content.substring(content.length()-80, content.length()));
-				}
-
-			
-			}
+//			
+//			Thread.sleep(2000);
+//			IndexSearcher searcher = DataManager.getSearchManager().acquire();
+//			ScoreDoc[] hits = searcher.search(new TermQuery(new Term("Content","test")), 500000).scoreDocs;
+//			int fgdf = 0;
+//			for(ScoreDoc doc : hits) {
+//				Document doc2 = searcher.doc(doc.doc);
+//				for(String content : doc2.getValues("Content")) {
+//					DataManager.getImplProv().getLogger().info("start "+content.substring(0, 80));
+//					DataManager.getImplProv().getLogger().info("end "+content.substring(content.length()-80, content.length()));
+//				}
+//
+//			
+//			}
 //			Query query = new TermQuery(new Term("Content", "organic"));
 //			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);
 //			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
@@ -127,7 +133,8 @@ public class ServerStart {
 //
 //		    outputStream.close();
 //			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
-			//uploadZip(root);
+			//createDataset(5);
+			uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -189,6 +196,25 @@ public class ServerStart {
 				EdalHelpers.authenticateWinOrUnixOrMacUser());
 		return rootDirectory;
 	}
+	
+	static void createDataset(int copies) throws IOException {
+		File dir = PATH.toFile();
+		if(!dir.exists()) {
+			dir.mkdir();
+		}		
+		FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "test.txt").toString());
+		BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
+		String s = "This is a test for indexing large text data.";
+		int size = (Integer.MAX_VALUE-(200*1024*1024))/s.getBytes().length;
+		for(int i = 0; i < size; i++) {
+			bufferedWriter.write(s);
+		}
+		bufferedWriter.write("last words");	
+		myWriter.close();
+		for(int i = 0; i < copies; i++) {
+			Files.copy(Paths.get(PATH.toString(), "test.txt"), Paths.get(PATH.toString(), "copy_"+i+".txt"),StandardCopyOption.REPLACE_EXISTING);
+		}
+	}
 
 	public static void uploadZip(PrimaryDataDirectory currentDirectory)
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
@@ -222,7 +248,7 @@ public class ServerStart {
 		Path pathToRessource = Paths.get(System.getProperty("user.home") + File.separator + "textfiles23");
 		EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(entity, pathToRessource,
 				metadata, true);
-		Files.walkFileTree(pathToRessource, edalVisitor);
+		Files.walkFileTree(PATH, edalVisitor);
 		entity.addPublicReference(PersistentIdentifier.DOI);
 		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@erics.smtp.2805"));
 
