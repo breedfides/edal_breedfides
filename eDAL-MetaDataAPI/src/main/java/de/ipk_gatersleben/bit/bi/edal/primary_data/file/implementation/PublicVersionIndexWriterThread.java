@@ -35,7 +35,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
@@ -143,6 +145,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
+	public static final String[] METADATAFIELDS = {MetaDataImplementation.ALGORITHM,MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,
+			MetaDataImplementation.VERSIONID,MetaDataImplementation.PERSON,MetaDataImplementation.CREATORNAME,MetaDataImplementation.TYPE,
+			MetaDataImplementation.CONTRIBUTORNAME,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALL,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.FILETYPE,
+			MetaDataImplementation.ENTITYID,MetaDataImplementation.MIMETYPE,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.STARTDATE,MetaDataImplementation.SUBJECT, MetaDataImplementation.ENTITYTYPE
+			,PublicVersionIndexWriterThread.DOCID,PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,PublicVersionIndexWriterThread.INTERNALID};
 	
 	public static final int MAXDOCSIZE = Integer.MAX_VALUE;
 	int docCount = 0;

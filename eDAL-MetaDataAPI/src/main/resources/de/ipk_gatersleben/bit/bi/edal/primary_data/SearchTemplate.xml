@@ -158,10 +158,35 @@
               <div id="edal-report-table-inner-container">
                 <div id="edal-report-filter" class="flex-column custom-scroll">
 
+                  <div>
+                    <div class="hittypelabel pl-2">
+                      <label style="margin-bottom:0;" for="">Search in:</label>
+                    </div>
+                    <div class="hittypeinput pb-1">
+                    <div id="radioContainer">
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="searchFor" id="metaDataRadio" value="Metadata" onclick="EdalReport.filterChange()" checked="checked">
+                          <label class="form-check-label" for="exampleRadios1">
+                            Metadata
+                          </label>
+                          <button class="info-btn button-circle ml-3" data-toggle="tooltip" data-placement="right" title="Search in metadata of datasets and files.">i</button>
+                        </div>
+                        <div class="form-check mt-2">
+                          <input class="form-check-input" type="radio" name="searchFor" id="contentRadio" value="Content" onclick="EdalReport.contentButton()">
+                            <label class="form-check-label" for="exampleRadios2" >
+                              Content
+                            </label>
+                            <button class="info-btn button-circle ml-3" data-toggle="tooltip" data-placement="right" title="Search in content of text files. (Up to 1.8gb text files)">i</button>
+                          </div>
+                          </div>
+                        </div>
+                  </div>
+                  <div style="border-bottom: 1px solid rgba(0,0,0,.1)"></div>
+
                   <div class="hittypelabel pl-2">
                     <label style="margin-bottom:0;" for="">Result types:</label>
                   </div>
-                  <div class="hittypeinput mb-1 pb-2">
+                  <div class="hittypeinput pb-1">
                     <div id="radioContainer">
                       <div class="form-check">
                         <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
@@ -182,7 +207,8 @@
                               </label>
                             </div>
                           </div>
-                        </div>
+                  </div>
+                        <div class="mb-2" style="border-bottom: 1px solid rgba(0,0,0,.1)"></div>
 
                         <label class="pl-2" for="amount" style="width:38%;">Creation year:</label>
                         <span class="pl-1" id="date-label" style="color:#333; font-weight:bold;"></span>
@@ -205,20 +231,6 @@
                             <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
                               <select id="suffixesSelect" onchange="EdalReport.filterChange()" class="form-control form-control-sm pr-3" disabled="disabled" name="top5" size="1">
                                 <option>*</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <div class="centerclass pl-2" style="width:50%;float:left;">
-                            <label style="margin-bottom:0;" for="">Search for:
-                            </label>
-                          </div>
-                          <div class="mb-1" style="border-bottom: 1px solid rgba(0,0,0,.1);">
-                            <div class="filetypeinput centerclass pb-2 pr-2" style="width: 50%;margin: 0 auto;">
-                              <select id="searchContextSelect" class="form-control form-control-sm pr-3" name="top5" size="1">
-                                <option>Metadata</option>
-                                <option>Content</option>
                               </select>
                             </div>
                           </div>

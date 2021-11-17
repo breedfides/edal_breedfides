@@ -134,7 +134,7 @@ public class ServerStart {
 //		    outputStream.close();
 //			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
 			//createDataset(5);
-			uploadZip(root);
+			//uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

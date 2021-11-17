@@ -45,21 +45,21 @@ let EdalReport = new function() {
     this.ulDummy.style.overflowX = "hidden";
 
     this.reportColumns = [
-                    {
-                        title: "DOI",
-                        data: "doi",
-                        width: "10%",
-                        class: "edal-report-doi",
-                        render: function (data, type, row) {
-                            return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
-                        }
-                    },
-                    {
-                        title: "Dataset",
-                        data: "title",
-                        class: "edal-report-title"
-                    }
-                ];
+        {
+            title: "DOI",
+            data: "doi",
+            width: "10%",
+            class: "edal-report-doi",
+            render: function (data, type, row) {
+                return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+            }
+        },
+        {
+            title: "Dataset",
+            data: "title",
+            class: "edal-report-title"
+        }
+    ];
 
     this.fileColumns = [
         {
@@ -102,15 +102,15 @@ let EdalReport = new function() {
             title: "Dataset",
             data: "title",
             class: "edal-report-title"
-        },
-        {
-          title: "DL",
-          class: "edal-report-title",
-          width: "35px",
-          render: function (data, type, row) {
-              return '<a href="'+serverURL+'/DOI/'+row.link+'/DOWNLOAD" target="_blank" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span>';
-          }
-        }
+         },
+        // {
+        //   title: "DL",
+        //   class: "edal-report-title",
+        //   width: "35px",
+        //   render: function (data, type, row) {
+        //       return '<a href="'+serverURL+'/DOI/'+row.link+'/DOWNLOAD" target="_blank" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span>';
+        //   }
+        // }
     ];
 
     this.directoriesColumns = [
@@ -212,7 +212,7 @@ let EdalReport = new function() {
         ID++;
         let requestId = ID;
         let requestData = { "hitType":document.querySelector('input[name = "hitType"]:checked').value, "existingQuery":queryValue, "filters":this.filters,
-         "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries, "whereToSearch":document.getElementById("searchContextSelect").value };
+         "bottomResultId":this.bottomResultId, "pageSize":this.pageSize,"pageIndex":0,"pagination":[], "pageArraySize":0,"displayedPage":1, "queries":self.queries, "whereToSearch":$('input[name="searchFor"]:checked').val() };
         self.currentRequestData = requestData;
         //check if search is useful because of a potential selected file type
         var fileTypeSelected = false;
@@ -322,6 +322,7 @@ let EdalReport = new function() {
       span.innerHTML = innerHtmlString;
       let innerSpan = document.createElement("button");
       innerSpan.classList.add("remove-query-btn", "ml-2");
+      innerSpan.classList.add("button-circle", "ml-2");
       innerSpan.innerHTML = '&times';
       span.appendChild(innerSpan);
       innerSpan.onclick = function(){
@@ -793,6 +794,11 @@ let EdalReport = new function() {
             window.history.replaceState(null, null, window.location.pathname);
         });
     };
+
+    this.contentButton = function(){
+      document.getElementById("exampleRadios2").checked = true;
+      this.filterChange();
+    }
 
     // /* resets term lists and calls EdalReport.facetedTerms() to count hits for
     //  every search term which depend on the current set queries*/

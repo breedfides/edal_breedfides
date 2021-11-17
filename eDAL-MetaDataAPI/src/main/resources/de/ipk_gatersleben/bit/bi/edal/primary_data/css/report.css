@@ -465,12 +465,10 @@ footer {
   font-weight: normal;
   width: 100%;
   text-align: center;
-  margin: 0 auto;
-  border-bottom: 1px solid rgba(0,0,0,.1);
+  margin-left: 35%;
 }
 
 #radioContainer{
-  margin: 0 auto;
   width: auto;
   text-align: left;
   display: table;
@@ -914,6 +912,12 @@ ul#query-ul li {
 }
 
 .remove-query-btn{
+  font-weight: bold;
+  border: 1px solid rgba(2, 117, 216,.8);
+  cursor: pointer;
+}
+
+.button-circle{
   text-align: center;
   margin-top: .1em;
   margin-bottom: .1em;
@@ -925,22 +929,24 @@ ul#query-ul li {
   justify-content: center;
   align-items: center;
   font-size: 1em;
-  font-weight: bold;
   text-decoration: none
   color:black;
   background: white;
-  border: 1px solid rgba(2, 117, 216,.8);
   transition: 0.3s;
 }
 
-.remove-query-btn:hover{
+.info-btn{
+    border: 1px solid black;
+    float:right;
+}
+
+.button-circle:hover{
   background: rgba(2, 117, 216,1);
   border-style: none;
   color: white;
-  cursor: pointer;
 }
 
-.remove-query-btn:focus{
+.button-circle:focus{
   outline: none;
   box-shadow: none;
 }

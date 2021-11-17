@@ -1230,9 +1230,10 @@ public class DataManager {
 			result.put("hitSize", scoreDocs.length);
 			pageSize = ((int) (long) scoreDocs.length);
 		}
+		Set<String> fields = Set.of(PublicVersionIndexWriterThread.METADATAFIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
-				doc = searcher.doc(scoreDocs[i].doc);
+				doc = searcher.doc(scoreDocs[i].doc,fields);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1533,7 +1534,6 @@ public class DataManager {
 				result.put("parsedQuery", queryString.toString());
 				queryJoiner.add(queryString);
 			} catch (ParseException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		JSONArray queries = (JSONArray) jsonArray.get("queries");
