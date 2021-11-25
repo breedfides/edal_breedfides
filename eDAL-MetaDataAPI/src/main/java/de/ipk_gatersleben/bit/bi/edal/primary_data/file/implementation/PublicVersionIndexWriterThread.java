@@ -35,9 +35,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Stack;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
@@ -145,11 +143,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
-	public static final String[] METADATAFIELDS = {MetaDataImplementation.ALGORITHM,MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,
-			MetaDataImplementation.VERSIONID,MetaDataImplementation.PERSON,MetaDataImplementation.CREATORNAME,MetaDataImplementation.TYPE,
-			MetaDataImplementation.CONTRIBUTORNAME,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALL,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.FILETYPE,
-			MetaDataImplementation.ENTITYID,MetaDataImplementation.MIMETYPE,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.STARTDATE,MetaDataImplementation.SUBJECT, MetaDataImplementation.ENTITYTYPE
-			,PublicVersionIndexWriterThread.DOCID,PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,PublicVersionIndexWriterThread.INTERNALID};
 	
 	public static final int MAXDOCSIZE = Integer.MAX_VALUE;
 	int docCount = 0;
@@ -168,6 +161,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	IndexReader reader = null;
 	DirectoryTaxonomyWriter taxoWriter = null;
 	private final FacetsConfig config = new FacetsConfig();
+	public static final String[] METADATAFIELDS = {MetaDataImplementation.ALGORITHM,MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,
+			MetaDataImplementation.VERSIONID,MetaDataImplementation.PERSON,MetaDataImplementation.CREATORNAME,MetaDataImplementation.TYPE,
+			MetaDataImplementation.CONTRIBUTORNAME,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALL,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.FILETYPE,
+			MetaDataImplementation.ENTITYID,MetaDataImplementation.MIMETYPE,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.STARTDATE,MetaDataImplementation.SUBJECT, MetaDataImplementation.ENTITYTYPE
+			,PublicVersionIndexWriterThread.DOCID,PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,PublicVersionIndexWriterThread.INTERNALID};
+	
 
 	Directory index;
 	/** high value fetch objects faster, but more memory is needed */
@@ -384,12 +383,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	private void updateIndex(Integer pubRef, String internalId, Session session) {
 		this.filesCounter = 0;
-		// Alternative way to fetch the PrimaryDataFileImplementation associated with
-		// the publicReference (requieres entire publicReference)
-		// PrimaryDataFileImplementation parentDirFile =
-		// session.get(PrimaryDataFileImplementation.class,
-		// pubRef.getVersion().getPrimaryEntityId());
-
 		NativeQuery<Object[]> nativeQuery = session.createNativeQuery(
 				"SELECT entities.id, entities.type FROM PUBLICREFERENCES p, entity_versions ev, entities\r\n"
 						+ "where p.id =:publicID and ev.id = p.version_id and entities.id = ev.primaryentityid");
@@ -409,14 +402,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,
 							REVISIONDIRECTORY);
 				}
-				long dirStart = System.currentTimeMillis();
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n"
 						+ "where parentdirectory_id =:parentdir\r\n" + "order by id");
 				ScrollableResults results = nativeQuery.setParameter("parentdir", dir).setMaxResults(directoryFetchSize)
 						.scroll(ScrollMode.FORWARD_ONLY);
-//				String hql = "from PrimaryDataFileImplementation s "
-//						+ "where s.parentDirectory.id = :id order by s.id";
-//				ScrollableResults results = session.createQuery(hql).setParameter("id", dir.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
 				int count = 0;
 				String tempFileId = null;
 				while (results.next()) {
@@ -467,13 +456,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n"
 				+ "where primaryentityid =:file and revision = "
 				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
-		long hibernateQueryStart = System.currentTimeMillis();
 		Integer version = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
-		hibernateQueryStart = System.currentTimeMillis() - hibernateQueryStart;
-		ScoreDoc[] hits2 = null;
 		try {
-			Term term = new Term(MetaDataImplementation.VERSIONID, Integer.toString(version));
-			hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
+			ScoreDoc[] hits2 = searcher.search(new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version))), 1).scoreDocs;
 			if (hits2 == null || hits2.length == 0) {
 				do {
 					try {
@@ -495,137 +480,64 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						// TODO Auto-generated catch block
 						e2.printStackTrace();
 					}
-					hits2 = searcher.search(new TermQuery(term), 1).scoreDocs;
+					hits2 = searcher.search(new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version))), 1).scoreDocs;
 				} while (hits2 == null || hits2.length == 0);
+			}
+			try {
+				Document doc = searcher.doc(hits2[0].doc);
+				String filetype = FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE));
+				addFacets(doc);
+				writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version)));
+				doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID, internalId, Store.YES));
+				StringBuilder docIDBuilder = new StringBuilder(doc.get(MetaDataImplementation.PRIMARYENTITYID)).append("-")
+						.append(String.valueOf(pubRef));
+				doc.add(new StringField(PublicVersionIndexWriterThread.DOCID, docIDBuilder.toString(), Store.YES));
+				if (entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+					if (revision == REVISIONFILE) {
+						doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE,
+								Store.YES));
+							// skip this field, if file has no extension
+							if (filetype != null && filetype.length() > 0) {
+								doc.add(new TextField(MetaDataImplementation.FILETYPE, filetype, Store.YES));
+								doc.add(new FacetField(MetaDataImplementation.FILETYPE, filetype));
+							}
+							int fileSize;
+							try {
+								fileSize = Integer.parseInt(doc.get(MetaDataImplementation.SIZE));
+							}
+							catch (NumberFormatException e)
+							{
+								fileSize = PublicVersionIndexWriterThread.MAXDOCSIZE;
+							}
+							String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
+							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize < PublicVersionIndexWriterThread.MAXDOCSIZE) {						
+								String[] dateValues = doc.get("VersionCreationDate").split("-");
+								if(dateValues.length == 5) {
+									Path pathToFile = Paths.get(((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath().toString(),
+											dateValues[0],dateValues[1],dateValues[2],dateValues[3],dateValues[4],file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
+									indexFileContent(doc, pathToFile.toFile());
+								}
+
+							}
+					} else if (revision == REVISIONDIRECTORY) {
+						doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY,
+								Store.YES));
+					}
+				} else {
+					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, entityType, Store.YES));
+				}
+
+				doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID, String.valueOf(pubRef), Store.YES));
+				writer.addDocument(config.build(taxoWriter, doc));
+				indexedVersions++;
+				this.filesCounter++;
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		} catch (IOException e) {
 			this.indexWriterThreadLogger.debug("Querry Error: " + e.getMessage());
 		}
 
-		long indexingTimeForOneDocument = 0;
-		try {
-			Document doc = searcher.doc(hits2[0].doc);
-			String filetype = FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE));
-			addFacets(doc);
-			writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version)));
-			String pID = String.valueOf(pubRef);
-			doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID, internalId, Store.YES));
-			StringBuilder docIDBuilder = new StringBuilder(doc.get(MetaDataImplementation.PRIMARYENTITYID)).append("-")
-					.append(pID);
-			doc.add(new StringField(PublicVersionIndexWriterThread.DOCID, docIDBuilder.toString(), Store.YES));
-			String title = doc.get(MetaDataImplementation.TITLE);
-			if (entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-				if (revision == REVISIONFILE) {
-					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE,
-							Store.YES));
-					if (title != null) {
-						// skip this field, if file has no extension
-						if (filetype != null && filetype.length() > 0) {
-							doc.add(new TextField(MetaDataImplementation.FILETYPE, filetype, Store.YES));
-							doc.add(new FacetField(MetaDataImplementation.FILETYPE, filetype));
-						}
-						int fileSize;
-						try {
-							fileSize = Integer.parseInt(doc.get(MetaDataImplementation.SIZE));
-						}
-						catch (NumberFormatException e)
-						{
-							fileSize = PublicVersionIndexWriterThread.MAXDOCSIZE;
-						}
-						String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
-						DataManager.getImplProv().getLogger().info(title+" size: "+fileSize);
-						if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize < PublicVersionIndexWriterThread.MAXDOCSIZE) {						
-							DataManager.getImplProv().getLogger().info("Indexing Content for "+title);
-							PrimaryDataFileImplementation pdfile = session.get(PrimaryDataFileImplementation.class,
-									file);
-							if(pdfile.getPathToLocalFile(pdfile.getCurrentVersion()).toFile().exists()) {
-								
-								char[] myBuffer = new char[512];
-								BufferedReader in = new BufferedReader(new FileReader(pdfile.getPathToLocalFile(pdfile.getCurrentVersion()).toFile()));
-								StringBuilder builder = new StringBuilder();
-								
-								int ch;
-								char lastSeperator;
-								int pos = -1;
-								while((ch = in.read()) != -1) {
-								    char theChar = (char) ch;
-								    if((builder.length()+1) == IndexWriter.MAX_STORED_STRING_LENGTH) {
-								    	//if last appended char is a whitespace or if no whitespace found.. just store the string in a content field
-								    	if(pos == builder.length()-1 || pos < 1) {
-									    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
-									    	doc.add(new TextField("Content",builder.toString(),Store.YES));
-									    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
-									    	pos = -1;
-								    	}else {
-								    		//split up the last part of the string to the last whitespace for a clean cut between stored Fields
-									    	String builderString = builder.toString();
-//									    	DataManager.getImplProv().getLogger().info("3datasize: "+builder.length());
-//									    	DataManager.getImplProv().getLogger().info("start|"+builderString.substring(0,80));
-//									    	DataManager.getImplProv().getLogger().info("end|"+builderString.substring(pos-80,pos));
-									    	doc.add(new TextField("Content",builderString.substring(0,pos),Store.YES));
-									    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
-									    	builder.append(builderString.substring(pos));
-								    		pos = -1;
-								    	}
-								    }
-							    	builder.append(theChar);
-								    if(Character.isWhitespace(theChar)) {
-								    	pos = builder.length()-1;
-								    }
-								}
-								if(builder.length() > 0) {
-									String c = builder.toString();
-							    	DataManager.getImplProv().getLogger().info("2datasize: string length: "+c.length() +" vs builder.length: "+builder.length()+"last part: "+c.substring(c.length()-70,c.length()-1));
-							    	doc.add(new TextField("Content",c,Store.YES));
-								}
-								in.close();
-								
-//								int bytesRead = in.read(myBuffer,0,myBuffer.length);
-//								while (bytesRead != -1)
-//								{
-//									String string= new String(myBuffer, 0, bytesRead);
-//								    if((builder.length() + string.length()) < MAX_FIELD_SIZE) {
-//									    builder.append(string);
-//								    }else {
-//								    	DataManager.getImplProv().getLogger().info("1datasize: "+builder.length());
-//								    	doc.add(new TextField("Content",builder.toString(),Store.YES));
-//								    	builder.setLength(0);
-//								    	builder.append(string);
-//								    }
-//								    bytesRead = in.read(myBuffer,0,myBuffer.length);
-//								}
-//								String c = builder.toString();
-//						    	DataManager.getImplProv().getLogger().info("2datasize: string length: "+c.length() +" vs builder.length: "+builder.length()+"last part: "+c.substring(c.length()-70,c.length()-1));
-//								doc.add(new TextField("Content",builder.toString(),Store.YES));
-//								in.close();
-								// needed to not slow down hibernate session
-							}
-							session.evict(pdfile);
-						}
-					}
-				} else if (revision == REVISIONDIRECTORY) {
-					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY,
-							Store.YES));
-				}
-			} else {
-				doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, entityType, Store.YES));
-			}
-
-			doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID, pID, Store.YES));
-			indexingTimeForOneDocument = System.currentTimeMillis();
-			writer.addDocument(config.build(taxoWriter, doc));
-			long finishedAdding = System.currentTimeMillis();
-			indexingTimeForOneDocument = finishedAdding - indexingTimeForOneDocument;
-			DataManager.getImplProv().getLogger().info("DocNr. " + (++docCount) + " ms:" + indexingTimeForOneDocument
-					+ " hibernteQuery: " + hibernateQueryStart + "BYTES: " + writer.ramBytesUsed());
-			indexedVersions++;
-			this.filesCounter++;
-//				this.implementationProviderLogger
-//						.info("UPDATED VERSION: " + doc.get(MetaDataImplementation.TITLE)
-//								+ " ID:" + doc.get(MetaDataImplementation.VERSIONID));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
 			try {
 				writer.commit();
@@ -657,6 +569,43 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 		}
+	}
+	
+	private void indexFileContent(Document doc, File file) throws IOException {
+		if(file != null && file.exists()) {
+			BufferedReader in = new BufferedReader(new FileReader(file));
+			StringBuilder builder = new StringBuilder();
+			
+			int ch;
+			int pos = -1;
+			while((ch = in.read()) != -1) {
+			    char theChar = (char) ch;
+			    if((builder.length()+1) == IndexWriter.MAX_STORED_STRING_LENGTH) {
+			    	//if last appended char is a whitespace or if no whitespace found.. just store the string in a content field
+			    	if(pos == builder.length()-1 || pos < 1) {
+				    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+				    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+				    	pos = -1;
+			    	}else {
+			    		//split up the last part of the string to the last whitespace for a clean cut between stored Fields
+				    	String builderString = builder.toString();
+				    	doc.add(new TextField("Content",builderString.substring(0,pos),Store.YES));
+				    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
+				    	builder.append(builderString.substring(pos));
+			    		pos = -1;
+			    	}
+			    }
+		    	builder.append(theChar);
+			    if(Character.isWhitespace(theChar)) {
+			    	pos = builder.length()-1;
+			    }
+			}
+			if(builder.length() > 0) {
+				String c = builder.toString();
+		    	doc.add(new TextField("Content",c,Store.YES));
+			}
+			in.close();
+		}		
 	}
 
 	/**

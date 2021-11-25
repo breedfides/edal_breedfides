@@ -73,6 +73,15 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class ServerStart {
 	
+	
+	private static int HTTPS_PORT = 8443;
+	private static int HTTP_PORT = 8080;
+	private static final String ROOT_USER = "ralfs@ipk-gatersleben.de";
+	private static final String EMAIL = "ralfs@ipk-gatersleben.de";
+	private static final String DATACITE_PREFIX = "10.5072";
+	private static final String DATACITE_PASSWORD = "";
+	private static final String DATACITE_USERNAME = "";
+	
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "TEST_DATASET");
 
 	public static void main(String[] args) {
@@ -133,8 +142,8 @@ public class ServerStart {
 //
 //		    outputStream.close();
 //			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
-			//createDataset(5);
-			//uploadZip(root);
+			//createDataset(99);
+			uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -186,10 +195,13 @@ public class ServerStart {
 	}
 
 	public static PrimaryDataDirectory getRoot() throws Exception {
-		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
-				new InternetAddress("ralfs@erics.smtp.2805"), new InternetAddress("ralfs@erics.smtp.2805"),
-				new InternetAddress("ralfs@erics.smtp.2805"), new InternetAddress("ralfs@erics.smtp.2805"), "localhost",
-				"", "");
+		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME,
+				DATACITE_PASSWORD, DATACITE_PREFIX,
+				new InternetAddress(EMAIL),
+				new InternetAddress(EMAIL),
+				new InternetAddress(EMAIL),
+				new InternetAddress(ROOT_USER)
+				,"imap.ipk-gatersleben.de","","");
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
@@ -205,7 +217,7 @@ public class ServerStart {
 		FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "test.txt").toString());
 		BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 		String s = "This is a test for indexing large text data.";
-		int size = (Integer.MAX_VALUE-(200*1024*1024))/s.getBytes().length;
+		int size = (1000*1024*1024)/s.getBytes().length;
 		for(int i = 0; i < size; i++) {
 			bufferedWriter.write(s);
 		}
@@ -220,10 +232,10 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("MyPrimleTi6343769");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Functional annotation of SNPs and INDELs from 52 highly diverse accessions of the model allopolyploid plant Brassica napus");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
-		NaturalPerson np = new NaturalPerson("Andrea", "Bräutigam",
+		NaturalPerson np = new NaturalPerson("Thomas", "Schmutzer",
 				"Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
 				"06466", "Germany");
 		persons.add(np);
@@ -248,9 +260,9 @@ public class ServerStart {
 		Path pathToRessource = Paths.get(System.getProperty("user.home") + File.separator + "textfiles23");
 		EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(entity, pathToRessource,
 				metadata, true);
-		Files.walkFileTree(PATH, edalVisitor);
+		Files.walkFileTree(pathToRessource, edalVisitor);
 		entity.addPublicReference(PersistentIdentifier.DOI);
-		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@erics.smtp.2805"));
+		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
 
 	}
 
