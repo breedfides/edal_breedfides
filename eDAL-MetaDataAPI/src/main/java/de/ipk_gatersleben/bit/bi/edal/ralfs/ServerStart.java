@@ -35,6 +35,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.TextFragment;
@@ -54,6 +55,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
@@ -101,63 +103,25 @@ public class ServerStart {
 //
 //			
 //			}
-//			Query query = new TermQuery(new Term("Content", "organic"));
-//			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);
-//			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-//					.getAnalyzer();
-//			SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
-//			Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
-//			for (int i = 0; i < 1; i++) {
-//				int id = hits.scoreDocs[i].doc;
-////				TermsEnum enum2 =searcher.getIndexReader().getTermVector(id, "Content").iterator();
-////				enum2.seekExact(new BytesRef("organic"));	
-////				PostingsEnum posting = enum2.postings(null, PostingsEnum.FREQS);
-////				int freq = posting.freq();
-//				
-//				
-//				Document doc = searcher.doc(id);
-//				String text = doc.get("Content");
-//				TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), id, "Content",
-//						analyzer);
-//				TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, text, false, 10);// highlighter.getBestFragments(tokenStream,
-//																										// text, 3,
-//																										// "...");
-//				for (int j = 0; j < frag.length; j++) {
-//					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
-//						System.out.println((frag[j].toString()));
-//					}
-//				}
-//			}
-//			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer) {
-//				@Override
-//				protected BreakIterator getBreakIterator(String field) {
-//					return new WholeBreakIterator();
-//				}
-//			};
-//			unifiedHighlighter.setMaxLength(Integer.MAX_VALUE-2);
-//			String[] snipets = unifiedHighlighter.highlight("Content", query, hits);
-//		    FileOutputStream outputStream = new FileOutputStream("testfile.txt");
-//		    byte[] strToBytes = snipets[0].getBytes();
-//		    outputStream.write(strToBytes);
-//
-//		    outputStream.close();
-//			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
-			//createDataset(99);
-			uploadZip(root);
+			
+			//hightlightExample();
+
+			createDataset(2000);
+		    uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public static void hightlightExample() {
-//			IndexSearcher searcher = DataManager.getSearchManager().acquire();
-//			Query query = new TermQuery(new Term("Content", "organic"));
-//			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "organic")), 500000);
-//			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-//					.getAnalyzer();
+	public static void hightlightExample() throws IOException, InvalidTokenOffsetsException {
+			IndexSearcher searcher = DataManager.getSearchManager().acquire();
+			Query query = new TermQuery(new Term("Content", "mäuse"));
+			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "mäuse")), 500000);
+			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+					.getAnalyzer();
 //			SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 //			Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
-//			for (int i = 0; i < 1; i++) {
+//			for (int i = 0; i < hits.totalHits.value; i++) {
 //				int id = hits.scoreDocs[i].doc;
 ////				TermsEnum enum2 =searcher.getIndexReader().getTermVector(id, "Content").iterator();
 ////				enum2.seekExact(new BytesRef("organic"));	
@@ -166,6 +130,7 @@ public class ServerStart {
 //				
 //				
 //				Document doc = searcher.doc(id);
+//				System.out.println(("Doc title: "+doc.get(MetaDataImplementation.TITLE)));
 //				String text = doc.get("Content");
 //				TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), id, "Content",
 //						analyzer);
@@ -174,6 +139,7 @@ public class ServerStart {
 //																										// "...");
 //				for (int j = 0; j < frag.length; j++) {
 //					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+//						System.out.println(("FRAGMENT--"));
 //						System.out.println((frag[j].toString()));
 //					}
 //				}
@@ -184,14 +150,20 @@ public class ServerStart {
 //					return new WholeBreakIterator();
 //				}
 //			};
-//			unifiedHighlighter.setMaxLength(Integer.MAX_VALUE-2);
-//			String[] snipets = unifiedHighlighter.highlight("Content", query, hits);
-//		    FileOutputStream outputStream = new FileOutputStream("testfile.txt");
-//		    byte[] strToBytes = snipets[0].getBytes();
-//		    outputStream.write(strToBytes);
+			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
+			String[] snipets = unifiedHighlighter.highlight("Content", query, hits);
+			String title = "NameV1.2";
+			for(String snipet : snipets) {
+//				title+=0;
+//			    FileOutputStream outputStream = new FileOutputStream(title);
+//			    byte[] strToBytes = snipet.getBytes();
+//			    outputStream.write(strToBytes);
 //
-//		    outputStream.close();
-//			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
+//			    outputStream.close();
+				System.out.println("Snipet: ");
+				System.out.println(snipet);
+			}
+			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
 	}
 
 	public static PrimaryDataDirectory getRoot() throws Exception {
@@ -202,6 +174,8 @@ public class ServerStart {
 				new InternetAddress(EMAIL),
 				new InternetAddress(ROOT_USER)
 				,"imap.ipk-gatersleben.de","","");
+		configuration.setDataPath(Paths.get("d:\\edal"));
+		configuration.setMountPath(Paths.get("d:\\edal"));
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
@@ -217,7 +191,7 @@ public class ServerStart {
 		FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "test.txt").toString());
 		BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 		String s = "This is a test for indexing large text data.";
-		int size = (1000*1024*1024)/s.getBytes().length;
+		int size = (100*1024*1024)/s.getBytes().length;
 		for(int i = 0; i < size; i++) {
 			bufferedWriter.write(s);
 		}
@@ -232,11 +206,11 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Functional annotation of SNPs and INDELs from 52 highly diverse accessions of the model allopolyploid plant Brassica napus");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Indexing Test Performance2");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
-		NaturalPerson np = new NaturalPerson("Thomas", "Schmutzer",
-				"Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
+		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
+				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
 				"06466", "Germany");
 		persons.add(np);
 		metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
@@ -253,11 +227,11 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("Results of genie3 analyis for 329452343239"));
+				new UntypedData("Results of genie3 analyis for 329452343239NR23"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);
-		Path pathToRessource = Paths.get(System.getProperty("user.home") + File.separator + "textfiles23");
+		Path pathToRessource = Paths.get(System.getProperty("user.home") + File.separator + "TEST_DATASET");
 		EdalDirectoryVisitorWithMetaData edalVisitor = new EdalDirectoryVisitorWithMetaData(entity, pathToRessource,
 				metadata, true);
 		Files.walkFileTree(pathToRessource, edalVisitor);

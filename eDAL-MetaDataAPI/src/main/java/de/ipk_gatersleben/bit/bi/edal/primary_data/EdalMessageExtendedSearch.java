@@ -156,6 +156,15 @@ public class EdalMessageExtendedSearch {
 	}
 	
 	@GET
+	@Path("/showHighlightedContent/{doc}")
+	@ManagedAsync
+	@Produces(MediaType.TEXT_PLAIN)
+    public String showHighlightedContent(@PathParam("doc") String doc)
+    {
+		return "Content for docid: "+doc;
+    }
+	
+	@GET
     @Path("/pdf")
     public Response downloadPdfFile()
     {

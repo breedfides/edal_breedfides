@@ -85,9 +85,11 @@ import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.MultiTerms;
+import org.apache.lucene.index.StoredFieldVisitor;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -112,6 +114,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
+import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -1189,10 +1192,14 @@ public class DataManager {
 		int currentPageNumber = ((int) (long) jsonArray.get("displayedPage"));
 		int pageArraySize = ((int) (long) jsonArray.get("pageArraySize"));
 		int pageIndex = ((int) (long) jsonArray.get("pageIndex"));
+		DataManager.getImplProv().getLogger().info("Running QUery");
+		TopDocs toHighlight = null;
+		int pageSize = ((int) (long) jsonArray.get("pageSize"));
 		if (pageArraySize == 0 || currentPageNumber == 1) {
 			try {
 				DataManager.getImplProv().getLogger().debug("Builded QUery advanced search: " + buildedQuery.toString());
 				topDocs = searcher.search(buildedQuery, 5000000);
+				toHighlight = searcher.search(buildedQuery, pageSize);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -1205,6 +1212,7 @@ public class DataManager {
 						5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) jsonArray.get("bottomResultScore"));
 				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
+				toHighlight = searcher.search(buildedQuery, pageSize);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1216,24 +1224,37 @@ public class DataManager {
 				topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
 		result.put("displayedPage", (long) jsonArray.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
+		DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
+		String[] snipets = new String[0];
+		
+		//highlighting
+		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+				.getAnalyzer();
+		UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
+		try {
+			snipets = unifiedHighlighter.highlight("Content", buildedQuery, toHighlight);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
-		ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+		ScoreDoc[] scoreDocs = topDocs.scoreDocs;	
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
 		if (scoreDocs.length == 0) {
 			result.put("hitSize", scoreDocs.length);
 			return result;
 		}
-		Document doc = null;
-		int pageSize = ((int) (long) jsonArray.get("pageSize"));
 		if (scoreDocs.length < pageSize) {
 			result.put("hitSize", scoreDocs.length);
 			pageSize = ((int) (long) scoreDocs.length);
 		}
+		Document doc = null;
 		Set<String> fields = Set.of(PublicVersionIndexWriterThread.METADATAFIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = searcher.doc(scoreDocs[i].doc,fields);
+				DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1270,11 +1291,16 @@ public class DataManager {
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 				obj.put("link", link);
 				obj.put("fileName", file.toString());
+				obj.put("docId",doc.get(PublicVersionIndexWriterThread.DOCID));
 				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
+					//highlighted snipet
+					if(i < snipets.length) {
+						obj.put("highlight", snipets[i]);
+					}
 				} else if (type.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 					obj.put("type", "Directory");
 					obj.put("ext", "");
@@ -1284,9 +1310,12 @@ public class DataManager {
 		}
 		result.put("results", finalArray);
 		// bottomResult.docids needs to be stored, to support paginated Searching
+		
+		//Pagination
 		int additionalPages;
 		JSONArray pageArray = new JSONArray();
 		JSONObject page = new JSONObject();
+		Set<String> set = Set.of(new String[]{PublicVersionIndexWriterThread.DOCID});
 		if (pageArraySize == 0) {
 			page.put("bottomResult", null);
 			page.put("bottomResultScore", 0);
@@ -1302,7 +1331,7 @@ public class DataManager {
 					if (index < scoreDocs.length-1) {
 						try {
 							page.put("bottomResult",
-									searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+									searcher.doc(scoreDocs[index].doc, set).get(PublicVersionIndexWriterThread.DOCID));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1);
 							page.put("index", i);
@@ -1314,6 +1343,7 @@ public class DataManager {
 					} else {
 						break;
 					}
+					DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
 				}
 			}
 		} else {
@@ -1329,11 +1359,12 @@ public class DataManager {
 					if (index < scoreDocs.length) {
 						try {
 							page.put("bottomResult",
-									searcher.doc(scoreDocs[index].doc).get(PublicVersionIndexWriterThread.DOCID));
+									searcher.doc(scoreDocs[index].doc, set).get(PublicVersionIndexWriterThread.DOCID));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
 							pageArray.add(page);
+							DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -1345,6 +1376,7 @@ public class DataManager {
 			}
 		}
 		result.put("pageArray", pageArray);
+		DataManager.getImplProv().getLogger().info("Created PageArray");
 		try {
 			result.put("bottomResult",
 					searcher.doc(scoreDocs[pageSize - 1].doc).get(PublicVersionIndexWriterThread.DOCID));
@@ -1353,8 +1385,10 @@ public class DataManager {
 			e.printStackTrace();
 		}finally {
 			try {
-				if(searcher != null)
+				if(searcher != null) {
 					searchManager.release(searcher);
+					DataManager.getImplProv().getLogger().info("Released searcher");
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1367,6 +1401,7 @@ public class DataManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		DataManager.getImplProv().getLogger().info("Returning Result");
 		return result;
 	}
 

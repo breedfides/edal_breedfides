@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.BreakIterator;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,11 +58,18 @@ import org.apache.lucene.index.MultiTerms;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.uhighlight.Passage;
+import org.apache.lucene.search.uhighlight.PassageFormatter;
+import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
+import org.apache.lucene.search.uhighlight.WholeBreakIterator;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.velocity.VelocityContext;
@@ -1465,6 +1473,49 @@ class VeloCityHtmlGenerator {
 
 	}
 	
+	public Object generateHtmlForContent(Code responseCode, String doc, String q) throws EdalException, IOException, ParseException {
+		IndexSearcher searcher = DataManager.getSearchManager().acquire();
+		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
+		TopDocs hits = searcher.search(query, 1);
+		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+				.getAnalyzer();
+		UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer) {
+			@Override
+			protected BreakIterator getBreakIterator(String field) {
+				return new WholeBreakIterator();
+			}
+		};
+		QueryParser parser = new QueryParser("Content",analyzer);
+		String[] snipets = unifiedHighlighter.highlight("Content", parser.parse(q), hits);
+		final VelocityContext context = new VelocityContext();
+		
+		/* set the charset */
+		context.put("charset", "UTF-8");
+		context.put("responseCode", responseCode.getCode());
+		/* set serverURL */
+		context.put("serverURL", EdalHttpServer.getServerURL());
+		if(snipets.length > 0) {
+			context.put("content", snipets[0]);
+		}else {
+			context.put("content", "Bummer there was an Error");
+		}
+
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
+
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/ContentTemplate.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
+
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
+	}
+	
 	/**
 	 * Generate HTML output for an Error message of the HHTP handler.
 	 * 
@@ -1795,5 +1846,7 @@ class VeloCityHtmlGenerator {
 	public static int getMaxYear() {
 		return maxYear;
 	}
+
+
 
 }

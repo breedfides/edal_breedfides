@@ -158,14 +158,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	Boolean indexedData = false;
 	IndexWriter writer = null;
 	IndexSearcher searcher = null;
-	IndexReader reader = null;
+	private IndexReader reader = null;
 	DirectoryTaxonomyWriter taxoWriter = null;
 	private final FacetsConfig config = new FacetsConfig();
-	public static final String[] METADATAFIELDS = {MetaDataImplementation.ALGORITHM,MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,
-			MetaDataImplementation.VERSIONID,MetaDataImplementation.PERSON,MetaDataImplementation.CREATORNAME,MetaDataImplementation.TYPE,
-			MetaDataImplementation.CONTRIBUTORNAME,MetaDataImplementation.LEGALPERSON,MetaDataImplementation.ALL,MetaDataImplementation.DESCRIPTION,MetaDataImplementation.FILETYPE,
-			MetaDataImplementation.ENTITYID,MetaDataImplementation.MIMETYPE,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.STARTDATE,MetaDataImplementation.SUBJECT, MetaDataImplementation.ENTITYTYPE
-			,PublicVersionIndexWriterThread.DOCID,PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,PublicVersionIndexWriterThread.INTERNALID};
+	public static final String[] METADATAFIELDS = {MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,MetaDataImplementation.VERSIONID,
+			MetaDataImplementation.ENTITYID,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.DOCID,
+			PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,
+			PublicVersionIndexWriterThread.INTERNALID, MetaDataImplementation.FILETYPE};
 	
 
 	Directory index;
@@ -489,8 +488,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				addFacets(doc);
 				writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version)));
 				doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID, internalId, Store.YES));
+				//test docid with revision instead of pubRef
 				StringBuilder docIDBuilder = new StringBuilder(doc.get(MetaDataImplementation.PRIMARYENTITYID)).append("-")
-						.append(String.valueOf(pubRef));
+						.append(revision);
 				doc.add(new StringField(PublicVersionIndexWriterThread.DOCID, docIDBuilder.toString(), Store.YES));
 				if (entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
 					if (revision == REVISIONFILE) {
@@ -513,6 +513,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize < PublicVersionIndexWriterThread.MAXDOCSIZE) {						
 								String[] dateValues = doc.get("VersionCreationDate").split("-");
 								if(dateValues.length == 5) {
+									DataManager.getImplProv().getLogger().info("Indexing content for "+doc.get(MetaDataImplementation.TITLE));
 									Path pathToFile = Paths.get(((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath().toString(),
 											dateValues[0],dateValues[1],dateValues[2],dateValues[3],dateValues[4],file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
 									indexFileContent(doc, pathToFile.toFile());

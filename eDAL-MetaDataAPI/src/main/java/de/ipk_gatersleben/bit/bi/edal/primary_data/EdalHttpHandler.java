@@ -48,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpStatus.Code;
@@ -129,7 +130,6 @@ public class EdalHttpHandler extends AbstractHandler {
 					this.sendMessage(response, HttpStatus.Code.NOT_FOUND, "no ID and version specified");
 				} else {
 					final String methodToken = tokenizer.nextToken().toUpperCase();
-
 					try {
 						switch (EdalHttpFunctions.valueOf(methodToken)) {
 
@@ -613,7 +613,14 @@ public class EdalHttpHandler extends AbstractHandler {
 						case HOME:
 							this.sendHomePage(response,HttpStatus.Code.OK);
 							break;
-							
+						
+						case CONTENT:
+							String id = request.getParameter("d");
+							String query = request.getParameter("q");
+							if(id != null && id.length() > 0 && query != null && query.length() > 0) {
+								this.sendContent(response, HttpStatus.Code.OK, id, query);
+							}
+							break;
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -1369,6 +1376,32 @@ public class EdalHttpHandler extends AbstractHandler {
 		}		
 	}
 	
+	//create and send search template if there is a query set as parameter
+	private void sendContent(final HttpServletResponse response, final HttpStatus.Code responseCode, String doc, String query) {
+		try {
+		
+			String htmlOutput = "";
+			try {
+				htmlOutput = velocityHtmlGenerator.generateHtmlForContent(responseCode, doc, query).toString();
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			response.setStatus(responseCode.getCode());
+
+			response.setContentType("text/html");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
+
+		} catch (EofException eof) {
+			// Do nothing, because response was already send
+		} catch (IOException | EdalException e) {
+			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
+		}		
+	}
 	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode) {
 		
 		

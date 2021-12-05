@@ -61,6 +61,59 @@ let EdalReport = new function() {
         }
     ];
 
+    this.fileColumnsWithHighlights = [
+      {
+          title: "Filename",
+          width: "25%",
+          class: "edal-report-doi",
+          render: function (data, type, row) {
+              return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
+          }
+      },
+      {
+        title: "Preview",
+        width: "15%",
+        data: "highlight",
+        class: "edal-report-title",
+        render: function (data, type, row) {
+          return '<div class="cell-hover" onclick="EdalReport.showFullText(\'' + row.docId + '\',\''+EdalReport.currentRequestData.existingQuery+'\')" data-animation="true" data-toggle="tooltip" data-html="true" title="'+data+'">'+data+'</div>';
+        }
+      },
+      {
+          title: "File type",
+          width: "8%",
+          data: "ext",
+          class: "edal-report-title"
+      },
+      {
+          title: "File size",
+          width: "8%",
+          data: "size",
+          class: "edal-report-title",
+          render: function (data, type, row) {
+              if (type === "display") {
+                  return EdalReport.niceBytes(parseInt(data));
+              } else {
+                  return data;
+              }
+          }
+      },
+      {
+          title: "DOI",
+          data: "doi",
+          width: "10%",
+          class: "edal-report-doi",
+          render: function (data, type, row) {
+              return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
+          }
+      },
+      {
+          title: "Dataset",
+          data: "title",
+          class: "edal-report-title"
+       },
+    ];
+
     this.fileColumns = [
         {
             title: "Filename",
@@ -202,6 +255,10 @@ let EdalReport = new function() {
       });
     }
 
+    this.showFullText = function(doc, query){
+      window.open(serverURL+"/content?d="+doc+"&q="+query, serverURL+'/content').focus();
+    }
+
     /* used to search with the currentRequestData and to process the results */
     this.search = function(){
       return new Promise((resolve, reject)=>{
@@ -246,7 +303,11 @@ let EdalReport = new function() {
             if(requestData.hitType == "dataset"){
               self.renderDatatableReports(self.reportColumns);
             }else if(requestData.hitType == "singledata"){
-              self.renderDatatableReports(self.fileColumns);
+              if(data.hitSize > 0 && data.results[0].highlight != null){
+                self.renderDatatableReports(self.fileColumnsWithHighlights);
+              }else{
+                self.renderDatatableReports(self.fileColumns);
+              }
             }else if(requestData.hitType == "directory"){
               self.renderDatatableReports(self.directoriesColumns);
             }
@@ -717,6 +778,7 @@ let EdalReport = new function() {
           self.pageSize = self.pageSize - self.pageSize%5;
         }
         $(document).ready(async function() {
+          $("body").tooltip({ selector: '[data-toggle=tooltip]' });
             $.fn.isInViewport = function() {
                 var elem = $(this);
                 var elementTop = elem.position().top;

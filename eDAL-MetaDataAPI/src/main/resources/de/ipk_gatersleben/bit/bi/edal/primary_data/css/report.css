@@ -957,3 +957,10 @@ ul#query-ul li {
   display: inline-flex;
   align-items: center;
 }
+.cell-hover{
+  overflow:hidden;
+  cursor:pointer;
+}
+.cell-hover:hover{
+  text-decoration: underline;
+}

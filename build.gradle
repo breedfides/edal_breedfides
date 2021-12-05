@@ -261,6 +261,9 @@ project(':eDAL-MetaDataAPI') {
 		compile group: 'org.apache.lucene', name: 'lucene-highlighter', version: '8.7.0'
 		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-backward-codecs
 		compile group: 'org.apache.lucene', name: 'lucene-backward-codecs', version: '8.7.0'
+		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-misc
+		compile group: 'org.apache.lucene', name: 'lucene-misc', version: '8.7.0'
+		
 		
     	
     	
