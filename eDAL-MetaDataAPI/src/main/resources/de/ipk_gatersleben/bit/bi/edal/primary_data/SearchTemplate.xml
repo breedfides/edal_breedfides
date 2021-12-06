@@ -174,7 +174,7 @@
                     <div class="hittypeinput pb-1">
                     <div id="radioContainer">
                       <div class="form-check">
-                        <input class="form-check-input" type="radio" name="searchFor" id="metaDataRadio" value="Metadata" onclick="EdalReport.filterChange()" checked="checked">
+                        <input class="form-check-input" type="radio" name="searchFor" id="metaDataRadio" value="Metadata" onclick="EdalReport.metaDataButton()" checked="checked">
                           <label class="form-check-label" for="exampleRadios1">
                             Metadata
                           </label>
@@ -198,20 +198,20 @@
                   <div class="hittypeinput pb-1">
                     <div id="radioContainer">
                       <div class="form-check">
-                        <input class="form-check-input" type="radio" name="hitType" id="exampleRadios1" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
-                          <label class="form-check-label" for="exampleRadios1">
+                        <input class="form-check-input" type="radio" name="hitType" id="publicReferenceRadio" value="$publicreference" onclick="EdalReport.filterChange()" checked="checked">
+                          <label class="form-check-label" for="publicReferenceRadio">
                             Datasets
                           </label>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="hitType" id="exampleRadios2" value="$file" onclick="EdalReport.filterChange()">
-                            <label class="form-check-label" for="exampleRadios2">
+                          <input class="form-check-input" type="radio" name="hitType" id="fileRadio" value="$file" onclick="EdalReport.filterChange()">
+                            <label class="form-check-label" for="fileRadio">
                               Files
                             </label>
                           </div>
                           <div class="form-check">
-                            <input class="form-check-input" type="radio" name="hitType" id="exampleRadios3" value="$directory" onclick="EdalReport.filterChange()">
-                              <label class="form-check-label" for="exampleRadios3">
+                            <input class="form-check-input" type="radio" name="hitType" id="directoryRadio" value="$directory" onclick="EdalReport.filterChange()">
+                              <label class="form-check-label" for="directoryRadio">
                                 Directories
                               </label>
                             </div>

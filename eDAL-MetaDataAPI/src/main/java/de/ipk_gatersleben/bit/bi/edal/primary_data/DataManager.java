@@ -1226,16 +1226,18 @@ public class DataManager {
 		result.put("pageIndex", pageIndex);
 		DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
 		String[] snipets = new String[0];
-		
-		//highlighting
-		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-				.getAnalyzer();
-		UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
-		try {
-			snipets = unifiedHighlighter.highlight("Content", buildedQuery, toHighlight);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		String whereToSearch = (String) jsonArray.get("whereToSearch");
+		if(whereToSearch != null && whereToSearch.equals("Content") && buildedQuery.toString().contains("Content")) {
+			//highlighting
+			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+					.getAnalyzer();
+			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
+			try {
+				snipets = unifiedHighlighter.highlight("Content", buildedQuery, toHighlight);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}	
 		}
 
 		ScoreDoc[] scoreDocs = topDocs.scoreDocs;	

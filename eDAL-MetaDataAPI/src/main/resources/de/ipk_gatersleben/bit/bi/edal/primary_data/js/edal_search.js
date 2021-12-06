@@ -857,8 +857,16 @@ let EdalReport = new function() {
         });
     };
 
+    this.metaDataButton = function(){
+      document.getElementById("publicReferenceRadio").disabled = false;
+      document.getElementById("directoryRadio").disabled = false;
+      this.filterChange();
+    }
+
     this.contentButton = function(){
-      document.getElementById("exampleRadios2").checked = true;
+      document.getElementById("fileRadio").checked = true;
+      document.getElementById("publicReferenceRadio").disabled = true;
+      document.getElementById("directoryRadio").disabled = true;
       this.filterChange();
     }
 

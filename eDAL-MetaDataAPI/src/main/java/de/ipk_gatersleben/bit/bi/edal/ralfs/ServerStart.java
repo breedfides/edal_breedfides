@@ -106,8 +106,8 @@ public class ServerStart {
 			
 			//hightlightExample();
 
-			createDataset(2000);
-		    uploadZip(root);
+			//createDataset(2000);
+		    //uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -206,10 +206,10 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Indexing Test Performance2");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Indexing Test Performance23");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
-		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
+		NaturalPerson np = new NaturalPerson("Jens", "Ralfs",
 				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraﬂe 3",
 				"06466", "Germany");
 		persons.add(np);
@@ -227,7 +227,7 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("Results of genie3 analyis for 329452343239NR23"));
+				new UntypedData("Datensatz von Ralfs"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);
