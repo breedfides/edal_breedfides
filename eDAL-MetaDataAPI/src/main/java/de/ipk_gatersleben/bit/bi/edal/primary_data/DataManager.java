@@ -114,6 +114,12 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.TextFragment;
+import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
@@ -1160,9 +1166,9 @@ public class DataManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	static public JSONObject advancedSearch(JSONObject jsonArray) {
+	static public JSONObject advancedSearch(JSONObject requestObject) {
 		JSONObject result = new JSONObject();
-		Query buildedQuery = buildQueryFromJSON(jsonArray, result);
+		Query buildedQuery = buildQueryFromJSON(requestObject, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
 		result.put("facets", new JSONArray());
 		Thread innerThread = new Thread(){
@@ -1189,12 +1195,12 @@ public class DataManager {
 		}
 		DataManager.getImplProv().getLogger().debug(buildedQuery.toString());
 		TopDocs topDocs = null;
-		int currentPageNumber = ((int) (long) jsonArray.get("displayedPage"));
-		int pageArraySize = ((int) (long) jsonArray.get("pageArraySize"));
-		int pageIndex = ((int) (long) jsonArray.get("pageIndex"));
+		int currentPageNumber = ((int) (long) requestObject.get("displayedPage"));
+		int pageArraySize = ((int) (long) requestObject.get("pageArraySize"));
+		int pageIndex = ((int) (long) requestObject.get("pageIndex"));
 		DataManager.getImplProv().getLogger().info("Running QUery");
 		TopDocs toHighlight = null;
-		int pageSize = ((int) (long) jsonArray.get("pageSize"));
+		int pageSize = ((int) (long) requestObject.get("pageSize"));
 		if (pageArraySize == 0 || currentPageNumber == 1) {
 			try {
 				DataManager.getImplProv().getLogger().debug("Builded QUery advanced search: " + buildedQuery.toString());
@@ -1208,11 +1214,11 @@ public class DataManager {
 			ScoreDoc bottomScoreDoc = null;
 			try {
 				bottomScoreDoc = searcher.search(new TermQuery(
-						new Term(PublicVersionIndexWriterThread.DOCID, (String) jsonArray.get("bottomResultId"))),
+						new Term(PublicVersionIndexWriterThread.DOCID, (String) requestObject.get("bottomResultId"))),
 						5).scoreDocs[0];
-				bottomScoreDoc.score = ((float) (double) jsonArray.get("bottomResultScore"));
+				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
 				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
-				toHighlight = searcher.search(buildedQuery, pageSize);
+				toHighlight = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1222,18 +1228,21 @@ public class DataManager {
 		result.put("hitSize", topDocs.scoreDocs.length);
 		result.put("hitSizeDescription",
 				topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
-		result.put("displayedPage", (long) jsonArray.get("displayedPage"));
+		result.put("displayedPage", (long) requestObject.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
 		DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
 		String[] snipets = new String[0];
-		String whereToSearch = (String) jsonArray.get("whereToSearch");
-		if(whereToSearch != null && whereToSearch.equals("Content") && buildedQuery.toString().contains("Content")) {
+		String whereToSearch = (String) requestObject.get("whereToSearch");
+		if(whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) && buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
 			//highlighting
-			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-					.getAnalyzer();
+		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+				.getAnalyzer();
+		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
+		Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(buildedQuery));
+			
 			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
 			try {
-				snipets = unifiedHighlighter.highlight("Content", buildedQuery, toHighlight);
+				snipets = unifiedHighlighter.highlight(PublicVersionIndexWriterThread.CONTENT, buildedQuery, toHighlight);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -1296,13 +1305,12 @@ public class DataManager {
 				obj.put("docId",doc.get(PublicVersionIndexWriterThread.DOCID));
 				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
+				if(i < snipets.length) {
+					obj.put("highlight", snipets[i]);
+				}
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
-					//highlighted snipet
-					if(i < snipets.length) {
-						obj.put("highlight", snipets[i]);
-					}
 				} else if (type.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 					obj.put("type", "Directory");
 					obj.put("ext", "");
@@ -1326,7 +1334,7 @@ public class DataManager {
 			pageArray.add(page);
 			// if pageSize equals the result size, only one page should be stored
 			if (pageSize != scoreDocs.length) {
-				additionalPages = 10;
+				additionalPages = 3;
 				for (int i = 1; i < additionalPages; i++) {
 					page = new JSONObject();
 					int index = i * pageSize - 1;
@@ -1351,10 +1359,9 @@ public class DataManager {
 		} else {
 			// check if there needs to be loaded more additional Sites or only 1 (the
 			// current selected Site)
-			// pageArraySize = array of all pages
-			if (currentPageNumber + 4 > pageArraySize && scoreDocs.length > pageSize) {
+			if (currentPageNumber + 2 > pageArraySize && scoreDocs.length > pageSize) {
 				int offset = pageArraySize - currentPageNumber + 1;
-				additionalPages = 5 - offset;
+				additionalPages = 3 - offset;
 				for (int i = 0; i < additionalPages; i++) {
 					page = new JSONObject();
 					int index = (i + offset) * pageSize - 1;
@@ -1556,7 +1563,8 @@ public class DataManager {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = whereToSearch.equals("Content") ? new QueryParser("Content", analyzer) : new QueryParser(MetaDataImplementation.ALL, analyzer);
+		QueryParser pars = whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) ? 
+				new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer) : new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		StringJoiner queryJoiner = new StringJoiner(" ");

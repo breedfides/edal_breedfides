@@ -76,7 +76,7 @@ let EdalReport = new function() {
         data: "highlight",
         class: "edal-report-title",
         render: function (data, type, row) {
-          return '<div class="cell-hover" onclick="EdalReport.showFullText(\'' + row.docId + '\',\''+EdalReport.currentRequestData.existingQuery+'\')" data-animation="true" data-toggle="tooltip" data-html="true" title="'+data+'">'+data+'</div>';
+          return '<div class="cell-hover" onclick="EdalReport.showFullText(\'' + row.docId + '\',\''+EdalReport.currentRequestData.existingQuery+'\')">'+data+'</div>';
         }
       },
       {
@@ -370,7 +370,7 @@ let EdalReport = new function() {
         let tempChar = text.charAt(j);
         innerHtmlString += tempChar;
         if(tempChar == ':'){
-          if(j > 0 && text.charAt(j-1) != '\\'){
+          if(!closeTag && j > 0 && text.charAt(j-1) != '\\'){
             innerHtmlString += "<b>";
             closeTag = true;
           }
@@ -664,6 +664,7 @@ let EdalReport = new function() {
       let self = this;
       ID++;
       let requestId = ID;
+      const oldQuery = currentRequestData.existingQuery;
       currentRequestData["bottomResultId"] = history[index].bottomResult;
       currentRequestData["bottomResultScore"] = history[index].bottomResultScore;
       currentRequestData["pageIndex"] = index;
@@ -675,6 +676,7 @@ let EdalReport = new function() {
       reportData = data.results;
       if(ID == requestId){
         self.reportData = data.results;
+        currentRequestData.existingQuery = oldQuery;
         var currentPage = index+1;
         self.pageNumbers = Math.ceil(data.hitSize/self.pageSize);
         if (typeof data.results !== 'undefined'){
@@ -682,15 +684,15 @@ let EdalReport = new function() {
         }
         var pageArray = [];
         var offset;
-        if(history[index].page < 7){
+        if(history[index].page < 3){
           i = 0;
-        }else if(index > 5){
-          i = index-5;
+        }else if(index > 1){
+          i = index-1;
           if(data.pageArray.length > 0){
             for(j = 0; j < data.pageArray.length; j++){
               history.push(data.pageArray[j]);
             }
-          offset = index+4;
+          offset = index+1;
           if(offset > history.length){
             i -= offset-history.length;
             if(history.length > 10){
@@ -698,8 +700,6 @@ let EdalReport = new function() {
             }
           }
           }
-        }else{
-          alert("bummer: index < 5 und page >= 7");
         }
         var j = 0;
         var sum = i+j;
@@ -715,7 +715,11 @@ let EdalReport = new function() {
         if(currentRequestData.hitType == "dataset"){
           self.renderDatatableReports(self.reportColumns);
         }else if(currentRequestData.hitType == "singledata"){
-          self.renderDatatableReports(self.fileColumns);
+          if(data.hitSize > 0 && data.results[0].highlight != null){
+            self.renderDatatableReports(self.fileColumnsWithHighlights);
+          }else{
+            self.renderDatatableReports(self.fileColumns);
+          }
         }else if(currentRequestData.hitType == "directory"){
           self.renderDatatableReports(self.directoriesColumns);
         }

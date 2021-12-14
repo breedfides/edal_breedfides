@@ -66,6 +66,13 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleFragmenter;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.TextFragment;
+import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.uhighlight.Passage;
 import org.apache.lucene.search.uhighlight.PassageFormatter;
 import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
@@ -1476,30 +1483,40 @@ class VeloCityHtmlGenerator {
 	public Object generateHtmlForContent(Code responseCode, String doc, String q) throws EdalException, IOException, ParseException {
 		IndexSearcher searcher = DataManager.getSearchManager().acquire();
 		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
-		TopDocs hits = searcher.search(query, 1);
-		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-				.getAnalyzer();
-		UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer) {
-			@Override
-			protected BreakIterator getBreakIterator(String field) {
-				return new WholeBreakIterator();
-			}
-		};
-		QueryParser parser = new QueryParser("Content",analyzer);
-		String[] snipets = unifiedHighlighter.highlight("Content", parser.parse(q), hits);
+		ScoreDoc[] hits = searcher.search(query, 1).scoreDocs;
 		final VelocityContext context = new VelocityContext();
+		if(hits.length > 0) {
+			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+					.getAnalyzer();
+			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
+			Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(parser.parse(q)));
+			highlighter.setTextFragmenter(new SimpleFragmenter(150));
+			Document document = searcher.doc(hits[0].doc);
+			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc, PublicVersionIndexWriterThread.CONTENT,
+			analyzer);
+			TextFragment[] fragments;
+			try {
+				fragments = highlighter.getBestTextFragments(tokenStream, document.get(PublicVersionIndexWriterThread.CONTENT), false, 5);
+				List<String> snipets = new ArrayList<>();
+				for(TextFragment fragment : fragments) {
+					if(fragment.getScore() > 0.0) {
+						snipets.add(fragment.toString());
+					}
+				}
+				context.put(PublicVersionIndexWriterThread.CONTENT, snipets);
+			} catch (IOException | InvalidTokenOffsetsException e) {
+				context.put(PublicVersionIndexWriterThread.CONTENT, "There was an Error, Document not found.");
+			}
+
+		}else {
+			context.put(PublicVersionIndexWriterThread.CONTENT, "There was an Error, Document not found.");
+		}
 		
 		/* set the charset */
 		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
-		if(snipets.length > 0) {
-			context.put("content", snipets[0]);
-		}else {
-			context.put("content", "Bummer there was an Error");
-		}
-
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		
 		final StringWriter output = new StringWriter();

@@ -56,6 +56,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataType;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDCMIDataType;
@@ -89,7 +90,7 @@ public class ServerStart {
 	public static void main(String[] args) {
 		try {
 			PrimaryDataDirectory root = getRoot();
-//			
+			
 //			Thread.sleep(2000);
 //			IndexSearcher searcher = DataManager.getSearchManager().acquire();
 //			ScoreDoc[] hits = searcher.search(new TermQuery(new Term("Content","test")), 500000).scoreDocs;
@@ -106,8 +107,8 @@ public class ServerStart {
 			
 			//hightlightExample();
 
-			//createDataset(2000);
-		    //uploadZip(root);
+//			createDataset(400);
+//		    uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -191,7 +192,7 @@ public class ServerStart {
 		FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "test.txt").toString());
 		BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 		String s = "This is a test for indexing large text data.";
-		int size = (100*1024*1024)/s.getBytes().length;
+		int size = (500*1024*1024)/s.getBytes().length;
 		for(int i = 0; i < size; i++) {
 			bufferedWriter.write(s);
 		}
@@ -206,10 +207,10 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Indexing Test Performance23");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Hardwarehersteller");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
-		NaturalPerson np = new NaturalPerson("Jens", "Ralfs",
+		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
 				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
 				"06466", "Germany");
 		persons.add(np);
@@ -227,7 +228,7 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("Datensatz von Ralfs"));
+				new UntypedData("Hardwarehersteller"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);

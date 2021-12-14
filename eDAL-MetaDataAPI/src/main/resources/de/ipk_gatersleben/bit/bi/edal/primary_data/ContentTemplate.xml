@@ -15,33 +15,26 @@
             height: 75%;
         }
         .content{
-          width: 75%;
-          height: 100%;
+          width: max-content;
+          height: 2em;
+          margin-bottom:1em;
           box-sizing: border-box;
           border: 1px solid #ccc!important;
-          border-radius: 16px;
           overflow: auto;
-        }
-        .highlight{
-          background-color: #FFFF00;
         }
       </style>
 
   </head>
 
   <body>
-    <div class="content">
-    $content
-  </div>
+
+      #foreach($obj in $Content)    <div class="content">"$obj"</div>
+      #end
 
     <script>
       $( document ).ready(function() {
         window.history.replaceState(null, null, window.location.pathname);
       });
-      var tags = document.getElementsByTagName( 'b' );
-      for(i = 0; i < tags.length; i++){
-        tags[i].classList.add("highlight");
-      }
     </script>
   </body>
 

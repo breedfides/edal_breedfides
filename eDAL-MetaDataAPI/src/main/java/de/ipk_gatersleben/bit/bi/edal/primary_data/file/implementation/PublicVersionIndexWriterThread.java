@@ -143,6 +143,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DIRECTORY = "directory";
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
+	public static final String CONTENT = "Content";
 	
 	public static final int MAXDOCSIZE = Integer.MAX_VALUE;
 	int docCount = 0;
@@ -164,7 +165,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String[] METADATAFIELDS = {MetaDataImplementation.TITLE,MetaDataImplementation.SIZE,MetaDataImplementation.VERSIONID,
 			MetaDataImplementation.ENTITYID,MetaDataImplementation.PRIMARYENTITYID,MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.DOCID,
 			PublicVersionIndexWriterThread.PUBLICID,PublicVersionIndexWriterThread.REVISION,PublicVersionIndexWriterThread.PUBLICREFERENCE,
-			PublicVersionIndexWriterThread.INTERNALID, MetaDataImplementation.FILETYPE};
+			PublicVersionIndexWriterThread.INTERNALID, PublicVersionIndexWriterThread.CONTENT, MetaDataImplementation.FILETYPE};
 	
 
 	Directory index;
@@ -584,13 +585,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			    if((builder.length()+1) == IndexWriter.MAX_STORED_STRING_LENGTH) {
 			    	//if last appended char is a whitespace or if no whitespace found.. just store the string in a content field
 			    	if(pos == builder.length()-1 || pos < 1) {
-				    	doc.add(new TextField("Content",builder.toString(),Store.YES));
+				    	doc.add(new TextField(CONTENT,builder.toString(),Store.YES));
 				    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 				    	pos = -1;
 			    	}else {
 			    		//split up the last part of the string to the last whitespace for a clean cut between stored Fields
 				    	String builderString = builder.toString();
-				    	doc.add(new TextField("Content",builderString.substring(0,pos),Store.YES));
+				    	doc.add(new TextField(CONTENT,builderString.substring(0,pos),Store.YES));
 				    	builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 				    	builder.append(builderString.substring(pos));
 			    		pos = -1;
@@ -603,7 +604,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			if(builder.length() > 0) {
 				String c = builder.toString();
-		    	doc.add(new TextField("Content",c,Store.YES));
+		    	doc.add(new TextField(CONTENT,c,Store.YES));
 			}
 			in.close();
 		}		
@@ -676,102 +677,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME, contributor.toString()));
 			}
 		}
-	}
-
-	protected void indexRestObjects() {
-//		long executeIndexingStart = System.currentTimeMillis();
-//
-//		if (!this.sessionFactory.isClosed()) {
-//			final Session session = this.sessionFactory.openSession();
-//
-//			session.setDefaultReadOnly(true);
-//
-//			//final FullTextSession fullTextSession = Search.getFullTextSession(session);
-//
-////			fullTextSession.setHibernateFlushMode(FlushMode.MANUAL);
-////			fullTextSession.setCacheMode(CacheMode.NORMAL);
-//
-//			final long queryStartTime = System.currentTimeMillis();
-//
-//			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//			//this.implementationProviderLogger.info("Starting execute Index task: lastIndexedID: " + lastIndexedID);
-//			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder.createQuery(PrimaryDataEntityVersionImplementation.class);
-//			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-//			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID))
-//					.orderBy(criteriaBuilder.asc(root.get("id")));
-//
-//			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
-//
-//			int indexedObjects = 0;
-//			int flushedObjects = 0;
-//
-//			final long queryTime = System.currentTimeMillis() - queryStartTime;
-//			final long indexStartTime = System.currentTimeMillis();
-//		    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-//			PrimaryDataEntityVersionImplementation version = null;
-//			while (results.next()) {
-//				/** index each element */
-//				//fullTextSession.index(results.get(0));
-//				version = (PrimaryDataEntityVersionImplementation) results.get(0);
-////				try {
-////					this.indexVersion(writer, version);
-////				} catch (MetaDataException e) {
-////					// TODO Auto-generated catch block
-////					e.printStackTrace();
-////				} catch (IOException e) {
-////					// TODO Auto-generated catch block
-////					e.printStackTrace();
-////				}
-////				indexedObjects++;
-////				flushedObjects++;
-//			}
-//			results.close();
-//			session.close();
-//			try {
-//				writer.commit();
-//				if(version != null)
-//				//this.implementationProviderLogger.info("indexedObjects: "+indexedObjects+" version.getID= "+version.getId()+" lastIndexed; "+this.lastIndexedID);
-//				if (indexedObjects > 0 && version.getId() > this.lastIndexedID) {
-//					this.lastIndexedID = version.getId() ;
-//				}
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
-//
-//			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-//		//	this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects: "+indexedObjects+" flushed: "+flushedObjects);
-//			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
-//
-//			if (indexedObjects > 0 || flushedObjects > 0) {
-//				this.indexWriterThreadLogger
-//						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects
-//								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-//								+ df.format(new Date(queryTime)));
-//			}
-//
-//			try {
-//				FileOutputStream fos = new FileOutputStream(
-//						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
-//				ObjectOutputStream oos = new ObjectOutputStream(fos);
-//				oos.writeObject(this.lastIndexedID);
-//				oos.close();
-//				//fos.close();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//
-//			try {
-//				Thread.sleep(Math.min(
-//						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
-//								NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
-//						NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
-//			} catch (final InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			//this.implementationProviderLogger.info("Finished execute Index task: lastIndexedID: " + lastIndexedID);
-//			long executeIndexingFinishTime = System.currentTimeMillis()-executeIndexingStart;
-//			//this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+" Amount_of_indexed_objects: "+indexedObjects+" flushedObjects: "+flushedObjects);
-//		}
 	}
 
 	protected void resetIndexThread() {

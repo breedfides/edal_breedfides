@@ -66,6 +66,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
+/**
+ * @author ralfs
+ *
+ */
 abstract class IndexWriterThread extends EdalThread {
 	protected static final int SLEEP_RUNTIME_FACTOR = 2;
 	protected static final long MIN_THREAD_SLEEP_MILLISECONDS = 500;
@@ -112,9 +116,8 @@ abstract class IndexWriterThread extends EdalThread {
 		this.sessionFactory = sessionFactory;
 	}
 	
-	protected abstract void executeIndexing();
 	
-	protected abstract void indexRestObjects();
+	protected abstract void executeIndexing();
 	
 	protected abstract void resetIndexThread();
 

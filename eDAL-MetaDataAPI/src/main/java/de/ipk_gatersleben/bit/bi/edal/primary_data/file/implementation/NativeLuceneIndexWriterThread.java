@@ -123,7 +123,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
-	//StandardAnalyzer analyzer;
 	protected Boolean lastIDChanged = false;
 	IndexWriter writer = null;
 	protected static int lastIndexedID = 0;
@@ -167,12 +166,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-		this.indexWriterThreadLogger.debug("Last indexed ID : " + NativeLuceneIndexWriterThread.getLastID());
-
-
-		
+		this.indexWriterThreadLogger.debug("Last indexed ID : " + NativeLuceneIndexWriterThread.getLastID());	
 	}
-
+	/**
+	 * Checks if there are recent stored versions, loads them and indexes the data
+	 */
 	protected void executeIndexing() {
 
 		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
@@ -180,10 +178,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			final Session session = this.sessionFactory.openSession();
 			session.setDefaultReadOnly(true);
 			
-			/** caching not neededm, also disabled to prevent memory leaks */
-			session.setCacheMode(CacheMode.IGNORE);
-			
+			/** this feature isn't needed for indexing and disabled to prevent oom errors */
+			session.setCacheMode(CacheMode.IGNORE);		
 			final long queryStartTime = System.currentTimeMillis();
+			
+			/** Load all PrimaryDataEntityVersionImplementations that haven't been indexed yet	 */
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
@@ -196,16 +195,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 			int indexedObjects = 0;
 			int flushedObjects = 0;
-
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
-
 			final long indexStartTime = System.currentTimeMillis();
 
 			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
 				version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
-					/** index each element */
 					this.indexVersion(writer, version);
 					indexedObjects++;
 					this.setLastID(version.getId());
@@ -220,8 +216,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-			// this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects:
-			// "+indexedObjects+" flushed: "+flushedObjects);
 			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
 			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
 			if (indexedObjects > 0 || flushedObjects > 0) {
@@ -253,15 +247,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
-			if (flushedObjects != indexedObjects) {
-				indexRestObjects();
-			}
-			// this.implementationProviderLogger.info("Finished execute Index task:
-			// lastIndexedID: " + lastIndexedID);
 			this.indexLogger.debug("NativeLuceneIndexWriterThread time: "+executeIndexingFinishTime);
-			// this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+"
-			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
-			// "+flushedObjects);
 		}
 	}
 
@@ -370,17 +356,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(" ");
 		}
 		doc.add(new TextField(MetaDataImplementation.SUBJECT, builder.toString(), Store.YES));
-		IdentifierRelation relations = (IdentifierRelation) metadata.getElementValue(EnumDublinCoreElements.RELATION);
-		for (Identifier identifier : relations) {
-			builder.setLength(0);
-			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()));
-			builder.append(" ");
-			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()));
-			builder.append(" ");
-			builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
-			builder.append(", ");
-			doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.NO));
-		}
+		builder.setLength(0);
+		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()));
+		builder.append(" ");
+		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()));
+		builder.append(" ");
+		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
+		builder.append(", ");
+		doc.add(new TextField(MetaDataImplementation.RELATION, builder.toString(), Store.NO));
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
 			doc.add(new TextField(MetaDataImplementation.STARTDATE,Integer.toString(date.getStartDate().get(Calendar.YEAR)),Store.YES));
@@ -401,13 +384,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		for(IndexableField field : doc.getFields()){	
 			allFieldsJoiner.add(field.stringValue());
 		}
-		doc.add(new StringField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
+		doc.add(new TextField(MetaDataImplementation.ALL, allFieldsJoiner.toString(),Store.YES));
 		doc.add(new StringField(MetaDataImplementation.VERSIONID, Integer.toString(version.getId()), Store.YES));
 		doc.add(new StringField(MetaDataImplementation.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
 		doc.add(new StringField(PublicVersionIndexWriterThread.REVISION,Long.toString(version.getRevision()), Store.YES));
 		builder.setLength(0);
 		Calendar cd = version.getCreationDate();
-		//important to access related local files for content indexing
+		//important to access the related local file for content indexing if this Version belongs to a file
 		doc.add(new StringField("VersionCreationDate", 
 				builder.append(cd.get(Calendar.YEAR)).append('-').append(cd.get(Calendar.MONTH))
 				.append('-').append(cd.get(Calendar.DAY_OF_MONTH)).append('-').append(cd.get(Calendar.HOUR_OF_DAY))
@@ -427,88 +410,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	private String getString(String string) {
 		return string == null ? "" : string;
-	}
-
-	protected void indexRestObjects() {
-//		long executeIndexingStart = System.currentTimeMillis();
-//
-//		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
-//			final Session session = this.sessionFactory.openSession();
-//
-//			session.setDefaultReadOnly(true);
-//
-//			final long queryStartTime = System.currentTimeMillis();
-//
-//			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-//			// this.implementationProviderLogger.info("Starting execute Index task:
-//			// lastIndexedID: " + lastIndexedID);
-//			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
-//					.createQuery(PrimaryDataEntityVersionImplementation.class);
-//			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-//			criteria.where(criteriaBuilder.gt(root.get("id"), this.lastIndexedID)).orderBy(criteriaBuilder.asc(root.get("id")));
-//			final ScrollableResults results = session.createQuery(criteria).scroll(ScrollMode.FORWARD_ONLY);
-//
-//			int indexedObjects = 0;
-//			int flushedObjects = 0;
-//
-//			final long queryTime = System.currentTimeMillis() - queryStartTime;
-//			final long indexStartTime = System.currentTimeMillis();
-//			PrimaryDataEntityVersionImplementation version = null;
-//			while (results.next()) {
-//				/** index each element */
-//				version = (PrimaryDataEntityVersionImplementation) results.get(0);
-//				try {
-//					this.indexVersion(writer, version);
-//					this.implementationProviderLogger.info("(rest)Indexed Version: " + version.getId()+" indexedversions: "+indexedObjects+" fetchsize: "+0);
-//				} catch (MetaDataException e) {
-//					e.printStackTrace();
-//				}
-//				indexedObjects++;
-//				flushedObjects++;
-//			}
-//			results.close();
-//			session.close();
-//			try {
-//				if (!writer.isOpen()) {
-//					this.implementationProviderLogger.info("\n WRITER IS CLOSED BUT TRYING TO COMMIT/ADD DOCS");
-//				} else {
-//					writer.flush();
-//				}
-//				if (version != null && version.getId() > this.lastIndexedID) {
-//					this.lastIndexedID = version.getId();
-//				}
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
-//
-//			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-//			// this.indexLogger.info("indexingTime: "+indexingTime+ " amount_of_objects:
-//			// "+indexedObjects+" flushed: "+flushedObjects);
-//			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
-//
-//			if (indexedObjects > 0 || flushedObjects > 0) {
-//				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
-//						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
-//			}
-//
-//			updateLastIndexedID(flushedObjects);
-//
-//			try {
-//				Thread.sleep(Math.min(
-//						Math.max(indexingTime * NativeLuceneIndexWriterThread.SLEEP_RUNTIME_FACTOR,
-//								NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
-//						NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
-//			} catch (final InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			// this.implementationProviderLogger.info("Finished execute Index task:
-//			// lastIndexedID: " + lastIndexedID);
-//			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
-//			this.indexLogger.debug("NativeLuceneIndexWriterThread indexRest time: "+executeIndexingFinishTime);
-//			// this.indexLogger.info("indexRestObjects(ms): "+executeIndexingFinishTime+"
-//			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
-//			// "+flushedObjects);
-//		}
 	}
 
 	protected void resetIndexThread() {
