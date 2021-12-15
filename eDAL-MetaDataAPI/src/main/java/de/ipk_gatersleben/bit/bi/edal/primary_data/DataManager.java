@@ -12,7 +12,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
@@ -117,6 +119,7 @@ import org.apache.lucene.search.TotalHits.Relation;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleFragmenter;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
@@ -124,6 +127,7 @@ import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.velocity.VelocityContext;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.hibernate.Session;
 import org.json.simple.JSONArray;
@@ -1645,6 +1649,44 @@ public class DataManager {
 			DataManager.getImplProv().getLogger().debug("Parsing Error: " + e.getMessage());
 			return null;
 		}
+	}
+
+	public static JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
+		IndexSearcher searcher = DataManager.getSearchManager().acquire();
+		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
+		ScoreDoc[] hits = searcher.search(query, 1).scoreDocs;
+		JSONObject result = new JSONObject();
+		if(hits.length > 0) {
+			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+					.getAnalyzer();
+			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
+			Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(parser.parse(q)));
+			highlighter.setTextFragmenter(new SimpleFragmenter(300));
+			Document document = searcher.doc(hits[0].doc);
+			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc, PublicVersionIndexWriterThread.CONTENT,
+			analyzer);
+			TextFragment[] fragments;
+			try {
+				fragments = highlighter.getBestTextFragments(tokenStream, document.get(PublicVersionIndexWriterThread.CONTENT), false, 10);
+				List<String> snipets = new ArrayList<>();
+				for(TextFragment fragment : fragments) {
+					if(fragment.getScore() > 0.0) {
+						snipets.add(fragment.toString());
+					}
+				}
+			    BufferedWriter writer = new BufferedWriter(new FileWriter("test3.txt"));
+			    writer.write(snipets.get(0));
+			    
+			    writer.close();
+				result.put(PublicVersionIndexWriterThread.CONTENT, snipets);
+			} catch (IOException | InvalidTokenOffsetsException e) {
+				result.put("msg", "There was an Error, Document not found.");
+			}
+
+		}else {
+			result.put("msg", "There was an Error, Document not found.");
+		}
+		return result;
 	}
 
 }

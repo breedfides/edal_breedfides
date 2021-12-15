@@ -1,5 +1,4 @@
 /**
- * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -13,8 +12,10 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -1480,45 +1481,16 @@ class VeloCityHtmlGenerator {
 
 	}
 	
-	public Object generateHtmlForContent(Code responseCode, String doc, String q) throws EdalException, IOException, ParseException {
-		IndexSearcher searcher = DataManager.getSearchManager().acquire();
-		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
-		ScoreDoc[] hits = searcher.search(query, 1).scoreDocs;
+	public Object generateHtmlForContent(Code responseCode, String doc, String q) throws EdalException, IOException, ParseException {	
 		final VelocityContext context = new VelocityContext();
-		if(hits.length > 0) {
-			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-					.getAnalyzer();
-			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
-			Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(parser.parse(q)));
-			highlighter.setTextFragmenter(new SimpleFragmenter(150));
-			Document document = searcher.doc(hits[0].doc);
-			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc, PublicVersionIndexWriterThread.CONTENT,
-			analyzer);
-			TextFragment[] fragments;
-			try {
-				fragments = highlighter.getBestTextFragments(tokenStream, document.get(PublicVersionIndexWriterThread.CONTENT), false, 5);
-				List<String> snipets = new ArrayList<>();
-				for(TextFragment fragment : fragments) {
-					if(fragment.getScore() > 0.0) {
-						snipets.add(fragment.toString());
-					}
-				}
-				context.put(PublicVersionIndexWriterThread.CONTENT, snipets);
-			} catch (IOException | InvalidTokenOffsetsException e) {
-				context.put(PublicVersionIndexWriterThread.CONTENT, "There was an Error, Document not found.");
-			}
-
-		}else {
-			context.put(PublicVersionIndexWriterThread.CONTENT, "There was an Error, Document not found.");
-		}
-		
 		/* set the charset */
 		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+		context.put("doc", doc);
+		context.put("query", q);
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/ContentTemplate.xml",

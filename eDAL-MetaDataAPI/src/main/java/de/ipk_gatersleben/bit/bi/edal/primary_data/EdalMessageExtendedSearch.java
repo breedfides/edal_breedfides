@@ -155,6 +155,20 @@ public class EdalMessageExtendedSearch {
 		return result;
 	}
 	
+	@Path("/getHighlightedSections")
+	@POST
+	@ManagedAsync
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject getHighlightedSections(String json) {
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject requestObj = (JSONObject) parser.parse(json);
+			return DataManager.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
 	@GET
     @Path("/pdf")
     public Response downloadPdfFile()

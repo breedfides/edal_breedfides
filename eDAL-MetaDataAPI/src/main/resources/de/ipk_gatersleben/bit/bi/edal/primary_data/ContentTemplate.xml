@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+  <meta charset="UTF-8">
   <head>
     <title>$title - $repositoryNameShort</title>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -12,30 +13,48 @@
       <style>
         html, body {
             margin: 0;
-            height: 75%;
         }
         .content{
-          width: max-content;
-          height: 2em;
-          margin-bottom:1em;
+          width: 60%;
+          margin-top:1em;
           box-sizing: border-box;
           border: 1px solid #ccc!important;
           overflow: auto;
+        }
+        .container{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding-bottom: 1em;
         }
       </style>
 
   </head>
 
   <body>
-
-      #foreach($obj in $Content)    <div class="content">"$obj"</div>
-      #end
-
+    <div class="container" id="parent-container">
+    </div>
     <script>
       $( document ).ready(function() {
+        let requestObj = {"doc":"$doc","query":"$query"};
+        console.log("starting request");
+        var serverURL = "$serverURL";
+
+        $.post(serverURL+"/rest/extendedSearch/getHighlightedSections", JSON.stringify(requestObj), function(data){
+          console.log(data);
+          let container = document.getElementById("parent-container");
+          data.Content.forEach(function(element){
+            var div = document.createElement("div");
+            div.classList.add("content");
+            div.innerHTML = element;
+            container.appendChild(div);
+          });
+        });
         window.history.replaceState(null, null, window.location.pathname);
       });
-    </script>
+  </script>
+
   </body>
 
 </html>

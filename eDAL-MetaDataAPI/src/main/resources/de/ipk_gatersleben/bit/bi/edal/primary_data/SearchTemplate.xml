@@ -175,14 +175,14 @@
                     <div id="radioContainer">
                       <div class="form-check">
                         <input class="form-check-input" type="radio" name="searchFor" id="metaDataRadio" value="Metadata" onclick="EdalReport.metaDataButton()" checked="checked">
-                          <label class="form-check-label" for="exampleRadios1">
+                          <label class="form-check-label" for="metaDataRadio">
                             Metadata
                           </label>
                           <button class="info-btn button-circle ml-3" data-toggle="tooltip" data-placement="top" title="Search in metadata of datasets and files.">i</button>
                         </div>
                         <div class="form-check mt-2">
                           <input class="form-check-input" type="radio" name="searchFor" id="contentRadio" value="Content" onclick="EdalReport.contentButton()">
-                            <label class="form-check-label" for="exampleRadios2" >
+                            <label class="form-check-label" for="contentRadio" >
                               Content
                             </label>
                             <button class="info-btn button-circle ml-3" data-toggle="tooltip" data-placement="top" title="Search in content of text files. (Up to 1.8gb text files)">i</button>
@@ -347,6 +347,9 @@
                     content.style.display = "none";
                   } else {
                     content.style.display = "block";
+                    document.getElementById("metaDataRadio").checked = true;
+                    document.getElementById("publicReferenceRadio").disabled = false;
+                    document.getElementById("directoryRadio").disabled = false;
                   }
                 }
 
