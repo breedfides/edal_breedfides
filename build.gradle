@@ -275,9 +275,9 @@ project(':eDAL-MetaDataAPI') {
 	    
 	    compile group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
 	   
-	   	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.1'
-	    compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.11.1'
-	    
+	   	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.16.0'	    
+		compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.16.0'
+		
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
 	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
 		compile group: 'org.bidib.com.github.markusbernhardt', name: 'proxy-vole', version: '1.0.10'
