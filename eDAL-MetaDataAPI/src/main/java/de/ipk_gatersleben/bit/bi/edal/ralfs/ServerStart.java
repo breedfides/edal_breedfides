@@ -120,7 +120,7 @@ public class ServerStart {
 			//hightlightExample();
 
 //			createDataset(400);
-//		    uploadZip(root);
+		   // uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -219,7 +219,7 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Hardwarehersteller");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("Hardwarehersteller2");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
 		NaturalPerson np = new NaturalPerson("Eric", "Ralfs",
@@ -240,7 +240,7 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("Hardwarehersteller"));
+				new UntypedData("Hardwarehersteller2"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);

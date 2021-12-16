@@ -1278,7 +1278,13 @@ public class DataManager {
 			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class,
 					Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
-			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+			if(reference.getAcceptedDate() == null) {
+				//if in Testmode, use creation year
+				obj.put("year", doc.get(MetaDataImplementation.STARTDATE));
+			}else {
+				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+			}
+
 			if (type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
 				try {
 					obj.put("doi", reference.getAssignedID());
@@ -1303,7 +1309,6 @@ public class DataManager {
 						+ doc.get(PublicVersionIndexWriterThread.REVISION);
 				PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class,
 						doc.get(MetaDataImplementation.PRIMARYENTITYID));
-				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 				obj.put("link", link);
 				obj.put("fileName", file.toString());
 				obj.put("docId",doc.get(PublicVersionIndexWriterThread.DOCID));

@@ -2172,6 +2172,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			if(fuzzy) {
 				builder.append('~');
 			}
+			String buildedStr = builder.toString();
+			if(buildedStr.length() == 0) {
+				return new ArrayList<Integer>();
+			}
 			QueryParser parser = new QueryParser(MetaDataImplementation.LEGALPERSON, new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 	        ScoreDoc[] hits2;

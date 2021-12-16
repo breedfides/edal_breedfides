@@ -145,7 +145,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String DOCID = "docid";
 	public static final String CONTENT = "Content";
 	
-	public static final int MAXDOCSIZE = Integer.MAX_VALUE;
+	public static final int MAXDOCSIZE = 100*1024*1024;
 	int docCount = 0;
 	private final short REVISIONFILE = 1;
 	private final short REVISIONDIRECTORY = 0;
@@ -260,8 +260,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			Predicate predicateAccepted = criteriaBuilder.equal(root.get("publicationStatus"),
 					PublicationStatus.ACCEPTED);
 			Predicate predicateType = criteriaBuilder.equal(root.get("identifierType"), PersistentIdentifier.DOI);
-			criteria.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType))
-					.orderBy(criteriaBuilder.asc(root.get("id")));
+			if(DataManager.getConfiguration().isInTestMode()) {
+				criteria.where(criteriaBuilder.and(predicateId, predicateType))
+				.orderBy(criteriaBuilder.asc(root.get("id")));
+			}else {
+				criteria.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType))
+				.orderBy(criteriaBuilder.asc(root.get("id")));
+			}
+
 
 			/** Transaction is needed for ScrollableResults */
 			session.getTransaction().begin();
@@ -511,7 +517,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								fileSize = PublicVersionIndexWriterThread.MAXDOCSIZE;
 							}
 							String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
-							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize < PublicVersionIndexWriterThread.MAXDOCSIZE) {						
+							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {						
 								String[] dateValues = doc.get("VersionCreationDate").split("-");
 								if(dateValues.length == 5) {
 									DataManager.getImplProv().getLogger().info("Indexing content for "+doc.get(MetaDataImplementation.TITLE));
