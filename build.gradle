@@ -323,6 +323,15 @@ project(':eDAL-MetaDataAPI') {
 	artifacts{
 		archives shadowJar //, shadowJarLogin
 	}
+	
+	task cleanUpTestDirectory(type: Delete) {
+		
+		def homePath = ant.properties['user.home']
+		println homePath
+		delete new File(homePath, "edaltest/")
+		followSymlinks = true
+	  }
+	test.finalizedBy(cleanUpTestDirectory)
 }
 
 //Server Project specific stuff
