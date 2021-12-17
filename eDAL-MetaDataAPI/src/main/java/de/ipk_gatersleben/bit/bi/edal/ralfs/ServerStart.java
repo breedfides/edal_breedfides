@@ -102,7 +102,6 @@ public class ServerStart {
 	public static void main(String[] args) {
 		try {
 			PrimaryDataDirectory root = getRoot();
-			
 //			Thread.sleep(2000);
 //			IndexSearcher searcher = DataManager.getSearchManager().acquire();
 //			ScoreDoc[] hits = searcher.search(new TermQuery(new Term("Content","test")), 500000).scoreDocs;
