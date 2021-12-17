@@ -513,21 +513,20 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							int fileSize;
 							try {
 								fileSize = Integer.parseInt(doc.get(MetaDataImplementation.SIZE));
+								String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
+								if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {						
+									String[] dateValues = doc.get("VersionCreationDate").split("-");
+									if(dateValues.length == 5) {
+										Path pathToFile = Paths.get(((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath().toString(),
+												dateValues[0],dateValues[1],dateValues[2],dateValues[3],dateValues[4],file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
+										indexFileContent(doc, pathToFile.toFile());
+									}
+
+								}
 							}
 							catch (NumberFormatException e)
 							{
-								fileSize = PublicVersionIndexWriterThread.MAXDOCSIZE;
-							}
-							String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
-							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {						
-								String[] dateValues = doc.get("VersionCreationDate").split("-");
-								if(dateValues.length == 5) {
-									DataManager.getImplProv().getLogger().info("Indexing content for "+doc.get(MetaDataImplementation.TITLE));
-									Path pathToFile = Paths.get(((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath().toString(),
-											dateValues[0],dateValues[1],dateValues[2],dateValues[3],dateValues[4],file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
-									indexFileContent(doc, pathToFile.toFile());
-								}
-
+								fileSize = -1;
 							}
 					} else if (revision == REVISIONDIRECTORY) {
 						doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY,
