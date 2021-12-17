@@ -158,7 +158,7 @@ public class TestRmiUploadDownload extends ClientServerTest {
 
 		Assertions.assertEquals(FileUtils.sizeOf(START_INPUT_PATH.toFile()), FileUtils.sizeOf(START_OUTPUT_PATH.toFile()));
 
-		FileUtils.deleteDirectory(START_OUTPUT_PATH.getParent().toFile());
+//		FileUtils.deleteDirectory(START_OUTPUT_PATH.getParent().toFile());
 
 	}
 }

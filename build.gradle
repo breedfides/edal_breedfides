@@ -324,14 +324,14 @@ project(':eDAL-MetaDataAPI') {
 		archives shadowJar //, shadowJarLogin
 	}
 	
-	task cleanUpTestDirectory(type: Delete) {
+	task cleanUpTestDirectoryAPI(type: Delete) {
 		
 		def homePath = ant.properties['user.home']
 		println homePath
 		delete new File(homePath, "edaltest/")
 		followSymlinks = true
 	  }
-	test.finalizedBy(cleanUpTestDirectory)
+	test.finalizedBy(cleanUpTestDirectoryAPI)
 }
 
 //Server Project specific stuff
@@ -381,4 +381,13 @@ project(':eDAL-MetaDataAPI-Client') {
 	artifacts{
 		archives shadowJar
 	}
+	
+	task cleanUpTestDirectoryClient(type: Delete) {
+		
+		def homePath = ant.properties['user.home']
+		println homePath
+		delete new File(homePath, "TEST_READ/")
+		followSymlinks = true
+	  }
+	test.finalizedBy(cleanUpTestDirectoryClient)
 }
