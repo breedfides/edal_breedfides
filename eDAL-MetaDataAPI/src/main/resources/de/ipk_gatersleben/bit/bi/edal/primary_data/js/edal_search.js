@@ -285,7 +285,9 @@ let EdalReport = new function() {
           $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
           reportData = data.results;
           if(ID == requestId){
-            self.updateTerms(data.facets);
+            if(data.facets != null){
+              self.updateTerms(data.facets);
+            }
             if(data.parsedQuery != null && data.parsedQuery != ""){
               const queryIndex = self.queries.length;
               self.queries.push(data.parsedQuery);

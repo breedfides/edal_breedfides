@@ -1234,7 +1234,7 @@ public class DataManager {
 				topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
 		result.put("displayedPage", (long) requestObject.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
-		DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
+		//DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
 		String[] snipets = new String[0];
 		String whereToSearch = (String) requestObject.get("whereToSearch");
 		if(whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) && buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
@@ -1362,7 +1362,7 @@ public class DataManager {
 					} else {
 						break;
 					}
-					DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
+					//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
 				}
 			}
 		} else {
@@ -1539,12 +1539,17 @@ public class DataManager {
 	    List<FacetResult> results = new ArrayList<>();
 
 	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
-	    results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+	    getSearchManager().release(searcher);
+	    try {
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
+		    results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+	    }catch(IOException e) {
+	    	return null;
+	    }
 		JSONArray result = new JSONArray();
 	    for(FacetResult facet : results) {
 	    	if(facet == null)
@@ -1559,7 +1564,6 @@ public class DataManager {
 	    	jsonFacet.put("sortedByHits",facet.labelValues);
 	    	result.add(jsonFacet);
 	    }
-	    getSearchManager().release(searcher);
 	    return result;
 	}
 
