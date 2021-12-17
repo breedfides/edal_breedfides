@@ -686,7 +686,7 @@ let EdalReport = new function() {
           document.getElementById("result-stats").innerHTML = 'Showing '+(index*self.pageSize+1)+' to '+(index*self.pageSize+data.results.length)+' of ' +self.hitSize+' results';
         }
         var pageArray = [];
-        var offset;
+        var offset, i;
         if(history[index].page < 3){
           i = 0;
         }else if(index > 1){
@@ -698,7 +698,7 @@ let EdalReport = new function() {
           offset = index+1;
           if(offset > history.length){
             i -= offset-history.length;
-            if(history.length > 10){
+            if(history.length > 3){
               i--;
             }
           }
@@ -706,7 +706,7 @@ let EdalReport = new function() {
         }
         var j = 0;
         var sum = i+j;
-        while(j < 10 && sum < history.length){
+        while(j < 3 && sum < history.length){
           pageArray.push(history[sum]);
           j++;
           sum = i+j;
