@@ -1202,7 +1202,7 @@ public class DataManager {
 		int currentPageNumber = ((int) (long) requestObject.get("displayedPage"));
 		int pageArraySize = ((int) (long) requestObject.get("pageArraySize"));
 		int pageIndex = ((int) (long) requestObject.get("pageIndex"));
-		DataManager.getImplProv().getLogger().info("Running QUery");
+		//DataManager.getImplProv().getLogger().info("Running QUery");
 		TopDocs toHighlight = null;
 		int pageSize = ((int) (long) requestObject.get("pageSize"));
 		if (pageArraySize == 0 || currentPageNumber == 1) {
@@ -1235,22 +1235,15 @@ public class DataManager {
 		result.put("displayedPage", (long) requestObject.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
 		//DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
-		String[] snipets = new String[0];
 		String whereToSearch = (String) requestObject.get("whereToSearch");
+		Highlighter highlighter = null;
+		Analyzer analyzer = null;
 		if(whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) && buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
 			//highlighting
-		Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-				.getAnalyzer();
-		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
-		Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(buildedQuery));
-			
-			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
-			try {
-				snipets = unifiedHighlighter.highlight(PublicVersionIndexWriterThread.CONTENT, buildedQuery, toHighlight);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}	
+			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+					.getAnalyzer();
+			highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(buildedQuery));
+			highlighter.setTextFragmenter(new SimpleFragmenter(48));
 		}
 
 		ScoreDoc[] scoreDocs = topDocs.scoreDocs;	
@@ -1269,7 +1262,7 @@ public class DataManager {
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = searcher.doc(scoreDocs[i].doc,fields);
-				DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
+				//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1314,9 +1307,19 @@ public class DataManager {
 				obj.put("docId",doc.get(PublicVersionIndexWriterThread.DOCID));
 				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
-				if(i < snipets.length) {
-					obj.put("highlight", snipets[i]);
+				
+				if(highlighter != null && analyzer != null) {
+					try {
+						TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(),
+								scoreDocs[i].doc, PublicVersionIndexWriterThread.CONTENT,analyzer);
+						TextFragment[] fragments = highlighter.getBestTextFragments(tokenStream, doc.get(PublicVersionIndexWriterThread.CONTENT), false, 1);
+						if(fragments.length > 0) {
+							obj.put("highlight", fragments[0].toString());
+						}
+					} catch (IOException | InvalidTokenOffsetsException e) {
+					}
 				}
+				
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
@@ -1382,7 +1385,7 @@ public class DataManager {
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
 							pageArray.add(page);
-							DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
+							//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -1394,7 +1397,7 @@ public class DataManager {
 			}
 		}
 		result.put("pageArray", pageArray);
-		DataManager.getImplProv().getLogger().info("Created PageArray");
+		//DataManager.getImplProv().getLogger().info("Created PageArray");
 		try {
 			result.put("bottomResult",
 					searcher.doc(scoreDocs[pageSize - 1].doc).get(PublicVersionIndexWriterThread.DOCID));
@@ -1405,7 +1408,7 @@ public class DataManager {
 			try {
 				if(searcher != null) {
 					searchManager.release(searcher);
-					DataManager.getImplProv().getLogger().info("Released searcher");
+					DataManager.getImplProv().getLogger().debug("Released searcher");
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -1419,7 +1422,6 @@ public class DataManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		DataManager.getImplProv().getLogger().info("Returning Result");
 		return result;
 	}
 
@@ -1660,6 +1662,14 @@ public class DataManager {
 		}
 	}
 
+	/**
+	 * Method to get the top 10 highlighted passages for a Document
+	 * @param doc The Document to be highlighted
+	 * @param q The Query that should contain a keyword for highlighting
+	 * @return The Highlighted passages wrapped in a JSONObject
+	 * @throws IOException
+	 * @throws ParseException
+	 */
 	public static JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
 		IndexSearcher searcher = DataManager.getSearchManager().acquire();
 		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
@@ -1670,7 +1680,7 @@ public class DataManager {
 					.getAnalyzer();
 			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
 			Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(parser.parse(q)));
-			highlighter.setTextFragmenter(new SimpleFragmenter(300));
+			highlighter.setTextFragmenter(new SimpleFragmenter(300));//48
 			Document document = searcher.doc(hits[0].doc);
 			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc, PublicVersionIndexWriterThread.CONTENT,
 			analyzer);
@@ -1683,10 +1693,6 @@ public class DataManager {
 						snipets.add(fragment.toString());
 					}
 				}
-			    BufferedWriter writer = new BufferedWriter(new FileWriter("test3.txt"));
-			    writer.write(snipets.get(0));
-			    
-			    writer.close();
 				result.put(PublicVersionIndexWriterThread.CONTENT, snipets);
 			} catch (IOException | InvalidTokenOffsetsException e) {
 				result.put("msg", "There was an Error, Document not found.");

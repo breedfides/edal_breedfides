@@ -64,7 +64,7 @@ let EdalReport = new function() {
     this.fileColumnsWithHighlights = [
       {
           title: "Filename",
-          width: "25%",
+          width: "20%",
           class: "edal-report-doi",
           render: function (data, type, row) {
               return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
@@ -72,7 +72,7 @@ let EdalReport = new function() {
       },
       {
         title: "Preview",
-        width: "15%",
+        width: "25%",
         data: "highlight",
         class: "edal-report-title",
         render: function (data, type, row) {
@@ -101,7 +101,7 @@ let EdalReport = new function() {
       {
           title: "DOI",
           data: "doi",
-          width: "10%",
+          width: "8%",
           class: "edal-report-doi",
           render: function (data, type, row) {
               return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
@@ -285,9 +285,7 @@ let EdalReport = new function() {
           $.post("/rest/extendedSearch/search", JSON.stringify(requestData), function(data){
           reportData = data.results;
           if(ID == requestId){
-            if(data.facets != null){
-              self.updateTerms(data.facets);
-            }
+            self.updateTerms(data.facets);
             if(data.parsedQuery != null && data.parsedQuery != ""){
               const queryIndex = self.queries.length;
               self.queries.push(data.parsedQuery);
@@ -411,12 +409,15 @@ let EdalReport = new function() {
     }
 
     this.updateTerms = function(data){
-      let self = this;
       document.getElementById(PERSON).innerHTML = "";
       document.getElementById(CONTRIBUTOR).innerHTML = "";
       document.getElementById(SUBJECT).innerHTML = "";
       document.getElementById(TITLE).innerHTML = "";
       document.getElementById(DESCRIPTION).innerHTML = "";
+      if(data == null){
+        return;
+      }
+      let self = this;
       data.forEach(function(facet){
         let tempList = facet.sortedByHits;
         //facet for filetypes ? -> fill select with values
