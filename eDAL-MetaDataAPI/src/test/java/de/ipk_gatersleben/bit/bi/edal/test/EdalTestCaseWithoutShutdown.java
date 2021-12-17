@@ -80,10 +80,10 @@ public class EdalTestCaseWithoutShutdown {
 		}
 	}
 
-	@AfterEach
-	public void tearDown() throws Exception {
-		EdalHelpers.cleanMountPath(mountPath);
-	}
+//	@AfterEach
+//	public void tearDown() throws Exception {
+//		EdalHelpers.cleanMountPath(mountPath);
+//	}
 
 	/**
 	 * Checks to see if a specific port is available.

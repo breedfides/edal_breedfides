@@ -109,7 +109,7 @@ public class ClientServerTest {
 	@AfterEach
 	public void stopServer() throws Exception {
 		EdalServer.stopServer(ClientServerTest.HOST, ClientServerTest.REGISTRY_PORT);
-		EdalHelpers.cleanMountPath(mountPath);
+//		EdalHelpers.cleanMountPath(mountPath);
 	}
 
 	/**
