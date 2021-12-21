@@ -60,6 +60,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.facet.FacetField;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
@@ -146,6 +147,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public static final String FILE = "file";
 	public static final String DOCID = "docid";
 	public static final String CONTENT = "Content";
+
 	
 	public static final int MAXDOCSIZE = 100*1024*1024;
 	int docCount = 0;
@@ -517,6 +519,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain") && fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {						
 									String[] dateValues = doc.get("VersionCreationDate").split("-");
 									if(dateValues.length == 5) {
+										DataManager.getImplProv().getLogger().info("indexing content for:_ "+doc.get("Title")+" size: "+doc.get(MetaDataImplementation.SIZE));
 										Path pathToFile = Paths.get(((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath().toString(),
 												dateValues[0],dateValues[1],dateValues[2],dateValues[3],dateValues[4],file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
 										indexFileContent(doc, pathToFile.toFile());
@@ -610,8 +613,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			    }
 			}
 			if(builder.length() > 0) {
-				String c = builder.toString();
-		    	doc.add(new TextField(CONTENT,c,Store.YES));
+				doc.add(new TextField(PublicVersionIndexWriterThread.CONTENT, builder.toString(), Store.YES));
 			}
 			in.close();
 		}		

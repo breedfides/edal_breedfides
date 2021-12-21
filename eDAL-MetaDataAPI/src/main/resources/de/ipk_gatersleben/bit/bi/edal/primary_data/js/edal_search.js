@@ -313,6 +313,7 @@ let EdalReport = new function() {
             }
             self.manipulateDataTable(data.pageArray, self.currentRequestData, history);
             document.getElementById("loading-indicator").style.display="none";
+            self.currentRequestData.hitSize = self.hitSize;
             if (typeof data.results !== 'undefined'){
                 document.getElementById("result-stats").innerHTML = 'Showing 1 to '+data.results.length+' of ' +self.hitSize+' results';
             }else{

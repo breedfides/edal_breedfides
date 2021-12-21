@@ -1174,11 +1174,11 @@ public class DataManager {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(requestObject, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
-		result.put("facets", new JSONArray());
-		Thread innerThread = new Thread(){
+		class DrillDownThread extends Thread {
+			JSONArray facets = new JSONArray();
 			public void run(){
 				try {
-					result.put("facets", DataManager.drillDown(buildedQuery.toString()));
+					facets = DataManager.drillDown(buildedQuery.toString());
 				} catch (ParseException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1188,7 +1188,11 @@ public class DataManager {
 				}
 				internalCountDownLatch.countDown();
 			}
-		};
+			public JSONArray getFacets(){
+				return facets;
+			}
+		}
+		DrillDownThread innerThread = new DrillDownThread();
 		innerThread.start();
 		IndexSearcher searcher = null;
 		try {
@@ -1202,36 +1206,33 @@ public class DataManager {
 		int currentPageNumber = ((int) (long) requestObject.get("displayedPage"));
 		int pageArraySize = ((int) (long) requestObject.get("pageArraySize"));
 		int pageIndex = ((int) (long) requestObject.get("pageIndex"));
-		//DataManager.getImplProv().getLogger().info("Running QUery");
-		TopDocs toHighlight = null;
 		int pageSize = ((int) (long) requestObject.get("pageSize"));
-		if (pageArraySize == 0 || currentPageNumber == 1) {
-			try {
+		try {
+			if (pageArraySize == 0 || currentPageNumber == 1) {
 				DataManager.getImplProv().getLogger().debug("Builded QUery advanced search: " + buildedQuery.toString());
-				topDocs = searcher.search(buildedQuery, 5000000);
-				toHighlight = searcher.search(buildedQuery, pageSize);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		} else {
-			ScoreDoc bottomScoreDoc = null;
-			try {
+				topDocs = searcher.search(buildedQuery, pageSize*3);
+			} else {
+				ScoreDoc bottomScoreDoc = null;
 				bottomScoreDoc = searcher.search(new TermQuery(
 						new Term(PublicVersionIndexWriterThread.DOCID, (String) requestObject.get("bottomResultId"))),
 						5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
-				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, 5000000);
-				toHighlight = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize*3);
 			}
-
+			if(requestObject.get("hitSize") == null) {
+				DataManager.getImplProv().getLogger().info("Calculatin number of hits");
+				TotalHitCountCollector collector = new TotalHitCountCollector();
+				searcher.search(buildedQuery, collector);
+				result.put("hitSize", collector.getTotalHits());
+			}else {
+				DataManager.getImplProv().getLogger().info("NOT calculating number of hits, already there");
+				result.put("hitSize", requestObject.get("hitSize"));
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-		result.put("hitSize", topDocs.scoreDocs.length);
-		result.put("hitSizeDescription",
-				topDocs.totalHits.relation.equals(TotalHits.Relation.EQUAL_TO) ? "" : "More than");
+		result.put("hitSizeDescription","");
 		result.put("displayedPage", (long) requestObject.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
 		//DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
@@ -1239,10 +1240,10 @@ public class DataManager {
 		Highlighter highlighter = null;
 		Analyzer analyzer = null;
 		if(whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) && buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
-			//highlighting
+			//prepare highlighting
 			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
 					.getAnalyzer();
-			highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(buildedQuery));
+			highlighter = new Highlighter(new QueryScorer(buildedQuery));
 			highlighter.setTextFragmenter(new SimpleFragmenter(48));
 		}
 
@@ -1262,7 +1263,6 @@ public class DataManager {
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = searcher.doc(scoreDocs[i].doc,fields);
-				//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1310,11 +1310,12 @@ public class DataManager {
 				
 				if(highlighter != null && analyzer != null) {
 					try {
-						TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(),
-								scoreDocs[i].doc, PublicVersionIndexWriterThread.CONTENT,analyzer);
-						TextFragment[] fragments = highlighter.getBestTextFragments(tokenStream, doc.get(PublicVersionIndexWriterThread.CONTENT), false, 1);
-						if(fragments.length > 0) {
-							obj.put("highlight", fragments[0].toString());
+						String highlight = highlighter.getBestFragment(analyzer, PublicVersionIndexWriterThread.CONTENT,
+								doc.get(PublicVersionIndexWriterThread.CONTENT));
+						if(highlight != null) {
+							obj.put("highlight", highlight);
+						}else {
+							obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
 						}
 					} catch (IOException | InvalidTokenOffsetsException e) {
 					}
@@ -1329,6 +1330,7 @@ public class DataManager {
 				}
 			}
 			finalArray.add(obj);
+			//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
 		}
 		result.put("results", finalArray);
 		// bottomResult.docids needs to be stored, to support paginated Searching
@@ -1397,7 +1399,6 @@ public class DataManager {
 			}
 		}
 		result.put("pageArray", pageArray);
-		//DataManager.getImplProv().getLogger().info("Created PageArray");
 		try {
 			result.put("bottomResult",
 					searcher.doc(scoreDocs[pageSize - 1].doc).get(PublicVersionIndexWriterThread.DOCID));
@@ -1411,7 +1412,6 @@ public class DataManager {
 					DataManager.getImplProv().getLogger().debug("Released searcher");
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1419,9 +1419,9 @@ public class DataManager {
 		try {
 			internalCountDownLatch.await();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		result.put("facets", innerThread.getFacets());
 		return result;
 	}
 
@@ -1663,7 +1663,7 @@ public class DataManager {
 	}
 
 	/**
-	 * Method to get the top 10 highlighted passages for a Document
+	 * Method to get the top 10 highlighted passages for a Document 
 	 * @param doc The Document to be highlighted
 	 * @param q The Query that should contain a keyword for highlighting
 	 * @return The Highlighted passages wrapped in a JSONObject

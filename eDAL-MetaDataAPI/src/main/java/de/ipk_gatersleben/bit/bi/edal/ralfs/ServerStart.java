@@ -118,7 +118,7 @@ public class ServerStart {
 			
 			//hightlightExample();
 
-//			createDataset(100);
+//			createDataset(50);
 //		    uploadZip(root);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -207,7 +207,7 @@ public class ServerStart {
 		for(int i = 0; i < size; i++) {
 			bufferedWriter.write(s);
 		}
-		bufferedWriter.write("last words");	
+		bufferedWriter.write("the last muchos important words");	
 		myWriter.close();
 		for(int i = 0; i < copies; i++) {
 			Files.copy(Paths.get(PATH.toString(), "test.txt"), Paths.get(PATH.toString(), "copy_"+i+".txt"),StandardCopyOption.REPLACE_EXISTING);
@@ -218,10 +218,10 @@ public class ServerStart {
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("100mb dateien");
+		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("100mb dateien 2012");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
-		NaturalPerson np = new NaturalPerson("Jens", "Ralfs",
+		NaturalPerson np = new NaturalPerson("Zoe", "Breu",
 				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
 				"06466", "Germany");
 		persons.add(np);
@@ -239,7 +239,7 @@ public class ServerStart {
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData("100mb dateien"));
+				new UntypedData("100mb dateien 2012"));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);
