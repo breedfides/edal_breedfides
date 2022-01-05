@@ -42,7 +42,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -64,8 +70,8 @@ public class SearchTest extends EdalDefaultTestCase{
 	
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "Search_Test");
 	private static JSONObject json = new JSONObject();
+	private static HashMap<String,Object> map = new HashMap<String,Object>();
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testSearch() throws Exception{
 		createDataset();
@@ -83,10 +89,20 @@ public class SearchTest extends EdalDefaultTestCase{
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
+
+		map.put("existingQuery", "Subject:wheat");
+		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		map.put("pageIndex", 0l);
+		map.put("pageArraySize", 0l);
+		map.put("pageSize", 10l);
+		map.put("filters", new JSONArray());
+		map.put("queries", new JSONArray());
+		map.put("bottomResultId", null);
+		map.put("displayedPage", 1l);
+		map.put("whereToSearch", "Metadata");		
+		json = new JSONObject(map);
+
 		
-		json = (JSONObject) parser.parse("{\"existingQuery\":\"Subject:wheat\",\"hitType\":\"dataset\","
-				+ "\"pagination\":[],\"pageIndex\":0,\"pageArraySize\":0,\"pageSize\":10,\"filters\":[],"
-				+ "\"bottomResultId\":null,\"displayedPage\":1,\"queries\":[],\"whereToSearch\":\"Metadata\"}");
 		JSONObject result = DataManager.advancedSearch(json);
 		System.out.println(result.toJSONString());
 		//find 3 datasets
@@ -105,10 +121,55 @@ public class SearchTest extends EdalDefaultTestCase{
 		JSONArray hitArray = (JSONArray) result.get("results");
 		for(Object hit : hitArray) {
 			String highlight = (String) ((JSONObject)hit).get("highlight");
-			System.out.println(highlight);
 			Assertions.assertTrue(highlight.contains("<B>test</B>"));
 		}
-		System.out.println(result.toJSONString());
+		
+		class RunnableSearch implements Runnable{
+			JSONObject json;
+			int expected;
+			public RunnableSearch(JSONObject json, int expected){
+				this.json = json;
+				this.expected = expected;
+			}
+			@Override
+			public void run() {
+				for(int i = 0; i < 200; i++) {
+					JSONObject result = DataManager.advancedSearch(json);
+					Assertions.assertEquals(expected, result.get("hitSize"));
+					
+					json.put("existingQuery", "Creator:Smith");
+					result = DataManager.advancedSearch(json);
+					Assertions.assertEquals(expected, result.get("hitSize"));
+					
+					json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
+					result = DataManager.advancedSearch(json);
+					Assertions.assertEquals(3, result.get("hitSize"));
+					
+					json.put("existingQuery", "Creator:Peter");
+					result = DataManager.advancedSearch(json);
+					Assertions.assertEquals(3, result.get("hitSize"));
+				}
+			}
+		}
+		
+		List<RunnableSearch> callableTasks = new ArrayList<>();
+		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		map.put("whereToSearch", "Metadata");
+		map.put("existingQuery", "Title:test1");
+		ExecutorService executor = Executors.newFixedThreadPool(10);
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		executor.submit(new RunnableSearch(new JSONObject(map),1));
+		map.put("existingQuery", "Subject:wheat");
+		executor.submit(new RunnableSearch(new JSONObject(map),3));
+		executor.submit(new RunnableSearch(new JSONObject(map),3));
+		executor.shutdown();
+		executor.awaitTermination(120, TimeUnit.SECONDS);
 	}
 	@AfterEach
 	public void clearTestFiles() throws IOException {
