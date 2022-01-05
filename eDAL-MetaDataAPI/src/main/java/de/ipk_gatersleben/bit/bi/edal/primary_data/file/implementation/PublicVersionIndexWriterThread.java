@@ -585,6 +585,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	
 	private void indexFileContent(Document doc, File file) throws IOException {
 		if(file != null && file.exists()) {
+			//reading and appending single chars for best index and search performance
 			BufferedReader in = new BufferedReader(new FileReader(file));
 			StringBuilder builder = new StringBuilder();
 			

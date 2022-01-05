@@ -1220,12 +1220,10 @@ public class DataManager {
 				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize*3);
 			}
 			if(requestObject.get("hitSize") == null) {
-				DataManager.getImplProv().getLogger().info("Calculatin number of hits");
 				TotalHitCountCollector collector = new TotalHitCountCollector();
 				searcher.search(buildedQuery, collector);
 				result.put("hitSize", collector.getTotalHits());
 			}else {
-				DataManager.getImplProv().getLogger().info("NOT calculating number of hits, already there");
 				result.put("hitSize", requestObject.get("hitSize"));
 			}
 		} catch (IOException e1) {
@@ -1320,7 +1318,6 @@ public class DataManager {
 					} catch (IOException | InvalidTokenOffsetsException e) {
 					}
 				}
-				
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
@@ -1515,7 +1512,6 @@ public class DataManager {
 		QueryParser queryParser = new QueryParser(MetaDataImplementation.ALL, 
 				((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
 		queryParser.setDefaultOperator(Operator.AND);
-		IndexSearcher searcher = searchManager.acquire();
 		try {
 			if(taxoReader != null) {
 				TaxonomyReader newReader = TaxonomyReader.openIfChanged(taxoReader);
@@ -1527,7 +1523,6 @@ public class DataManager {
 			}
 		} catch (IOException e) {
 			DataManager.getImplProv().getLogger().debug("Error when creating DirectoryTaxonomyReader.. "+e.getMessage());
-			searchManager.release(searcher);
 			if(taxoReader != null) {
 				taxoReader.close();	
 			}
@@ -1536,12 +1531,12 @@ public class DataManager {
 		
 		DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
 	    FacetsCollector fc = new FacetsCollector();
+		IndexSearcher searcher = searchManager.acquire();
 	    FacetsCollector.search(searcher,drillQuery, 50000, fc);
 
 	    List<FacetResult> results = new ArrayList<>();
 
 	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
-	    getSearchManager().release(searcher);
 	    try {
 		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
 		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
@@ -1550,8 +1545,10 @@ public class DataManager {
 		    results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
 		    results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
 	    }catch(IOException e) {
+		    searchManager.release(searcher);
 	    	return null;
 	    }
+	    searchManager.release(searcher);
 		JSONArray result = new JSONArray();
 	    for(FacetResult facet : results) {
 	    	if(facet == null)
