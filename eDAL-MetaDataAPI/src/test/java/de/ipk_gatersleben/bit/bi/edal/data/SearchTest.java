@@ -71,6 +71,7 @@ public class SearchTest extends EdalDefaultTestCase{
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "Search_Test");
 	private static JSONObject json = new JSONObject();
 	private static HashMap<String,Object> map = new HashMap<String,Object>();
+	private static final int THREAD_AMOUNT = 20;
 
 	@Test
 	public void testSearch() throws Exception{
@@ -131,9 +132,13 @@ public class SearchTest extends EdalDefaultTestCase{
 				this.json = json;
 				this.expected = expected;
 			}
+			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				for(int i = 0; i < 200; i++) {
+				for(int i = 0; i < 10; i++) {
+					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+					json.put("whereToSearch", "Metadata");
+					json.put("existingQuery", "Title:test1");
 					JSONObject result = DataManager.advancedSearch(json);
 					Assertions.assertEquals(expected, result.get("hitSize"));
 					
@@ -147,27 +152,21 @@ public class SearchTest extends EdalDefaultTestCase{
 					
 					json.put("existingQuery", "Creator:Peter");
 					result = DataManager.advancedSearch(json);
-					Assertions.assertEquals(3, result.get("hitSize"));
+					Assertions.assertEquals(9, result.get("hitSize"));
+					
+					json.put("existingQuery", "Content:test");
+					json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
+					result = DataManager.advancedSearch(json);
+					Assertions.assertEquals(9, result.get("hitSize"));
+					System.out.println(i+". cycle finished");
 				}
 			}
 		}
 		
-		List<RunnableSearch> callableTasks = new ArrayList<>();
-		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
-		map.put("whereToSearch", "Metadata");
-		map.put("existingQuery", "Title:test1");
-		ExecutorService executor = Executors.newFixedThreadPool(10);
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		executor.submit(new RunnableSearch(new JSONObject(map),1));
-		map.put("existingQuery", "Subject:wheat");
-		executor.submit(new RunnableSearch(new JSONObject(map),3));
-		executor.submit(new RunnableSearch(new JSONObject(map),3));
+		ExecutorService executor = Executors.newFixedThreadPool(THREAD_AMOUNT);
+		for(int i = 0; i < THREAD_AMOUNT; i++) {
+			executor.execute(new RunnableSearch(new JSONObject(map),1));
+		}
 		executor.shutdown();
 		executor.awaitTermination(120, TimeUnit.SECONDS);
 	}
@@ -198,7 +197,6 @@ public class SearchTest extends EdalDefaultTestCase{
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
 			PublicReferenceException, IOException {
-		System.out.println("UPLOADING A DATASET");
 		PrimaryDataDirectory entity = currentDirectory.createPrimaryDataDirectory("100mb dateien 2012");
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
