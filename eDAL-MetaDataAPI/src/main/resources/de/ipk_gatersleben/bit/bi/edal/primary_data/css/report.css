@@ -468,10 +468,27 @@ footer {
   margin-left: 35%;
 }
 
+.radio-container-input{
+  margin-right:1em;
+}
+
+.radio-container-label{
+  width:90px;
+}
+
+.footer-icons{
+  margin: auto;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
 #radioContainer{
   width: auto;
   text-align: left;
   display: table;
+  height:30px;
 }
 
 .halfinput{
