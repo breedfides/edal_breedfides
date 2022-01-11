@@ -12,7 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data;
 
-import de.ipk_gatersleben.bit.bi.edal.helper.Search;
+
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -33,6 +33,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.ralfs.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
 
 import java.io.BufferedWriter;

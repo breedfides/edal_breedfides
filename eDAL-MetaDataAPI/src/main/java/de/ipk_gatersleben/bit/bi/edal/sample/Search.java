@@ -1,3 +1,4 @@
+package de.ipk_gatersleben.bit.bi.edal.sample;
 /**
  * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -10,7 +11,6 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package de.ipk_gatersleben.bit.bi.edal.helper;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -85,15 +85,16 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVer
 public class Search {
 
 	@SuppressWarnings("unchecked")
-	static public JSONObject advancedSearch(JSONObject requestObject) {
+	public static JSONObject advancedSearch(JSONObject requestObject) {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(requestObject, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
 		class DrillDownThread extends Thread {
 			JSONArray facets = new JSONArray();
-			public void run(){
+
+			public void run() {
 				try {
-					facets = Search.drillDown(buildedQuery.toString());
+					facets = drillDown(buildedQuery.toString());
 				} catch (ParseException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -103,7 +104,8 @@ public class Search {
 				}
 				internalCountDownLatch.countDown();
 			}
-			public JSONArray getFacets(){
+
+			public JSONArray getFacets() {
 				return facets;
 			}
 		}
@@ -111,7 +113,7 @@ public class Search {
 		innerThread.start();
 		IndexSearcher searcher = null;
 		try {
-			searcher = DataManager.getSearchManager().acquire();		
+			searcher = DataManager.getSearchManager().acquire();
 		} catch (IOException e2) {
 			e2.printStackTrace();
 			return result;
@@ -124,43 +126,45 @@ public class Search {
 		int pageSize = ((int) (long) requestObject.get("pageSize"));
 		try {
 			if (pageArraySize == 0 || currentPageNumber == 1) {
-				DataManager.getImplProv().getLogger().debug("Builded QUery advanced search: " + buildedQuery.toString());
-				topDocs = searcher.search(buildedQuery, pageSize*3);
+				DataManager.getImplProv().getLogger()
+						.debug("Builded QUery advanced search: " + buildedQuery.toString());
+				topDocs = searcher.search(buildedQuery, pageSize * 3);
 			} else {
 				ScoreDoc bottomScoreDoc = null;
 				bottomScoreDoc = searcher.search(new TermQuery(
 						new Term(PublicVersionIndexWriterThread.DOCID, (String) requestObject.get("bottomResultId"))),
 						5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
-				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize*3);
+				topDocs = searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize * 3);
 			}
-			if(requestObject.get("hitSize") == null) {
+			if (requestObject.get("hitSize") == null) {
 				TotalHitCountCollector collector = new TotalHitCountCollector();
 				searcher.search(buildedQuery, collector);
 				result.put("hitSize", collector.getTotalHits());
-			}else {
+			} else {
 				result.put("hitSize", requestObject.get("hitSize"));
 			}
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		result.put("hitSizeDescription","");
+		result.put("hitSizeDescription", "");
 		result.put("displayedPage", (long) requestObject.get("displayedPage"));
 		result.put("pageIndex", pageIndex);
-		//DataManager.getImplProv().getLogger().info("Finished Query with: "+topDocs.totalHits.value);
+		// DataManager.getImplProv().getLogger().info("Finished Query with:
+		// "+topDocs.totalHits.value);
 		String whereToSearch = (String) requestObject.get("whereToSearch");
 		Highlighter highlighter = null;
 		Analyzer analyzer = null;
-		if(whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) && buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
-			//prepare highlighting
-			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-					.getAnalyzer();
+		if (whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT)
+				&& buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
+			// prepare highlighting
+			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer();
 			highlighter = new Highlighter(new QueryScorer(buildedQuery));
 			highlighter.setTextFragmenter(new SimpleFragmenter(48));
 		}
 
-		ScoreDoc[] scoreDocs = topDocs.scoreDocs;	
+		ScoreDoc[] scoreDocs = topDocs.scoreDocs;
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 		JSONArray finalArray = new JSONArray();
 		if (scoreDocs.length == 0) {
@@ -175,7 +179,7 @@ public class Search {
 		Set<String> fields = Set.of(PublicVersionIndexWriterThread.METADATAFIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
-				doc = searcher.doc(scoreDocs[i].doc,fields);
+				doc = searcher.doc(scoreDocs[i].doc, fields);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -184,10 +188,10 @@ public class Search {
 			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class,
 					Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
-			if(reference.getAcceptedDate() == null) {
-				//if in Testmode, use creation year
+			if (reference.getAcceptedDate() == null) {
+				// if in Testmode, use creation year
 				obj.put("year", doc.get(MetaDataImplementation.STARTDATE));
-			}else {
+			} else {
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			}
 
@@ -217,17 +221,17 @@ public class Search {
 						doc.get(MetaDataImplementation.PRIMARYENTITYID));
 				obj.put("link", link);
 				obj.put("fileName", file.toString());
-				obj.put("docId",doc.get(PublicVersionIndexWriterThread.DOCID));
+				obj.put("docId", doc.get(PublicVersionIndexWriterThread.DOCID));
 				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
-				
-				if(highlighter != null && analyzer != null) {
+
+				if (highlighter != null && analyzer != null) {
 					try {
 						String highlight = highlighter.getBestFragment(analyzer, PublicVersionIndexWriterThread.CONTENT,
 								doc.get(PublicVersionIndexWriterThread.CONTENT));
-						if(highlight != null) {
+						if (highlight != null) {
 							obj.put("highlight", highlight);
-						}else {
+						} else {
 							obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
 						}
 					} catch (IOException | InvalidTokenOffsetsException e) {
@@ -242,16 +246,17 @@ public class Search {
 				}
 			}
 			finalArray.add(obj);
-			//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title: "+doc.get(MetaDataImplementation.TITLE));
+			// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title:
+			// "+doc.get(MetaDataImplementation.TITLE));
 		}
 		result.put("results", finalArray);
 		// bottomResult.docids needs to be stored, to support paginated Searching
-		
-		//Pagination
+
+		// Pagination
 		int additionalPages;
 		JSONArray pageArray = new JSONArray();
 		JSONObject page = new JSONObject();
-		Set<String> set = Set.of(new String[]{PublicVersionIndexWriterThread.DOCID});
+		Set<String> set = Set.of(new String[] { PublicVersionIndexWriterThread.DOCID });
 		if (pageArraySize == 0) {
 			page.put("bottomResult", null);
 			page.put("bottomResultScore", 0);
@@ -264,7 +269,7 @@ public class Search {
 				for (int i = 1; i < additionalPages; i++) {
 					page = new JSONObject();
 					int index = i * pageSize - 1;
-					if (index < scoreDocs.length-1) {
+					if (index < scoreDocs.length - 1) {
 						try {
 							page.put("bottomResult",
 									searcher.doc(scoreDocs[index].doc, set).get(PublicVersionIndexWriterThread.DOCID));
@@ -279,7 +284,8 @@ public class Search {
 					} else {
 						break;
 					}
-					//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
+					// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title:
+					// "+doc.get(MetaDataImplementation.TITLE));
 				}
 			}
 		} else {
@@ -299,7 +305,8 @@ public class Search {
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
 							pageArray.add(page);
-							//DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title: "+doc.get(MetaDataImplementation.TITLE));
+							// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title:
+							// "+doc.get(MetaDataImplementation.TITLE));
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -317,9 +324,9 @@ public class Search {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}finally {
+		} finally {
 			try {
-				if(searcher != null) {
+				if (searcher != null) {
 					DataManager.getSearchManager().release(searcher);
 					DataManager.getImplProv().getLogger().debug("Released searcher");
 				}
@@ -368,9 +375,10 @@ public class Search {
 		}
 		return null;
 	}
-	
+
 	public static JSONArray builQueryAndDrillDown(JSONObject json) throws ParseException, IOException {
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		QueryParser pars = new QueryParser(MetaDataImplementation.ALL,
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 		pars.setDefaultOperator(Operator.AND);
 		StringJoiner queryJoiner = new StringJoiner(" ");
 		JSONArray filters = (JSONArray) json.get("filters");
@@ -387,14 +395,15 @@ public class Search {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
+				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false,
+						false);
 			} else if (type.equals(MetaDataImplementation.SIZE)) {
 				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
 			} else if (type.equals(MetaDataImplementation.FILETYPE)) {
 				keyword.replace("\\", "");
-				String fileTypeQuery = MetaDataImplementation.FILETYPE+":"+keyword;
+				String fileTypeQuery = MetaDataImplementation.FILETYPE + ":" + keyword;
 				try {
 					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
 				} catch (ParseException e) {
@@ -402,7 +411,7 @@ public class Search {
 					e.printStackTrace();
 				}
 			}
-			if(luceneQuery != null) {
+			if (luceneQuery != null) {
 				DataManager.getImplProv().getLogger().debug(luceneQuery.toString());
 				queryJoiner.add(Occur.MUST.toString() + luceneQuery.toString());
 			}
@@ -412,7 +421,8 @@ public class Search {
 			luceneQuery = new TermQuery(
 					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
 		} else if (hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-			luceneQuery = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
+			luceneQuery = new TermQuery(
+					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
 		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 			luceneQuery = new TermQuery(
 					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
@@ -422,67 +432,96 @@ public class Search {
 		queryJoiner.add(luceneQuery.toString());
 		return drillDown(queryJoiner.toString());
 	}
-	
+
 	public static JSONArray drillDown(String query) throws ParseException, IOException {
-		QueryParser queryParser = new QueryParser(MetaDataImplementation.ALL, 
-				((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		QueryParser queryParser = new QueryParser(MetaDataImplementation.ALL,
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 		queryParser.setDefaultOperator(Operator.AND);
-		
+
 		TaxonomyReader taxoReader = DataManager.getTaxonomyReader();
-		
+
 		try {
-			if(taxoReader != null) {
+			if (taxoReader != null) {
 				TaxonomyReader newReader = TaxonomyReader.openIfChanged(taxoReader);
-				if(newReader != null) {
+				if (newReader != null) {
 					taxoReader = newReader;
 				}
-			}else {
-				taxoReader = new DirectoryTaxonomyReader(((FileSystemImplementationProvider)DataManager.getImplProv()).getFacetDirectory());
+			} else {
+				taxoReader = new DirectoryTaxonomyReader(
+						((FileSystemImplementationProvider) DataManager.getImplProv()).getFacetDirectory());
 			}
 		} catch (IOException e) {
-			DataManager.getImplProv().getLogger().debug("Error when creating DirectoryTaxonomyReader.. "+e.getMessage());
-			if(taxoReader != null) {
-				taxoReader.close();	
+			//e.printStackTrace();
+			DataManager.getImplProv().getLogger()
+					.debug("Error when creating DirectoryTaxonomyReader.. " + e.getMessage());
+			if (taxoReader != null) {
+				taxoReader.close();
 			}
 			return new JSONArray();
 		}
-		
+
 		FacetsConfig config = DataManager.getFacetsConfig();
 		DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
-	    FacetsCollector fc = new FacetsCollector();
+		FacetsCollector fc = new FacetsCollector();
 		IndexSearcher searcher = DataManager.getSearchManager().acquire();
-	    FacetsCollector.search(searcher,drillQuery, 50000, fc);
+		FacetsCollector.search(searcher, drillQuery, 50000, fc);
 
-	    List<FacetResult> results = new ArrayList<>();
+		List<FacetResult> results = new ArrayList<>();
 
-	    Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
-	    try {
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
-		    results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
-	    }catch(IOException e) {
-	    	DataManager.getSearchManager().release(searcher);
-	    	return null;
-	    }
-	    DataManager.getSearchManager().release(searcher);
+		Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
+		try {
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
+			results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+		} catch (IOException e) {
+			//e.printStackTrace();
+			try {
+				taxoReader.close();
+				if (taxoReader != null) {
+					TaxonomyReader newReader = TaxonomyReader.openIfChanged(taxoReader);
+					if (newReader != null) {
+						taxoReader = newReader;
+					}
+				} else {
+					taxoReader = new DirectoryTaxonomyReader(
+							((FileSystemImplementationProvider) DataManager.getImplProv()).getFacetDirectory());
+				}
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
+				results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+			} catch (IOException er) {
+				//er.printStackTrace();
+				DataManager.getImplProv().getLogger()
+						.debug("Error when creating DirectoryTaxonomyReader.. " + e.getMessage());
+				if (taxoReader != null) {
+					taxoReader.close();
+				}
+				return new JSONArray();
+			}
+			DataManager.getSearchManager().release(searcher);
+		}
+		DataManager.getSearchManager().release(searcher);
 		JSONArray result = new JSONArray();
-	    for(FacetResult facet : results) {
-	    	if(facet == null)
-	    		continue;
-	    	JSONObject jsonFacet = new JSONObject();
-	    	if(facet.dim.equals(MetaDataImplementation.CREATORNAME))
-	    		jsonFacet.put("category", MetaDataImplementation.PERSON);
-	    	else if(facet.dim.equals(MetaDataImplementation.CONTRIBUTORNAME))
-	    		jsonFacet.put("category", MetaDataImplementation.CONTRIBUTOR);
-	    	else
-	    		jsonFacet.put("category",facet.dim);
-	    	jsonFacet.put("sortedByHits",facet.labelValues);
-	    	result.add(jsonFacet);
-	    }
-	    return result;
+		for (FacetResult facet : results) {
+			if (facet == null)
+				continue;
+			JSONObject jsonFacet = new JSONObject();
+			if (facet.dim.equals(MetaDataImplementation.CREATORNAME))
+				jsonFacet.put("category", MetaDataImplementation.PERSON);
+			else if (facet.dim.equals(MetaDataImplementation.CONTRIBUTORNAME))
+				jsonFacet.put("category", MetaDataImplementation.CONTRIBUTOR);
+			else
+				jsonFacet.put("category", facet.dim);
+			jsonFacet.put("sortedByHits", facet.labelValues);
+			result.add(jsonFacet);
+		}
+		return result;
 	}
 
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
@@ -494,8 +533,9 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT) ? 
-				new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer) : new QueryParser(MetaDataImplementation.ALL, analyzer);
+		QueryParser pars = whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT)
+				? new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer)
+				: new QueryParser(MetaDataImplementation.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		StringJoiner queryJoiner = new StringJoiner(" ");
@@ -579,9 +619,10 @@ public class Search {
 	}
 
 	/**
-	 * Method to get the top 10 highlighted passages for a Document 
+	 * Method to get the top 10 highlighted passages for a Document
+	 * 
 	 * @param doc The Document to be highlighted
-	 * @param q The Query that should contain a keyword for highlighting
+	 * @param q   The Query that should contain a keyword for highlighting
 	 * @return The Highlighted passages wrapped in a JSONObject
 	 * @throws IOException
 	 * @throws ParseException
@@ -591,21 +632,24 @@ public class Search {
 		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
 		ScoreDoc[] hits = searcher.search(query, 1).scoreDocs;
 		JSONObject result = new JSONObject();
-		if(hits.length > 0) {
+		if (hits.length > 0) {
 			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
 					.getAnalyzer();
 			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
-			Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"), new QueryScorer(parser.parse(q)));
-			highlighter.setTextFragmenter(new SimpleFragmenter(300));//48
+			Highlighter highlighter = new Highlighter(
+					new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"),
+					new QueryScorer(parser.parse(q)));
+			highlighter.setTextFragmenter(new SimpleFragmenter(300));// 48
 			Document document = searcher.doc(hits[0].doc);
-			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc, PublicVersionIndexWriterThread.CONTENT,
-			analyzer);
+			TokenStream tokenStream = TokenSources.getAnyTokenStream(searcher.getIndexReader(), hits[0].doc,
+					PublicVersionIndexWriterThread.CONTENT, analyzer);
 			TextFragment[] fragments;
 			try {
-				fragments = highlighter.getBestTextFragments(tokenStream, document.get(PublicVersionIndexWriterThread.CONTENT), false, 10);
+				fragments = highlighter.getBestTextFragments(tokenStream,
+						document.get(PublicVersionIndexWriterThread.CONTENT), false, 10);
 				List<String> snipets = new ArrayList<>();
-				for(TextFragment fragment : fragments) {
-					if(fragment.getScore() > 0.0) {
+				for (TextFragment fragment : fragments) {
+					if (fragment.getScore() > 0.0) {
 						snipets.add(fragment.toString());
 					}
 				}
@@ -614,13 +658,13 @@ public class Search {
 				result.put("msg", "There was an Error, Document not found.");
 			}
 
-		}else {
+		} else {
 			result.put("msg", "There was an Error, Document not found.");
 		}
 		return result;
 	}
-	
-	static public HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
+
+	public static HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
 		final long startTime = System.currentTimeMillis();
 		IndexReader reader = null;
 		try {
@@ -655,7 +699,8 @@ public class Search {
 		try {
 			luceneQuery = parser.parse(keyword);
 		} catch (ParseException e2) {
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().debug("Was not able to Parse: \n" + keyword);
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
+					.debug("Was not able to Parse: \n" + keyword);
 			return new HashSet<>();
 		}
 		if (luceneQuery == null) {
@@ -701,5 +746,5 @@ public class Search {
 		}
 		return new HashSet<Integer>();
 	}
-	
+
 }

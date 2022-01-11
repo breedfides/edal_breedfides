@@ -31,58 +31,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.swing.text.DateFormatter;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.DateTools;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DoublePoint;
-import org.apache.lucene.document.LongPoint;
-import org.apache.lucene.document.NumericDocValuesField;
-import org.apache.lucene.document.DateTools.Resolution;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
-import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.search.Query;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.ManagedAsync;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FuzzyQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TermRangeQuery;
-import org.hibernate.Session;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -90,21 +53,9 @@ import org.json.simple.parser.ParseException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.ipk_gatersleben.bit.bi.edal.helper.Search;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
-
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 
 @Path("extendedSearch")
 public class EdalMessageExtendedSearch {
@@ -113,11 +64,12 @@ public class EdalMessageExtendedSearch {
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject extendedSearch(String json) throws JsonParseException, JsonMappingException, IOException {
+	public JSONObject extendedSearch(String json) {
 		JSONParser parser = new JSONParser();
 		try {
 			return Search.advancedSearch((JSONObject) parser.parse(json));
-		} catch (ParseException e) {
+		} catch (Exception e) {
+			e.printStackTrace();
 			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
 			return new JSONObject();
 		}
