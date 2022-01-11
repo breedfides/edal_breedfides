@@ -158,7 +158,6 @@ public class SearchTest extends EdalDefaultTestCase{
 					json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
 					result = DataManager.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
-					System.out.println(i+". cycle finished");
 				}
 			}
 		}

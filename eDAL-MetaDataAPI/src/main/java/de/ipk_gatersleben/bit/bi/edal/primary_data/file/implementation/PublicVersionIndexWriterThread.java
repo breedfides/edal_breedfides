@@ -469,8 +469,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 									&& fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {
 								String[] dateValues = doc.get("VersionCreationDate").split("-");
 								if (dateValues.length == 5) {
-									DataManager.getImplProv().getLogger().info("indexing content for:_ "
-											+ doc.get("Title") + " size: " + doc.get(MetaDataImplementation.SIZE));
+//									DataManager.getImplProv().getLogger().info("indexing content for:_ "
+//											+ doc.get("Title") + " size: " + doc.get(MetaDataImplementation.SIZE));
 									Path pathToFile = Paths.get(
 											((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
 													.toString(),
