@@ -29,6 +29,7 @@ import org.hibernate.Session;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import de.ipk_gatersleben.bit.bi.edal.helper.Search;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
@@ -45,7 +46,7 @@ public class EdalMessageSearchByKeyword {
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
-		HashSet<Integer> ids = DataManager.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		HashSet<Integer> ids = Search.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		JSONArray finalArray = new JSONArray();
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		for(Integer id : ids) {
@@ -75,7 +76,7 @@ public class EdalMessageSearchByKeyword {
 	@Path("/{keyword}/fuzzy")
 	@Produces(MediaType.APPLICATION_JSON)
 	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
-		return DataManager.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		return Search.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 
 }

@@ -12,6 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.data;
 
+import de.ipk_gatersleben.bit.bi.edal.helper.Search;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -104,19 +105,19 @@ public class SearchTest extends EdalDefaultTestCase{
 		json = new JSONObject(map);
 
 		
-		JSONObject result = DataManager.advancedSearch(json);
+		JSONObject result = Search.advancedSearch(json);
 		System.out.println(result.toJSONString());
 		//find 3 datasets
 		Assertions.assertEquals(3, result.get("hitSize"));
 		
 		json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
-		result = DataManager.advancedSearch(json);
+		result = Search.advancedSearch(json);
 		//find 9 files
 		Assertions.assertEquals(9, result.get("hitSize"));
 		
 		json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
 		json.put("existingQuery", new TermQuery(new Term(PublicVersionIndexWriterThread.CONTENT,"test")).toString());
-		result = DataManager.advancedSearch(json);
+		result = Search.advancedSearch(json);
 		//search for content
 		Assertions.assertEquals(9, result.get("hitSize"));
 		JSONArray hitArray = (JSONArray) result.get("results");
@@ -139,24 +140,24 @@ public class SearchTest extends EdalDefaultTestCase{
 					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
-					JSONObject result = DataManager.advancedSearch(json);
+					JSONObject result = Search.advancedSearch(json);
 					Assertions.assertEquals(expected, result.get("hitSize"));
 					
 					json.put("existingQuery", "Creator:Smith");
-					result = DataManager.advancedSearch(json);
+					result = Search.advancedSearch(json);
 					Assertions.assertEquals(expected, result.get("hitSize"));
 					
 					json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
-					result = DataManager.advancedSearch(json);
+					result = Search.advancedSearch(json);
 					Assertions.assertEquals(3, result.get("hitSize"));
 					
 					json.put("existingQuery", "Creator:Peter");
-					result = DataManager.advancedSearch(json);
+					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 					
 					json.put("existingQuery", "Content:test");
 					json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
-					result = DataManager.advancedSearch(json);
+					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 				}
 			}

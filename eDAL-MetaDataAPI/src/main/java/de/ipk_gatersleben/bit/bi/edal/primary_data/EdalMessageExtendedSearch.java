@@ -80,6 +80,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.ipk_gatersleben.bit.bi.edal.helper.Search;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
@@ -103,7 +104,7 @@ public class EdalMessageExtendedSearch {
 	public JSONObject extendedSearch(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
-			return DataManager.advancedSearch((JSONObject) parser.parse(json));
+			return Search.advancedSearch((JSONObject) parser.parse(json));
 		} catch (ParseException e) {
 			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
 			return new JSONObject();
@@ -117,7 +118,7 @@ public class EdalMessageExtendedSearch {
 	public String parseQuery(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
-			Query query = DataManager.parseToLuceneQuery((JSONObject) parser.parse(json));
+			Query query = Search.parseToLuceneQuery((JSONObject) parser.parse(json));
 			if(query == null) {
 				return "";
 			}
@@ -135,7 +136,7 @@ public class EdalMessageExtendedSearch {
 	public JSONArray drillDown(String json) {
 		JSONParser parser = new JSONParser();
 		try {
-			return DataManager.builQueryAndDrillDown((JSONObject)parser.parse(json));
+			return Search.builQueryAndDrillDown((JSONObject)parser.parse(json));
 		} catch (org.apache.lucene.queryparser.classic.ParseException | ParseException | IOException e) {
 			return new JSONArray();
 		}
@@ -163,7 +164,7 @@ public class EdalMessageExtendedSearch {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject requestObj = (JSONObject) parser.parse(json);
-			return DataManager.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
+			return Search.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
 		} catch (Exception e) {
 			return null;
 		}
