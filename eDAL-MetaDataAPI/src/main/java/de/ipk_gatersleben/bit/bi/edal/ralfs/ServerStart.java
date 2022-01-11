@@ -96,7 +96,25 @@ public class ServerStart {
 	private static final String DATACITE_PREFIX = "10.5072";
 	private static final String DATACITE_PASSWORD = "";
 	private static final String DATACITE_USERNAME = "";
-	
+	String prototype = "{\r\n" + 
+			"   \"hitType\":\"dataset\",\r\n" + 
+			"   \"existingQuery\":\"wheat\",\r\n" + 
+			"   \"filters\":[\r\n" + 
+			"      \r\n" + 
+			"   ],\r\n" + 
+			"   \"bottomResultId\":null,\r\n" + 
+			"   \"pageSize\":10,\r\n" + 
+			"   \"pageIndex\":0,\r\n" + 
+			"   \"pagination\":[\r\n" + 
+			"      \r\n" + 
+			"   ],\r\n" + 
+			"   \"pageArraySize\":0,\r\n" + 
+			"   \"displayedPage\":1,\r\n" + 
+			"   \"queries\":[\r\n" + 
+			"      \r\n" + 
+			"   ],\r\n" + 
+			"   \"whereToSearch\":\"Metadata\"\r\n" + 
+			"}";
 	
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "TEST_DATASET");
 
@@ -179,23 +197,7 @@ public class ServerStart {
 			DataManager.getImplProv().getLogger().info("Snippets: "+snipets.length);
 	}
 
-	public static PrimaryDataDirectory getRoot() throws Exception {
-		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME,
-				DATACITE_PASSWORD, DATACITE_PREFIX,
-				new InternetAddress(EMAIL),
-				new InternetAddress(EMAIL),
-				new InternetAddress(EMAIL),
-				new InternetAddress(ROOT_USER)
-				,"imap.ipk-gatersleben.de","","");
-		configuration.setDataPath(Paths.get("d:\\edal"));
-		configuration.setMountPath(Paths.get("d:\\edal"));
-		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
-		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
-				EdalHelpers.authenticateWinOrUnixOrMacUser());
-		return rootDirectory;
-	}
-	
+
 	static void createDataset(int copies) throws IOException {
 		File dir = PATH.toFile();
 		if(!dir.exists()) {
@@ -214,6 +216,24 @@ public class ServerStart {
 			Files.copy(Paths.get(PATH.toString(), "test.txt"), Paths.get(PATH.toString(), "copy_"+i+".txt"),StandardCopyOption.REPLACE_EXISTING);
 		}
 	}
+	
+	public static PrimaryDataDirectory getRoot() throws Exception {
+		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME,
+				DATACITE_PASSWORD, DATACITE_PREFIX,
+				new InternetAddress(EMAIL),
+				new InternetAddress(EMAIL),
+				new InternetAddress(EMAIL),
+				new InternetAddress(ROOT_USER)
+				,"imap.ipk-gatersleben.de","","");
+		configuration.setDataPath(Paths.get("d:\\edal"));
+		configuration.setMountPath(Paths.get("d:\\edal"));
+		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
+		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
+		return rootDirectory;
+	}
+	
 
 	public static void uploadZip(PrimaryDataDirectory currentDirectory)
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
