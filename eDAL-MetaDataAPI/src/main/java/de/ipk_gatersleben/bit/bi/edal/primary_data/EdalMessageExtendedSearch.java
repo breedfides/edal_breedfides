@@ -101,11 +101,13 @@ public class EdalMessageExtendedSearch {
 		JSONParser parser = new JSONParser();
 		try {
 			return Search.builQueryAndDrillDown((JSONObject)parser.parse(json));
-		} catch (org.apache.lucene.queryparser.classic.ParseException | ParseException | IOException e) {
+		} catch (Exception e) {
+			e.printStackTrace();
 			return new JSONArray();
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Path("/getTermLists")
 	@POST
 	@ManagedAsync

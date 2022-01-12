@@ -38,6 +38,7 @@ import javax.mail.internet.InternetAddress;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermsEnum;
@@ -145,9 +146,9 @@ public class ServerStart {
 	}
 	
 	public static void hightlightExample() throws IOException, InvalidTokenOffsetsException {
-			IndexSearcher searcher = DataManager.getSearchManager().acquire();
+			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
 			Query query = new TermQuery(new Term("Content", "mäuse"));
-			TopDocs hits = searcher.search(new TermQuery(new Term("Content", "mäuse")), 500000);
+			TopDocs hits = manager.searcher.search(new TermQuery(new Term("Content", "mäuse")), 500000);
 			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
 					.getAnalyzer();
 //			SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
@@ -181,7 +182,7 @@ public class ServerStart {
 //					return new WholeBreakIterator();
 //				}
 //			};
-			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(searcher, analyzer);
+			UnifiedHighlighter unifiedHighlighter = new UnifiedHighlighter(manager.searcher, analyzer);
 			String[] snipets = unifiedHighlighter.highlight("Content", query, hits);
 			String title = "NameV1.2";
 			for(String snipet : snipets) {

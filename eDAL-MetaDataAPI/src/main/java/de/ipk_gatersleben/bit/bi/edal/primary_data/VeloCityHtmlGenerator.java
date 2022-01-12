@@ -54,6 +54,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiTerms;
@@ -1711,15 +1712,15 @@ class VeloCityHtmlGenerator {
 
 				}
 				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
-				IndexSearcher searcher;
+				SearcherAndTaxonomy manager;
 				try {
-					searcher = DataManager.getSearchManager().acquire();
+					manager = DataManager.getSearchManager().acquire();
 					TopDocs docs;
-					docs = searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
+					docs = manager.searcher.search(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)),500000);
 					ScoreDoc[] scoreDocs = docs.scoreDocs;
 					Analyzer myAnalyzer = ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer();
 					for(ScoreDoc scoreDoc : scoreDocs) {
-						Document doc = searcher.doc(scoreDoc.doc);
+						Document doc = manager.searcher.doc(scoreDoc.doc);
 						String[] strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
 						for(String string : strings) {
 							contributors.add(string.replaceAll("\\s+", " ").trim());
@@ -1766,7 +1767,7 @@ class VeloCityHtmlGenerator {
 							maxYear = year;
 						}
 					}
-					DataManager.getSearchManager().release(searcher);
+					DataManager.getSearchManager().release(manager);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";

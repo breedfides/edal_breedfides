@@ -49,7 +49,9 @@ import javax.mail.internet.MimeMultipart;
 import javax.security.auth.Subject;
 
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
@@ -178,7 +180,7 @@ public class DataManager {
 	/**
 	 * Manages the reopining and sharing of IndexSearcher instances
 	 */
-	private static SearcherManager searchManager = null;
+	private static SearcherTaxonomyManager searchManager;
 	
 	private static TaxonomyReader taxoReader = null;
 	private static FacetsConfig config = new FacetsConfig();
@@ -266,7 +268,7 @@ public class DataManager {
 	 * Getter for the SearcherManager
 	 * @return
 	 */
-	public static SearcherManager getSearchManager() {
+	public static SearcherTaxonomyManager getSearchManager() {
 		return searchManager;
 	}
 
@@ -417,8 +419,9 @@ public class DataManager {
 			DataManager.stopLatch = new CountDownLatch(1);
 		}
 		IndexWriter writer = ((FileSystemImplementationProvider)implementationProvider).getWriter();
+		DirectoryTaxonomyWriter taxoWriter = ((FileSystemImplementationProvider)implementationProvider).getTaxoWriter();
 		try {
-			searchManager = new SearcherManager(writer,new SearcherFactory());
+			searchManager = new SearcherTaxonomyManager(writer, new SearcherFactory(), taxoWriter);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}

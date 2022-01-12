@@ -143,6 +143,8 @@ public class FileSystemImplementationProvider
 			"were", "what", "when", "which", "while", "with", "within", "without", "would");
 
 	private IndexWriter writer = null;
+	
+	private DirectoryTaxonomyWriter taxoWriter = null;
 
 	private boolean hibernateIndexing = false;
 
@@ -444,7 +446,6 @@ public class FileSystemImplementationProvider
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				DirectoryTaxonomyWriter taxoWriter = null;
 				try {
 					this.facetDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(), "Facets"));
 					taxoWriter = new DirectoryTaxonomyWriter(facetDirectory);
@@ -680,6 +681,10 @@ public class FileSystemImplementationProvider
 	@Override
 	public Class<? extends PrimaryDataFile> getPrimaryDataFileProvider() {
 		return PrimaryDataFileImplementation.class;
+	}
+	
+	public DirectoryTaxonomyWriter getTaxoWriter() {
+		return taxoWriter;
 	}
 
 	/**

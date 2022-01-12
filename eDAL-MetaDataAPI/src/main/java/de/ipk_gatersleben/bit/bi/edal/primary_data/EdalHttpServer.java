@@ -47,6 +47,7 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 
@@ -131,7 +132,6 @@ public class EdalHttpServer {
 						"/" + EdalHttpFunctions.REJECT.name() + "/*", "/" + EdalHttpFunctions.USER_ACCEPT.name() + "/*",
 						"/" + EdalHttpFunctions.USER_REJECT.name() + "/*", "/" + EdalHttpFunctions.LOGIN.name() + "/*",
 						"/favicon.ico", "/index.htm", "/robots.txt", "/Report/*", "/REPORT/*", "/report/*" });
-
 		RequestLogHandler requestLogHandler = new RequestLogHandler();
 		requestLogHandler.setRequestLog(requestLog);
 
@@ -142,10 +142,12 @@ public class EdalHttpServer {
 		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setResourceBase(".");
 
+
 		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		restHandler.setContextPath("/rest");
 		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		jerseyServlet.setInitOrder(2);
+		
 		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageSearchByKeyword,de.ipk_gatersleben.bit.bi.edal.primary_data.EdalMessageExtendedSearch,org.glassfish.jersey.media.multipart.MultiPartFeature");
 
 //		ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
