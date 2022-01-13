@@ -1712,7 +1712,7 @@ class VeloCityHtmlGenerator {
 
 				}
 				//Fill HashMaps with distinct Metadata of PublicReference for facted Searching
-				SearcherAndTaxonomy manager;
+				SearcherAndTaxonomy manager = null;
 				try {
 					manager = DataManager.getSearchManager().acquire();
 					TopDocs docs;
@@ -1767,10 +1767,13 @@ class VeloCityHtmlGenerator {
 							maxYear = year;
 						}
 					}
-					DataManager.getSearchManager().release(manager);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 					msg = "The index was changing.. filters are incomplete. For a better experience wait and refresh the page.";
+				}finally {
+					try {
+						DataManager.getSearchManager().release(manager);
+					} catch (IOException e) {DataManager.getImplProv().getLogger().debug(e.getMessage());}
 				}
 			}
 		}

@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -92,18 +93,15 @@ public class Search {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(requestObject, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
+		
 		class DrillDownThread extends Thread {
-			JSONArray facets = new JSONArray();
-
+			public JSONArray facets = new JSONArray();
 			public void run() {
 				facets = drillDown(buildedQuery.toString());
 				internalCountDownLatch.countDown();
 			}
-
-			public JSONArray getFacets() {
-				return facets;
-			}
 		}
+		
 		DrillDownThread innerThread = new DrillDownThread();
 		innerThread.start();
 		SearcherAndTaxonomy manager = null;
@@ -155,8 +153,11 @@ public class Search {
 				&& buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
 			// prepare highlighting
 			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer();
-			highlighter = new Highlighter(new QueryScorer(buildedQuery));
-			highlighter.setTextFragmenter(new SimpleFragmenter(48));
+			Query contentQuery = extractContentQuery((String) requestObject.get("existingQuery"), (JSONArray) requestObject.get("queries"));
+			if(contentQuery != null) {
+				highlighter = new Highlighter(new QueryScorer(contentQuery));
+				highlighter.setTextFragmenter(new SimpleFragmenter(48));
+			}
 		}
 
 		ScoreDoc[] scoreDocs = topDocs.scoreDocs;
@@ -220,7 +221,7 @@ public class Search {
 				obj.put("size", doc.get(MetaDataImplementation.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
 
-				if (highlighter != null && analyzer != null) {
+				if (highlighter != null) {
 					try {
 						String highlight = highlighter.getBestFragment(analyzer, PublicVersionIndexWriterThread.CONTENT,
 								doc.get(PublicVersionIndexWriterThread.CONTENT));
@@ -230,6 +231,7 @@ public class Search {
 							obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
 						}
 					} catch (IOException | InvalidTokenOffsetsException e) {
+						obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
 					}
 				}
 				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
@@ -323,20 +325,71 @@ public class Search {
 			try {
 				if (manager != null) {
 					DataManager.getSearchManager().release(manager);
-					DataManager.getImplProv().getLogger().debug("Released searcher");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 		result.put("bottomResultScore", scoreDocs[pageSize - 1].score);
-		try {
-			internalCountDownLatch.await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		if(Thread.interrupted()) {
+			result.put("facets", new JSONArray());
+		}else {
+			try {
+				internalCountDownLatch.await(60, TimeUnit.SECONDS);
+				result.put("facets", innerThread.facets);
+			} catch (InterruptedException e) {
+				result.put("facets", new JSONArray());
+			}
 		}
-		result.put("facets", innerThread.getFacets());
 		return result;
+	}
+
+	/**
+	 * Producses a query if the parameters contain the keyword "Content"
+	 * @param existingQuery User entered Query
+	 * @param jsonArray List of additional user entered queries
+	 * @return A Query that only contains useful terms for highlighting
+	 */
+	private static Query extractContentQuery(String existingQuery, JSONArray jsonArray) {
+		QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		parser.setDefaultOperator(Operator.AND);
+		StringJoiner contentQuery = new StringJoiner(" ");
+		String parsedQuery = "";
+		if(existingQuery.length() > 0) {
+			try {
+				parsedQuery = parser.parse(existingQuery).toString();
+			} catch (ParseException e) {
+				try {
+					parsedQuery = parser.parse(QueryParser.escape(existingQuery)).toString();
+				} catch (ParseException e1) {
+					DataManager.getImplProv().getLogger().debug(e.getMessage());
+				}
+			}
+			if(parsedQuery.contains(PublicVersionIndexWriterThread.CONTENT)) {
+				contentQuery.add(parsedQuery);
+			}	
+		}
+		for(Object query : jsonArray) {
+			if(query instanceof String) {
+				if(((String)query).contains(PublicVersionIndexWriterThread.CONTENT)) {
+					contentQuery.add((String)query);
+				}
+			}
+		}
+		String toParse = contentQuery.toString();
+		if(toParse.length() > 0) {
+			try {
+				return parser.parse(contentQuery.toString());
+			} catch (ParseException e) {
+				try {
+					return parser.parse(QueryParser.escape(contentQuery.toString()));
+				} catch (ParseException e1) {
+					return null;
+				}
+			}
+		}else {
+			return null;
+		}
 	}
 
 	public static Query parseToLuceneQuery(JSONObject jsonArray) {
