@@ -1,5 +1,3 @@
-package de.ipk_gatersleben.bit.bi.edal.sample;
-
 /**
  * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -12,6 +10,8 @@ package de.ipk_gatersleben.bit.bi.edal.sample;
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
+package de.ipk_gatersleben.bit.bi.edal.sample;
+
 
 import java.io.IOException;
 import java.nio.file.Paths;
