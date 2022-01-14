@@ -36,6 +36,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifie
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
+import de.ipk_gatersleben.bit.bi.edal.test.EdalTestCaseWithoutShutdown;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -55,6 +56,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -75,12 +77,12 @@ import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.api.Test;
 
-public class SearchTest extends EdalDefaultTestCase{
+public class SearchTest extends EdalTestCaseWithoutShutdown{
 	
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "Search_Test");
 	private static JSONObject json = new JSONObject();
 	private static HashMap<String,Object> map = new HashMap<String,Object>();
-	private static final int THREAD_AMOUNT = 20;
+	private static final int THREAD_AMOUNT = 10;
 
 	@Test
 	public void testSearch() throws Exception{
@@ -137,23 +139,25 @@ public class SearchTest extends EdalDefaultTestCase{
 		class RunnableSearch implements Runnable{
 			JSONObject json;
 			int expected;
-			public RunnableSearch(JSONObject json, int expected){
+			CountDownLatch latch;
+			public RunnableSearch(JSONObject json, CountDownLatch latch){
 				this.json = json;
 				this.expected = expected;
+				this.latch = latch;
 			}
 			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				for(int i = 0; i < 10; i++) {
+				for(int i = 0; i < 3; i++) {
 					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
 					JSONObject result = Search.advancedSearch(json);
-					Assertions.assertEquals(expected, result.get("hitSize"));
+					Assertions.assertEquals(1, result.get("hitSize"));
 					
 					json.put("existingQuery", "Creator:Smith");
 					result = Search.advancedSearch(json);
-					Assertions.assertEquals(expected, result.get("hitSize"));
+					Assertions.assertEquals(1, result.get("hitSize"));
 					
 					json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
 					result = Search.advancedSearch(json);
@@ -168,15 +172,17 @@ public class SearchTest extends EdalDefaultTestCase{
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 				}
+				latch.countDown();
 			}
 		}
-		
+		CountDownLatch latch = new CountDownLatch(THREAD_AMOUNT);
 		ExecutorService executor = Executors.newFixedThreadPool(THREAD_AMOUNT);
 		for(int i = 0; i < THREAD_AMOUNT; i++) {
-			executor.execute(new RunnableSearch(new JSONObject(map),1));
+			executor.execute(new RunnableSearch(new JSONObject(map),latch));
 		}
 		executor.shutdown();
-		executor.awaitTermination(120, TimeUnit.SECONDS);
+		latch.await();
+		DataManager.shutdown();
 	}
 	@AfterEach
 	public void clearTestFiles() throws IOException {
@@ -193,7 +199,7 @@ public class SearchTest extends EdalDefaultTestCase{
 			FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "content_"+Math.pow(10, j)+".txt").toString());
 			BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 			String s = "This is a test for indexing the content of text files.";
-			int size = (int) ((Math.pow(10, j)*1024*1024)/s.getBytes().length);
+			int size = ((10*1024*1024)/s.getBytes().length);
 			for(int i = 0; i < size; i++) {
 				bufferedWriter.write(s);
 			}
@@ -238,6 +244,8 @@ public class SearchTest extends EdalDefaultTestCase{
 
 	}
 }
+
+
 class EdalDirectoryVisitorWithMetaData implements FileVisitor<Path> {
 
 	private SortedSet<String> pathSet = new TreeSet<>();
