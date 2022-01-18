@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -142,10 +143,10 @@ public class SearchTest extends EdalDefaultTestCase{
 		
 		class RunnableSearch implements Runnable{
 			JSONObject json;
-			int expected;
-			public RunnableSearch(JSONObject json, int expected){
+			CountDownLatch latch;
+			public RunnableSearch(JSONObject json, CountDownLatch latch){
 				this.json = json;
-				this.expected = expected;
+				this.latch = latch;
 			}
 			@SuppressWarnings("unchecked")
 			@Override
@@ -155,11 +156,11 @@ public class SearchTest extends EdalDefaultTestCase{
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
 					JSONObject result = Search.advancedSearch(json);
-					Assertions.assertEquals(expected, result.get("hitSize"));
+					Assertions.assertEquals(1, result.get("hitSize"));
 					
 					json.put("existingQuery", "Creator:Smith");
 					result = Search.advancedSearch(json);
-					Assertions.assertEquals(expected, result.get("hitSize"));
+					Assertions.assertEquals(1, result.get("hitSize"));
 					
 					json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
 					result = Search.advancedSearch(json);
@@ -174,15 +175,16 @@ public class SearchTest extends EdalDefaultTestCase{
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 				}
+				latch.countDown();
 			}
 		}
-		
+		CountDownLatch latch = new CountDownLatch(THREAD_AMOUNT);
 		ExecutorService executor = Executors.newFixedThreadPool(THREAD_AMOUNT);
 		for(int i = 0; i < THREAD_AMOUNT; i++) {
-			executor.execute(new RunnableSearch(new JSONObject(map),1));
+			executor.execute(new RunnableSearch(new JSONObject(map),latch));
 		}
-		executor.shutdown();
-		executor.awaitTermination(120, TimeUnit.SECONDS);
+		latch.await();
+		executor.shutdownNow();
 	}
 	@AfterEach
 	public void clearTestFiles() throws IOException {
