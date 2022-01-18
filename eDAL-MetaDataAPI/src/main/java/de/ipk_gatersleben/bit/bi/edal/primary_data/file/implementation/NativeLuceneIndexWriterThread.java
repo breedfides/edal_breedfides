@@ -125,7 +125,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	protected Boolean lastIDChanged = false;
 	IndexWriter writer = null;
-	protected static int lastIndexedID = 0;
+	protected int lastIndexedID = 0;
 
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat");
 	/** high value fetch objects faster, but more memory is needed */
@@ -166,7 +166,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-		this.indexWriterThreadLogger.debug("Last indexed ID : " + NativeLuceneIndexWriterThread.getLastID());	
+		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.getLastID());	
 	}
 	/**
 	 * Checks if there are recent stored versions, loads them and indexes the data
@@ -187,7 +187,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), NativeLuceneIndexWriterThread.getLastID())).orderBy(criteriaBuilder.asc(root.get("id")));
+			criteria.where(criteriaBuilder.gt(root.get("id"), this.getLastID())).orderBy(criteriaBuilder.asc(root.get("id")));
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
@@ -257,7 +257,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				FileOutputStream fos = new FileOutputStream(
 						Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
-				oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
+				oos.writeObject(this.getLastID());
 				oos.close();
 				fos.close();
 			} catch (IOException e) {
@@ -451,10 +451,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	}
 	
 	protected void setLastID(int val) {
-		NativeLuceneIndexWriterThread.lastIndexedID = val;
+		this.lastIndexedID = val;
 	}
-	protected static int getLastID() {
-		return NativeLuceneIndexWriterThread.lastIndexedID;
+	public int getLastID() {
+		return this.lastIndexedID;
 	}
 
 

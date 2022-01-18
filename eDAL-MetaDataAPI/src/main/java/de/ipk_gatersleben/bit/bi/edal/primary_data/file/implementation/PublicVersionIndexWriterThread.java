@@ -260,7 +260,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						FileOutputStream fos = new FileOutputStream(
 								Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
 						ObjectOutputStream oos = new ObjectOutputStream(fos);
-						oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
+						oos.writeObject(((NativeLuceneIndexWriterThread)((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexThread()).getLastID());
 						oos.close();
 						fos.close();
 					} catch (IOException e) {
@@ -510,7 +510,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					FileOutputStream fos = new FileOutputStream(
 							Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(NativeLuceneIndexWriterThread.getLastID());
+					oos.writeObject(((NativeLuceneIndexWriterThread)((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexThread()).getLastID());
 					oos.close();
 					fos.close();
 				} catch (IOException e) {
