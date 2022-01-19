@@ -151,7 +151,7 @@ public class SearchTest extends EdalDefaultTestCase{
 			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				for(int i = 0; i < 10; i++) {
+				for(int i = 0; i < 5; i++) {
 					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");

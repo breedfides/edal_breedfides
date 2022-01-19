@@ -37,6 +37,10 @@ let EdalReport = new function() {
     //list for current queries (the information is displayed as tabs above the datatable)
     this.queries = [];
     this.contentQueries = [];
+
+    this.sizeSliderMax = -1;
+
+
     //dummy element that is used to clone new elements when facetedTerms-uls are calculated and appended to the dom
     this.ulDummy = document.createElement("ul");
     this.ulDummy.classList.add("list-group");
@@ -367,6 +371,21 @@ let EdalReport = new function() {
         }
       });
       $("#date-label").html(minYear + " - " + maxYear);
+
+      $("#slider-filesize").slider({
+          range: true,
+          min: 0,
+          max: self.rangeSizeValues.length-1,
+          values: [0, self.rangeSizeValues.length-1],
+          slide: function(event, ui) {
+            $("#file-size-label").html(self.rangeSizeValues[ui.values[0]][0]+self.rangeSizeValues[ui.values[0]][1]+" - "+self.rangeSizeValues[ui.values[1]][0]+self.rangeSizeValues[ui.values[1]][1]);
+          },
+          stop: function (event, ui) {
+            EdalReport.filterChange();
+          }
+      });
+      $("#file-size-label").html(self.rangeSizeValues[0][0]+self.rangeSizeValues[0][1]+" - "+self.rangeSizeValues[self.rangeSizeValues.length-1][0]+self.rangeSizeValues[self.rangeSizeValues.length-1][1]);
+
       $("#suffixesSelect").val("*");
       self.filterChange();
     }
@@ -846,10 +865,10 @@ let EdalReport = new function() {
               for(j = 0; j < 10; j++){
                 byteVal = Math.pow(2,j);
                 //reached maxFileSize?
+                self.rangeSizeValues.push([byteVal,units_array[i]]);
                 if(units_array[i].localeCompare(maxSizeArr.unit) == 0 && byteVal > parseInt(maxSizeArr.bytes,10)){
                   break loop;
                 }
-                self.rangeSizeValues.push([byteVal,units_array[i]]);
               }
             }
             $("#slider-filesize").slider({
