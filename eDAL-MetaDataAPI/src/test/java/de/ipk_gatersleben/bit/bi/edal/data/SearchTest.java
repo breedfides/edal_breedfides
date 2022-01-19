@@ -13,6 +13,7 @@
 package de.ipk_gatersleben.bit.bi.edal.data;
 
 
+import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -22,6 +23,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -36,7 +40,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifie
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
-import de.ipk_gatersleben.bit.bi.edal.test.EdalTestCaseWithoutShutdown;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -65,7 +68,11 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -77,12 +84,12 @@ import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.api.Test;
 
-public class SearchTest extends EdalTestCaseWithoutShutdown{
+public class SearchTest extends EdalDefaultTestCase{
 	
 	private static Path PATH = Paths.get(System.getProperty("user.home"), "Search_Test");
 	private static JSONObject json = new JSONObject();
 	private static HashMap<String,Object> map = new HashMap<String,Object>();
-	private static final int THREAD_AMOUNT = 10;
+	private static final int THREAD_AMOUNT = 20;
 
 	@Test
 	public void testSearch() throws Exception{
@@ -96,12 +103,10 @@ public class SearchTest extends EdalTestCaseWithoutShutdown{
 		uploadZip(rootDirectory, "test2", "Smith");
 		uploadZip(rootDirectory, "test3", "Brown");
 		DataManager.shutdown();
-		
 		rootDirectory = DataManager.getRootDirectory(
 				EdalHelpers.getFileSystemImplementationProvider(false,
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
-
 		map.put("existingQuery", "Subject:wheat");
 		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		map.put("pageIndex", 0l);
@@ -138,17 +143,15 @@ public class SearchTest extends EdalTestCaseWithoutShutdown{
 		
 		class RunnableSearch implements Runnable{
 			JSONObject json;
-			int expected;
 			CountDownLatch latch;
 			public RunnableSearch(JSONObject json, CountDownLatch latch){
 				this.json = json;
-				this.expected = expected;
 				this.latch = latch;
 			}
 			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				for(int i = 0; i < 3; i++) {
+				for(int i = 0; i < 10; i++) {
 					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
@@ -180,9 +183,8 @@ public class SearchTest extends EdalTestCaseWithoutShutdown{
 		for(int i = 0; i < THREAD_AMOUNT; i++) {
 			executor.execute(new RunnableSearch(new JSONObject(map),latch));
 		}
-		executor.shutdown();
 		latch.await();
-		DataManager.shutdown();
+		executor.shutdownNow();
 	}
 	@AfterEach
 	public void clearTestFiles() throws IOException {
@@ -199,7 +201,7 @@ public class SearchTest extends EdalTestCaseWithoutShutdown{
 			FileWriter myWriter = new FileWriter(Paths.get(PATH.toString(), "content_"+Math.pow(10, j)+".txt").toString());
 			BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 			String s = "This is a test for indexing the content of text files.";
-			int size = ((10*1024*1024)/s.getBytes().length);
+			int size = (int) ((Math.pow(10, j)*1024*1024)/s.getBytes().length);
 			for(int i = 0; i < size; i++) {
 				bufferedWriter.write(s);
 			}
@@ -243,140 +245,4 @@ public class SearchTest extends EdalTestCaseWithoutShutdown{
 		//entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
 
 	}
-}
-
-
-class EdalDirectoryVisitorWithMetaData implements FileVisitor<Path> {
-
-	private SortedSet<String> pathSet = new TreeSet<>();
-	private PrimaryDataDirectory currentDirectory = null;
-	private int numberOfRootElements = 0;
-	private boolean store = false;
-	private MetaData metaData = null;
-
-	public EdalDirectoryVisitorWithMetaData(
-			PrimaryDataDirectory currentDirectory, Path path,
-			MetaData metaData, boolean store) {
-		this.currentDirectory = currentDirectory;
-		this.numberOfRootElements = path.getNameCount() - 1;
-		this.store = store;
-		this.metaData = metaData;
-
-		if (this.metaData != null) {
-			setMetaData(this.currentDirectory);
-		}
-	}
-
-	@Override
-	public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-			throws IOException {
-
-		try {
-			PrimaryDataDirectory newCurrentDirectory = currentDirectory
-					.createPrimaryDataDirectory(dir.getFileName().toString());
-
-			this.currentDirectory = newCurrentDirectory;
-		} catch (PrimaryDataDirectoryException e) {
-			throw new IOException(e);
-		}
-		/* else rootDirectory */
-		if (numberOfRootElements < dir.getNameCount()) {
-
-			Path tmpPath = dir
-					.subpath(numberOfRootElements, dir.getNameCount());
-
-			StringBuffer tmpBuffer = new StringBuffer("//");
-
-			for (int i = 0; i < tmpPath.getNameCount(); i++) {
-				tmpBuffer.append(tmpPath.getName(i) + "/");
-			}
-			/* cut last "/"-symbol */
-			pathSet.add(tmpBuffer.toString().substring(0,
-					tmpBuffer.toString().length() - 1));
-		}
-		return FileVisitResult.CONTINUE;
-	}
-
-	@Override
-	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-			throws IOException {
-
-		try {
-			PrimaryDataFile pdf = currentDirectory.createPrimaryDataFile(file
-					.getFileName().toString());
-
-			if (store) {
-				pdf.store(new FileInputStream(file.toFile()));
-			}
-
-		} catch (PrimaryDataDirectoryException | PrimaryDataFileException
-				| PrimaryDataEntityVersionException e) {
-			throw new IOException(e);
-		}
-		Path tmpPath = file.subpath(numberOfRootElements, file.getNameCount());
-
-		StringBuffer tmpBuffer = new StringBuffer("//");
-
-		for (int i = 0; i < tmpPath.getNameCount(); i++) {
-			tmpBuffer.append(tmpPath.getName(i) + "/");
-		}
-
-		/* cut last "/"-symbol */
-		pathSet.add(tmpBuffer.toString().substring(0,
-				tmpBuffer.toString().length() - 1));
-		return FileVisitResult.CONTINUE;
-	}
-
-	@Override
-	public FileVisitResult visitFileFailed(Path file, IOException exc)
-			throws IOException {
-		return FileVisitResult.CONTINUE;
-	}
-
-	@Override
-	public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-			throws IOException {
-		try {
-			currentDirectory = currentDirectory.getParentDirectory();
-		} catch (PrimaryDataDirectoryException e) {
-			throw new IOException(e);
-		}
-
-		return FileVisitResult.CONTINUE;
-	}
-
-	public SortedSet<String> getPathSet() {
-		return pathSet;
-	}
-
-	private void setMetaData(PrimaryDataEntity entity) {
-
-		try {
-			MetaData m = entity.getMetaData().clone();
-
-			m.setElementValue(EnumDublinCoreElements.CREATOR, this.metaData
-					.getElementValue(EnumDublinCoreElements.CREATOR));
-			m.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, this.metaData
-					.getElementValue(EnumDublinCoreElements.CONTRIBUTOR));
-			m.setElementValue(EnumDublinCoreElements.SUBJECT, this.metaData
-					.getElementValue(EnumDublinCoreElements.SUBJECT));
-			m.setElementValue(EnumDublinCoreElements.LANGUAGE, this.metaData
-					.getElementValue(EnumDublinCoreElements.LANGUAGE));
-			m.setElementValue(EnumDublinCoreElements.DESCRIPTION, this.metaData
-					.getElementValue(EnumDublinCoreElements.DESCRIPTION));
-			m.setElementValue(EnumDublinCoreElements.PUBLISHER, this.metaData
-					.getElementValue(EnumDublinCoreElements.PUBLISHER));
-			m.setElementValue(EnumDublinCoreElements.RIGHTS, this.metaData
-					.getElementValue(EnumDublinCoreElements.RIGHTS));
-			m.setElementValue(EnumDublinCoreElements.SOURCE, this.metaData
-					.getElementValue(EnumDublinCoreElements.SOURCE));
-
-			entity.setMetaData(m);
-
-		} catch (CloneNotSupportedException | MetaDataException
-				| PrimaryDataEntityVersionException e) {
-			e.printStackTrace();
-		}
-	}
-
 }
