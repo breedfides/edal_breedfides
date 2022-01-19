@@ -129,6 +129,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			config.setMultiValued(MetaDataImplementation.TITLE, true);
 			config.setMultiValued(MetaDataImplementation.SUBJECT, true);
 			config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
+			config.setMultiValued(MetaDataImplementation.STARTDATE, true);
 			index = FSDirectory.open(Paths.get(this.indexDirectory.toString(), "Master_Index"));
 			reader = DirectoryReader.open(writer);
 			searcher = new IndexSearcher(reader);
@@ -607,7 +608,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			if (ta.toString().length() > 1)
 				doc.add(new FacetField(MetaDataImplementation.SUBJECT, ta.toString()));
 		}
-		ts.close();
+		ts.close();		
 
 		String[] strings = doc.getValues(MetaDataImplementation.CREATORNAME);
 		for (String s : strings) {
@@ -641,6 +642,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME, contributor.toString()));
 			}
 		}
+		strings = doc.getValues(MetaDataImplementation.STARTDATE);
+		for(String s : strings) {
+			doc.add(new FacetField(MetaDataImplementation.STARTDATE, s));
+		}
+		doc.add(new FacetField(MetaDataImplementation.SIZE, doc.get(MetaDataImplementation.SIZE)));
 	}
 
 	protected void resetIndexThread() {

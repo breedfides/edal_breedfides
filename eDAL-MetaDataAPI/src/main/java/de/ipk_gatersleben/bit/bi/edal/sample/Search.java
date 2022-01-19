@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +44,7 @@ import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
@@ -58,6 +60,7 @@ import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -87,6 +90,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicRef
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 
 public class Search {
+	
+	public static final String MINYEAR = "minYear";
+	public static final String MAXYEAR = "maxYear";
+	public static final String MAXFILESIZE = "maxSize";
 
 	@SuppressWarnings("unchecked")
 	public static JSONObject advancedSearch(JSONObject requestObject) {
@@ -492,10 +499,9 @@ public class Search {
 			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
 			FacetsCollector fc = new FacetsCollector();
 			FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
-
 			List<FacetResult> results = new ArrayList<>();
 
-			try {
+			try {				
 				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
 				results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
 				results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
@@ -527,6 +533,64 @@ public class Search {
 			e.printStackTrace();
 		}
 		return new JSONArray();
+	}
+	
+	public static HashMap<String, String> getInitialFilterOptions() {
+		try {
+			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
+			FacetsConfig config = DataManager.getFacetsConfig();
+			FacetsCollector fc = new FacetsCollector();
+			BooleanQuery booleanQuery = new BooleanQuery.Builder()
+				    .add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.FILE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
+				    .build();
+			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
+			List<FacetResult> results = new ArrayList<>();
+			try {				
+				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, MetaDataImplementation.SIZE));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, MetaDataImplementation.STARTDATE));
+			} catch (Exception e) {
+				e.printStackTrace();
+				DataManager.getSearchManager().release(manager);
+				return new HashMap<String, String>();
+			}finally {
+				DataManager.getSearchManager().release(manager);	
+			}
+			HashMap<String, String> result = new HashMap<String, String>();
+			for (FacetResult facet : results) {
+				if (facet == null)
+					continue;
+				if(facet.dim.equals(MetaDataImplementation.SIZE)) {
+					long maxFileSize = 0;
+					for(LabelAndValue lav : facet.labelValues) {
+						long size = Long.valueOf(lav.label.replaceFirst("^0+(?!$)", ""));
+						if(size > maxFileSize) {
+							maxFileSize = size;
+						}
+					}
+					result.put(Search.MAXFILESIZE, Long.toString(maxFileSize));
+				}else if(facet.dim.equals(MetaDataImplementation.STARTDATE)) {
+					int minYear = Integer.MAX_VALUE;
+					int maxYear = 0;
+					for(LabelAndValue lav : facet.labelValues) {
+						int year = Integer.valueOf(lav.label.substring(0,4));
+						if(year <= minYear) {
+							minYear = year;
+						}
+						if(year > maxYear) {
+							maxYear = year;
+						}
+					}
+					result.put(Search.MINYEAR, Integer.toString(minYear));
+					result.put(Search.MAXYEAR, Integer.toString(maxYear));
+				}
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new HashMap<String, String>();
 	}
 
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {

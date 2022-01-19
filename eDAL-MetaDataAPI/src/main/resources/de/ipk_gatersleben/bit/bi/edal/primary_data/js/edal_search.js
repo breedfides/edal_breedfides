@@ -352,6 +352,21 @@ let EdalReport = new function() {
         var options = $(this).slider( 'option' );
         $(this).slider( 'values', [ options.min, options.max ] );
       });
+      $("#slider-range").slider({
+        range: true,
+        min: Number(minYear),
+        max: Number(maxYear),
+        values: [
+          Number(minYear), Number(maxYear)
+        ],
+        slide: function (event, ui) {
+          $("#date-label").html(ui.values[0] + " - " + ui.values[1]);
+        },
+        stop: function (event, ui) {
+          EdalReport.filterChange();
+        }
+      });
+      $("#date-label").html(minYear + " - " + maxYear);
       $("#suffixesSelect").val("*");
       self.filterChange();
     }
@@ -823,12 +838,20 @@ let EdalReport = new function() {
             });
             //populate Array with values for file size slider
             var units_array = ["B",...self.units];
+            var byteVal = 0;
+            var maxSizeArr = self.niceBytesArray(maxFileSize);
+            console.log(maxSizeArr);
+            loop:
             for(i = 0; i < 4; i++){
               for(j = 0; j < 10; j++){
-                self.rangeSizeValues.push([Math.pow(2,j),units_array[i]]);
+                byteVal = Math.pow(2,j);
+                //reached maxFileSize?
+                if(units_array[i].localeCompare(maxSizeArr.unit) == 0 && byteVal > parseInt(maxSizeArr.bytes,10)){
+                  break loop;
+                }
+                self.rangeSizeValues.push([byteVal,units_array[i]]);
               }
             }
-            self.rangeSizeValues.push([1,units_array[4]]);
             $("#slider-filesize").slider({
                 range: true,
                 min: 0,
@@ -1019,6 +1042,26 @@ let EdalReport = new function() {
       } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < self.units.length - 1);
 
       return bytes.toFixed(dp).replace(".", ",") + ' ' + self.units[u];
+    };
+
+    /* converts bytes to the human readable equivalent */
+    this.niceBytesArray = function(bytes) {
+      let self = this;
+      const thresh = 1024;
+      const dp = 1;
+      if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+      }
+
+      let u = -1;
+      const r = 10**dp;
+
+      do {
+        bytes /= thresh;
+        ++u;
+      } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < self.units.length - 1);
+
+      return {bytes:bytes.toFixed(dp).replace(".", ","),unit:self.units[u]};
     };
 
     /* converts a the human readable  file to the rare bytes*/

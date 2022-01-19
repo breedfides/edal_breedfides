@@ -107,20 +107,20 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Path("/getTermLists")
-	@POST
-	@ManagedAsync
-	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
-		JSONObject result = new JSONObject();
-		result.put(MetaDataImplementation.PERSON, VeloCityHtmlGenerator.getCreators());
-		result.put(MetaDataImplementation.CONTRIBUTOR, VeloCityHtmlGenerator.getContributors());
-		result.put(MetaDataImplementation.SUBJECT, VeloCityHtmlGenerator.getSubjects());
-		result.put(MetaDataImplementation.TITLE, VeloCityHtmlGenerator.getTitles());
-		result.put(MetaDataImplementation.DESCRIPTION, VeloCityHtmlGenerator.getDescriptions());		
-		return result;
-	}
+//	@SuppressWarnings("unchecked")
+//	@Path("/getTermLists")
+//	@POST
+//	@ManagedAsync
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
+//		JSONObject result = new JSONObject();
+//		result.put(MetaDataImplementation.PERSON, VeloCityHtmlGenerator.getCreators());
+//		result.put(MetaDataImplementation.CONTRIBUTOR, VeloCityHtmlGenerator.getContributors());
+//		result.put(MetaDataImplementation.SUBJECT, VeloCityHtmlGenerator.getSubjects());
+//		result.put(MetaDataImplementation.TITLE, VeloCityHtmlGenerator.getTitles());
+//		result.put(MetaDataImplementation.DESCRIPTION, VeloCityHtmlGenerator.getDescriptions());		
+//		return result;
+//	}
 	
 	@Path("/getHighlightedSections")
 	@POST

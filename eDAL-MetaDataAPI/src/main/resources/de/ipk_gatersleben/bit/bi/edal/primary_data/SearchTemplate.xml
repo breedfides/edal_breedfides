@@ -325,9 +325,6 @@
 
               <script>
                 EdalReport.init(reportData, mapData);
-                if ("$backendMessage" != "") {
-                  alert("$backendMessage");
-                }
 
                 function expon(val, min, max) {
                   var minv = Math.log(min);
