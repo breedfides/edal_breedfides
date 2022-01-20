@@ -72,71 +72,57 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  * @author arendd
  */
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
-	/* constants for indexed lucene fields that are used for public searching */
-	public static final String PUBLICID = "PublicReference";
-	public static final String INTERNALID = "internalId";
-	public static final String REVISION = "revision";
-	public static final String PUBLICREFERENCE = "dataset";
-	public static final String INDIVIDUALFILE = "singledata";
-	public static final String DIRECTORY = "directory";
-	public static final String FILE = "file";
-	public static final String DOCID = "docid";
-	public static final String CONTENT = "Content";
 
-	public static final int MAXDOCSIZE = 100 * 1024 * 1024;
-	private int docCount = 0;
-	private final short REVISIONFILE = 1;
-	private final short REVISIONDIRECTORY = 0;
-	private final short REVISIONPUBLICREFERENCE = 2;
+	private static final String LAST_ID = "last_id_publicreference.dat";
+
+	/** The max number of bytes for the indexing of file content **/
+	private final int MAX_DOC_SIZE = 100 * 1024 * 1024;
+	
+	/** The revision type determines the url/path ending and is needed to
+	 *  resolve the correct "URL" at search time **/
+	private final short REVISION_TYPE_FILE = 1;
+	private final short REVISION_TYPE_DIRECTORY = 0;
+	private final short REVISION_TYPE_PUBLICREFERENCE = 2;
+	
 	protected static int lastIndexedID = 0;
 	private Analyzer analyzer = null;
-	int counterValue = 0;
-	int indexedVersions = 0;
-	int flushedObjects = 0;
-	int filesCounter = 0;
-	Boolean indexedData = false;
-	IndexWriter writer = null;
-	IndexSearcher searcher = null;
+	private int indexedVersions = 0;
+	private int flushedObjects = 0;
+	private int filesCounter = 0;
+	private Boolean indexedData = false;
+	private IndexWriter writer = null;
+	private IndexSearcher searcher = null;
 	private IndexReader reader = null;
-	DirectoryTaxonomyWriter taxoWriter = null;
+	private DirectoryTaxonomyWriter taxoWriter = null;
+	/** Used for indexing of Facets, holds information about the indexed Facet-dimensions **/
 	private final FacetsConfig config = new FacetsConfig();
-	public static final String[] METADATAFIELDS = { MetaDataImplementation.TITLE, MetaDataImplementation.SIZE,
-			MetaDataImplementation.VERSIONID, MetaDataImplementation.ENTITYID, MetaDataImplementation.PRIMARYENTITYID,
-			MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DOCID,
-			PublicVersionIndexWriterThread.PUBLICID, PublicVersionIndexWriterThread.REVISION,
-			PublicVersionIndexWriterThread.PUBLICREFERENCE, PublicVersionIndexWriterThread.INTERNALID,
-			PublicVersionIndexWriterThread.CONTENT, MetaDataImplementation.FILETYPE };
 
-	Directory index;
 	/** high value fetch objects faster, but more memory is needed */
-	final int fetchSize = (int) Math.pow(10, 5);
-	final int directoryFetchSize = (int) Math.pow(10, 5);
+	private final int FETCH_SIZE = (int) Math.pow(10, 5);
+	private final int DIRECTORY_FETCH_SIZE = (int) Math.pow(10, 5);
 
-	DirectoryReader directoryReader;
+	private DirectoryReader directoryReader;
 	public static final String INDEX_NAME = "Master_Index";
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), LAST_ID);
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer, DirectoryTaxonomyWriter taxoWriter) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
 		this.writer = writer;
 		this.analyzer = writer.getAnalyzer();
-		int numberDocs = 0;
 		try {
 			this.taxoWriter = taxoWriter;
-			config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
-			config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
-			config.setMultiValued(MetaDataImplementation.TITLE, true);
-			config.setMultiValued(MetaDataImplementation.SUBJECT, true);
-			config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
-			config.setMultiValued(MetaDataImplementation.STARTDATE, true);
-			index = FSDirectory.open(Paths.get(this.indexDirectory.toString(), "Master_Index"));
-			reader = DirectoryReader.open(writer);
-			searcher = new IndexSearcher(reader);
-			directoryReader = DirectoryReader.open(writer);
-			numberDocs += reader.numDocs();
+			this.config.setMultiValued(IndexSearchConstants.CREATORNAME, true);
+			this.config.setMultiValued(IndexSearchConstants.CONTRIBUTORNAME, true);
+			this.config.setMultiValued(IndexSearchConstants.TITLE, true);
+			this.config.setMultiValued(IndexSearchConstants.SUBJECT, true);
+			this.config.setMultiValued(IndexSearchConstants.DESCRIPTION, true);
+			this.config.setMultiValued(IndexSearchConstants.STARTDATE, true);
+			this.reader = DirectoryReader.open(writer);
+			this.searcher = new IndexSearcher(reader);
+			this.directoryReader = DirectoryReader.open(writer);
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.indexLogger.debug("Error occured while starting the PublicVersionIndexWriterThread (opening Lucene IO tools): "+e.getMessage());
 		}
 
 		if (Files.exists(pathToLastId)) {
@@ -149,7 +135,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				e.printStackTrace();
 			}
 		}
-		this.indexWriterThreadLogger
+		this.indexLogger
 				.debug("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
 
 	}
@@ -214,7 +200,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
-			final ScrollableResults results = session.createQuery(criteria).setCacheable(false).setMaxResults(fetchSize)
+			final ScrollableResults results = session.createQuery(criteria).setCacheable(false).setMaxResults(FETCH_SIZE)
 					.scroll(ScrollMode.FORWARD_ONLY);
 
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
@@ -277,7 +263,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 				try {
 					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+							Paths.get(this.indexDirectory.toString(), LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 					oos.close();
@@ -352,15 +338,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				String dir = stack.pop();
 				if (parentDirFile.equals(dir)) {
 					this.updateVersions(dir, session, pubRef, internalId,
-							PublicVersionIndexWriterThread.PUBLICREFERENCE, REVISIONPUBLICREFERENCE);
+							IndexSearchConstants.PUBLICREFERENCE, REVISION_TYPE_PUBLICREFERENCE);
 				} else {
-					this.updateVersions(dir, session, pubRef, internalId, PublicVersionIndexWriterThread.INDIVIDUALFILE,
-							REVISIONDIRECTORY);
+					this.updateVersions(dir, session, pubRef, internalId, IndexSearchConstants.INDIVIDUALFILE,
+							REVISION_TYPE_DIRECTORY);
 				}
 				//get all children of the current directory
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n"
 						+ "where parentdirectory_id =:parentdir\r\n" + "order by id");
-				ScrollableResults results = nativeQuery.setParameter("parentdir", dir).setMaxResults(directoryFetchSize)
+				ScrollableResults results = nativeQuery.setParameter("parentdir", dir).setMaxResults(DIRECTORY_FETCH_SIZE)
 						.scroll(ScrollMode.FORWARD_ONLY);
 				int count = 0;
 				String tempFileId = null;
@@ -371,7 +357,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						stack.add(tempFileId);
 					} else {
 						this.updateVersions(tempFileId, session, pubRef, internalId,
-								PublicVersionIndexWriterThread.INDIVIDUALFILE, REVISIONFILE);
+								IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
 					}
 					count++;
 				}
@@ -381,10 +367,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						+ "where parentdirectory_id =:parentdir and id >:last\r\n" + "order by id");
 //				hql = "from PrimaryDataFileImplementation s "
 //						+ "where s.parentDirectory.id = :id AND s.id > :lastid order by s.id";
-				while (count == directoryFetchSize) {
+				while (count == DIRECTORY_FETCH_SIZE) {
 					count = 0;
 					results = nativeQuery.setParameter("parentdir", dir).setParameter("last", tempFileId)
-							.setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
+							.setMaxResults(DIRECTORY_FETCH_SIZE).scroll(ScrollMode.FORWARD_ONLY);
 					// results = session.createQuery(hql).setParameter("id",
 					// dir.getID()).setParameter("lastid",
 					// tempFile.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
@@ -394,7 +380,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							stack.add(tempFileId);
 						} else {
 							this.updateVersions(tempFileId, session, pubRef, internalId,
-									PublicVersionIndexWriterThread.INDIVIDUALFILE, REVISIONFILE);
+									IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
 						}
 						count++;
 					}
@@ -404,7 +390,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 		} else {
 			this.updateVersions(parentDirFile, session, pubRef, internalId,
-					PublicVersionIndexWriterThread.PUBLICREFERENCE, REVISIONFILE);
+					IndexSearchConstants.PUBLICREFERENCE, REVISION_TYPE_FILE);
 		}
 	}
 
@@ -416,7 +402,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		Integer version = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
 		try {
 			ScoreDoc[] hits2 = searcher.search(
-					new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version))), 1).scoreDocs;
+					new TermQuery(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version))), 1).scoreDocs;
 			if (hits2 == null || hits2.length == 0) {
 				do {
 					try {
@@ -439,44 +425,44 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						e2.printStackTrace();
 					}
 					hits2 = searcher.search(
-							new TermQuery(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version))),
+							new TermQuery(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version))),
 							1).scoreDocs;
 				} while (hits2 == null || hits2.length == 0);
 			}
 			try {
 				Document doc = searcher.doc(hits2[0].doc);
-				String filetype = FilenameUtils.getExtension(doc.get(MetaDataImplementation.TITLE));
+				String filetype = FilenameUtils.getExtension(doc.get(IndexSearchConstants.TITLE));
 				addFacets(doc);
-				writer.deleteDocuments(new Term(MetaDataImplementation.VERSIONID, Integer.toString(version)));
-				doc.add(new StringField(PublicVersionIndexWriterThread.INTERNALID, internalId, Store.YES));
+				writer.deleteDocuments(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version)));
+				doc.add(new StringField(IndexSearchConstants.INTERNALID, internalId, Store.YES));
 				// test docid with revision instead of pubRef
-				StringBuilder docIDBuilder = new StringBuilder(doc.get(MetaDataImplementation.PRIMARYENTITYID))
+				StringBuilder docIDBuilder = new StringBuilder(doc.get(IndexSearchConstants.PRIMARYENTITYID))
 						.append("-").append(revision);
-				doc.add(new StringField(PublicVersionIndexWriterThread.DOCID, docIDBuilder.toString(), Store.YES));
-				if (entityType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-					if (revision == REVISIONFILE) {
-						doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE,
+				doc.add(new StringField(IndexSearchConstants.DOCID, docIDBuilder.toString(), Store.YES));
+				if (entityType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
+					if (revision == REVISION_TYPE_FILE) {
+						doc.add(new StringField(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE,
 								Store.YES));
 						// skip this field, if file has no extension
 						if (filetype != null && filetype.length() > 0) {
-							doc.add(new TextField(MetaDataImplementation.FILETYPE, filetype, Store.YES));
-							doc.add(new FacetField(MetaDataImplementation.FILETYPE, filetype));
+							doc.add(new TextField(IndexSearchConstants.FILETYPE, filetype, Store.YES));
+							doc.add(new FacetField(IndexSearchConstants.FILETYPE, filetype));
 						}
 						int fileSize;
 						try {
-							fileSize = Integer.parseInt(doc.get(MetaDataImplementation.SIZE));
-							String mimeType[] = doc.get(MetaDataImplementation.MIMETYPE).split("/");
+							fileSize = Integer.parseInt(doc.get(IndexSearchConstants.SIZE));
+							String mimeType[] = doc.get(IndexSearchConstants.MIMETYPE).split("/");
 							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain")
-									&& fileSize <= PublicVersionIndexWriterThread.MAXDOCSIZE) {
+									&& fileSize <= MAX_DOC_SIZE) {
 								String[] dateValues = doc.get("VersionCreationDate").split("-");
 								if (dateValues.length == 5) {
 //									DataManager.getImplProv().getLogger().info("indexing content for:_ "
-//											+ doc.get("Title") + " size: " + doc.get(MetaDataImplementation.SIZE));
+//											+ doc.get("Title") + " size: " + doc.get(IndexSearchConstants.SIZE));
 									Path pathToFile = Paths.get(
 											((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
 													.toString(),
 											dateValues[0], dateValues[1], dateValues[2], dateValues[3], dateValues[4],
-											file + "-" + doc.get(PublicVersionIndexWriterThread.REVISION) + ".dat");
+											file + "-" + doc.get(IndexSearchConstants.REVISION) + ".dat");
 									indexFileContent(doc, pathToFile.toFile());
 								}
 
@@ -484,15 +470,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						} catch (NumberFormatException e) {
 							fileSize = -1;
 						}
-					} else if (revision == REVISIONDIRECTORY) {
-						doc.add(new StringField(MetaDataImplementation.ENTITYTYPE,
-								PublicVersionIndexWriterThread.DIRECTORY, Store.YES));
+					} else if (revision == REVISION_TYPE_DIRECTORY) {
+						doc.add(new StringField(IndexSearchConstants.ENTITYTYPE,
+								IndexSearchConstants.DIRECTORY, Store.YES));
 					}
 				} else {
-					doc.add(new StringField(MetaDataImplementation.ENTITYTYPE, entityType, Store.YES));
+					doc.add(new StringField(IndexSearchConstants.ENTITYTYPE, entityType, Store.YES));
 				}
 
-				doc.add(new StringField(PublicVersionIndexWriterThread.PUBLICID, String.valueOf(pubRef), Store.YES));
+				doc.add(new StringField(IndexSearchConstants.PUBLICID, String.valueOf(pubRef), Store.YES));
 				writer.addDocument(config.build(taxoWriter, doc));
 				indexedVersions++;
 				this.filesCounter++;
@@ -503,7 +489,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			this.indexWriterThreadLogger.debug("Querry Error: " + e.getMessage());
 		}
 
-		if (indexedVersions != 0 && indexedVersions % fetchSize == 0) {
+		if (indexedVersions != 0 && indexedVersions % FETCH_SIZE == 0) {
 			try {
 				writer.commit();
 				this.taxoWriter.commit();
@@ -520,11 +506,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			flushedObjects += fetchSize;
+			flushedObjects += FETCH_SIZE;
 			if (indexedVersions > 0 && pubRef > PublicVersionIndexWriterThread.getLastID()) {
 				try {
 					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+							Paths.get(this.indexDirectory.toString(), LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 					oos.close();
@@ -550,14 +536,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					// if last appended char is a whitespace or if no whitespace found.. just store
 					// the string in a content field
 					if (pos == builder.length() - 1 || pos < 1) {
-						doc.add(new TextField(CONTENT, builder.toString(), Store.YES));
+						doc.add(new TextField(IndexSearchConstants.CONTENT, builder.toString(), Store.YES));
 						builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 						pos = -1;
 					} else {
 						// split up the last part of the string to the last whitespace for a clean cut
 						// between stored Fields
 						String builderString = builder.toString();
-						doc.add(new TextField(CONTENT, builderString.substring(0, pos), Store.YES));
+						doc.add(new TextField(IndexSearchConstants.CONTENT, builderString.substring(0, pos), Store.YES));
 						builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 						builder.append(builderString.substring(pos));
 						pos = -1;
@@ -569,7 +555,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 			if (builder.length() > 0) {
-				doc.add(new TextField(PublicVersionIndexWriterThread.CONTENT, builder.toString(), Store.YES));
+				doc.add(new TextField(IndexSearchConstants.CONTENT, builder.toString(), Store.YES));
 			}
 			in.close();
 		}
@@ -584,35 +570,35 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * @throws IOException
 	 */
 	private void addFacets(Document doc) throws IOException {
-		TokenStream ts = analyzer.tokenStream(MetaDataImplementation.DESCRIPTION,
-				doc.get(MetaDataImplementation.DESCRIPTION));
+		TokenStream ts = analyzer.tokenStream(IndexSearchConstants.DESCRIPTION,
+				doc.get(IndexSearchConstants.DESCRIPTION));
 		ts.reset();
 		while (ts.incrementToken()) {
 			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
 			if (ta.toString().length() > 1)
-				doc.add(new FacetField(MetaDataImplementation.DESCRIPTION, ta.toString()));
+				doc.add(new FacetField(IndexSearchConstants.DESCRIPTION, ta.toString()));
 		}
 		ts.close();
-		ts = analyzer.tokenStream(MetaDataImplementation.TITLE, doc.get(MetaDataImplementation.TITLE));
+		ts = analyzer.tokenStream(IndexSearchConstants.TITLE, doc.get(IndexSearchConstants.TITLE));
 		ts.reset();
 		while (ts.incrementToken()) {
 			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
 			if (ta.toString().length() > 1)
-				doc.add(new FacetField(MetaDataImplementation.TITLE, ta.toString()));
+				doc.add(new FacetField(IndexSearchConstants.TITLE, ta.toString()));
 		}
 		ts.close();
-		ts = analyzer.tokenStream(MetaDataImplementation.SUBJECT, doc.get(MetaDataImplementation.SUBJECT));
+		ts = analyzer.tokenStream(IndexSearchConstants.SUBJECT, doc.get(IndexSearchConstants.SUBJECT));
 		ts.reset();
 		while (ts.incrementToken()) {
 			CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
 			if (ta.toString().length() > 1)
-				doc.add(new FacetField(MetaDataImplementation.SUBJECT, ta.toString()));
+				doc.add(new FacetField(IndexSearchConstants.SUBJECT, ta.toString()));
 		}
 		ts.close();		
 
-		String[] strings = doc.getValues(MetaDataImplementation.CREATORNAME);
+		String[] strings = doc.getValues(IndexSearchConstants.CREATORNAME);
 		for (String s : strings) {
-			ts = analyzer.tokenStream(MetaDataImplementation.CREATORNAME, s);
+			ts = analyzer.tokenStream(IndexSearchConstants.CREATORNAME, s);
 			ts.reset();
 			StringJoiner creator = new StringJoiner(" ");
 			while (ts.incrementToken()) {
@@ -623,12 +609,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			ts.close();
 			if (creator.length() > 0) {
-				doc.add(new FacetField(MetaDataImplementation.CREATORNAME, creator.toString()));
+				doc.add(new FacetField(IndexSearchConstants.CREATORNAME, creator.toString()));
 			}
 		}
-		strings = doc.getValues(MetaDataImplementation.CONTRIBUTORNAME);
+		strings = doc.getValues(IndexSearchConstants.CONTRIBUTORNAME);
 		for (String s : strings) {
-			ts = analyzer.tokenStream(MetaDataImplementation.CONTRIBUTORNAME, s);
+			ts = analyzer.tokenStream(IndexSearchConstants.CONTRIBUTORNAME, s);
 			ts.reset();
 			StringJoiner contributor = new StringJoiner(" ");
 			while (ts.incrementToken()) {
@@ -639,14 +625,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			ts.close();
 			if (contributor.length() > 0) {
-				doc.add(new FacetField(MetaDataImplementation.CONTRIBUTORNAME, contributor.toString()));
+				doc.add(new FacetField(IndexSearchConstants.CONTRIBUTORNAME, contributor.toString()));
 			}
 		}
-		strings = doc.getValues(MetaDataImplementation.STARTDATE);
+		strings = doc.getValues(IndexSearchConstants.STARTDATE);
 		for(String s : strings) {
-			doc.add(new FacetField(MetaDataImplementation.STARTDATE, s));
+			doc.add(new FacetField(IndexSearchConstants.STARTDATE, s));
 		}
-		doc.add(new FacetField(MetaDataImplementation.SIZE, doc.get(MetaDataImplementation.SIZE)));
+		doc.add(new FacetField(IndexSearchConstants.SIZE, doc.get(IndexSearchConstants.SIZE)));
 	}
 
 	protected void resetIndexThread() {

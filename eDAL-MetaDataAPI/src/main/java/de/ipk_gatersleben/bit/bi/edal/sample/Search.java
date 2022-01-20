@@ -37,8 +37,8 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DateTools.Resolution;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
@@ -47,9 +47,6 @@ import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
-import org.apache.lucene.facet.taxonomy.TaxonomyReader;
-import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -58,16 +55,14 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHitCountCollector;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -84,7 +79,7 @@ import org.json.simple.JSONObject;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -99,8 +94,7 @@ public class Search {
 	public static JSONObject advancedSearch(JSONObject requestObject) {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(requestObject, result);
-		CountDownLatch internalCountDownLatch = new CountDownLatch(1);
-		
+		CountDownLatch internalCountDownLatch = new CountDownLatch(1);		
 		class DrillDownThread extends Thread {
 			public JSONArray facets = new JSONArray();
 			public void run() {
@@ -132,7 +126,7 @@ public class Search {
 			} else {
 				ScoreDoc bottomScoreDoc = null;
 				bottomScoreDoc = manager.searcher.search(new TermQuery(
-						new Term(PublicVersionIndexWriterThread.DOCID, (String) requestObject.get("bottomResultId"))),
+						new Term(IndexSearchConstants.DOCID, (String) requestObject.get("bottomResultId"))),
 						5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
 				topDocs = manager.searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize * 3);
@@ -156,8 +150,8 @@ public class Search {
 		String whereToSearch = (String) requestObject.get("whereToSearch");
 		Highlighter highlighter = null;
 		Analyzer analyzer = null;
-		if (whereToSearch != null && whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT)
-				&& buildedQuery.toString().contains(PublicVersionIndexWriterThread.CONTENT)) {
+		if (whereToSearch != null && whereToSearch.equals(IndexSearchConstants.CONTENT)
+				&& buildedQuery.toString().contains(IndexSearchConstants.CONTENT)) {
 			// prepare highlighting
 			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer();
 			Query contentQuery = extractContentQuery((String) requestObject.get("existingQuery"), (JSONArray) requestObject.get("queries"));
@@ -179,7 +173,7 @@ public class Search {
 			pageSize = ((int) (long) scoreDocs.length);
 		}
 		Document doc = null;
-		Set<String> fields = Set.of(PublicVersionIndexWriterThread.METADATAFIELDS);
+		Set<String> fields = Set.of(IndexSearchConstants.METADATAFIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = manager.searcher.doc(scoreDocs[i].doc, fields);
@@ -188,17 +182,17 @@ public class Search {
 				e.printStackTrace();
 			}
 			JSONObject obj = new JSONObject();
-			String type = doc.get(MetaDataImplementation.ENTITYTYPE);
+			String type = doc.get(IndexSearchConstants.ENTITYTYPE);
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class,
-					Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+					Integer.parseInt((doc.get(IndexSearchConstants.PUBLICID))));
 			if (reference.getAcceptedDate() == null) {
 				// if in Testmode, use creation year
-				obj.put("year", doc.get(MetaDataImplementation.STARTDATE));
+				obj.put("year", doc.get(IndexSearchConstants.STARTDATE));
 			} else {
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			}
 
-			if (type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+			if (type.equals(IndexSearchConstants.PUBLICREFERENCE)) {
 				try {
 					obj.put("doi", reference.getAssignedID());
 				} catch (PublicReferenceException e) {
@@ -216,42 +210,42 @@ public class Search {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				String ext = doc.get(MetaDataImplementation.FILETYPE);
-				String link = doc.get(PublicVersionIndexWriterThread.INTERNALID) + "/"
-						+ doc.get(MetaDataImplementation.PRIMARYENTITYID) + "/"
-						+ doc.get(PublicVersionIndexWriterThread.REVISION);
+				String ext = doc.get(IndexSearchConstants.FILETYPE);
+				String link = doc.get(IndexSearchConstants.INTERNALID) + "/"
+						+ doc.get(IndexSearchConstants.PRIMARYENTITYID) + "/"
+						+ doc.get(IndexSearchConstants.REVISION);
 				PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class,
-						doc.get(MetaDataImplementation.PRIMARYENTITYID));
+						doc.get(IndexSearchConstants.PRIMARYENTITYID));
 				obj.put("link", link);
 				obj.put("fileName", file.toString());
-				obj.put("docId", doc.get(PublicVersionIndexWriterThread.DOCID));
-				obj.put("size", doc.get(MetaDataImplementation.SIZE));
+				obj.put("docId", doc.get(IndexSearchConstants.DOCID));
+				obj.put("size", doc.get(IndexSearchConstants.SIZE));
 				obj.put("title", reference.getVersion().getMetaData().toString());
 
 				if (highlighter != null) {
 					try {
-						String highlight = highlighter.getBestFragment(analyzer, PublicVersionIndexWriterThread.CONTENT,
-								doc.get(PublicVersionIndexWriterThread.CONTENT));
+						String highlight = highlighter.getBestFragment(analyzer, IndexSearchConstants.CONTENT,
+								doc.get(IndexSearchConstants.CONTENT));
 						if (highlight != null) {
 							obj.put("highlight", highlight);
 						} else {
-							obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
+							obj.put("highlight", doc.get(IndexSearchConstants.CONTENT).substring(0, 100));
 						}
 					} catch (IOException | InvalidTokenOffsetsException e) {
-						obj.put("highlight", doc.get(PublicVersionIndexWriterThread.CONTENT).substring(0, 100));
+						obj.put("highlight", doc.get(IndexSearchConstants.CONTENT).substring(0, 100));
 					}
 				}
-				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
+				if (type.equals(IndexSearchConstants.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
-				} else if (type.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+				} else if (type.equals(IndexSearchConstants.DIRECTORY)) {
 					obj.put("type", "Directory");
 					obj.put("ext", "");
 				}
 			}
 			finalArray.add(obj);
 			// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+i+" title:
-			// "+doc.get(MetaDataImplementation.TITLE));
+			// "+doc.get(IndexSearchConstants.TITLE));
 		}
 		result.put("results", finalArray);
 		// bottomResult.docids needs to be stored, to support paginated Searching
@@ -260,7 +254,7 @@ public class Search {
 		int additionalPages;
 		JSONArray pageArray = new JSONArray();
 		JSONObject page = new JSONObject();
-		Set<String> set = Set.of(new String[] { PublicVersionIndexWriterThread.DOCID });
+		Set<String> set = Set.of(new String[] { IndexSearchConstants.DOCID });
 		if (pageArraySize == 0) {
 			page.put("bottomResult", null);
 			page.put("bottomResultScore", 0);
@@ -276,7 +270,7 @@ public class Search {
 					if (index < scoreDocs.length - 1) {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
-									.get(PublicVersionIndexWriterThread.DOCID));
+									.get(IndexSearchConstants.DOCID));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1);
 							page.put("index", i);
@@ -289,7 +283,7 @@ public class Search {
 						break;
 					}
 					// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title:
-					// "+doc.get(MetaDataImplementation.TITLE));
+					// "+doc.get(IndexSearchConstants.TITLE));
 				}
 			}
 		} else {
@@ -304,13 +298,13 @@ public class Search {
 					if (index < scoreDocs.length) {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
-									.get(PublicVersionIndexWriterThread.DOCID));
+									.get(IndexSearchConstants.DOCID));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
 							pageArray.add(page);
 							// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title:
-							// "+doc.get(MetaDataImplementation.TITLE));
+							// "+doc.get(IndexSearchConstants.TITLE));
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -324,7 +318,7 @@ public class Search {
 		result.put("pageArray", pageArray);
 		try {
 			result.put("bottomResult",
-					manager.searcher.doc(scoreDocs[pageSize - 1].doc).get(PublicVersionIndexWriterThread.DOCID));
+					manager.searcher.doc(scoreDocs[pageSize - 1].doc).get(IndexSearchConstants.DOCID));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -358,7 +352,7 @@ public class Search {
 	 * @return A Query that only contains useful terms for highlighting
 	 */
 	private static Query extractContentQuery(String existingQuery, JSONArray jsonArray) {
-		QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		QueryParser parser = new QueryParser(IndexSearchConstants.CONTENT, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
 		parser.setDefaultOperator(Operator.AND);
 		StringJoiner contentQuery = new StringJoiner(" ");
 		String parsedQuery = "";
@@ -372,13 +366,13 @@ public class Search {
 					DataManager.getImplProv().getLogger().debug(e.getMessage());
 				}
 			}
-			if(parsedQuery.contains(PublicVersionIndexWriterThread.CONTENT)) {
+			if(parsedQuery.contains(IndexSearchConstants.CONTENT)) {
 				contentQuery.add(parsedQuery);
 			}	
 		}
 		for(Object query : jsonArray) {
 			if(query instanceof String) {
-				if(((String)query).contains(PublicVersionIndexWriterThread.CONTENT)) {
+				if(((String)query).contains(IndexSearchConstants.CONTENT)) {
 					contentQuery.add((String)query);
 				}
 			}
@@ -406,7 +400,7 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL, analyzer);
+		QueryParser pars = new QueryParser(IndexSearchConstants.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String type = ((String) jsonArray.get("type"));
 		String keyword = (String) jsonArray.get("searchterm");
@@ -432,7 +426,7 @@ public class Search {
 	}
 
 	public static JSONArray builQueryAndDrillDown(JSONObject json) {
-		QueryParser pars = new QueryParser(MetaDataImplementation.ALL,
+		QueryParser pars = new QueryParser(IndexSearchConstants.ALL,
 				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 		pars.setDefaultOperator(Operator.AND);
 		StringJoiner queryJoiner = new StringJoiner(" ");
@@ -442,7 +436,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {
+			if (type.equals(IndexSearchConstants.STARTDATE) || type.equals(IndexSearchConstants.ENDDATE)) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -450,15 +444,15 @@ public class Search {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false,
+				luceneQuery = TermRangeQuery.newStringRange(IndexSearchConstants.STARTDATE, lower, upper, false,
 						false);
-			} else if (type.equals(MetaDataImplementation.SIZE)) {
-				luceneQuery = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
+			} else if (type.equals(IndexSearchConstants.SIZE)) {
+				luceneQuery = TermRangeQuery.newStringRange(IndexSearchConstants.SIZE,
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(MetaDataImplementation.FILETYPE)) {
+			} else if (type.equals(IndexSearchConstants.FILETYPE)) {
 				keyword.replace("\\", "");
-				String fileTypeQuery = MetaDataImplementation.FILETYPE + ":" + keyword;
+				String fileTypeQuery = IndexSearchConstants.FILETYPE + ":" + keyword;
 				try {
 					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
 				} catch (ParseException e) {
@@ -472,15 +466,15 @@ public class Search {
 			}
 		}
 		String hitType = (String) json.get("hitType");
-		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
 			luceneQuery = new TermQuery(
-					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
+					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.PUBLICREFERENCE));
+		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
 			luceneQuery = new TermQuery(
-					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE));
+		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
 			luceneQuery = new TermQuery(
-					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
+					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -490,7 +484,7 @@ public class Search {
 
 	public static JSONArray drillDown(String query) {
 		try {
-			QueryParser queryParser = new QueryParser(MetaDataImplementation.ALL,
+			QueryParser queryParser = new QueryParser(IndexSearchConstants.ALL,
 					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 			queryParser.setDefaultOperator(Operator.AND);
 			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
@@ -503,12 +497,12 @@ public class Search {
 
 			try {				
 				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.CREATORNAME));
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.CONTRIBUTORNAME));
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.SUBJECT));
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.TITLE));
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.DESCRIPTION));
-				results.add(facets.getTopChildren(5000, MetaDataImplementation.FILETYPE));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.CREATORNAME));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.CONTRIBUTORNAME));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.SUBJECT));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.TITLE));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.DESCRIPTION));
+				results.add(facets.getTopChildren(5000, IndexSearchConstants.FILETYPE));
 			} catch (Exception e) {
 				DataManager.getSearchManager().release(manager);
 				return new JSONArray();
@@ -519,10 +513,10 @@ public class Search {
 				if (facet == null)
 					continue;
 				JSONObject jsonFacet = new JSONObject();
-				if (facet.dim.equals(MetaDataImplementation.CREATORNAME))
-					jsonFacet.put("category", MetaDataImplementation.PERSON);
-				else if (facet.dim.equals(MetaDataImplementation.CONTRIBUTORNAME))
-					jsonFacet.put("category", MetaDataImplementation.CONTRIBUTOR);
+				if (facet.dim.equals(IndexSearchConstants.CREATORNAME))
+					jsonFacet.put("category", IndexSearchConstants.PERSON);
+				else if (facet.dim.equals(IndexSearchConstants.CONTRIBUTORNAME))
+					jsonFacet.put("category", IndexSearchConstants.CONTRIBUTOR);
 				else
 					jsonFacet.put("category", facet.dim);
 				jsonFacet.put("sortedByHits", facet.labelValues);
@@ -541,15 +535,15 @@ public class Search {
 			FacetsConfig config = DataManager.getFacetsConfig();
 			FacetsCollector fc = new FacetsCollector();
 			BooleanQuery booleanQuery = new BooleanQuery.Builder()
-				    .add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.FILE)), BooleanClause.Occur.SHOULD)
-				    .add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE,PublicVersionIndexWriterThread.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE,IndexSearchConstants.FILE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE,IndexSearchConstants.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
 				    .build();
 			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
 			List<FacetResult> results = new ArrayList<>();
 			try {				
 				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, MetaDataImplementation.SIZE));
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, MetaDataImplementation.STARTDATE));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, IndexSearchConstants.SIZE));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, IndexSearchConstants.STARTDATE));
 			} catch (Exception e) {
 				e.printStackTrace();
 				DataManager.getSearchManager().release(manager);
@@ -561,7 +555,7 @@ public class Search {
 			for (FacetResult facet : results) {
 				if (facet == null)
 					continue;
-				if(facet.dim.equals(MetaDataImplementation.SIZE)) {
+				if(facet.dim.equals(IndexSearchConstants.SIZE)) {
 					long maxFileSize = 0;
 					for(LabelAndValue lav : facet.labelValues) {
 						long size = Long.valueOf(lav.label.replaceFirst("^0+(?!$)", ""));
@@ -570,7 +564,7 @@ public class Search {
 						}
 					}
 					result.put(Search.MAXFILESIZE, Long.toString(maxFileSize));
-				}else if(facet.dim.equals(MetaDataImplementation.STARTDATE)) {
+				}else if(facet.dim.equals(IndexSearchConstants.STARTDATE)) {
 					int minYear = Integer.MAX_VALUE;
 					int maxYear = 0;
 					for(LabelAndValue lav : facet.labelValues) {
@@ -602,9 +596,9 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = whereToSearch.equals(PublicVersionIndexWriterThread.CONTENT)
-				? new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer)
-				: new QueryParser(MetaDataImplementation.ALL, analyzer);
+		QueryParser pars = whereToSearch.equals(IndexSearchConstants.CONTENT)
+				? new QueryParser(IndexSearchConstants.CONTENT, analyzer)
+				: new QueryParser(IndexSearchConstants.ALL, analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		StringJoiner queryJoiner = new StringJoiner(" ");
@@ -634,7 +628,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(MetaDataImplementation.STARTDATE) || type.equals(MetaDataImplementation.ENDDATE)) {
+			if (type.equals(IndexSearchConstants.STARTDATE) || type.equals(IndexSearchConstants.ENDDATE)) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -642,12 +636,12 @@ public class Search {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				query = TermRangeQuery.newStringRange(MetaDataImplementation.STARTDATE, lower, upper, false, false);
-			} else if (type.equals(MetaDataImplementation.SIZE)) {
-				query = TermRangeQuery.newStringRange(MetaDataImplementation.SIZE,
+				query = TermRangeQuery.newStringRange(IndexSearchConstants.STARTDATE, lower, upper, false, false);
+			} else if (type.equals(IndexSearchConstants.SIZE)) {
+				query = TermRangeQuery.newStringRange(IndexSearchConstants.SIZE,
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(MetaDataImplementation.FILETYPE)) {
+			} else if (type.equals(IndexSearchConstants.FILETYPE)) {
 				QueryParser queryParser = new QueryParser(type, analyzer);
 				queryParser.setDefaultOperator(Operator.AND);
 				keyword.replace("\\", "");
@@ -664,14 +658,14 @@ public class Search {
 		}
 
 		String hitType = (String) jsonArray.get("hitType");
-		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
 			query = new TermQuery(
-					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.PUBLICREFERENCE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.INDIVIDUALFILE)) {
-			query = new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.FILE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.PUBLICREFERENCE));
+		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
+			query = new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE));
+		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
 			query = new TermQuery(
-					new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.DIRECTORY));
+					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -698,31 +692,31 @@ public class Search {
 	 */
 	public static JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
 		SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
-		Query query = new TermQuery(new Term(PublicVersionIndexWriterThread.DOCID, doc));
+		Query query = new TermQuery(new Term(IndexSearchConstants.DOCID, doc));
 		ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
 		JSONObject result = new JSONObject();
 		if (hits.length > 0) {
 			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
 					.getAnalyzer();
-			QueryParser parser = new QueryParser(PublicVersionIndexWriterThread.CONTENT, analyzer);
+			QueryParser parser = new QueryParser(IndexSearchConstants.CONTENT, analyzer);
 			Highlighter highlighter = new Highlighter(
 					new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"),
 					new QueryScorer(parser.parse(q)));
 			highlighter.setTextFragmenter(new SimpleFragmenter(300));// 48
 			Document document = manager.searcher.doc(hits[0].doc);
 			TokenStream tokenStream = TokenSources.getAnyTokenStream(manager.searcher.getIndexReader(), hits[0].doc,
-					PublicVersionIndexWriterThread.CONTENT, analyzer);
+					IndexSearchConstants.CONTENT, analyzer);
 			TextFragment[] fragments;
 			try {
 				fragments = highlighter.getBestTextFragments(tokenStream,
-						document.get(PublicVersionIndexWriterThread.CONTENT), false, 10);
+						document.get(IndexSearchConstants.CONTENT), false, 10);
 				List<String> snipets = new ArrayList<>();
 				for (TextFragment fragment : fragments) {
 					if (fragment.getScore() > 0.0) {
 						snipets.add(fragment.toString());
 					}
 				}
-				result.put(PublicVersionIndexWriterThread.CONTENT, snipets);
+				result.put(IndexSearchConstants.CONTENT, snipets);
 			} catch (IOException | InvalidTokenOffsetsException e) {
 				result.put("msg", "There was an Error, Document not found.");
 			}
@@ -751,13 +745,13 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		Analyzer standardAnalyzer = new StandardAnalyzer(stopSet);
-		String[] fields = { MetaDataImplementation.TITLE, MetaDataImplementation.DESCRIPTION,
-				MetaDataImplementation.COVERAGE, MetaDataImplementation.IDENTIFIER, MetaDataImplementation.SIZE,
-				MetaDataImplementation.TYPE, MetaDataImplementation.LANGUAGE, MetaDataImplementation.PERSON,
-				MetaDataImplementation.LEGALPERSON, MetaDataImplementation.ALGORITHM, MetaDataImplementation.CHECKSUM,
-				MetaDataImplementation.SUBJECT, MetaDataImplementation.RELATION, MetaDataImplementation.MIMETYPE,
-				MetaDataImplementation.STARTDATE, MetaDataImplementation.ENDDATE, MetaDataImplementation.RELATIONTYPE,
-				MetaDataImplementation.RELATEDIDENTIFIERTYPE };
+		String[] fields = { IndexSearchConstants.TITLE, IndexSearchConstants.DESCRIPTION,
+				IndexSearchConstants.COVERAGE, IndexSearchConstants.IDENTIFIER, IndexSearchConstants.SIZE,
+				IndexSearchConstants.TYPE, IndexSearchConstants.LANGUAGE, IndexSearchConstants.PERSON,
+				IndexSearchConstants.LEGALPERSON, IndexSearchConstants.ALGORITHM, IndexSearchConstants.CHECKSUM,
+				IndexSearchConstants.SUBJECT, IndexSearchConstants.RELATION, IndexSearchConstants.MIMETYPE,
+				IndexSearchConstants.STARTDATE, IndexSearchConstants.ENDDATE, IndexSearchConstants.RELATIONTYPE,
+				IndexSearchConstants.RELATEDIDENTIFIERTYPE };
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser = new MultiFieldQueryParser(fields,
 				standardAnalyzer);
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
@@ -779,21 +773,21 @@ public class Search {
 		/** A possible way to search for Files AND rootDirectories */
 //		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 //		BooleanQuery.Builder subbooleanQuery = new BooleanQuery.Builder();
-//		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM,standardAnalyzer);
+//		QueryParser queryType = new QueryParser(IndexSearchConstants.CHECKSUM,standardAnalyzer);
 //		queryType.setDefaultOperator(QueryParser.OR_OPERATOR);
 //		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
 //		try {
-//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)).toString()), Occur.SHOULD);
-//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)).toString()), Occur.SHOULD);
+//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, entityType)).toString()), Occur.SHOULD);
+//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)).toString()), Occur.SHOULD);
 //			booleanQuery.add(queryType.parse(subbooleanQuery.build().toString()),Occur.MUST);
 //		} catch (ParseException e2) {
 //			// TODO Auto-generated catch block
 //			e2.printStackTrace();
 //		}		
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-		QueryParser queryType = new QueryParser(MetaDataImplementation.CHECKSUM, standardAnalyzer);
+		QueryParser queryType = new QueryParser(IndexSearchConstants.CHECKSUM, standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
-		booleanQuery.add(new TermQuery(new Term(MetaDataImplementation.ENTITYTYPE, entityType)), Occur.FILTER);
+		booleanQuery.add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, entityType)), Occur.FILTER);
 		try {
 			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
 			ScoreDoc[] hits2 = manager.searcher.search(booleanQuery.build(), 50000).scoreDocs;
@@ -806,7 +800,7 @@ public class Search {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				ids.add(Integer.parseInt((doc.get(PublicVersionIndexWriterThread.PUBLICID))));
+				ids.add(Integer.parseInt((doc.get(IndexSearchConstants.PUBLICID))));
 			}
 			return ids;
 		} catch (IOException e2) {

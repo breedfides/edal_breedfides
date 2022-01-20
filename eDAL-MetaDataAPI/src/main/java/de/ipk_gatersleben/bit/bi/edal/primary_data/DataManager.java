@@ -67,6 +67,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ALLPrinci
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ListThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.RebuildIndexThread;
@@ -217,11 +218,11 @@ public class DataManager {
 
 		DataManager.resetDefaultPermissions();
 		
-		config.setMultiValued(MetaDataImplementation.CREATORNAME, true);
-		config.setMultiValued(MetaDataImplementation.CONTRIBUTORNAME, true);
-		config.setMultiValued(MetaDataImplementation.SUBJECT, true);
-		config.setMultiValued(MetaDataImplementation.TITLE, true);
-		config.setMultiValued(MetaDataImplementation.DESCRIPTION, true);
+		config.setMultiValued(IndexSearchConstants.CREATORNAME, true);
+		config.setMultiValued(IndexSearchConstants.CONTRIBUTORNAME, true);
+		config.setMultiValued(IndexSearchConstants.SUBJECT, true);
+		config.setMultiValued(IndexSearchConstants.TITLE, true);
+		config.setMultiValued(IndexSearchConstants.DESCRIPTION, true);
 
 		try {
 			DataManager.rootCheat = new InternetAddress(ROOT_CHEAT);

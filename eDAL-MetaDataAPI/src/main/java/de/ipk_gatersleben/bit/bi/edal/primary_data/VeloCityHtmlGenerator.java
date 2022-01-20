@@ -99,6 +99,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -1533,11 +1534,11 @@ class VeloCityHtmlGenerator {
 		
 		context.put("filetypes", fileTypes);
 		
-		context.put("publicreference", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		context.put("publicreference", IndexSearchConstants.PUBLICREFERENCE);
 		
-		context.put("file", PublicVersionIndexWriterThread.INDIVIDUALFILE);
+		context.put("file", IndexSearchConstants.INDIVIDUALFILE);
 		
-		context.put("directory", PublicVersionIndexWriterThread.DIRECTORY);
+		context.put("directory", IndexSearchConstants.DIRECTORY);
 		
 		HashMap<String, String> filterOptions = Search.getInitialFilterOptions();
 		

@@ -24,6 +24,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -108,7 +109,7 @@ public class SearchTest extends EdalDefaultTestCase{
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
 		map.put("existingQuery", "Subject:wheat");
-		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		map.put("hitType", IndexSearchConstants.PUBLICREFERENCE);
 		map.put("pageIndex", 0l);
 		map.put("pageArraySize", 0l);
 		map.put("pageSize", 10l);
@@ -125,13 +126,13 @@ public class SearchTest extends EdalDefaultTestCase{
 		//find 3 datasets
 		Assertions.assertEquals(3, result.get("hitSize"));
 		
-		json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
+		json.put("hitType", IndexSearchConstants.INDIVIDUALFILE);
 		result = Search.advancedSearch(json);
 		//find 9 files
 		Assertions.assertEquals(9, result.get("hitSize"));
 		
-		json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
-		json.put("existingQuery", new TermQuery(new Term(PublicVersionIndexWriterThread.CONTENT,"test")).toString());
+		json.put("whereToSearch", IndexSearchConstants.CONTENT);
+		json.put("existingQuery", new TermQuery(new Term(IndexSearchConstants.CONTENT,"test")).toString());
 		result = Search.advancedSearch(json);
 		//search for content
 		Assertions.assertEquals(9, result.get("hitSize"));
@@ -152,7 +153,7 @@ public class SearchTest extends EdalDefaultTestCase{
 			@Override
 			public void run() {
 				for(int i = 0; i < 5; i++) {
-					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+					json.put("hitType", IndexSearchConstants.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
 					JSONObject result = Search.advancedSearch(json);
@@ -162,7 +163,7 @@ public class SearchTest extends EdalDefaultTestCase{
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(1, result.get("hitSize"));
 					
-					json.put("hitType", PublicVersionIndexWriterThread.INDIVIDUALFILE);
+					json.put("hitType", IndexSearchConstants.INDIVIDUALFILE);
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(3, result.get("hitSize"));
 					
@@ -171,7 +172,7 @@ public class SearchTest extends EdalDefaultTestCase{
 					Assertions.assertEquals(9, result.get("hitSize"));
 					
 					json.put("existingQuery", "Content:test");
-					json.put("whereToSearch", PublicVersionIndexWriterThread.CONTENT);
+					json.put("whereToSearch", IndexSearchConstants.CONTENT);
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 				}

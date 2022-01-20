@@ -107,43 +107,6 @@ public class MetaDataImplementation extends MetaData implements Cloneable {
 			});
 
 	private int id;
-	
-	public static final String TITLE = "Title";
-	public static final String DESCRIPTION = "Description";
-	public static final String COVERAGE = "Coverage";
-	public static final String IDENTIFIER = "Identifier";
-	public static final String RELATEDIDENTIFIERTYPE = "RelatedIdentifierType";
-	public static final String RELATIONTYPE = "RelationType";
-	public static final String SIZE = "Size";
-	public static final String TYPE = "Type";
-	public static final String LANGUAGE = "Language";
-	public static final String ALGORITHM = "Algorithm";
-	public static final String CHECKSUM = "Checksum";
-	public static final String VERSIONID = "versionID";
-	public static final String SUBJECT = "Subject";
-	public static final String RELATION = "Relation";
-	public static final String MIMETYPE = "Mimetype";
-	public static final String STARTDATE = "Startdate";
-	public static final String ENDDATE = "Enddate";
-	public static final String PERSON = "Creator";
-	public static final String CONTRIBUTOR = "Contributor";
-	public static final String LEGALPERSON = "Legalperson";
-	public static final String FILETYPE = "Filetype";
-	public static final String CONTRIBUTORNAME = "ContributorName";
-	public static final String CREATORNAME = "CreatorName";
-	public static final String ALL = "Allfields";
-	//to map a Document to the corresponding publicReferenceEntity
-	public static final String ENTITYID = "entityId";
-	//to map a Document to it's corresponding DataEntity
-	public static final String PRIMARYENTITYID = "associatedPrimaryEntityID";
-	
-	//to distinguish publicReferenceEntities and single Files/Folders
-	public static final String ENTITYTYPE = "entityType";
-
-
-
-
-
 
 	private Map<EnumDublinCoreElements, MyUntypedData> myMap;
 
