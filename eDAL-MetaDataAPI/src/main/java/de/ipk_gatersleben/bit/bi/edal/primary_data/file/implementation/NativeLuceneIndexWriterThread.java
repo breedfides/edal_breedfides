@@ -123,11 +123,15 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
+	private static final String ID = "id";
+	private static final String DELIMITER = " ";
+	private static final String NONE = "none";
+	private static final char HYPHEN = '-';
 	protected Boolean lastIDChanged = false;
-	IndexWriter writer = null;
+	private IndexWriter writer = null;
 	protected int lastIndexedID = 0;
 
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat");
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID);
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(12, 5);
 
@@ -142,7 +146,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			reader.close();
 			reader = null;
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.indexLogger.debug("Error opening and closing the IndexReader: "+e.getMessage());
 		}
 		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
 		Path parent = this.pathToLastId.getParent();
@@ -151,7 +155,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			try {
 				Files.createDirectories(parent);
 			} catch (IOException e) {
-				this.indexWriterThreadLogger.debug("Error while creating Index Directory" + e.getMessage());
+				this.indexLogger.debug("Error while creating Index Directory" + e.getMessage());
 			}
 		}
 		if (Files.exists(this.pathToLastId)) {
@@ -163,10 +167,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				ois.close();
 				fis.close();
 			} catch (IOException | ClassNotFoundException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("Error reading the last indexed ID: " + e.getMessage());
 			}
 		}
-		this.indexWriterThreadLogger.debug("Last indexed ID : " + this.getLastID());	
+		this.indexLogger.debug("Last indexed ID : " + this.getLastID());	
 	}
 	/**
 	 * Checks if there are recent stored versions, loads them and indexes the data
@@ -187,7 +191,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
 					.createQuery(PrimaryDataEntityVersionImplementation.class);
 			Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-			criteria.where(criteriaBuilder.gt(root.get("id"), this.getLastID())).orderBy(criteriaBuilder.asc(root.get("id")));
+			criteria.where(criteriaBuilder.gt(root.get(ID), this.getLastID())).orderBy(criteriaBuilder.asc(root.get(ID)));
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
@@ -198,15 +202,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			final long queryTime = System.currentTimeMillis() - queryStartTime;
 			final long indexStartTime = System.currentTimeMillis();
 
-			PrimaryDataEntityVersionImplementation version = null;
 			while (results.next()) {
-				version = (PrimaryDataEntityVersionImplementation) results.get(0);
+				PrimaryDataEntityVersionImplementation version = (PrimaryDataEntityVersionImplementation) results.get(0);
 				try {
 					this.indexVersion(writer, version);
 					indexedObjects++;
 					this.setLastID(version.getId());
 				} catch (MetaDataException e) {
-					e.printStackTrace();
+					this.indexLogger.debug("Unable to load a metadata value: "+e.getMessage());	
 				}
 				if (indexedObjects % fetchSize == 0) {
 					flushedObjects += fetchSize;
@@ -216,7 +219,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			results.close();
 			session.close();
 			final long indexingTime = System.currentTimeMillis() - indexStartTime;
-			DateFormat df = new SimpleDateFormat("mm:ss:SSS");
+			DateFormat dateFormat = new SimpleDateFormat("mm:ss:SSS");
 			long executeIndexingFinishTime = System.currentTimeMillis() - executeIndexingStart;
 			if (indexedObjects > 0 || flushedObjects > 0) {
 				try {
@@ -225,18 +228,18 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 					this.indexWriterThreadLogger.debug("Error while commiting changes to Index" + e.getMessage());
 				}
 				this.indexWriterThreadLogger.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedObjects + " | "
-						+ flushedObjects + " | " + df.format(new Date(indexingTime)) + " | " + df.format(new Date(queryTime)));
-				this.implementationProviderLogger.debug("[NativeLuceneIndexWriterThread] Indexing Time: "+executeIndexingFinishTime);
+						+ flushedObjects + " | " + dateFormat.format(new Date(indexingTime)) + " | " + dateFormat.format(new Date(queryTime)));
+				this.implementationProviderLogger.debug("NativeLuceneIndexWriterThread Indexing Time: "+executeIndexingFinishTime);
 			}
 			try {
 				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat").toFile());
+						Paths.get(this.indexDirectory.toString(), IndexSearchConstants.PUBLIC_LAST_ID).toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 				oos.close();
 				fos.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("Error writing the last indexed ID "+e.getMessage());	
 			}
 			updateLastIndexedID(indexedObjects);
 			try {
@@ -245,7 +248,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 								NativeLuceneIndexWriterThread.MIN_THREAD_SLEEP_MILLISECONDS),
 						NativeLuceneIndexWriterThread.MAX_THREAD_SLEEP_MILLISECONDS));
 			} catch (final InterruptedException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("NativeLuceneIndexWriterThread got interrupted: " +e.getMessage());	
 			}
 			this.indexLogger.debug("NativeLuceneIndexWriterThread time: "+executeIndexingFinishTime);
 		}
@@ -255,13 +258,13 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if (indexedObjects != 0) {
 			try {
 				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), "NativeLucene_last_id.dat").toFile());
+						Paths.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID).toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.getLastID());
 				oos.close();
 				fos.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("Error writing the last indexed ID: "+e.getMessage());
 			}
 		}
 	}
@@ -291,15 +294,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.setLength(0);
 			if (currentPerson instanceof NaturalPerson) {
 				builder.append(((NaturalPerson) currentPerson).getGivenName());
-				builder.append(" ");
+				builder.append(DELIMITER);
 				builder.append(((NaturalPerson) currentPerson).getSureName());
-				builder.append(" ");
+				builder.append(DELIMITER);
 				doc.add(new TextField(IndexSearchConstants.CREATORNAME, builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
-			builder.append(" ");
+			builder.append(DELIMITER);
 			builder.append(( currentPerson).getZip());
-			builder.append(" ");
+			builder.append(DELIMITER);
 			builder.append(( currentPerson).getCountry());
 			doc.add(new TextField(IndexSearchConstants.PERSON, builder.toString(), Store.YES));
 		}
@@ -307,11 +310,11 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		builder.setLength(0);
 		builder.append(( legalPerson).getLegalName());
-		builder.append(" ");
+		builder.append(DELIMITER);
 		builder.append(( legalPerson).getAddressLine());
-		builder.append(" ");
+		builder.append(DELIMITER);
 		builder.append(( legalPerson).getZip());
-		builder.append(" ");
+		builder.append(DELIMITER);
 		builder.append(( legalPerson).getCountry());
 		doc.add(new TextField(IndexSearchConstants.LEGALPERSON, builder.toString(), Store.YES));
 		/** 
@@ -322,15 +325,15 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.setLength(0);
 			if (currentPerson instanceof NaturalPerson) {
 				builder.append(((NaturalPerson) currentPerson).getGivenName());
-				builder.append(" ");
+				builder.append(DELIMITER);
 				builder.append(((NaturalPerson) currentPerson).getSureName());
-				builder.append(" ");
+				builder.append(DELIMITER);
 				doc.add(new TextField(IndexSearchConstants.CONTRIBUTORNAME, builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
-			builder.append(" ");
+			builder.append(DELIMITER);
 			builder.append(( currentPerson).getZip());
-			builder.append(" ");
+			builder.append(DELIMITER);
 			builder.append(( currentPerson).getCountry());
 			doc.add(new TextField(IndexSearchConstants.CONTRIBUTOR, builder.toString(), Store.YES));
 		}
@@ -339,7 +342,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if(checkSums.size() > 1) {
 			for (CheckSumType checkSum : checkSums) {
 				builder.append(checkSum.getAlgorithm());
-				builder.append(" ");
+				builder.append(DELIMITER);
 				builder.append(checkSum.getCheckSum());
 				builder.append(", ");
 				doc.add(new TextField(IndexSearchConstants.CHECKSUM, checkSum.getAlgorithm(), Store.NO));
@@ -353,14 +356,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		builder.setLength(0);
 		for (UntypedData subject : subjects) {
 			builder.append(subject.getString());
-			builder.append(" ");
+			builder.append(DELIMITER);
 		}
 		doc.add(new TextField(IndexSearchConstants.SUBJECT, builder.toString(), Store.YES));
 		builder.setLength(0);
 		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()));
-		builder.append(" ");
+		builder.append(DELIMITER);
 		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()));
-		builder.append(" ");
+		builder.append(DELIMITER);
 		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
 		builder.append(", ");
 		doc.add(new TextField(IndexSearchConstants.RELATION, builder.toString(), Store.NO));
@@ -373,14 +376,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 		}
 		if (metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
-			doc.add(new TextField(IndexSearchConstants.MIMETYPE, "none", Store.YES));
-			doc.add(new TextField(IndexSearchConstants.TYPE, "none", Store.YES));
+			doc.add(new TextField(IndexSearchConstants.MIMETYPE, NONE, Store.YES));
+			doc.add(new TextField(IndexSearchConstants.TYPE, NONE, Store.YES));
 		} else {
 			doc.add(new TextField(IndexSearchConstants.MIMETYPE,
 					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
 			doc.add(new TextField(IndexSearchConstants.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}		
-		StringJoiner allFieldsJoiner = new StringJoiner(" ");
+		StringJoiner allFieldsJoiner = new StringJoiner(DELIMITER);
 		for(IndexableField field : doc.getFields()){	
 			allFieldsJoiner.add(field.stringValue());
 		}
@@ -391,10 +394,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		builder.setLength(0);
 		Calendar cd = version.getCreationDate();
 		//important to access the related local file for content indexing if this Version belongs to a file
-		doc.add(new StringField("VersionCreationDate", 
-				builder.append(cd.get(Calendar.YEAR)).append('-').append(cd.get(Calendar.MONTH))
-				.append('-').append(cd.get(Calendar.DAY_OF_MONTH)).append('-').append(cd.get(Calendar.HOUR_OF_DAY))
-				.append('-').append(cd.get(Calendar.MINUTE)).toString(),Store.YES));
+		doc.add(new StringField(IndexSearchConstants.CREATION_DATE, 
+				builder.append(cd.get(Calendar.YEAR)).append(HYPHEN).append(cd.get(Calendar.MONTH))
+				.append(HYPHEN).append(cd.get(Calendar.DAY_OF_MONTH)).append(HYPHEN).append(cd.get(Calendar.HOUR_OF_DAY))
+				.append(HYPHEN).append(cd.get(Calendar.MINUTE)).toString(),Store.YES));
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {

@@ -37,6 +37,7 @@ public final class IndexSearchConstants {
 	public static final String FILETYPE = "Filetype";
 	public static final String CONTRIBUTORNAME = "ContributorName";
 	public static final String CREATORNAME = "CreatorName";
+	public static final String CREATION_DATE = "VersionCreationDate";
 	public static final String ALL = "Allfields";
 	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";
@@ -56,6 +57,8 @@ public final class IndexSearchConstants {
 	public static final String CONTENT = "Content";
 	public static final String PUBLICID = "PublicReference";	
 	public static final String INTERNALID = "internalId";
+	public static final String PUBLIC_LAST_ID = "last_id_publicreference.dat";
+	public static final String NATIVE_INDEXER_LAST_ID = "last_id_publicreference.dat";
 	
 	public static final String[] METADATAFIELDS = { IndexSearchConstants.TITLE, IndexSearchConstants.SIZE,
 			IndexSearchConstants.VERSIONID, IndexSearchConstants.ENTITYID, IndexSearchConstants.PRIMARYENTITYID,
