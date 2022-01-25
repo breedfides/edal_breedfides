@@ -25,14 +25,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Stack;
 import java.util.StringJoiner;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Logger;
@@ -61,8 +65,10 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.NativeQuery;
+import org.hibernate.query.Query;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 
@@ -331,6 +337,22 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			DataManager.getImplProv().getLogger().info("Publicreferences that still have to be indexed " + l);
 		}
 	}
+	
+	private ScrollableResults getPrimaryDataFileIds(String primId, Session session,Class entityClass, String lowerBound){
+		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<String> primaryEntityCriteria = criteriaBuilder.createQuery(String.class);	
+		Root<PrimaryDataFileImplementation> fileRoot = primaryEntityCriteria.from(PrimaryDataFileImplementation.class);	
+		primaryEntityCriteria.select(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID));
+		if(lowerBound !=  null) {
+			primaryEntityCriteria.where(criteriaBuilder.and(criteriaBuilder.equal(fileRoot.get("parentDirectory").get(PrimaryDataDirectoryImplementation.STRING_ID), primId),criteriaBuilder.equal(fileRoot.type(), entityClass), criteriaBuilder.greaterThan(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),lowerBound)));	
+		}else {
+			primaryEntityCriteria.where(criteriaBuilder.and(criteriaBuilder.equal(fileRoot.get("parentDirectory").get(PrimaryDataDirectoryImplementation.STRING_ID), primId),criteriaBuilder.equal(fileRoot.type(), entityClass)));	
+		}
+		primaryEntityCriteria.orderBy(criteriaBuilder.asc(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID)));
+		return session.createQuery(primaryEntityCriteria).setMaxResults(DIRECTORY_FETCH_SIZE).scroll(ScrollMode.FORWARD_ONLY);
+	}
+	
+	
 
 	/**
 	 * Traverses all files/directories that belong to a PublicReference with a stack
@@ -340,68 +362,117 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * @param internalId The InternalId of the publicreference
 	 * @param session
 	 */
+	@SuppressWarnings("unchecked")
 	private void indexPublicReference(Integer pubRef, String internalId, Session session) {
+		/** Discriminator value kann nicht mit criteria geholt werden -> man müsste das ganze Object aus der Datenbank holen.. **/
+		long start = System.currentTimeMillis();
+		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<PrimaryDataDirectoryImplementation> primaryEntityCriteria = criteriaBuilder.createQuery(PrimaryDataDirectoryImplementation.class);
+		Root<PrimaryDataDirectoryImplementation> fileRoot = primaryEntityCriteria.from(PrimaryDataDirectoryImplementation.class);	
+		Subquery<String> sub = primaryEntityCriteria.subquery(String.class);
+		Root<PublicReferenceImplementation> subRoot = sub.from(PublicReferenceImplementation.class);
+		Join<PublicReferenceImplementation,PrimaryDataEntityVersionImplementation> join= subRoot.join("version");
+		sub.select(join.get("primaryEntityId"));
+		sub.where(criteriaBuilder.equal(subRoot.get(ID), pubRef));
+		primaryEntityCriteria.select(fileRoot);
+		primaryEntityCriteria.where(fileRoot.in(sub));		
+		PrimaryDataDirectoryImplementation primId = session.createQuery(primaryEntityCriteria).getSingleResult();
+		long end = System.currentTimeMillis()-start;
+		start = System.currentTimeMillis();
+		
+		
 		this.filesCounter = 0;
+		@SuppressWarnings("unchecked")
 		NativeQuery<Object[]> nativeQuery = session.createNativeQuery(
 				"SELECT entities.id, entities.type FROM PUBLICREFERENCES p, entity_versions ev, entities\r\n"
 						+ "where p.id =:publicID and ev.id = p.version_id and entities.id = ev.primaryentityid");
 		nativeQuery.setParameter("publicID", pubRef);
 		Object[] typeId = nativeQuery.getSingleResult();
 		String parentDirFile = (String) typeId[0];
-
+		DataManager.getImplProv().getLogger().info(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
+		this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 		Stack<String> stack = new Stack<>();
-		if (((Character) typeId[1]).equals('D')) {
-			stack.add(parentDirFile);
-			while (!stack.isEmpty()) {
+		if (primId.isDirectory()) {
+			stack.add(primId.getID());
+			while (!stack.isEmpty()) {		
 				String directory = stack.pop();
-				if (parentDirFile.equals(directory)) {
-					this.indexEntityVersion(directory, session, pubRef, internalId,
+				this.indexEntityVersion(directory, session, pubRef, internalId,
 							IndexSearchConstants.PUBLICREFERENCE, REVISION_TYPE_PUBLICREFERENCE);
-				} else {
-					this.indexEntityVersion(directory, session, pubRef, internalId, IndexSearchConstants.INDIVIDUALFILE,
-							REVISION_TYPE_DIRECTORY);
-				}
 				// get all children of the current directory
+				start = System.currentTimeMillis();
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n"
 						+ "where parentdirectory_id =:parentdir\r\n" + "order by id");
 				ScrollableResults results = nativeQuery.setParameter(PARENTDIR, directory)
 						.setMaxResults(DIRECTORY_FETCH_SIZE).scroll(ScrollMode.FORWARD_ONLY);
-				int count = 0;
+				end = System.currentTimeMillis() - start;
+				start = System.currentTimeMillis();
+				//this.getEntityQuery(parentDirFile, session, PrimaryDataDirectoryImplementation.class).setMaxResults(DIRECTORY_FETCH_SIZE).getResultList();
+				ScrollableResults primDirs = this.getPrimaryDataFileIds(directory, session,PrimaryDataDirectoryImplementation.class, null);
+				ScrollableResults primFiles = this.getPrimaryDataFileIds(directory, session,PrimaryDataFileImplementation.class, null);
+				this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start)+" nr2");
 				String tempFileId = null;
-				// add child directories to the stack, process child files immediately
-				while (results.next()) {
-					tempFileId = (String) results.get(0);
-					if (((Character) results.get(1)).equals('D')) {
-						stack.add(tempFileId);
-					} else {
-						this.indexEntityVersion(tempFileId, session, pubRef, internalId,
-								IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
-					}
+				int count = 0;
+				while(primDirs.next()) {
+					tempFileId = primDirs.getString(0);
+					stack.add(tempFileId);
 					count++;
 				}
+				while(primFiles.next()) {
+					tempFileId = primFiles.getString(0);
+					this.indexEntityVersion(tempFileId, session, pubRef, internalId,
+					IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
+					count++;
+				}
+//				// add child directories to the stack, process child files immediately
+//				while (results.next()) {
+//					tempFileId = (String) results.get(0);
+//					if (((Character) results.get(1)).equals('D')) {
+//						stack.add(tempFileId);
+//					} else {
+//						this.indexEntityVersion(tempFileId, session, pubRef, internalId,
+//								IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
+//					}
+//					count++;
+//				}
+				primDirs.close();
+				primFiles.close();
 				results.close();
 				session.clear();
 				nativeQuery = session.createNativeQuery("SELECT id, type FROM ENTITIES \r\n"
 						+ "where parentdirectory_id =:parentdir and id >:last\r\n" + "order by id");
-//				hql = "from PrimaryDataFileImplementation s "
-//						+ "where s.parentDirectory.id = :id AND s.id > :lastid order by s.id";
 				while (count == DIRECTORY_FETCH_SIZE) {
 					count = 0;
+					start = System.currentTimeMillis();
 					results = nativeQuery.setParameter(PARENTDIR, directory).setParameter("last", tempFileId)
 							.setMaxResults(DIRECTORY_FETCH_SIZE).scroll(ScrollMode.FORWARD_ONLY);
-					// results = session.createQuery(hql).setParameter("id",
-					// dir.getID()).setParameter("lastid",
-					// tempFile.getID()).setMaxResults(directoryFetchSize).scroll(ScrollMode.FORWARD_ONLY);
-					while (results.next()) {
-						tempFileId = (String) results.get(0);
-						if (((Character) results.get(1)).equals('D')) {
-							stack.add(tempFileId);
-						} else {
-							this.indexEntityVersion(tempFileId, session, pubRef, internalId,
-									IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
-						}
+					end = System.currentTimeMillis()-start;
+					start = System.currentTimeMillis();
+					primDirs = this.getPrimaryDataFileIds(directory, session,PrimaryDataDirectoryImplementation.class, tempFileId);
+					primFiles = this.getPrimaryDataFileIds(directory, session,PrimaryDataFileImplementation.class, tempFileId);
+					this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start));
+//					while (results.next()) {
+//						tempFileId = (String) results.get(0);
+//						if (((Character) results.get(1)).equals('D')) {
+//							stack.add(tempFileId);
+//						} else {
+//							this.indexEntityVersion(tempFileId, session, pubRef, internalId,
+//									IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
+//						}
+//						count++;
+//					}
+					while(primDirs.next()) {
+						tempFileId = primDirs.getString(0);
+						stack.add(tempFileId);
 						count++;
 					}
+					while(primFiles.next()) {
+						tempFileId = primFiles.getString(0);
+						this.indexEntityVersion(tempFileId, session, pubRef, internalId,
+								IndexSearchConstants.INDIVIDUALFILE, REVISION_TYPE_FILE);
+						count++;
+					}
+					primDirs.close();
+					primFiles.close();
 					results.close();
 					session.clear();
 				}
@@ -413,11 +484,25 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 
 	private void indexEntityVersion(String file, Session session, Integer pubRef, String internalId, String entityType,
-			int revision) {
+			int revision) {		
+		long start = System.currentTimeMillis();
+		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+		Root<PrimaryDataEntityVersionImplementation> root = criteriaQuery.from(PrimaryDataEntityVersionImplementation.class);
+		criteriaQuery.select(root.get(ID));
+		Subquery<Long> sub = criteriaQuery.subquery(Long.class);
+		Root<PrimaryDataEntityVersionImplementation> subRoot = sub.from(PrimaryDataEntityVersionImplementation.class);
+		sub.select(criteriaBuilder.max(subRoot.get("revision")));
+		sub.where(criteriaBuilder.equal(subRoot.get("primaryEntityId"), file));
+		criteriaQuery.where(criteriaBuilder.and(criteriaBuilder.equal(root.get("revision"), sub),criteriaBuilder.equal(root.get("primaryEntityId"), file)));
+		Integer version = session.createQuery(criteriaQuery).getSingleResult();
+		long end = System.currentTimeMillis()-start;
+		start = System.currentTimeMillis();
 		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n"
 				+ "where primaryentityid =:file and revision = "
 				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
-		Integer version = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
+		Integer version2 = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
+		this.indexLogger.debug(System.currentTimeMillis()-start+" "+end+" nr3");
 		try {
 			ScoreDoc[] versionHit = searcher.search(
 					new TermQuery(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version))), 1).scoreDocs;
@@ -461,9 +546,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							doc.add(new TextField(IndexSearchConstants.FILETYPE, filetype, Store.YES));
 							doc.add(new FacetField(IndexSearchConstants.FILETYPE, filetype));
 						}
-						int fileSize;
+						long fileSize;
 						try {
-							fileSize = Integer.parseInt(doc.get(IndexSearchConstants.SIZE));
+							fileSize = Long.parseLong(doc.get(IndexSearchConstants.SIZE));
 							String mimeType[] = doc.get(IndexSearchConstants.MIMETYPE).split(SEPERATOR);
 							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain")
 									&& fileSize <= MAX_DOC_SIZE) {
@@ -481,6 +566,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 							}
 						} catch (NumberFormatException e) {
+							e.printStackTrace();
 							this.indexLogger.debug("String conversion failed: " + e.getMessage());
 							fileSize = -1;
 						}

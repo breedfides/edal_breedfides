@@ -39,13 +39,17 @@ public final class IndexSearchConstants {
 	public static final String CREATORNAME = "CreatorName";
 	public static final String CREATION_DATE = "VersionCreationDate";
 	public static final String ALL = "Allfields";
+	public static final String DOCID = "docid";
+	public static final String INTERNALID = "internalId";
 	//to map a Document to the corresponding publicReferenceEntity
 	public static final String ENTITYID = "entityId";
 	//to map a Document to it's corresponding DataEntity
 	public static final String PRIMARYENTITYID = "associatedPrimaryEntityID";
-	
+
 	//to distinguish publicReferenceEntities and single Files/Folders
 	public static final String ENTITYTYPE = "entityType";
+	
+	
 	
 	/* constants for indexed lucene fields that are used for public searching */
 	public static final String FILE = "file";
@@ -53,10 +57,8 @@ public final class IndexSearchConstants {
 	public static final String PUBLICREFERENCE = "dataset";
 	public static final String INDIVIDUALFILE = "singledata";
 	public static final String DIRECTORY = "directory";
-	public static final String DOCID = "docid";
 	public static final String CONTENT = "Content";
 	public static final String PUBLICID = "PublicReference";	
-	public static final String INTERNALID = "internalId";
 	public static final String PUBLIC_LAST_ID = "last_id_publicreference.dat";
 	public static final String NATIVE_INDEXER_LAST_ID = "last_id_publicreference.dat";
 	
