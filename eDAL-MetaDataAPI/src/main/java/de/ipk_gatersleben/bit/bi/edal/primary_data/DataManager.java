@@ -66,6 +66,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ALLPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ListThread;
@@ -218,11 +219,11 @@ public class DataManager {
 
 		DataManager.resetDefaultPermissions();
 		
-		config.setMultiValued(IndexSearchConstants.CREATORNAME, true);
-		config.setMultiValued(IndexSearchConstants.CONTRIBUTORNAME, true);
-		config.setMultiValued(IndexSearchConstants.SUBJECT, true);
-		config.setMultiValued(IndexSearchConstants.TITLE, true);
-		config.setMultiValued(IndexSearchConstants.DESCRIPTION, true);
+		config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
+		config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
+		config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
+		config.setMultiValued(EnumIndexField.TITLE.value(), true);
+		config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
 
 		try {
 			DataManager.rootCheat = new InternetAddress(ROOT_CHEAT);

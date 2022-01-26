@@ -135,12 +135,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		this.analyzer = writer.getAnalyzer();
 		try {
 			this.taxoWriter = taxoWriter;
-			this.config.setMultiValued(IndexSearchConstants.CREATORNAME, true);
-			this.config.setMultiValued(IndexSearchConstants.CONTRIBUTORNAME, true);
-			this.config.setMultiValued(IndexSearchConstants.TITLE, true);
-			this.config.setMultiValued(IndexSearchConstants.SUBJECT, true);
-			this.config.setMultiValued(IndexSearchConstants.DESCRIPTION, true);
-			this.config.setMultiValued(IndexSearchConstants.STARTDATE, true);
+			this.config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
+			this.config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
+			this.config.setMultiValued(EnumIndexField.TITLE.value(), true);
+			this.config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
+			this.config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
+			this.config.setMultiValued(EnumIndexField.STARTDATE.value(), true);
 			this.reader = DirectoryReader.open(writer);
 			this.searcher = new IndexSearcher(reader);
 			this.directoryReader = DirectoryReader.open(writer);
@@ -402,7 +402,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //		String parentDirFile = (String) typeId[0];
 //		DataManager.getImplProv().getLogger().info(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 //		this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
-
 		// index a new PublicReference version
 		this.indexEntityVersion(parentDirectoryId, session, pubRef, internalId, IndexSearchConstants.PUBLICREFERENCE,
 				REVISION_TYPE_PUBLICREFERENCE);
@@ -472,10 +471,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //				+ "where primaryentityid =:file and revision = "
 //				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
 //		Integer version2 = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
-		this.indexLogger.debug(System.currentTimeMillis() - start + " " + end + " nr3");
 		try {
 			ScoreDoc[] versionHit = searcher.search(
-					new TermQuery(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version))), 1).scoreDocs;
+					new TermQuery(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version))), 1).scoreDocs;
 			while (versionHit == null || versionHit.length == 0) {
 				try {
 					Thread.sleep(Math.min(
@@ -496,33 +494,33 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					this.indexLogger.debug("IO Error when opening or closing IndexReader: " + e.getMessage());
 				}
 				versionHit = searcher.search(
-						new TermQuery(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version))),
+						new TermQuery(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version))),
 						1).scoreDocs;
 			}
 			try {
 				Document doc = searcher.doc(versionHit[0].doc);
-				String filetype = FilenameUtils.getExtension(doc.get(IndexSearchConstants.TITLE));
+				String filetype = FilenameUtils.getExtension(doc.get(EnumIndexField.TITLE.value()));
 				addFacets(doc);
-				writer.deleteDocuments(new Term(IndexSearchConstants.VERSIONID, Integer.toString(version)));
-				doc.add(new StringField(IndexSearchConstants.INTERNALID, internalId, Store.YES));
-				StringBuilder docIDBuilder = new StringBuilder(doc.get(IndexSearchConstants.PRIMARYENTITYID))
+				writer.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
+				doc.add(new StringField(EnumIndexField.INTERNALID.value(), internalId, Store.YES));
+				StringBuilder docIDBuilder = new StringBuilder(doc.get(EnumIndexField.PRIMARYENTITYID.value()))
 						.append(HYPHEN).append(revision);
-				doc.add(new StringField(IndexSearchConstants.DOCID, docIDBuilder.toString(), Store.YES));
+				doc.add(new StringField(EnumIndexField.DOCID.value(), docIDBuilder.toString(), Store.YES));
 				if (entityType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
 					if (revision == REVISION_TYPE_FILE) {
-						doc.add(new StringField(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE, Store.YES));
+						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE, Store.YES));
 						// skip this field, if file has no extension
 						if (filetype != null && !filetype.isEmpty()) {
-							doc.add(new TextField(IndexSearchConstants.FILETYPE, filetype, Store.YES));
-							doc.add(new FacetField(IndexSearchConstants.FILETYPE, filetype));
+							doc.add(new TextField(EnumIndexField.FILETYPE.value(), filetype, Store.YES));
+							doc.add(new FacetField(EnumIndexField.FILETYPE.value(), filetype));
 						}
 						long fileSize;
 						try {
-							fileSize = Long.parseLong(doc.get(IndexSearchConstants.SIZE));
-							String mimeType[] = doc.get(IndexSearchConstants.MIMETYPE).split(SEPERATOR);
+							fileSize = Long.parseLong(doc.get(EnumIndexField.SIZE.value()));
+							String mimeType[] = doc.get(EnumIndexField.MIMETYPE.value()).split(SEPERATOR);
 							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain")
 									&& fileSize <= MAX_DOC_SIZE) {
-								String[] dateValues = doc.get(IndexSearchConstants.CREATION_DATE).split(HYPHEN);
+								String[] dateValues = doc.get(EnumIndexField.CREATION_DATE.value()).split(HYPHEN);
 								if (dateValues.length == 5) {
 //									DataManager.getImplProv().getLogger().info("indexing content for:_ "
 //											+ doc.get("Title") + " size: " + doc.get(IndexSearchConstants.SIZE));
@@ -530,7 +528,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 											((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
 													.toString(),
 											dateValues[0], dateValues[1], dateValues[2], dateValues[3], dateValues[4],
-											file + HYPHEN + doc.get(IndexSearchConstants.REVISION) + ".dat");
+											file + HYPHEN + doc.get(EnumIndexField.REVISION.value()) + ".dat");
 									indexFileContent(doc, pathToFile.toFile());
 								}
 
@@ -541,11 +539,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							fileSize = -1;
 						}
 					} else if (revision == REVISION_TYPE_DIRECTORY) {
-						doc.add(new StringField(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.DIRECTORY,
+						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY,
 								Store.YES));
 					}
 				} else {
-					doc.add(new StringField(IndexSearchConstants.ENTITYTYPE, entityType, Store.YES));
+					doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
 				}
 				doc.add(new StringField(IndexSearchConstants.PUBLICID, String.valueOf(pubRef), Store.YES));
 				this.writer.addDocument(config.build(taxoWriter, doc));
@@ -649,38 +647,38 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * @throws IOException
 	 */
 	private void addFacets(Document doc) throws IOException {
-		TokenStream tokenStream = analyzer.tokenStream(IndexSearchConstants.DESCRIPTION,
-				doc.get(IndexSearchConstants.DESCRIPTION));
+		TokenStream tokenStream = analyzer.tokenStream(EnumIndexField.DESCRIPTION.value(),
+				doc.get(EnumIndexField.DESCRIPTION.value()));
 		tokenStream.reset();
 		while (tokenStream.incrementToken()) {
 			CharTermAttribute termAttribute = tokenStream.getAttribute(CharTermAttribute.class);
 			if (termAttribute != null && termAttribute.toString().length() > 1) {
-				doc.add(new FacetField(IndexSearchConstants.DESCRIPTION, termAttribute.toString()));
+				doc.add(new FacetField(EnumIndexField.DESCRIPTION.value(), termAttribute.toString()));
 			}
 		}
 		tokenStream.close();
-		tokenStream = analyzer.tokenStream(IndexSearchConstants.TITLE, doc.get(IndexSearchConstants.TITLE));
+		tokenStream = analyzer.tokenStream(EnumIndexField.TITLE.value(), doc.get(EnumIndexField.TITLE.value()));
 		tokenStream.reset();
 		while (tokenStream.incrementToken()) {
 			CharTermAttribute termAttribute = tokenStream.getAttribute(CharTermAttribute.class);
 			if (termAttribute != null && termAttribute.toString().length() > 1) {
-				doc.add(new FacetField(IndexSearchConstants.TITLE, termAttribute.toString()));
+				doc.add(new FacetField(EnumIndexField.TITLE.value(), termAttribute.toString()));
 			}
 		}
 		tokenStream.close();
-		tokenStream = analyzer.tokenStream(IndexSearchConstants.SUBJECT, doc.get(IndexSearchConstants.SUBJECT));
+		tokenStream = analyzer.tokenStream(EnumIndexField.SUBJECT.value(), doc.get(EnumIndexField.SUBJECT.value()));
 		tokenStream.reset();
 		while (tokenStream.incrementToken()) {
 			CharTermAttribute termAttribute = tokenStream.getAttribute(CharTermAttribute.class);
 			if (termAttribute != null && termAttribute.toString().length() > 1) {
-				doc.add(new FacetField(IndexSearchConstants.SUBJECT, termAttribute.toString()));
+				doc.add(new FacetField(EnumIndexField.SUBJECT.value(), termAttribute.toString()));
 			}
 		}
 		tokenStream.close();
 
-		String[] strings = doc.getValues(IndexSearchConstants.CREATORNAME);
+		String[] strings = doc.getValues(EnumIndexField.CREATORNAME.value());
 		for (String s : strings) {
-			tokenStream = analyzer.tokenStream(IndexSearchConstants.CREATORNAME, s);
+			tokenStream = analyzer.tokenStream(EnumIndexField.CREATORNAME.value(), s);
 			tokenStream.reset();
 			StringJoiner creator = new StringJoiner(" ");
 			while (tokenStream.incrementToken()) {
@@ -691,12 +689,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			tokenStream.close();
 			if (creator.length() > 0) {
-				doc.add(new FacetField(IndexSearchConstants.CREATORNAME, creator.toString()));
+				doc.add(new FacetField(EnumIndexField.CREATORNAME.value(), creator.toString()));
 			}
 		}
-		strings = doc.getValues(IndexSearchConstants.CONTRIBUTORNAME);
+		strings = doc.getValues(EnumIndexField.CONTRIBUTORNAME.value());
 		for (String s : strings) {
-			tokenStream = analyzer.tokenStream(IndexSearchConstants.CONTRIBUTORNAME, s);
+			tokenStream = analyzer.tokenStream(EnumIndexField.CONTRIBUTORNAME.value(), s);
 			tokenStream.reset();
 			StringJoiner contributor = new StringJoiner(" ");
 			while (tokenStream.incrementToken()) {
@@ -707,14 +705,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			}
 			tokenStream.close();
 			if (contributor.length() > 0) {
-				doc.add(new FacetField(IndexSearchConstants.CONTRIBUTORNAME, contributor.toString()));
+				doc.add(new FacetField(EnumIndexField.CONTRIBUTORNAME.value(), contributor.toString()));
 			}
 		}
-		strings = doc.getValues(IndexSearchConstants.STARTDATE);
+		strings = doc.getValues(EnumIndexField.STARTDATE.value());
 		for (String s : strings) {
-			doc.add(new FacetField(IndexSearchConstants.STARTDATE, s));
+			doc.add(new FacetField(EnumIndexField.STARTDATE.value(), s));
 		}
-		doc.add(new FacetField(IndexSearchConstants.SIZE, doc.get(IndexSearchConstants.SIZE)));
+		doc.add(new FacetField(EnumIndexField.SIZE.value(), doc.get(EnumIndexField.SIZE.value())));
 	}
 
 	/**

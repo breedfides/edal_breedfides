@@ -272,22 +272,22 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
-		doc.add(new TextField(IndexSearchConstants.TITLE, getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
-		doc.add(new TextField(IndexSearchConstants.DESCRIPTION, getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
+		doc.add(new TextField(EnumIndexField.TITLE.value(), getString(metadata.getElementValue(EnumDublinCoreElements.TITLE)), Store.YES));
+		doc.add(new TextField(EnumIndexField.DESCRIPTION.value(), getString(metadata.getElementValue(EnumDublinCoreElements.DESCRIPTION)),
 				Store.YES));
-		doc.add(new TextField(IndexSearchConstants.COVERAGE, getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.NO));
+		doc.add(new TextField(EnumIndexField.COVERAGE.value(), getString(metadata.getElementValue(EnumDublinCoreElements.COVERAGE)), Store.NO));
 		StringBuilder builder = new StringBuilder();
-		doc.add(new TextField(IndexSearchConstants.IDENTIFIER,
+		doc.add(new TextField(EnumIndexField.IDENTIFIER.value(),
 				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()), Store.NO));		
-		doc.add(new TextField(IndexSearchConstants.RELATEDIDENTIFIERTYPE,
+		doc.add(new TextField(EnumIndexField.RELATEDIDENTIFIERTYPE.value(),
 				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelatedIdentifierType().value()), Store.NO));
-		doc.add(new TextField(IndexSearchConstants.RELATIONTYPE,
+		doc.add(new TextField(EnumIndexField.RELATIONTYPE.value(),
 				getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()), Store.NO));
 		
-		doc.add(new TextField(IndexSearchConstants.SIZE,
+		doc.add(new TextField(EnumIndexField.SIZE.value(),
 				String.format("%014d",((DataSize) metadata.getElementValue(EnumDublinCoreElements.SIZE)).getFileSize()),Store.YES));
 		
-		doc.add(new TextField(IndexSearchConstants.LANGUAGE,
+		doc.add(new TextField(EnumIndexField.LANGUAGE.value(),
 				getString(((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()), Store.NO));
 		Persons creators = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
 		for (Person currentPerson : creators) {
@@ -297,14 +297,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(DELIMITER);
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(DELIMITER);
-				doc.add(new TextField(IndexSearchConstants.CREATORNAME, builder.toString(), Store.YES));
+				doc.add(new TextField(EnumIndexField.CREATORNAME.value(), builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(DELIMITER);
 			builder.append(( currentPerson).getZip());
 			builder.append(DELIMITER);
 			builder.append(( currentPerson).getCountry());
-			doc.add(new TextField(IndexSearchConstants.PERSON, builder.toString(), Store.YES));
+			doc.add(new TextField(EnumIndexField.PERSON.value(), builder.toString(), Store.YES));
 		}
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
@@ -316,7 +316,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		builder.append(( legalPerson).getZip());
 		builder.append(DELIMITER);
 		builder.append(( legalPerson).getCountry());
-		doc.add(new TextField(IndexSearchConstants.LEGALPERSON, builder.toString(), Store.YES));
+		doc.add(new TextField(EnumIndexField.LEGALPERSON.value(), builder.toString(), Store.YES));
 		/** 
 		 * Stringbuilder to combine multiple Values into one large String to store the text in one field per categopry
 		 * Not used for Relations and dates, because these values occur rarely more than once per Version/Document
@@ -328,14 +328,14 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(DELIMITER);
 				builder.append(((NaturalPerson) currentPerson).getSureName());
 				builder.append(DELIMITER);
-				doc.add(new TextField(IndexSearchConstants.CONTRIBUTORNAME, builder.toString(), Store.YES));
+				doc.add(new TextField(EnumIndexField.CONTRIBUTORNAME.value(), builder.toString(), Store.YES));
 			}
 			builder.append(( currentPerson).getAddressLine());
 			builder.append(DELIMITER);
 			builder.append(( currentPerson).getZip());
 			builder.append(DELIMITER);
 			builder.append(( currentPerson).getCountry());
-			doc.add(new TextField(IndexSearchConstants.CONTRIBUTOR, builder.toString(), Store.YES));
+			doc.add(new TextField(EnumIndexField.CONTRIBUTOR.value(), builder.toString(), Store.YES));
 		}
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
 		builder.setLength(0);
@@ -345,12 +345,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				builder.append(DELIMITER);
 				builder.append(checkSum.getCheckSum());
 				builder.append(", ");
-				doc.add(new TextField(IndexSearchConstants.CHECKSUM, checkSum.getAlgorithm(), Store.NO));
+				doc.add(new TextField(EnumIndexField.CHECKSUM.value(), checkSum.getAlgorithm(), Store.NO));
 			}
 		}else if(checkSums.size() == 1) {
 			CheckSumType checkSum = checkSums.iterator().next();
-			doc.add(new TextField(IndexSearchConstants.ALGORITHM, checkSum.getAlgorithm(), Store.NO));
-			doc.add(new TextField(IndexSearchConstants.CHECKSUM, checkSum.getCheckSum(), Store.NO));
+			doc.add(new TextField(EnumIndexField.ALGORITHM.value(), checkSum.getAlgorithm(), Store.NO));
+			doc.add(new TextField(EnumIndexField.CHECKSUM.value(), checkSum.getCheckSum(), Store.NO));
 		}
 		Subjects subjects = (Subjects) metadata.getElementValue(EnumDublinCoreElements.SUBJECT);
 		builder.setLength(0);
@@ -358,7 +358,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(subject.getString());
 			builder.append(DELIMITER);
 		}
-		doc.add(new TextField(IndexSearchConstants.SUBJECT, builder.toString(), Store.YES));
+		doc.add(new TextField(EnumIndexField.SUBJECT.value(), builder.toString(), Store.YES));
 		builder.setLength(0);
 		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getIdentifier()));
 		builder.append(DELIMITER);
@@ -366,35 +366,35 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		builder.append(DELIMITER);
 		builder.append(getString(((Identifier) metadata.getElementValue(EnumDublinCoreElements.IDENTIFIER)).getRelationType().value()));
 		builder.append(", ");
-		doc.add(new TextField(IndexSearchConstants.RELATION, builder.toString(), Store.NO));
+		doc.add(new TextField(EnumIndexField.RELATION.value(), builder.toString(), Store.NO));
 		DateEvents events = (DateEvents) metadata.getElementValue(EnumDublinCoreElements.DATE);
 		for (EdalDate date : events) {
-			doc.add(new TextField(IndexSearchConstants.STARTDATE,Integer.toString(date.getStartDate().get(Calendar.YEAR)),Store.YES));
+			doc.add(new TextField(EnumIndexField.STARTDATE.value(),Integer.toString(date.getStartDate().get(Calendar.YEAR)),Store.YES));
 			if (date instanceof EdalDateRange) {
-				doc.add(new TextField(IndexSearchConstants.ENDDATE,
+				doc.add(new TextField(EnumIndexField.ENDDATE.value(),
 						Integer.toString(((EdalDateRange) date).getEndDate().get(Calendar.YEAR)),Store.YES));
 			}
 		}
 		if (metadata.getElementValue(EnumDublinCoreElements.FORMAT) instanceof EmptyMetaData) {
-			doc.add(new TextField(IndexSearchConstants.MIMETYPE, NONE, Store.YES));
-			doc.add(new TextField(IndexSearchConstants.TYPE, NONE, Store.YES));
+			doc.add(new TextField(EnumIndexField.MIMETYPE.value(), NONE, Store.YES));
+			doc.add(new TextField(EnumIndexField.TYPE.value(), NONE, Store.YES));
 		} else {
-			doc.add(new TextField(IndexSearchConstants.MIMETYPE,
+			doc.add(new TextField(EnumIndexField.MIMETYPE.value(),
 					getString(((DataFormat) metadata.getElementValue(EnumDublinCoreElements.FORMAT)).getMimeType()), Store.YES));
-			doc.add(new TextField(IndexSearchConstants.TYPE, metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
+			doc.add(new TextField(EnumIndexField.TYPE.value(), metadata.getElementValue(EnumDublinCoreElements.TYPE).toString(), Store.YES));
 		}		
 		StringJoiner allFieldsJoiner = new StringJoiner(DELIMITER);
 		for(IndexableField field : doc.getFields()){	
 			allFieldsJoiner.add(field.stringValue());
 		}
-		doc.add(new TextField(IndexSearchConstants.ALL, allFieldsJoiner.toString(),Store.YES));
-		doc.add(new StringField(IndexSearchConstants.VERSIONID, Integer.toString(version.getId()), Store.YES));
-		doc.add(new StringField(IndexSearchConstants.PRIMARYENTITYID, version.getPrimaryEntityId(),Store.YES));
-		doc.add(new StringField(IndexSearchConstants.REVISION,Long.toString(version.getRevision()), Store.YES));
+		doc.add(new TextField(EnumIndexField.ALL.value(), allFieldsJoiner.toString(),Store.YES));
+		doc.add(new StringField(EnumIndexField.VERSIONID.value(), Integer.toString(version.getId()), Store.YES));
+		doc.add(new StringField(EnumIndexField.PRIMARYENTITYID.value(), version.getPrimaryEntityId(),Store.YES));
+		doc.add(new StringField(EnumIndexField.REVISION.value(),Long.toString(version.getRevision()), Store.YES));
 		builder.setLength(0);
 		Calendar cd = version.getCreationDate();
 		//important to access the related local file for content indexing if this Version belongs to a file
-		doc.add(new StringField(IndexSearchConstants.CREATION_DATE, 
+		doc.add(new StringField(EnumIndexField.CREATION_DATE.value(), 
 				builder.append(cd.get(Calendar.YEAR)).append(HYPHEN).append(cd.get(Calendar.MONTH))
 				.append(HYPHEN).append(cd.get(Calendar.DAY_OF_MONTH)).append(HYPHEN).append(cd.get(Calendar.HOUR_OF_DAY))
 				.append(HYPHEN).append(cd.get(Calendar.MINUTE)).toString(),Store.YES));

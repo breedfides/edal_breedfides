@@ -522,7 +522,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	}else {
 	    		luceneString = dataFormat.getMimeType();
 	    	}
-			QueryParser parser = new QueryParser(IndexSearchConstants.MIMETYPE, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.MIMETYPE.value(), new StandardAnalyzer());
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(QueryParser.escape(luceneString));
 	        ScoreDoc[] hits2;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
@@ -586,7 +586,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser(IndexSearchConstants.TYPE, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.TYPE.value(), new StandardAnalyzer());
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(dataType.getDataType().toString());
 	        ScoreDoc[] hits2;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
@@ -931,7 +931,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser(IndexSearchConstants.SIZE, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.SIZE.value(), new StandardAnalyzer());
 			String luceneString;
 			if(fuzzy) {
 	    		luceneString = Long.toString(data.getFileSize())+"~";
@@ -999,7 +999,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser(IndexSearchConstants.LANGUAGE, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.LANGUAGE.value(), new StandardAnalyzer());
 			String luceneString;
 			if(fuzzy) {
 				luceneString = data.getLanguage().toString()+"~";
@@ -1081,8 +1081,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				e.printStackTrace();
 			}
 			StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
-			QueryParser queryAlgorithm = new QueryParser(IndexSearchConstants.ALGORITHM,standardAnalyzer);
-			QueryParser queryCheckSum = new QueryParser(IndexSearchConstants.CHECKSUM,standardAnalyzer);
+			QueryParser queryAlgorithm = new QueryParser(EnumIndexField.ALGORITHM.value(),standardAnalyzer);
+			QueryParser queryCheckSum = new QueryParser(EnumIndexField.CHECKSUM.value(),standardAnalyzer);
 			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 			booleanQuery.add(queryAlgorithm.parse(data.getAlgorithm()), BooleanClause.Occur.MUST);
 		    booleanQuery.add(queryCheckSum.parse(data.getCheckSum()), BooleanClause.Occur.MUST);
@@ -1264,7 +1264,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 		   //create the BooleanQuery query object
-		   org.apache.lucene.search.Query query = LongPoint.newExactQuery(IndexSearchConstants.STARTDATE, date.getTimeInMillis());
+		   org.apache.lucene.search.Query query = LongPoint.newExactQuery(EnumIndexField.STARTDATE.value(), date.getTimeInMillis());
 
 		   //do the search
 			try {
@@ -1478,8 +1478,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 		   //create the BooleanQuery query object
-		   org.apache.lucene.search.Query start = LongPoint.newExactQuery(IndexSearchConstants.STARTDATE, dateStart.getTimeInMillis());
-		   org.apache.lucene.search.Query end = LongPoint.newExactQuery(IndexSearchConstants.ENDDATE, dateEnd.getTimeInMillis());
+		   org.apache.lucene.search.Query start = LongPoint.newExactQuery(EnumIndexField.STARTDATE.value(), dateStart.getTimeInMillis());
+		   org.apache.lucene.search.Query end = LongPoint.newExactQuery(EnumIndexField.ENDDATE.value(), dateEnd.getTimeInMillis());
 		   BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 		   booleanQuery.add(start, BooleanClause.Occur.MUST);
 		    booleanQuery.add(end, BooleanClause.Occur.MUST);
@@ -1552,7 +1552,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
 	    	//Search Documents with Parsed Query
-			QueryParser parser = new QueryParser(IndexSearchConstants.IDENTIFIER, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.IDENTIFIER.value(), new StandardAnalyzer());
 			String luceneString;
 			if(fuzzy) {
 				luceneString = identifier.getIdentifier()+"~";
@@ -1684,7 +1684,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			    	IndexSearcher searcher = new IndexSearcher(reader);
 			    	
 			    	//Search Documents with Parsed Query
-					QueryParser parser = new QueryParser(IndexSearchConstants.RELATION, new StandardAnalyzer());
+					QueryParser parser = new QueryParser(EnumIndexField.RELATION.value(), new StandardAnalyzer());
 					String luceneString;
 					if(fuzzy) {
 						luceneString = id.getIdentifier()+"~";
@@ -1828,10 +1828,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				e1.printStackTrace();
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
-	    	String[] fields = {IndexSearchConstants.TITLE,IndexSearchConstants.DESCRIPTION,IndexSearchConstants.COVERAGE,IndexSearchConstants.IDENTIFIER,
-	    			IndexSearchConstants.SIZE,IndexSearchConstants.TYPE,IndexSearchConstants.LANGUAGE,IndexSearchConstants.PERSON,IndexSearchConstants.LEGALPERSON,
-	    			IndexSearchConstants.ALGORITHM,IndexSearchConstants.CHECKSUM,IndexSearchConstants.SUBJECT,
-	    			IndexSearchConstants.RELATION,IndexSearchConstants.MIMETYPE,IndexSearchConstants.STARTDATE,IndexSearchConstants.ENDDATE};
+	    	String[] fields = {EnumIndexField.TITLE.value(),EnumIndexField.DESCRIPTION.value(),EnumIndexField.COVERAGE.value(),EnumIndexField.IDENTIFIER.value(),
+	    			EnumIndexField.SIZE.value(),EnumIndexField.TYPE.value(),EnumIndexField.LANGUAGE.value(),EnumIndexField.PERSON.value(),EnumIndexField.LEGALPERSON.value(),
+	    			EnumIndexField.ALGORITHM.value(),EnumIndexField.CHECKSUM.value(),EnumIndexField.SUBJECT.value(),
+	    			EnumIndexField.RELATION.value(),EnumIndexField.MIMETYPE.value(),EnumIndexField.STARTDATE.value(),EnumIndexField.ENDDATE.value()};
 			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 				    new MultiFieldQueryParser(fields, new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
@@ -2177,7 +2177,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			if(buildedStr.length() == 0) {
 				return new ArrayList<Integer>();
 			}
-			QueryParser parser = new QueryParser(IndexSearchConstants.LEGALPERSON, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.LEGALPERSON.value(), new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 	        ScoreDoc[] hits2;
 			try {
@@ -2329,7 +2329,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			if(fuzzy) {
 				builder.append('~');
 			}
-			QueryParser parser = new QueryParser(IndexSearchConstants.PERSON, new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.PERSON.value(), new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(builder.toString());
 	        ScoreDoc[] hits2;
@@ -2503,9 +2503,9 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	//Search Documents with Parsed Query
 			org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser =
 				    new MultiFieldQueryParser(
-				    		new String[]{IndexSearchConstants.TITLE,IndexSearchConstants.DESCRIPTION,
-				    				IndexSearchConstants.TYPE,IndexSearchConstants.COVERAGE,
-				    				IndexSearchConstants.SUBJECT},
+				    		new String[]{EnumIndexField.TITLE.value(),EnumIndexField.DESCRIPTION.value(),
+				    				EnumIndexField.TYPE.value(),EnumIndexField.COVERAGE.value(),
+				    				EnumIndexField.SUBJECT.value()},
 				    		new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.OR_OPERATOR);
 			

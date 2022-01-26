@@ -78,6 +78,7 @@ import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
@@ -126,7 +127,7 @@ public class Search {
 			} else {
 				ScoreDoc bottomScoreDoc = null;
 				bottomScoreDoc = manager.searcher.search(new TermQuery(
-						new Term(IndexSearchConstants.DOCID, (String) requestObject.get("bottomResultId"))),
+						new Term(EnumIndexField.DOCID.value(), (String) requestObject.get("bottomResultId"))),
 						5).scoreDocs[0];
 				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
 				topDocs = manager.searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize * 3);
@@ -182,12 +183,12 @@ public class Search {
 				e.printStackTrace();
 			}
 			JSONObject obj = new JSONObject();
-			String type = doc.get(IndexSearchConstants.ENTITYTYPE);
+			String type = doc.get(EnumIndexField.ENTITYTYPE.value());
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class,
 					Integer.parseInt((doc.get(IndexSearchConstants.PUBLICID))));
 			if (reference.getAcceptedDate() == null) {
 				// if in Testmode, use creation year
-				obj.put("year", doc.get(IndexSearchConstants.STARTDATE));
+				obj.put("year", doc.get(EnumIndexField.STARTDATE.value()));
 			} else {
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			}
@@ -210,16 +211,16 @@ public class Search {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				String ext = doc.get(IndexSearchConstants.FILETYPE);
-				String link = doc.get(IndexSearchConstants.INTERNALID) + "/"
-						+ doc.get(IndexSearchConstants.PRIMARYENTITYID) + "/"
-						+ doc.get(IndexSearchConstants.REVISION);
+				String ext = doc.get(EnumIndexField.FILETYPE.value());
+				String link = doc.get(EnumIndexField.INTERNALID.value()) + "/"
+						+ doc.get(EnumIndexField.PRIMARYENTITYID.value()) + "/"
+						+ doc.get(EnumIndexField.REVISION.value());
 				PrimaryDataFileImplementation file = session.get(PrimaryDataFileImplementation.class,
-						doc.get(IndexSearchConstants.PRIMARYENTITYID));
+						doc.get(EnumIndexField.PRIMARYENTITYID.value()));
 				obj.put("link", link);
 				obj.put("fileName", file.toString());
-				obj.put("docId", doc.get(IndexSearchConstants.DOCID));
-				obj.put("size", doc.get(IndexSearchConstants.SIZE));
+				obj.put("docId", doc.get(EnumIndexField.DOCID.value()));
+				obj.put("size", doc.get(EnumIndexField.SIZE.value()));
 				obj.put("title", reference.getVersion().getMetaData().toString());
 
 				if (highlighter != null) {
@@ -254,7 +255,7 @@ public class Search {
 		int additionalPages;
 		JSONArray pageArray = new JSONArray();
 		JSONObject page = new JSONObject();
-		Set<String> set = Set.of(new String[] { IndexSearchConstants.DOCID });
+		Set<String> set = Set.of(new String[] { EnumIndexField.DOCID.value() });
 		if (pageArraySize == 0) {
 			page.put("bottomResult", null);
 			page.put("bottomResultScore", 0);
@@ -270,7 +271,7 @@ public class Search {
 					if (index < scoreDocs.length - 1) {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
-									.get(IndexSearchConstants.DOCID));
+									.get(EnumIndexField.DOCID.value()));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1);
 							page.put("index", i);
@@ -298,7 +299,7 @@ public class Search {
 					if (index < scoreDocs.length) {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
-									.get(IndexSearchConstants.DOCID));
+									.get(EnumIndexField.DOCID.value()));
 							page.put("bottomResultScore", scoreDocs[index].score);
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
@@ -318,7 +319,7 @@ public class Search {
 		result.put("pageArray", pageArray);
 		try {
 			result.put("bottomResult",
-					manager.searcher.doc(scoreDocs[pageSize - 1].doc).get(IndexSearchConstants.DOCID));
+					manager.searcher.doc(scoreDocs[pageSize - 1].doc).get(EnumIndexField.DOCID.value()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -400,7 +401,7 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = new QueryParser(IndexSearchConstants.ALL, analyzer);
+		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(), analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String type = ((String) jsonArray.get("type"));
 		String keyword = (String) jsonArray.get("searchterm");
@@ -426,7 +427,7 @@ public class Search {
 	}
 
 	public static JSONArray builQueryAndDrillDown(JSONObject json) {
-		QueryParser pars = new QueryParser(IndexSearchConstants.ALL,
+		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(),
 				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 		pars.setDefaultOperator(Operator.AND);
 		StringJoiner queryJoiner = new StringJoiner(" ");
@@ -436,7 +437,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(IndexSearchConstants.STARTDATE) || type.equals(IndexSearchConstants.ENDDATE)) {
+			if (type.equals(EnumIndexField.STARTDATE) || type.equals(EnumIndexField.ENDDATE)) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -444,15 +445,15 @@ public class Search {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(IndexSearchConstants.STARTDATE, lower, upper, false,
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false,
 						false);
-			} else if (type.equals(IndexSearchConstants.SIZE)) {
-				luceneQuery = TermRangeQuery.newStringRange(IndexSearchConstants.SIZE,
+			} else if (type.equals(EnumIndexField.SIZE)) {
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(IndexSearchConstants.FILETYPE)) {
+			} else if (type.equals(EnumIndexField.FILETYPE)) {
 				keyword.replace("\\", "");
-				String fileTypeQuery = IndexSearchConstants.FILETYPE + ":" + keyword;
+				String fileTypeQuery = EnumIndexField.FILETYPE + ":" + keyword;
 				try {
 					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
 				} catch (ParseException e) {
@@ -468,13 +469,13 @@ public class Search {
 		String hitType = (String) json.get("hitType");
 		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
 			luceneQuery = new TermQuery(
-					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.PUBLICREFERENCE));
+					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.PUBLICREFERENCE));
 		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
 			luceneQuery = new TermQuery(
-					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE));
+					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE));
 		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
 			luceneQuery = new TermQuery(
-					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.DIRECTORY));
+					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -484,7 +485,7 @@ public class Search {
 
 	public static JSONArray drillDown(String query) {
 		try {
-			QueryParser queryParser = new QueryParser(IndexSearchConstants.ALL,
+			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
 					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 			queryParser.setDefaultOperator(Operator.AND);
 			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
@@ -497,12 +498,12 @@ public class Search {
 
 			try {				
 				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.CREATORNAME));
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.CONTRIBUTORNAME));
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.SUBJECT));
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.TITLE));
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.DESCRIPTION));
-				results.add(facets.getTopChildren(5000, IndexSearchConstants.FILETYPE));
+				results.add(facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.CONTRIBUTORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.SUBJECT.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.TITLE.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
 			} catch (Exception e) {
 				DataManager.getSearchManager().release(manager);
 				return new JSONArray();
@@ -513,10 +514,10 @@ public class Search {
 				if (facet == null)
 					continue;
 				JSONObject jsonFacet = new JSONObject();
-				if (facet.dim.equals(IndexSearchConstants.CREATORNAME))
-					jsonFacet.put("category", IndexSearchConstants.PERSON);
-				else if (facet.dim.equals(IndexSearchConstants.CONTRIBUTORNAME))
-					jsonFacet.put("category", IndexSearchConstants.CONTRIBUTOR);
+				if (facet.dim.equals(EnumIndexField.CREATORNAME.value()))
+					jsonFacet.put("category", EnumIndexField.PERSON.value());
+				else if (facet.dim.equals(EnumIndexField.CONTRIBUTORNAME.value()))
+					jsonFacet.put("category", EnumIndexField.CONTRIBUTOR.value());
 				else
 					jsonFacet.put("category", facet.dim);
 				jsonFacet.put("sortedByHits", facet.labelValues);
@@ -535,15 +536,15 @@ public class Search {
 			FacetsConfig config = DataManager.getFacetsConfig();
 			FacetsCollector fc = new FacetsCollector();
 			BooleanQuery booleanQuery = new BooleanQuery.Builder()
-				    .add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE,IndexSearchConstants.FILE)), BooleanClause.Occur.SHOULD)
-				    .add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE,IndexSearchConstants.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),IndexSearchConstants.FILE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),IndexSearchConstants.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
 				    .build();
 			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
 			List<FacetResult> results = new ArrayList<>();
 			try {				
 				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, IndexSearchConstants.SIZE));
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, IndexSearchConstants.STARTDATE));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.SIZE.value()));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.STARTDATE.value()));
 			} catch (Exception e) {
 				e.printStackTrace();
 				DataManager.getSearchManager().release(manager);
@@ -555,7 +556,7 @@ public class Search {
 			for (FacetResult facet : results) {
 				if (facet == null)
 					continue;
-				if(facet.dim.equals(IndexSearchConstants.SIZE)) {
+				if(facet.dim.equals(EnumIndexField.SIZE.value())) {
 					long maxFileSize = 0;
 					for(LabelAndValue lav : facet.labelValues) {
 						long size = Long.valueOf(lav.label.replaceFirst("^0+(?!$)", ""));
@@ -564,7 +565,7 @@ public class Search {
 						}
 					}
 					result.put(Search.MAXFILESIZE, Long.toString(maxFileSize));
-				}else if(facet.dim.equals(IndexSearchConstants.STARTDATE)) {
+				}else if(facet.dim.equals(EnumIndexField.STARTDATE.value())) {
 					int minYear = Integer.MAX_VALUE;
 					int maxYear = 0;
 					for(LabelAndValue lav : facet.labelValues) {
@@ -598,7 +599,7 @@ public class Search {
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = whereToSearch.equals(IndexSearchConstants.CONTENT)
 				? new QueryParser(IndexSearchConstants.CONTENT, analyzer)
-				: new QueryParser(IndexSearchConstants.ALL, analyzer);
+				: new QueryParser(EnumIndexField.ALL.value(), analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
 		StringJoiner queryJoiner = new StringJoiner(" ");
@@ -628,7 +629,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(IndexSearchConstants.STARTDATE) || type.equals(IndexSearchConstants.ENDDATE)) {
+			if (type.equals(EnumIndexField.STARTDATE) || type.equals(EnumIndexField.ENDDATE)) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -636,12 +637,12 @@ public class Search {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				query = TermRangeQuery.newStringRange(IndexSearchConstants.STARTDATE, lower, upper, false, false);
-			} else if (type.equals(IndexSearchConstants.SIZE)) {
-				query = TermRangeQuery.newStringRange(IndexSearchConstants.SIZE,
+				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false, false);
+			} else if (type.equals(EnumIndexField.SIZE)) {
+				query = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(IndexSearchConstants.FILETYPE)) {
+			} else if (type.equals(EnumIndexField.FILETYPE)) {
 				QueryParser queryParser = new QueryParser(type, analyzer);
 				queryParser.setDefaultOperator(Operator.AND);
 				keyword.replace("\\", "");
@@ -660,12 +661,12 @@ public class Search {
 		String hitType = (String) jsonArray.get("hitType");
 		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
 			query = new TermQuery(
-					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.PUBLICREFERENCE));
+					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.PUBLICREFERENCE));
 		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
-			query = new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.FILE));
+			query = new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE));
 		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
 			query = new TermQuery(
-					new Term(IndexSearchConstants.ENTITYTYPE, IndexSearchConstants.DIRECTORY));
+					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -692,7 +693,7 @@ public class Search {
 	 */
 	public static JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
 		SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
-		Query query = new TermQuery(new Term(IndexSearchConstants.DOCID, doc));
+		Query query = new TermQuery(new Term(EnumIndexField.DOCID.value(), doc));
 		ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
 		JSONObject result = new JSONObject();
 		if (hits.length > 0) {
@@ -745,13 +746,13 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		Analyzer standardAnalyzer = new StandardAnalyzer(stopSet);
-		String[] fields = { IndexSearchConstants.TITLE, IndexSearchConstants.DESCRIPTION,
-				IndexSearchConstants.COVERAGE, IndexSearchConstants.IDENTIFIER, IndexSearchConstants.SIZE,
-				IndexSearchConstants.TYPE, IndexSearchConstants.LANGUAGE, IndexSearchConstants.PERSON,
-				IndexSearchConstants.LEGALPERSON, IndexSearchConstants.ALGORITHM, IndexSearchConstants.CHECKSUM,
-				IndexSearchConstants.SUBJECT, IndexSearchConstants.RELATION, IndexSearchConstants.MIMETYPE,
-				IndexSearchConstants.STARTDATE, IndexSearchConstants.ENDDATE, IndexSearchConstants.RELATIONTYPE,
-				IndexSearchConstants.RELATEDIDENTIFIERTYPE };
+		String[] fields = { EnumIndexField.TITLE.value(), EnumIndexField.DESCRIPTION.value(),
+				EnumIndexField.COVERAGE.value(), EnumIndexField.IDENTIFIER.value(), EnumIndexField.SIZE.value(),
+				EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.PERSON.value(),
+				EnumIndexField.LEGALPERSON.value(), EnumIndexField.ALGORITHM.value(), EnumIndexField.CHECKSUM.value(),
+				EnumIndexField.SUBJECT.value(), EnumIndexField.RELATION.value(), EnumIndexField.MIMETYPE.value(),
+				EnumIndexField.STARTDATE.value(), EnumIndexField.ENDDATE.value(), EnumIndexField.RELATIONTYPE.value(),
+				EnumIndexField.RELATEDIDENTIFIERTYPE.value() };
 		org.apache.lucene.queryparser.classic.MultiFieldQueryParser parser = new MultiFieldQueryParser(fields,
 				standardAnalyzer);
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
@@ -785,9 +786,9 @@ public class Search {
 //			e2.printStackTrace();
 //		}		
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-		QueryParser queryType = new QueryParser(IndexSearchConstants.CHECKSUM, standardAnalyzer);
+		QueryParser queryType = new QueryParser(EnumIndexField.CHECKSUM.value(), standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
-		booleanQuery.add(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, entityType)), Occur.FILTER);
+		booleanQuery.add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), entityType)), Occur.FILTER);
 		try {
 			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
 			ScoreDoc[] hits2 = manager.searcher.search(booleanQuery.build(), 50000).scoreDocs;
