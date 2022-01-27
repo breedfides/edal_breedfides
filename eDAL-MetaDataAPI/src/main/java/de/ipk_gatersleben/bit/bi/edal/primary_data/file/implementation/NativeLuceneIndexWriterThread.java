@@ -123,6 +123,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
+	public static final String NATIVE_INDEXER_LAST_ID = "last_id_publicreference.dat";
 	private static final String ID = "id";
 	private static final String DELIMITER = " ";
 	private static final String NONE = "none";
@@ -131,7 +132,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private IndexWriter writer = null;
 	protected int lastIndexedID = 0;
 
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID);
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID);
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(12, 5);
 
@@ -233,7 +234,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			}
 			try {
 				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), IndexSearchConstants.PUBLIC_LAST_ID).toFile());
+						Paths.get(this.indexDirectory.toString(), PublicVersionIndexWriterThread.PUBLIC_LAST_ID).toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 				oos.close();
@@ -258,7 +259,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		if (indexedObjects != 0) {
 			try {
 				FileOutputStream fos = new FileOutputStream(
-						Paths.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID).toFile());
+						Paths.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
 				oos.writeObject(this.getLastID());
 				oos.close();

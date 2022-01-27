@@ -68,7 +68,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.Calculate
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ListThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.RebuildIndexThread;

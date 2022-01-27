@@ -13,20 +13,40 @@
 package de.ipk_gatersleben.bit.bi.edal.data;
 
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.mail.internet.AddressException;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.TermQuery;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -41,49 +61,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifie
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
-import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-
-import org.junit.jupiter.api.Test;
 
 public class SearchTest extends EdalDefaultTestCase{
 	
@@ -109,7 +86,7 @@ public class SearchTest extends EdalDefaultTestCase{
 						this.configuration), EdalHelpers
 						.authenticateWinOrUnixOrMacUser());
 		map.put("existingQuery", "Subject:wheat");
-		map.put("hitType", IndexSearchConstants.PUBLICREFERENCE);
+		map.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		map.put("pageIndex", 0l);
 		map.put("pageArraySize", 0l);
 		map.put("pageSize", 10l);
@@ -122,17 +99,16 @@ public class SearchTest extends EdalDefaultTestCase{
 
 		
 		JSONObject result = Search.advancedSearch(json);
-		System.out.println(result.toJSONString());
 		//find 3 datasets
 		Assertions.assertEquals(3, result.get("hitSize"));
 		
-		json.put("hitType", IndexSearchConstants.INDIVIDUALFILE);
+		json.put("hitType", PublicVersionIndexWriterThread.FILE);
 		result = Search.advancedSearch(json);
 		//find 9 files
 		Assertions.assertEquals(9, result.get("hitSize"));
 		
-		json.put("whereToSearch", IndexSearchConstants.CONTENT);
-		json.put("existingQuery", new TermQuery(new Term(IndexSearchConstants.CONTENT,"test")).toString());
+		json.put("whereToSearch", EnumIndexField.CONTENT.value());
+		json.put("existingQuery", new TermQuery(new Term(EnumIndexField.CONTENT.value(),"test")).toString());
 		result = Search.advancedSearch(json);
 		//search for content
 		Assertions.assertEquals(9, result.get("hitSize"));
@@ -153,7 +129,7 @@ public class SearchTest extends EdalDefaultTestCase{
 			@Override
 			public void run() {
 				for(int i = 0; i < 5; i++) {
-					json.put("hitType", IndexSearchConstants.PUBLICREFERENCE);
+					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
 					json.put("whereToSearch", "Metadata");
 					json.put("existingQuery", "Title:test1");
 					JSONObject result = Search.advancedSearch(json);
@@ -163,7 +139,7 @@ public class SearchTest extends EdalDefaultTestCase{
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(1, result.get("hitSize"));
 					
-					json.put("hitType", IndexSearchConstants.INDIVIDUALFILE);
+					json.put("hitType", PublicVersionIndexWriterThread.FILE);
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(3, result.get("hitSize"));
 					
@@ -172,7 +148,7 @@ public class SearchTest extends EdalDefaultTestCase{
 					Assertions.assertEquals(9, result.get("hitSize"));
 					
 					json.put("existingQuery", "Content:test");
-					json.put("whereToSearch", IndexSearchConstants.CONTENT);
+					json.put("whereToSearch", EnumIndexField.CONTENT.value());
 					result = Search.advancedSearch(json);
 					Assertions.assertEquals(9, result.get("hitSize"));
 				}

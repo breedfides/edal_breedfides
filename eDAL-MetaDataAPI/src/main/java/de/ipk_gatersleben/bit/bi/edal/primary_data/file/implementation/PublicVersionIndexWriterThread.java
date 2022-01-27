@@ -80,19 +80,27 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  */
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
-	private static final String INTERNAL_ID = "internalID";
+	private final String INTERNAL_ID = "internalID";
 
-	private static final String SEPERATOR = "/";
+	private final String SEPERATOR = "/";
 
-	private static final String HYPHEN = "-";
+	private final String HYPHEN = "-";
 
-	private static final String PARENTDIR = "parentdir";
+	private final String PARENTDIR = "parentdir";
 
-	private static final String IDENTIFIER_TYPE = "identifierType";
+	private final String IDENTIFIER_TYPE = "identifierType";
 
-	private static final String PUBLICATION_STATUS = "publicationStatus";
+	private final String PUBLICATION_STATUS = "publicationStatus";
 
-	private static final String ID = "id";
+	private final String ID = "id";
+	
+	public static final String FILE = "file";
+	
+	public static final String PUBLICREFERENCE = "dataset";
+	
+	public static final String DIRECTORY = "directory";	
+	
+	public static final String PUBLIC_LAST_ID = "last_id_publicreference.dat";
 
 	/** The max number of bytes for the indexing of file content **/
 	private final int MAX_DOC_SIZE = 100 * 1024 * 1024;
@@ -126,7 +134,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private final int DIRECTORY_FETCH_SIZE = (int) Math.pow(10, 5);
 
 	private DirectoryReader directoryReader;
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), IndexSearchConstants.PUBLIC_LAST_ID);
+	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), PUBLIC_LAST_ID);
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer, DirectoryTaxonomyWriter taxoWriter) {
@@ -272,7 +280,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 				try {
 					FileOutputStream fos = new FileOutputStream(Paths
-							.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID).toFile());
+							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
 							.getImplProv()).getIndexThread()).getLastID());
@@ -287,7 +295,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 								+ df.format(new Date(queryTime)));
 				try {
 					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), IndexSearchConstants.PUBLIC_LAST_ID).toFile());
+							Paths.get(this.indexDirectory.toString(), PublicVersionIndexWriterThread.PUBLIC_LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 					oos.close();
@@ -403,7 +411,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //		DataManager.getImplProv().getLogger().info(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 //		this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 		// index a new PublicReference version
-		this.indexEntityVersion(parentDirectoryId, session, pubRef, internalId, IndexSearchConstants.PUBLICREFERENCE,
+		this.indexEntityVersion(parentDirectoryId, session, pubRef, internalId, PublicVersionIndexWriterThread.PUBLICREFERENCE,
 				REVISION_TYPE_PUBLICREFERENCE);
 		Stack<String> stack = new Stack<>();
 		stack.add(parentDirectoryId);
@@ -425,7 +433,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				while (primDirs.next()) {
 					lastId = primDirs.getString(0);
 					stack.add(lastId);
-					this.indexEntityVersion(lastId, session, pubRef, internalId, IndexSearchConstants.INDIVIDUALFILE,
+					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.FILE,
 							REVISION_TYPE_DIRECTORY);
 					count++;
 				}
@@ -440,7 +448,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				count = 0;
 				while (primFiles.next()) {
 					lastId = primFiles.getString(0);
-					this.indexEntityVersion(lastId, session, pubRef, internalId, IndexSearchConstants.INDIVIDUALFILE,
+					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.FILE,
 							REVISION_TYPE_FILE);
 					count++;
 				}
@@ -506,9 +514,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				StringBuilder docIDBuilder = new StringBuilder(doc.get(EnumIndexField.PRIMARYENTITYID.value()))
 						.append(HYPHEN).append(revision);
 				doc.add(new StringField(EnumIndexField.DOCID.value(), docIDBuilder.toString(), Store.YES));
-				if (entityType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
+				if (entityType.equals(FILE)) {
 					if (revision == REVISION_TYPE_FILE) {
-						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE, Store.YES));
+						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE, Store.YES));
 						// skip this field, if file has no extension
 						if (filetype != null && !filetype.isEmpty()) {
 							doc.add(new TextField(EnumIndexField.FILETYPE.value(), filetype, Store.YES));
@@ -539,13 +547,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 							fileSize = -1;
 						}
 					} else if (revision == REVISION_TYPE_DIRECTORY) {
-						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY,
+						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY,
 								Store.YES));
 					}
 				} else {
 					doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
 				}
-				doc.add(new StringField(IndexSearchConstants.PUBLICID, String.valueOf(pubRef), Store.YES));
+				doc.add(new StringField(EnumIndexField.PUBLICID.value(), String.valueOf(pubRef), Store.YES));
 				this.writer.addDocument(config.build(taxoWriter, doc));
 				this.indexedVersions++;
 				this.filesCounter++;
@@ -562,7 +570,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				this.taxoWriter.commit();
 				try {
 					FileOutputStream fos = new FileOutputStream(Paths
-							.get(this.indexDirectory.toString(), IndexSearchConstants.NATIVE_INDEXER_LAST_ID).toFile());
+							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
 							.getImplProv()).getIndexThread()).getLastID());
@@ -578,7 +586,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			if (indexedVersions > 0 && pubRef > PublicVersionIndexWriterThread.getLastID()) {
 				try {
 					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), IndexSearchConstants.PUBLIC_LAST_ID).toFile());
+							Paths.get(this.indexDirectory.toString(), PublicVersionIndexWriterThread.PUBLIC_LAST_ID).toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
 					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
 					oos.close();
@@ -612,14 +620,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					// if last appended char is a whitespace or if no whitespace found.. just store
 					// the string in a content field
 					if (pos == builder.length() - 1 || pos < 1) {
-						doc.add(new TextField(IndexSearchConstants.CONTENT, builder.toString(), Store.YES));
+						doc.add(new TextField(EnumIndexField.CONTENT.value(), builder.toString(), Store.YES));
 						builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 						pos = -1;
 					} else {
 						// split up the last part of the string to the last whitespace for a clean cut
 						// between stored Fields
 						String builderString = builder.toString();
-						doc.add(new TextField(IndexSearchConstants.CONTENT, builderString.substring(0, pos),
+						doc.add(new TextField(EnumIndexField.CONTENT.value(), builderString.substring(0, pos),
 								Store.YES));
 						builder = new StringBuilder(IndexWriter.MAX_STORED_STRING_LENGTH);
 						builder.append(builderString.substring(pos));
@@ -632,7 +640,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				}
 			}
 			if (builder.length() > 0) {
-				doc.add(new TextField(IndexSearchConstants.CONTENT, builder.toString(), Store.YES));
+				doc.add(new TextField(EnumIndexField.CONTENT.value(), builder.toString(), Store.YES));
 			}
 			in.close();
 		}

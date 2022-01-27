@@ -306,7 +306,7 @@ let EdalReport = new function() {
             $("#report thead").empty();
             if(requestData.hitType == "dataset"){
               self.renderDatatableReports(self.reportColumns);
-            }else if(requestData.hitType == "singledata"){
+            }else if(requestData.hitType == "file"){
               if(data.hitSize > 0 && data.results[0].highlight != null){
                 self.renderDatatableReports(self.fileColumnsWithHighlights);
               }else{
@@ -457,7 +457,7 @@ let EdalReport = new function() {
         let tempList = facet.sortedByHits;
         //facet for filetypes ? -> fill select with values
         if(facet.category == "Filetype"){
-          if(self.currentRequestData["hitType"] == "singledata"){
+          if(self.currentRequestData["hitType"] == "file"){
             //reset select values
             var select = document.getElementById("suffixesSelect");
             select.innerHTML = "";
@@ -560,7 +560,6 @@ let EdalReport = new function() {
         radioButton.onclick = function(){
           unorderedList.innerHTML = "";
           if(!self.terms[type].sortedByNames){
-            console.log("need to sort faceted terms..");
             const sorted = [...terms].sort((a, b) => {
                 if (a.label > b.label)
                     return 1;
@@ -752,7 +751,7 @@ let EdalReport = new function() {
         $(tableid + " thead").empty();
         if(currentRequestData.hitType == "dataset"){
           self.renderDatatableReports(self.reportColumns);
-        }else if(currentRequestData.hitType == "singledata"){
+        }else if(currentRequestData.hitType == "file"){
           if(data.hitSize > 0 && data.results[0].highlight != null){
             self.renderDatatableReports(self.fileColumnsWithHighlights);
           }else{
@@ -780,7 +779,7 @@ let EdalReport = new function() {
           this.filters.push({"type":STARTDATE,"lower":lowbound,"upper":highbound,"fuzzy":false,"Occur":"And"});
         }
       }
-      if(this.currentRequestData.hitType == "singledata"){
+      if(this.currentRequestData.hitType == "file"){
         document.getElementById("suffixesSelect").disabled = false;
         $('.opacity-change').css('opacity','1');
         $('#slider-filesize').slider("enable");
@@ -859,7 +858,6 @@ let EdalReport = new function() {
             var units_array = ["B",...self.units];
             var byteVal = 0;
             var maxSizeArr = self.niceBytesArray(maxFileSize);
-            console.log(maxSizeArr);
             loop:
             for(i = 0; i < 4; i++){
               for(j = 0; j < 10; j++){

@@ -44,6 +44,8 @@ public enum EnumIndexField {
 		ENTITYID("entityId"),
 		PRIMARYENTITYID("associatedPrimaryEntityID"),
 		REVISION("revision"),
+		CONTENT("Content"),
+		PUBLICID("PublicReference"),
 		ENTITYTYPE("entityType");
 	 
 	    private String value;

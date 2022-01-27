@@ -11,18 +11,7 @@
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
-/**
- * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
- *
- * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
- * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
- * documentation material. This means, you must give appropriate credit, provide a link to the license, and indicate
- * if changes were made. You are free to copy and redistribute e!DAL in any medium or format. You are also free to
- * adapt, remix, transform, and build upon e!DAL for any purpose, even commercially.
- *
- *  Contributors:
- *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
- */
+
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,7 +33,6 @@ import org.json.simple.JSONObject;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.sample.Search;
@@ -59,7 +47,7 @@ public class EdalMessageSearchByKeyword {
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
-		HashSet<Integer> ids = Search.searchByKeyword(keyword, false, IndexSearchConstants.PUBLICREFERENCE);
+		HashSet<Integer> ids = Search.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		JSONArray finalArray = new JSONArray();
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		for(Integer id : ids) {
@@ -89,7 +77,7 @@ public class EdalMessageSearchByKeyword {
 	@Path("/{keyword}/fuzzy")
 	@Produces(MediaType.APPLICATION_JSON)
 	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
-		return Search.searchByKeyword(keyword, true, IndexSearchConstants.PUBLICREFERENCE);
+		return Search.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 	}
 
 }

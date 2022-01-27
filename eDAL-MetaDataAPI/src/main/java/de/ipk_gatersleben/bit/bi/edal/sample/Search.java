@@ -80,7 +80,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.IndexSearchConstants;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
@@ -90,6 +89,11 @@ public class Search {
 	public static final String MINYEAR = "minYear";
 	public static final String MAXYEAR = "maxYear";
 	public static final String MAXFILESIZE = "maxSize";
+	private static final String[] METADATAFIELDS = { EnumIndexField.TITLE.value(), EnumIndexField.SIZE.value(),
+			EnumIndexField.VERSIONID.value(), EnumIndexField.ENTITYID.value(), EnumIndexField.PRIMARYENTITYID.value(),
+			EnumIndexField.ENTITYTYPE.value(), EnumIndexField.DOCID.value(),EnumIndexField.PUBLICID.value(),
+			EnumIndexField.REVISION.value(), EnumIndexField.INTERNALID.value(),EnumIndexField.CONTENT.value(),
+			EnumIndexField.FILETYPE.value() };
 
 	@SuppressWarnings("unchecked")
 	public static JSONObject advancedSearch(JSONObject requestObject) {
@@ -151,8 +155,8 @@ public class Search {
 		String whereToSearch = (String) requestObject.get("whereToSearch");
 		Highlighter highlighter = null;
 		Analyzer analyzer = null;
-		if (whereToSearch != null && whereToSearch.equals(IndexSearchConstants.CONTENT)
-				&& buildedQuery.toString().contains(IndexSearchConstants.CONTENT)) {
+		if (whereToSearch != null && whereToSearch.equals(EnumIndexField.CONTENT.value())
+				&& buildedQuery.toString().contains(EnumIndexField.CONTENT.value())) {
 			// prepare highlighting
 			analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer();
 			Query contentQuery = extractContentQuery((String) requestObject.get("existingQuery"), (JSONArray) requestObject.get("queries"));
@@ -174,7 +178,7 @@ public class Search {
 			pageSize = ((int) (long) scoreDocs.length);
 		}
 		Document doc = null;
-		Set<String> fields = Set.of(IndexSearchConstants.METADATAFIELDS);
+		Set<String> fields = Set.of(Search.METADATAFIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = manager.searcher.doc(scoreDocs[i].doc, fields);
@@ -185,7 +189,7 @@ public class Search {
 			JSONObject obj = new JSONObject();
 			String type = doc.get(EnumIndexField.ENTITYTYPE.value());
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class,
-					Integer.parseInt((doc.get(IndexSearchConstants.PUBLICID))));
+					Integer.parseInt((doc.get(EnumIndexField.PUBLICID.value()))));
 			if (reference.getAcceptedDate() == null) {
 				// if in Testmode, use creation year
 				obj.put("year", doc.get(EnumIndexField.STARTDATE.value()));
@@ -193,7 +197,7 @@ public class Search {
 				obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
 			}
 
-			if (type.equals(IndexSearchConstants.PUBLICREFERENCE)) {
+			if (type.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
 				try {
 					obj.put("doi", reference.getAssignedID());
 				} catch (PublicReferenceException e) {
@@ -225,21 +229,21 @@ public class Search {
 
 				if (highlighter != null) {
 					try {
-						String highlight = highlighter.getBestFragment(analyzer, IndexSearchConstants.CONTENT,
-								doc.get(IndexSearchConstants.CONTENT));
+						String highlight = highlighter.getBestFragment(analyzer, EnumIndexField.CONTENT.value(),
+								doc.get(EnumIndexField.CONTENT.value()));
 						if (highlight != null) {
 							obj.put("highlight", highlight);
 						} else {
-							obj.put("highlight", doc.get(IndexSearchConstants.CONTENT).substring(0, 100));
+							obj.put("highlight", doc.get(EnumIndexField.CONTENT.value()).substring(0, 100));
 						}
 					} catch (IOException | InvalidTokenOffsetsException e) {
-						obj.put("highlight", doc.get(IndexSearchConstants.CONTENT).substring(0, 100));
+						obj.put("highlight", doc.get(EnumIndexField.CONTENT.value()).substring(0, 100));
 					}
 				}
-				if (type.equals(IndexSearchConstants.FILE)) {
+				if (type.equals(PublicVersionIndexWriterThread.FILE)) {
 					obj.put("type", "File");
 					obj.put("ext", ext);
-				} else if (type.equals(IndexSearchConstants.DIRECTORY)) {
+				} else if (type.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 					obj.put("type", "Directory");
 					obj.put("ext", "");
 				}
@@ -353,7 +357,7 @@ public class Search {
 	 * @return A Query that only contains useful terms for highlighting
 	 */
 	private static Query extractContentQuery(String existingQuery, JSONArray jsonArray) {
-		QueryParser parser = new QueryParser(IndexSearchConstants.CONTENT, ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
 		parser.setDefaultOperator(Operator.AND);
 		StringJoiner contentQuery = new StringJoiner(" ");
 		String parsedQuery = "";
@@ -367,13 +371,13 @@ public class Search {
 					DataManager.getImplProv().getLogger().debug(e.getMessage());
 				}
 			}
-			if(parsedQuery.contains(IndexSearchConstants.CONTENT)) {
+			if(parsedQuery.contains(EnumIndexField.CONTENT.value())) {
 				contentQuery.add(parsedQuery);
 			}	
 		}
 		for(Object query : jsonArray) {
 			if(query instanceof String) {
-				if(((String)query).contains(IndexSearchConstants.CONTENT)) {
+				if(((String)query).contains(EnumIndexField.CONTENT.value())) {
 					contentQuery.add((String)query);
 				}
 			}
@@ -467,15 +471,15 @@ public class Search {
 			}
 		}
 		String hitType = (String) json.get("hitType");
-		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
+		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
 			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.PUBLICREFERENCE));
-		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.FILE)) {
 			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE));
-		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY));
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -536,8 +540,8 @@ public class Search {
 			FacetsConfig config = DataManager.getFacetsConfig();
 			FacetsCollector fc = new FacetsCollector();
 			BooleanQuery booleanQuery = new BooleanQuery.Builder()
-				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),IndexSearchConstants.FILE)), BooleanClause.Occur.SHOULD)
-				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),IndexSearchConstants.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.FILE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
 				    .build();
 			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
 			List<FacetResult> results = new ArrayList<>();
@@ -597,8 +601,8 @@ public class Search {
 		stopSet.addAll(defaultStopWords);
 		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = whereToSearch.equals(IndexSearchConstants.CONTENT)
-				? new QueryParser(IndexSearchConstants.CONTENT, analyzer)
+		QueryParser pars = whereToSearch.equals(EnumIndexField.CONTENT.value())
+				? new QueryParser(EnumIndexField.CONTENT.value(), analyzer)
 				: new QueryParser(EnumIndexField.ALL.value(), analyzer);
 		pars.setDefaultOperator(Operator.AND);
 		String existing = (String) jsonArray.get("existingQuery");
@@ -659,14 +663,14 @@ public class Search {
 		}
 
 		String hitType = (String) jsonArray.get("hitType");
-		if (hitType.equals(IndexSearchConstants.PUBLICREFERENCE)) {
+		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
 			query = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.PUBLICREFERENCE));
-		} else if (hitType.equals(IndexSearchConstants.INDIVIDUALFILE)) {
-			query = new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.FILE));
-		} else if (hitType.equals(IndexSearchConstants.DIRECTORY)) {
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.FILE)) {
+			query = new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
 			query = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), IndexSearchConstants.DIRECTORY));
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY));
 		} else {
 			return null;
 		}
@@ -699,25 +703,25 @@ public class Search {
 		if (hits.length > 0) {
 			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
 					.getAnalyzer();
-			QueryParser parser = new QueryParser(IndexSearchConstants.CONTENT, analyzer);
+			QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), analyzer);
 			Highlighter highlighter = new Highlighter(
 					new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"),
 					new QueryScorer(parser.parse(q)));
 			highlighter.setTextFragmenter(new SimpleFragmenter(300));// 48
 			Document document = manager.searcher.doc(hits[0].doc);
 			TokenStream tokenStream = TokenSources.getAnyTokenStream(manager.searcher.getIndexReader(), hits[0].doc,
-					IndexSearchConstants.CONTENT, analyzer);
+					EnumIndexField.CONTENT.value(), analyzer);
 			TextFragment[] fragments;
 			try {
 				fragments = highlighter.getBestTextFragments(tokenStream,
-						document.get(IndexSearchConstants.CONTENT), false, 10);
+						document.get(EnumIndexField.CONTENT.value()), false, 10);
 				List<String> snipets = new ArrayList<>();
 				for (TextFragment fragment : fragments) {
 					if (fragment.getScore() > 0.0) {
 						snipets.add(fragment.toString());
 					}
 				}
-				result.put(IndexSearchConstants.CONTENT, snipets);
+				result.put(EnumIndexField.CONTENT.value(), snipets);
 			} catch (IOException | InvalidTokenOffsetsException e) {
 				result.put("msg", "There was an Error, Document not found.");
 			}
@@ -801,7 +805,7 @@ public class Search {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				ids.add(Integer.parseInt((doc.get(IndexSearchConstants.PUBLICID))));
+				ids.add(Integer.parseInt((doc.get(EnumIndexField.PUBLICID.value()))));
 			}
 			return ids;
 		} catch (IOException e2) {
