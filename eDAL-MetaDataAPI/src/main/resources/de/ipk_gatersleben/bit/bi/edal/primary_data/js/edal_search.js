@@ -176,7 +176,7 @@ let EdalReport = new function() {
             width: "25%",
             class: "edal-report-doi",
             render: function (data, type, row) {
-                return '<a href="'+serverURL+'/DOI/'+row.doi+'" target="_blank">'+row.fileName+'</a>';
+                return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
             }
         },
         {

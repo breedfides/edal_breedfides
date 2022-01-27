@@ -14,38 +14,74 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 public enum EnumIndexField {
 
+		/** Metadata fields like EnumDublinCoreElements **/
 		TITLE("Title"),
+		
 		DESCRIPTION("Description"),
+		
 		COVERAGE("Coverage"),
+		
 		IDENTIFIER("Identifier"),
+		
 		RELATEDIDENTIFIERTYPE("RelatedIdentifierType"),
+		
 		RELATIONTYPE("RelationType"),
+		
 		SIZE("Size"),
+		
 		TYPE("Type"),
+		
 		LANGUAGE("Language"),
+		
 		ALGORITHM("Algorithm"),
+		
 		CHECKSUM("Checksum"),
+		
 		VERSIONID("versionID"),
+		
 		SUBJECT("Subject"),
+		
 		RELATION("Relation"),
+		
 		MIMETYPE("Mimetype"),
+		
 		STARTDATE("Startdate"),
+		
 		ENDDATE("Enddate"),
+		
 		PERSON("Creator"),
-		CONTRIBUTOR("Contributor"),
+		CONTRIBUTOR("Contribut"
+				+ "or"),
 		LEGALPERSON("Legalperson"),
+		
 		FILETYPE("Filetype"),
+		
 		CONTRIBUTORNAME("ContributorName"),
+		
 		CREATORNAME("CreatorName"),
+		
 		CREATION_DATE("VersionCreationDate"),
+		
 		ALL("Allfields"),
+		
+		
+		/** Used as landing page URL of a related PrimaryEntityFile**/
 		DOCID("docid"),
+		
+		
+		/** Internal document fields for example to filter results by type **/
 		INTERNALID("internalId"),
+		
 		ENTITYID("entityId"),
+		
 		PRIMARYENTITYID("associatedPrimaryEntityID"),
+		
 		REVISION("revision"),
+		
 		CONTENT("Content"),
+		
 		PUBLICID("PublicReference"),
+		
 		ENTITYTYPE("entityType");
 	 
 	    private String value;

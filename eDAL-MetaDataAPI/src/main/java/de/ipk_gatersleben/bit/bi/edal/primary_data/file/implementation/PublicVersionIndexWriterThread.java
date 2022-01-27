@@ -80,6 +80,12 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
  */
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
+	private static final String PARENT_DIRECTORY = "parentDirectory";
+
+	private static final String REVISION = "revision";
+
+	private static final String PRIMARY_ENTITY_ID = "primaryEntityId";
+
 	private final String INTERNAL_ID = "internalID";
 
 	private final String SEPERATOR = "/";
@@ -104,14 +110,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	/** The max number of bytes for the indexing of file content **/
 	private final int MAX_DOC_SIZE = 100 * 1024 * 1024;
-
-	/**
-	 * The revision type determines the url/path ending and is needed to resolve the
-	 * correct "URL" at search time
-	 **/
-	private final short REVISION_TYPE_FILE = 1;
-	private final short REVISION_TYPE_DIRECTORY = 0;
-	private final short REVISION_TYPE_PUBLICREFERENCE = 2;
 
 	protected static int lastIndexedID = 0;
 	private Analyzer analyzer = null;
@@ -348,7 +346,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			DataManager.getImplProv().getLogger().info("Publicreferences that still have to be indexed " + l);
 		}
 	}
-
+	
+	/**
+	 * Fetches all children of a given type from a parent directory
+	 * @param primId The ID of the parent directory
+	 * @param session The Hibernate session
+	 * @param entityClass The desired child PrimaryEntity type
+	 * @param lowerBound The minimal ID.. if null the min ID is 0
+	 * @return A ScrollableResult iterator for the retrieved Child Ids
+	 */
 	private ScrollableResults getPrimaryDataFileIds(String primId, Session session, Class entityClass,
 			String lowerBound) {
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -359,13 +365,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		if (lowerBound != null) {
 			primaryEntityCriteria.where(criteriaBuilder.and(
 					criteriaBuilder.equal(
-							fileRoot.get("parentDirectory").get(PrimaryDataDirectoryImplementation.STRING_ID), primId),
+							fileRoot.get(PARENT_DIRECTORY).get(PrimaryDataDirectoryImplementation.STRING_ID), primId),
 					criteriaBuilder.equal(fileRoot.type(), entityClass), criteriaBuilder
 							.greaterThan(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), lowerBound)));
 		} else {
 			primaryEntityCriteria.where(criteriaBuilder.and(
 					criteriaBuilder.equal(
-							fileRoot.get("parentDirectory").get(PrimaryDataDirectoryImplementation.STRING_ID), primId),
+							fileRoot.get(PARENT_DIRECTORY).get(PrimaryDataDirectoryImplementation.STRING_ID), primId),
 					criteriaBuilder.equal(fileRoot.type(), entityClass)));
 		}
 		primaryEntityCriteria.orderBy(criteriaBuilder.asc(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID)));
@@ -379,7 +385,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * 
 	 * @param pubRef     The PublicReference of which the files are to be indexed
 	 * @param internalId The InternalId of the publicreference
-	 * @param session
+	 * @param session The given Hibernate session
 	 */
 	@SuppressWarnings("unchecked")
 	private void indexPublicReference(Integer pubRef, String internalId, Session session) {
@@ -395,7 +401,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		Subquery<String> sub = primaryEntityCriteria.subquery(String.class);
 		Root<PublicReferenceImplementation> subRoot = sub.from(PublicReferenceImplementation.class);
 		Join<PublicReferenceImplementation, PrimaryDataEntityVersionImplementation> join = subRoot.join("version");
-		sub.select(join.get("primaryEntityId"));
+		sub.select(join.get(PRIMARY_ENTITY_ID));
 		sub.where(criteriaBuilder.equal(subRoot.get(ID), pubRef));
 		primaryEntityCriteria.select(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID));
 		primaryEntityCriteria.where(fileRoot.in(sub));
@@ -411,8 +417,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //		DataManager.getImplProv().getLogger().info(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 //		this.indexLogger.debug(end+" "+(System.currentTimeMillis()-start)+" "+primId.getID()+" "+parentDirFile+" "+(primId.getID() == parentDirFile)+" nr1 publicReference "+pubRef);
 		// index a new PublicReference version
-		this.indexEntityVersion(parentDirectoryId, session, pubRef, internalId, PublicVersionIndexWriterThread.PUBLICREFERENCE,
-				REVISION_TYPE_PUBLICREFERENCE);
+		this.indexEntityVersion(parentDirectoryId, session, pubRef, internalId, PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		Stack<String> stack = new Stack<>();
 		stack.add(parentDirectoryId);
 		while (!stack.isEmpty()) {
@@ -433,8 +438,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				while (primDirs.next()) {
 					lastId = primDirs.getString(0);
 					stack.add(lastId);
-					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.FILE,
-							REVISION_TYPE_DIRECTORY);
+					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.DIRECTORY);
 					count++;
 				}
 				primDirs.close();
@@ -448,8 +452,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				count = 0;
 				while (primFiles.next()) {
 					lastId = primFiles.getString(0);
-					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.FILE,
-							REVISION_TYPE_FILE);
+					this.indexEntityVersion(lastId, session, pubRef, internalId, PublicVersionIndexWriterThread.FILE);
 					count++;
 				}
 				primFiles.close();
@@ -458,27 +461,29 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
-	private void indexEntityVersion(String file, Session session, Integer pubRef, String internalId, String entityType,
-			int revision) {
-		long start = System.currentTimeMillis();
+	/**
+	 * Indexes information of PrimaryEntityVersion, so that the associated File/Directory can be found for users
+	 * @param file The related PrimaryDataFile id
+	 * @param session The Hibernate session
+	 * @param pubRef The linked public dataset
+	 * @param internalId The internalId of the linked dataset
+	 * @param entityType The type of the associated PrimaryEntity
+	 * @param revision The revision
+	 */
+	private void indexEntityVersion(String file, Session session, Integer pubRef, String internalId, String entityType) {
+		
+		/** Fetch the PrimaryEntityVersion id associated with the given PrimaryDataFile id "file" **/
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
 		Root<PrimaryDataEntityVersionImplementation> root = criteriaQuery
 				.from(PrimaryDataEntityVersionImplementation.class);
 		criteriaQuery.select(root.get(ID));
-		Subquery<Long> sub = criteriaQuery.subquery(Long.class);
-		Root<PrimaryDataEntityVersionImplementation> subRoot = sub.from(PrimaryDataEntityVersionImplementation.class);
-		sub.select(criteriaBuilder.max(subRoot.get("revision")));
-		sub.where(criteriaBuilder.equal(subRoot.get("primaryEntityId"), file));
-		criteriaQuery.where(criteriaBuilder.and(criteriaBuilder.equal(root.get("revision"), sub),
-				criteriaBuilder.equal(root.get("primaryEntityId"), file)));
-		Integer version = session.createQuery(criteriaQuery).getSingleResult();
-		long end = System.currentTimeMillis() - start;
-		start = System.currentTimeMillis();
-//		NativeQuery nativeQuery = session.createNativeQuery("SELECT id FROM ENTITY_VERSIONS \r\n"
-//				+ "where primaryentityid =:file and revision = "
-//				+ "(select max(revision) from entity_versions where  primaryentityid =:file group by primaryentityid )");
-//		Integer version2 = (Integer) nativeQuery.setParameter("file", file).getSingleResult();
+		criteriaQuery.where(criteriaBuilder.equal(root.get(PRIMARY_ENTITY_ID), file));
+		criteriaQuery.orderBy(criteriaBuilder.desc(root.get(REVISION)));		
+		Integer version = session.createQuery(criteriaQuery).setMaxResults(1).getSingleResult();
+
+		
+		/** Fetch the indexed Document associated with the given PrimaryEntityVersion id "version" **/
 		try {
 			ScoreDoc[] versionHit = searcher.search(
 					new TermQuery(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version))), 1).scoreDocs;
@@ -511,48 +516,47 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				addFacets(doc);
 				writer.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
 				doc.add(new StringField(EnumIndexField.INTERNALID.value(), internalId, Store.YES));
+				doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
 				StringBuilder docIDBuilder = new StringBuilder(doc.get(EnumIndexField.PRIMARYENTITYID.value()))
-						.append(HYPHEN).append(revision);
-				doc.add(new StringField(EnumIndexField.DOCID.value(), docIDBuilder.toString(), Store.YES));
-				if (entityType.equals(FILE)) {
-					if (revision == REVISION_TYPE_FILE) {
-						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE, Store.YES));
-						// skip this field, if file has no extension
-						if (filetype != null && !filetype.isEmpty()) {
-							doc.add(new TextField(EnumIndexField.FILETYPE.value(), filetype, Store.YES));
-							doc.add(new FacetField(EnumIndexField.FILETYPE.value(), filetype));
-						}
-						long fileSize;
-						try {
-							fileSize = Long.parseLong(doc.get(EnumIndexField.SIZE.value()));
-							String mimeType[] = doc.get(EnumIndexField.MIMETYPE.value()).split(SEPERATOR);
-							if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain")
-									&& fileSize <= MAX_DOC_SIZE) {
-								String[] dateValues = doc.get(EnumIndexField.CREATION_DATE.value()).split(HYPHEN);
-								if (dateValues.length == 5) {
+						.append(HYPHEN);
+				if (entityType.equals(PublicVersionIndexWriterThread.FILE)) {
+					docIDBuilder.append(1);				
+					// skip this field, if file has no extension
+					if (filetype != null && !filetype.isEmpty()) {
+						doc.add(new TextField(EnumIndexField.FILETYPE.value(), filetype, Store.YES));
+						doc.add(new FacetField(EnumIndexField.FILETYPE.value(), filetype));
+					}
+					long fileSize;
+					try {
+						fileSize = Long.parseLong(doc.get(EnumIndexField.SIZE.value()));
+						String mimeType[] = doc.get(EnumIndexField.MIMETYPE.value()).split(SEPERATOR);
+						if (mimeType[0].toLowerCase().equals("text") && mimeType[1].toLowerCase().equals("plain")
+								&& fileSize <= MAX_DOC_SIZE) {
+							String[] dateValues = doc.get(EnumIndexField.CREATION_DATE.value()).split(HYPHEN);
+							if (dateValues.length == 5) {
 //									DataManager.getImplProv().getLogger().info("indexing content for:_ "
 //											+ doc.get("Title") + " size: " + doc.get(IndexSearchConstants.SIZE));
-									Path pathToFile = Paths.get(
-											((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
-													.toString(),
-											dateValues[0], dateValues[1], dateValues[2], dateValues[3], dateValues[4],
-											file + HYPHEN + doc.get(EnumIndexField.REVISION.value()) + ".dat");
-									indexFileContent(doc, pathToFile.toFile());
-								}
-
+								Path pathToFile = Paths.get(
+										((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
+												.toString(),
+										dateValues[0], dateValues[1], dateValues[2], dateValues[3], dateValues[4],
+										file + HYPHEN + doc.get(EnumIndexField.REVISION.value()) + ".dat");
+								indexFileContent(doc, pathToFile.toFile());
 							}
-						} catch (NumberFormatException e) {
-							e.printStackTrace();
-							this.indexLogger.debug("String conversion failed: " + e.getMessage());
-							fileSize = -1;
+
 						}
-					} else if (revision == REVISION_TYPE_DIRECTORY) {
-						doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY,
-								Store.YES));
+					} catch (NumberFormatException e) {
+						e.printStackTrace();
+						this.indexLogger.debug("String conversion failed: " + e.getMessage());
+						fileSize = -1;
 					}
-				} else {
-					doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
+				} else if(entityType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+					docIDBuilder.append(0);	
+				} else if(entityType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)){
+					docIDBuilder.append(2);	
 				}
+				//docID will be needed to resolve the correct link from a found version to the associated PrimaryDataFile landing page
+				doc.add(new StringField(EnumIndexField.DOCID.value(), docIDBuilder.toString(), Store.YES));
 				doc.add(new StringField(EnumIndexField.PUBLICID.value(), String.valueOf(pubRef), Store.YES));
 				this.writer.addDocument(config.build(taxoWriter, doc));
 				this.indexedVersions++;
