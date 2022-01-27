@@ -132,7 +132,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private IndexWriter writer = null;
 	protected int lastIndexedID = 0;
 
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID);
+	private final Path PATH_TO_LAST_ID = Paths.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID);
 	/** high value fetch objects faster, but more memory is needed */
 	final int fetchSize = (int) Math.pow(12, 5);
 
@@ -150,7 +150,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			this.indexLogger.debug("Error opening and closing the IndexReader: "+e.getMessage());
 		}
 		this.implementationProviderLogger.info("Number of docs at Startup: " + numberDocs);
-		Path parent = this.pathToLastId.getParent();
+		Path parent = this.PATH_TO_LAST_ID.getParent();
 
 		if (!Files.exists(parent)) {
 			try {
@@ -159,10 +159,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				this.indexLogger.debug("Error while creating Index Directory" + e.getMessage());
 			}
 		}
-		if (Files.exists(this.pathToLastId)) {
+		if (Files.exists(this.PATH_TO_LAST_ID)) {
 
 			try {
-				FileInputStream fis = new FileInputStream(this.pathToLastId.toFile());
+				FileInputStream fis = new FileInputStream(this.PATH_TO_LAST_ID.toFile());
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.setLastID((int) ois.readObject());
 				ois.close();
@@ -255,6 +255,10 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
+	/**
+	 * Updates the stored last ID
+	 * @param indexedObjects ID of the last indexed version
+	 */
 	private void updateLastIndexedID(int indexedObjects) {
 		if (indexedObjects != 0) {
 			try {
@@ -270,6 +274,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		}
 	}
 
+	/**
+	 * Creates a Document with the information of the provided PrimaryDataEntityVersionImplementation and adds it to the index
+	 * @param writer The given IndexWriter
+	 * @param version The given PrimaryDataEntityVersionImplementation
+	 * @throws MetaDataException
+	 */
 	private void indexVersion(IndexWriter writer, PrimaryDataEntityVersionImplementation version) throws MetaDataException {
 		MetaData metadata = version.getMetaData();
 		Document doc = new Document();
@@ -407,11 +417,21 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc = null;		
 	}
 
+	/**
+	 * Helper function to retrieve the contained String of an UntypedData object
+	 * @param data The given UntypedData
+	 * @return The extracted String
+	 */
 	private String getString(UntypedData data) {
 		String string = data.getString();
 		return string == null ? "" : string;
 	}
 
+	/**
+	 * Helper function to retrieve the contained String of an UntypedData object
+	 * @param data The given UntypedData
+	 * @return The extracted String
+	 */
 	private String getString(String string) {
 		return string == null ? "" : string;
 	}
@@ -450,17 +470,20 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
 	}
 	
-	protected void commitRequired() {
-		this.lastIDChanged = true;
-	}
-	
+	/**
+	 * Setter for the last indexed ID of this Thread
+	 * @param val version ID
+	 */
 	protected void setLastID(int val) {
 		this.lastIndexedID = val;
 	}
+	
+	/**
+	 * Getter for the last indexed ID of this Thread
+	 */
 	public int getLastID() {
 		return this.lastIndexedID;
 	}
-
 
 	@Override
 	public void run() {

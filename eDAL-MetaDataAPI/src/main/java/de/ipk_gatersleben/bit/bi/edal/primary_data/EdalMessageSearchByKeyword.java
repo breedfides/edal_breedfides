@@ -42,13 +42,22 @@ import javax.ws.rs.Produces;
 @Path("keywordsearch")
 public class EdalMessageSearchByKeyword {
 
+	private static final String LOCATIONS = "locations";
+	private static final String ACCESSES = "accesses";
+	private static final String DOWNLOADS = "downloads";
+	private static final String TITLE = "title";
+	/**
+	 * Search for indexed publicreferences
+	 * @param keyword The given search keyword
+	 * @return The hits wrapped as JSONObject in a JSONArray
+	 */
 	@GET
 	@Path("/{keyword}")
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
 		HashSet<Integer> ids = Search.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
-		JSONArray finalArray = new JSONArray();
+		JSONArray results = new JSONArray();
 		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
 		for(Integer id : ids) {
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
@@ -60,18 +69,23 @@ public class EdalMessageSearchByKeyword {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obj.put("title", reference.getVersion().getMetaData().toString());
+			obj.put(TITLE, reference.getVersion().getMetaData().toString());
 			String internalID = reference.getInternalID();
-			obj.put("downloads", String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
-			obj.put("accesses", String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
+			obj.put(DOWNLOADS, String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
+			obj.put(ACCESSES, String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
 			if(VeloCityHtmlGenerator.ipMap.get(internalID) != null) {
-				obj.put("locations",
+				obj.put(LOCATIONS,
 						GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
 			}
-			finalArray.add(obj);
+			results.add(obj);
 		}
-		return finalArray;
+		return results;
 	}
+	/**
+	 * Fuzzy Search for indexed publicreference 
+	 * @param keyword keyword The given search keyword
+	 * @return The hits wrapped as JSONObject in a JSONArray
+	 */
 	@GET
 	@ManagedAsync
 	@Path("/{keyword}/fuzzy")

@@ -60,6 +60,11 @@ import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 @Path("extendedSearch")
 public class EdalMessageExtendedSearch {
 
+	/**
+	 * Rest function to find indexed Files/datasets
+	 * @param json A container that shoul have specific Information
+	 * @return The found files/version information wrapped in a JSONArray
+	 */
 	@Path("/search")
 	@POST
 	@ManagedAsync
@@ -75,6 +80,14 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
+	/**
+	 * REST function to parse a String to a Lucene query
+	 * @param json The String to parse
+	 * @return The parsed Lucene query
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 * @throws IOException
+	 */
 	@Path("/parsequery")
 	@POST
 	@ManagedAsync
@@ -93,6 +106,11 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
+	/**
+	 * Drills down with a given query to return Lists of objects with [term/nubmer of hits] (Facets)
+	 * @param json The given query information
+	 * @return The facets
+	 */
 	@Path("/drillDown")
 	@POST
 	@ManagedAsync
@@ -107,21 +125,11 @@ public class EdalMessageExtendedSearch {
 		}
 	}
 	
-//	@SuppressWarnings("unchecked")
-//	@Path("/getTermLists")
-//	@POST
-//	@ManagedAsync
-//	@Produces(MediaType.APPLICATION_JSON)
-//	public JSONObject getTermLists() throws JsonParseException, JsonMappingException, IOException {
-//		JSONObject result = new JSONObject();
-//		result.put(MetaDataImplementation.PERSON, VeloCityHtmlGenerator.getCreators());
-//		result.put(MetaDataImplementation.CONTRIBUTOR, VeloCityHtmlGenerator.getContributors());
-//		result.put(MetaDataImplementation.SUBJECT, VeloCityHtmlGenerator.getSubjects());
-//		result.put(MetaDataImplementation.TITLE, VeloCityHtmlGenerator.getTitles());
-//		result.put(MetaDataImplementation.DESCRIPTION, VeloCityHtmlGenerator.getDescriptions());		
-//		return result;
-//	}
-	
+	/**
+	 * Finds and highlights sections that contain the given query term(s)
+	 * @param json Query information
+	 * @return The most relevant highlighted text sections
+	 */
 	@Path("/getHighlightedSections")
 	@POST
 	@ManagedAsync
