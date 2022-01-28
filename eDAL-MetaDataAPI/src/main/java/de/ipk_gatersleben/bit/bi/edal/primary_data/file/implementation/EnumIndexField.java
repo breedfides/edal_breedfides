@@ -50,8 +50,9 @@ public enum EnumIndexField {
 		ENDDATE("Enddate"),
 		
 		PERSON("Creator"),
-		CONTRIBUTOR("Contribut"
-				+ "or"),
+		
+		CONTRIBUTOR("Contributor"),
+		
 		LEGALPERSON("Legalperson"),
 		
 		FILETYPE("Filetype"),
@@ -66,23 +67,23 @@ public enum EnumIndexField {
 		
 		
 		/** Used as landing page URL of a related PrimaryEntityFile**/
-		DOCID("docid"),
+		DOCID("DocId"),
 		
 		
 		/** Internal document fields for example to filter results by type **/
-		INTERNALID("internalId"),
+		INTERNALID("InternalId"),
 		
-		ENTITYID("entityId"),
+		ENTITYID("EntityId"),
 		
-		PRIMARYENTITYID("associatedPrimaryEntityID"),
+		PRIMARYENTITYID("AssociatedPrimaryEntityID"),
 		
-		REVISION("revision"),
+		REVISION("Revision"),
 		
 		CONTENT("Content"),
 		
 		PUBLICID("PublicReference"),
 		
-		ENTITYTYPE("entityType");
+		ENTITYTYPE("EntityType");
 	 
 	    private String value;
 	 

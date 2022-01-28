@@ -118,9 +118,9 @@ public class EdalMessageExtendedSearch {
 	public JSONArray drillDown(String json) {
 		JSONParser parser = new JSONParser();
 		try {
-			return Search.builQueryAndDrillDown((JSONObject)parser.parse(json));
+			return Search.drillDown(Search.buildQueryFromJSON((JSONObject)parser.parse(json)));
 		} catch (Exception e) {
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error at REST drilldown: "+e.getMessage());
 			return new JSONArray();
 		}
 	}

@@ -95,6 +95,12 @@ public class Search {
 			EnumIndexField.REVISION.value(), EnumIndexField.INTERNALID.value(),EnumIndexField.CONTENT.value(),
 			EnumIndexField.FILETYPE.value() };
 
+	/**
+	 * Searches the index with the given query information
+	 * @param requestObject Wrapped query information: "existingQuery","hitType",
+	 *  	  "pageIndex", "pageArraySize", "filters", "queries", "bottomResultId", "displayedPage","whereToSearch"
+	 * @return The results and the associated facets wrapped in JSONObjects/Arrays
+	 */
 	@SuppressWarnings("unchecked")
 	public static JSONObject advancedSearch(JSONObject requestObject) {
 		JSONObject result = new JSONObject();
@@ -143,9 +149,8 @@ public class Search {
 			} else {
 				result.put("hitSize", requestObject.get("hitSize"));
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("IOexception on searching: "+e.getMessage());
 		}
 		result.put("hitSizeDescription", "");
 		result.put("displayedPage", (long) requestObject.get("displayedPage"));
@@ -183,8 +188,7 @@ public class Search {
 			try {
 				doc = manager.searcher.doc(scoreDocs[i].doc, fields);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("IOexception while searching a specific version: "+e.getMessage());
 			}
 			JSONObject obj = new JSONObject();
 			String type = doc.get(EnumIndexField.ENTITYTYPE.value());
@@ -201,8 +205,7 @@ public class Search {
 				try {
 					obj.put("doi", reference.getAssignedID());
 				} catch (PublicReferenceException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("no Publicreference ID set: "+e.getMessage());
 				}
 				obj.put("title", reference.getVersion().getMetaData().toString());
 				obj.put("fileName", "");
@@ -212,8 +215,7 @@ public class Search {
 				try {
 					obj.put("doi", reference.getAssignedID());
 				} catch (PublicReferenceException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("no Publicreference ID set: "+e.getMessage());
 				}
 				String ext = doc.get(EnumIndexField.FILETYPE.value());
 				String link = doc.get(EnumIndexField.INTERNALID.value()) + "/"
@@ -281,8 +283,7 @@ public class Search {
 							page.put("index", i);
 							pageArray.add(page);
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							DataManager.getImplProv().getLogger().debug("IOException when searching a specific version: "+e.getMessage());
 						}
 					} else {
 						break;
@@ -311,8 +312,7 @@ public class Search {
 							// DataManager.getImplProv().getLogger().info("Loaded doc Nr."+index+" title:
 							// "+doc.get(IndexSearchConstants.TITLE));
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							DataManager.getImplProv().getLogger().debug("IOException when searching a specific version: "+e.getMessage());
 						}
 					} else {
 						break;
@@ -325,8 +325,7 @@ public class Search {
 			result.put("bottomResult",
 					manager.searcher.doc(scoreDocs[pageSize - 1].doc).get(EnumIndexField.DOCID.value()));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("IOException when searching a specific version: "+e.getMessage());
 		} finally {
 			try {
 				if (manager != null) {
@@ -398,7 +397,12 @@ public class Search {
 		}
 	}
 
-	public static Query parseToLuceneQuery(JSONObject jsonArray) {
+	/**
+	 * Parses the given wrapped lucene field and the keyword to a valid lucene query
+	 * @param requestObject The query parts wrapped in a JSONObject
+	 * @return The parsed Lucene Query
+	 */
+	public static Query parseToLuceneQuery(JSONObject requestObject) {
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 		final CharArraySet stopSet = new CharArraySet(
 				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
@@ -407,8 +411,8 @@ public class Search {
 		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
 		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(), analyzer);
 		pars.setDefaultOperator(Operator.AND);
-		String type = ((String) jsonArray.get("type"));
-		String keyword = (String) jsonArray.get("searchterm");
+		String type = ((String) requestObject.get("type"));
+		String keyword = (String) requestObject.get("searchterm");
 		QueryParser queryParser = new QueryParser(type, analyzer);
 		queryParser.setDefaultOperator(Operator.AND);
 		try {
@@ -416,21 +420,26 @@ public class Search {
 				if (keyword.charAt(0) != '+' && keyword.charAt(0) != '-') {
 					keyword = '+' + keyword;
 				}
-				return pars.parse(QueryParser.escape((String) jsonArray.get("searchterm")));
+				return pars.parse(QueryParser.escape((String) requestObject.get("searchterm")));
 			}
-			if ((boolean) jsonArray.get("fuzzy")) {
+			if ((boolean) requestObject.get("fuzzy")) {
 				keyword = keyword + '~';
 			}
-			keyword = Occur.valueOf((String) jsonArray.get("occur")) + keyword;
+			keyword = Occur.valueOf((String) requestObject.get("occur")) + keyword;
 			return queryParser.parse(keyword);
 		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
 		}
 		return null;
 	}
 
-	public static JSONArray builQueryAndDrillDown(JSONObject json) {
+	/**
+	 * Builds the valid Query string from a JSONObject that contains the following inforamtion: 
+	 * "filters", "type", "searchterm", "hitType"
+	 * @param json The RequestObject that should contain query information and optional filters
+	 * @return A Lucene query string
+	 */
+	public static String buildQueryFromJSON(JSONObject json) {
 		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(),
 				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 		pars.setDefaultOperator(Operator.AND);
@@ -441,7 +450,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(EnumIndexField.STARTDATE) || type.equals(EnumIndexField.ENDDATE)) {
+			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -451,18 +460,17 @@ public class Search {
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false,
 						false);
-			} else if (type.equals(EnumIndexField.SIZE)) {
+			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(EnumIndexField.FILETYPE)) {
+			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
 				keyword.replace("\\", "");
 				String fileTypeQuery = EnumIndexField.FILETYPE + ":" + keyword;
 				try {
 					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
 				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
 				}
 			}
 			if (luceneQuery != null) {
@@ -484,9 +492,14 @@ public class Search {
 			return null;
 		}
 		queryJoiner.add(luceneQuery.toString());
-		return drillDown(queryJoiner.toString());
+		return queryJoiner.toString();
 	}
 
+	/**
+	 * Drills down on a Lucene query to obtain the related facets
+	 * @param query The query String
+	 * @return The facets wrapped as JSONObjects in a JSONArray
+	 */
 	public static JSONArray drillDown(String query) {
 		try {
 			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
@@ -534,6 +547,10 @@ public class Search {
 		return new JSONArray();
 	}
 	
+	/**
+	 * Getter for the MIN/MAX values of the creation dates and the max file size that are stored in the index
+	 * @return The MIN/MAX values wrapped in a <String, String>HashMap
+	 */
 	public static HashMap<String, String> getInitialFilterOptions() {
 		try {
 			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
@@ -592,6 +609,12 @@ public class Search {
 		return new HashMap<String, String>();
 	}
 
+	/**
+	 * Builds a valid Lucene Query from the given wrapped information
+	 * @param jsonArray The wrapped query information
+	 * @param result The JSONObject to which the parsedQuery will get attached
+	 * @return The parsed query
+	 */
 	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
 		String whereToSearch = (String) jsonArray.get("whereToSearch");
@@ -633,7 +656,7 @@ public class Search {
 			JSONObject queryData = (JSONObject) obj;
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(EnumIndexField.STARTDATE) || type.equals(EnumIndexField.ENDDATE)) {
+			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
 				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
@@ -642,22 +665,23 @@ public class Search {
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false, false);
-			} else if (type.equals(EnumIndexField.SIZE)) {
+			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				query = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
 						false, false);
-			} else if (type.equals(EnumIndexField.FILETYPE)) {
+			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
 				QueryParser queryParser = new QueryParser(type, analyzer);
 				queryParser.setDefaultOperator(Operator.AND);
 				keyword.replace("\\", "");
 				try {
 					query = queryParser.parse(QueryParser.escape(keyword));
 				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("Parsing error: "+e.getMessage());
 				}
 			}
-			DataManager.getImplProv().getLogger().debug(query.toString());
+			if(query != null) {
+				DataManager.getImplProv().getLogger().debug(query.toString());
+			}
 			queryJoiner.add(Occur.MUST.toString() + query.toString());
 			finalQuery.add(query, Occur.MUST);
 		}
@@ -732,6 +756,13 @@ public class Search {
 		return result;
 	}
 
+	/**
+	 * Searches on all Metadata Lucene fields with the given keyword/query string
+	 * @param keyword The given keyword
+	 * @param fuzzy if true it will run a fuzzy search
+	 * @param entityType The desired Entity types (dataset/file/directory)
+	 * @return The found version IDs wrapped in a HashSet
+	 */
 	public static HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
 		final long startTime = System.currentTimeMillis();
 		IndexReader reader = null;
@@ -774,21 +805,7 @@ public class Search {
 		if (luceneQuery == null) {
 			return new HashSet<>();
 		}
-
-		/** A possible way to search for Files AND rootDirectories */
-//		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-//		BooleanQuery.Builder subbooleanQuery = new BooleanQuery.Builder();
-//		QueryParser queryType = new QueryParser(IndexSearchConstants.CHECKSUM,standardAnalyzer);
-//		queryType.setDefaultOperator(QueryParser.OR_OPERATOR);
-//		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
-//		try {
-//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, entityType)).toString()), Occur.SHOULD);
-//			subbooleanQuery.add(queryType.parse(new TermQuery(new Term(IndexSearchConstants.ENTITYTYPE, PublicVersionIndexWriterThread.INDIVIDUALFILE)).toString()), Occur.SHOULD);
-//			booleanQuery.add(queryType.parse(subbooleanQuery.build().toString()),Occur.MUST);
-//		} catch (ParseException e2) {
-//			// TODO Auto-generated catch block
-//			e2.printStackTrace();
-//		}		
+	
 		BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 		QueryParser queryType = new QueryParser(EnumIndexField.CHECKSUM.value(), standardAnalyzer);
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
@@ -799,18 +816,12 @@ public class Search {
 			HashSet<Integer> ids = new HashSet<>();
 			for (int i = 0; i < hits2.length; i++) {
 				Document doc = null;
-				try {
-					doc = manager.searcher.doc(hits2[i].doc);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				doc = manager.searcher.doc(hits2[i].doc);
 				ids.add(Integer.parseInt((doc.get(EnumIndexField.PUBLICID.value()))));
 			}
 			return ids;
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("IOException when searching: "+e.getMessage());
 		}
 		return new HashSet<Integer>();
 	}
