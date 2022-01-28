@@ -86,10 +86,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVer
 
 public class Search {
 	
-	public static final String MINYEAR = "minYear";
-	public static final String MAXYEAR = "maxYear";
-	public static final String MAXFILESIZE = "maxSize";
-	private static final String[] METADATAFIELDS = { EnumIndexField.TITLE.value(), EnumIndexField.SIZE.value(),
+	public static final String MIN_YEAR = "minYear";
+	public static final String MAX_YEAR = "maxYear";
+	public static final String MAX_FILE_SIZE = "maxSize";
+	public static final String[] METADATA_FIELDS = { EnumIndexField.TITLE.value(), EnumIndexField.SIZE.value(),
 			EnumIndexField.VERSIONID.value(), EnumIndexField.ENTITYID.value(), EnumIndexField.PRIMARYENTITYID.value(),
 			EnumIndexField.ENTITYTYPE.value(), EnumIndexField.DOCID.value(),EnumIndexField.PUBLICID.value(),
 			EnumIndexField.REVISION.value(), EnumIndexField.INTERNALID.value(),EnumIndexField.CONTENT.value(),
@@ -178,7 +178,7 @@ public class Search {
 			pageSize = ((int) (long) scoreDocs.length);
 		}
 		Document doc = null;
-		Set<String> fields = Set.of(Search.METADATAFIELDS);
+		Set<String> fields = Set.of(Search.METADATA_FIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = manager.searcher.doc(scoreDocs[i].doc, fields);
@@ -568,7 +568,7 @@ public class Search {
 							maxFileSize = size;
 						}
 					}
-					result.put(Search.MAXFILESIZE, Long.toString(maxFileSize));
+					result.put(Search.MAX_FILE_SIZE, Long.toString(maxFileSize));
 				}else if(facet.dim.equals(EnumIndexField.STARTDATE.value())) {
 					int minYear = Integer.MAX_VALUE;
 					int maxYear = 0;
@@ -581,8 +581,8 @@ public class Search {
 							maxYear = year;
 						}
 					}
-					result.put(Search.MINYEAR, Integer.toString(minYear));
-					result.put(Search.MAXYEAR, Integer.toString(maxYear));
+					result.put(Search.MIN_YEAR, Integer.toString(minYear));
+					result.put(Search.MAX_YEAR, Integer.toString(maxYear));
 				}
 			}
 			return result;

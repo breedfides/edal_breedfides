@@ -524,12 +524,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	}
 			QueryParser parser = new QueryParser(EnumIndexField.MIMETYPE.value(), new StandardAnalyzer());
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(QueryParser.escape(luceneString));
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -588,12 +588,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    	//Search Documents with Parsed Query
 			QueryParser parser = new QueryParser(EnumIndexField.TYPE.value(), new StandardAnalyzer());
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(dataType.getDataType().toString());
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -939,12 +939,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	    		luceneString = Long.toString(data.getFileSize());
 			}
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -1007,12 +1007,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				luceneString = data.getLanguage().toString();
 			}
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -1102,12 +1102,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 //				luceneString = MetaDataImplementation.ALGORITHM+":"+data.getAlgorithm()+"~ "+MetaDataImplementation.CHECKSUM+":"+data.getCheckSum()+"~";
 //			}
 //	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 	    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 			try {
-				hits2 = searcher.search(booleanQuery.build(), 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(booleanQuery.build(), 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -1560,11 +1560,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				luceneString = identifier.getIdentifier();
 			}
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -1692,12 +1692,12 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						luceneString = id.getIdentifier();
 					}
 			        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-			        ScoreDoc[] hits2;
+			        ScoreDoc[] hits;
 			    	final ArrayList<Integer> versionIDList = new ArrayList<>();
 					try {
-						hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-				        for(int i = 0; i < hits2.length; i++) {
-				        	Document doc = searcher.doc(hits2[i].doc);
+						hits = searcher.search(luceneQuery, 10).scoreDocs;
+				        for(int i = 0; i < hits.length; i++) {
+				        	Document doc = searcher.doc(hits[i].doc);
 				        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 				        }
 					} catch (IOException e) {
@@ -1846,19 +1846,19 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			} catch (ParseException e1) {
 				e1.printStackTrace();
 			}
-	        ScoreDoc[] hits2 = null;
+	        ScoreDoc[] hits = null;
 			try {
-				hits2 = searcher.search(luceneQuery, 50000).scoreDocs;
+				hits = searcher.search(luceneQuery, 50000).scoreDocs;
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 	    	versionIDList = new ArrayList<>();
-			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits Size: "+hits2.length);
-	        for(int i = 0; i < hits2.length; i++) {
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits Size: "+hits.length);
+	        for(int i = 0; i < hits.length; i++) {
 	        	Document doc = null;
 				try {
-					doc = searcher.doc(hits2[i].doc);
+					doc = searcher.doc(hits[i].doc);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -2179,11 +2179,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			}
 			QueryParser parser = new QueryParser(EnumIndexField.LEGALPERSON.value(), new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 			try {
-				hits2 = searcher.search(parser.parse(builder.toString()), 5000).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(parser.parse(builder.toString()), 5000).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -2332,11 +2332,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			QueryParser parser = new QueryParser(EnumIndexField.PERSON.value(), new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(builder.toString());
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 			try {
-				hits2 = searcher.search(luceneQuery, 5000).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 5000).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
@@ -2516,11 +2516,11 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				luceneString = data.getString();
 			}
 	        org.apache.lucene.search.Query luceneQuery = parser.parse(luceneString);
-	        ScoreDoc[] hits2;
+	        ScoreDoc[] hits;
 			try {
-				hits2 = searcher.search(luceneQuery, 10).scoreDocs;
-		        for(int i = 0; i < hits2.length; i++) {
-		        	Document doc = searcher.doc(hits2[i].doc);
+				hits = searcher.search(luceneQuery, 10).scoreDocs;
+		        for(int i = 0; i < hits.length; i++) {
+		        	Document doc = searcher.doc(hits[i].doc);
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {

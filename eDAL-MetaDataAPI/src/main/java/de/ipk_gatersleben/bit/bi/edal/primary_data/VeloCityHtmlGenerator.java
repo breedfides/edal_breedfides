@@ -1541,11 +1541,11 @@ class VeloCityHtmlGenerator {
 		
 		HashMap<String, String> filterOptions = Search.getInitialFilterOptions();
 		
-		context.put("minYear", Integer.valueOf(filterOptions.get(Search.MINYEAR)));
+		context.put("minYear", Integer.valueOf(filterOptions.get(Search.MIN_YEAR)));
 		
-		context.put("maxYear", Integer.valueOf(filterOptions.get(Search.MAXYEAR)));
+		context.put("maxYear", Integer.valueOf(filterOptions.get(Search.MAX_YEAR)));
 		
-		context.put("maxFileSize", Long.valueOf(filterOptions.get(Search.MAXFILESIZE)));
+		context.put("maxFileSize", Long.valueOf(filterOptions.get(Search.MAX_FILE_SIZE)));
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		

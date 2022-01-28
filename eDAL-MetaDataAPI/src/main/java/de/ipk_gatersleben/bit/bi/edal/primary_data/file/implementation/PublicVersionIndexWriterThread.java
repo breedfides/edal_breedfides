@@ -81,56 +81,35 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	private static final String DAT = ".dat";
-
 	private static final String PLAIN = "plain";
-
 	private static final String TEXT = "text";
-
 	private static final String PARENT_DIRECTORY = "parentDirectory";
-
 	private static final String REVISION = "revision";
-
 	private static final String PRIMARY_ENTITY_ID = "primaryEntityId";
-
 	private final String INTERNAL_ID = "internalID";
-
 	private final String SEPERATOR = "/";
-
 	private final String HYPHEN = "-";
-
 	private final String IDENTIFIER_TYPE = "identifierType";
-
 	private final String PUBLICATION_STATUS = "publicationStatus";
-
 	private final String ID = "id";
 	
 	public static final String FILE = "file";
-	
-	public static final String PUBLICREFERENCE = "dataset";
-	
+	public static final String PUBLICREFERENCE = "dataset";	
 	public static final String DIRECTORY = "directory";	
 	
 	public static final String PUBLIC_LAST_ID = "last_id_publicreference.dat";
-
+	
 	/** The max number of bytes for the indexing of file content **/
 	private final int MAX_DOC_SIZE = 100 * 1024 * 1024;
-
-	protected static int lastIndexedID = 0;
-	
-	private Analyzer analyzer = null;
-	
+	protected static int lastIndexedID = 0;	
+	private Analyzer analyzer = null;	
 	private int indexedVersions = 0;
-	
 	private int flushedObjects = 0;
-	
-	private int filesCounter = 0;
-	
+	private int filesCounter = 0;	
 	private Boolean indexedData = false;
 	
-	private IndexWriter writer = null;
-	
-	private IndexSearcher searcher = null;
-	
+	private IndexWriter writer = null;	
+	private IndexSearcher searcher = null;	
 	private IndexReader reader = null;
 	
 	/**
@@ -190,7 +169,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 */
 	protected void executeIndexing() {
 		long indexingTime = 1;
-		long executeIndexingStart = 1;
 		if (!this.sessionFactory.isClosed() && !this.isFinishIndexing()) {
 
 			/**
@@ -218,7 +196,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			session.setCacheMode(CacheMode.IGNORE);
 			this.indexedVersions = 0;
 			this.flushedObjects = 0;
-			executeIndexingStart = System.currentTimeMillis();
 
 			final long queryStartTime = System.currentTimeMillis();
 
@@ -346,14 +323,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 */
 	private void countNewReferences(Session session) {
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-		CriteriaQuery<Long> criteriaLong = criteriaBuilder.createQuery(Long.class);
-		Root<PublicReferenceImplementation> root = criteriaLong.from(PublicReferenceImplementation.class);
-		criteriaLong.select(criteriaBuilder.count(root));
+		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
+		Root<PublicReferenceImplementation> root = criteriaQuery.from(PublicReferenceImplementation.class);
+		criteriaQuery.select(criteriaBuilder.count(root));
 		Predicate predicateId = criteriaBuilder.gt(root.get(ID), PublicVersionIndexWriterThread.getLastID());
 		Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS), PublicationStatus.ACCEPTED);
 		Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
-		criteriaLong.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType));
-		long l = session.createQuery(criteriaLong).getSingleResult();
+		criteriaQuery.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType));
+		long l = session.createQuery(criteriaQuery).getSingleResult();
 		if (l > 0) {
 			DataManager.getImplProv().getLogger().info("Publicreferences that still have to be indexed " + l);
 		}
@@ -405,7 +382,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		 * Discriminator value kann nicht mit criteria geholt werden -> man müsste das
 		 * ganze Object aus der Datenbank holen..
 		 **/
-		long start = System.currentTimeMillis();
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 		CriteriaQuery<String> primaryEntityCriteria = criteriaBuilder.createQuery(String.class);
 		Root<PrimaryDataDirectoryImplementation> fileRoot = primaryEntityCriteria
@@ -428,16 +404,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		Stack<String> directoryStack = new Stack<>();
 		directoryStack.add(parentDirectoryId);
 		while (!directoryStack.isEmpty()) {
+			
 			String directory = directoryStack.pop();
-
 			// index all child directories and add them to the stack
 			String lastId = null;
 			int count;
 			do {
 				/**
 				 * Get child directories, first iteration -> lastID == null because we dont want
-				 * a lowerbound, if there are more directories to process the lowerbound will
-				 * have a use
+				 * a lowerbound, if there are more directories to process the lowerbound will have a use
 				 **/
 				ScrollableResults primDirs = this.getPrimaryDataFileIds(directory, session,
 						PrimaryDataDirectoryImplementation.class, lastId);

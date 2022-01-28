@@ -128,13 +128,12 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	private static final String DELIMITER = " ";
 	private static final String NONE = "none";
 	private static final char HYPHEN = '-';
-	protected Boolean lastIDChanged = false;
 	private IndexWriter writer = null;
 	protected int lastIndexedID = 0;
 
 	private final Path PATH_TO_LAST_ID = Paths.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID);
 	/** high value fetch objects faster, but more memory is needed */
-	final int fetchSize = (int) Math.pow(12, 5);
+	final int FETCH_SIZE = (int) Math.pow(12, 5);
 
 	protected NativeLuceneIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory, Logger implementationProviderLogger,
 			IndexWriter writer) {
@@ -196,7 +195,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			/**
 			 * ScrollableResults will avoid loading too many objects in memory
 			 */
-			final ScrollableResults results = session.createQuery(criteria).setMaxResults(fetchSize).scroll(ScrollMode.FORWARD_ONLY);
+			final ScrollableResults results = session.createQuery(criteria).setMaxResults(FETCH_SIZE).scroll(ScrollMode.FORWARD_ONLY);
 
 			int indexedObjects = 0;
 			int flushedObjects = 0;
@@ -212,8 +211,8 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				} catch (MetaDataException e) {
 					this.indexLogger.debug("Unable to load a metadata value: "+e.getMessage());	
 				}
-				if (indexedObjects % fetchSize == 0) {
-					flushedObjects += fetchSize;
+				if (indexedObjects % FETCH_SIZE == 0) {
+					flushedObjects += FETCH_SIZE;
 				}
 			}
 			session.clear();
@@ -251,7 +250,6 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				this.indexLogger.debug("NativeLuceneIndexWriterThread got interrupted: " +e.getMessage());	
 			}
-			this.indexLogger.debug("NativeLuceneIndexWriterThread time: "+executeIndexingFinishTime);
 		}
 	}
 
@@ -404,7 +402,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		doc.add(new StringField(EnumIndexField.REVISION.value(),Long.toString(version.getRevision()), Store.YES));
 		builder.setLength(0);
 		Calendar cd = version.getCreationDate();
-		//important to access the related local file for content indexing if this Version belongs to a file
+		//needed to access the related local file for content indexing if this Version belongs to a file
 		doc.add(new StringField(EnumIndexField.CREATION_DATE.value(), 
 				builder.append(cd.get(Calendar.YEAR)).append(HYPHEN).append(cd.get(Calendar.MONTH))
 				.append(HYPHEN).append(cd.get(Calendar.DAY_OF_MONTH)).append(HYPHEN).append(cd.get(Calendar.HOUR_OF_DAY))
