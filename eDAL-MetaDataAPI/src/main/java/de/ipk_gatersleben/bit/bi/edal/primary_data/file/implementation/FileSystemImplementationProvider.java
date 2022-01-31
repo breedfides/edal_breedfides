@@ -71,6 +71,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
@@ -968,5 +969,10 @@ public class FileSystemImplementationProvider
 
 	private void setCacheManager(CacheManager cacheManager) {
 		this.cacheManager = cacheManager;
+	}
+
+	@Override
+	public Class<? extends SearchProvider> getSearchProvider() {
+		return SearchProviderImplementation.class;
 	}
 }

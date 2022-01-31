@@ -209,6 +209,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS),
 					PublicationStatus.ACCEPTED);
 			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
+			if(DataManager.getConfiguration() == null) {
+				System.out.print("# CONFIG NULL!");
+			}
 			if (DataManager.getConfiguration().isInTestMode()) {
 				criteria.where(criteriaBuilder.and(predicateId, predicateType))
 						.orderBy(criteriaBuilder.asc(root.get(ID)));

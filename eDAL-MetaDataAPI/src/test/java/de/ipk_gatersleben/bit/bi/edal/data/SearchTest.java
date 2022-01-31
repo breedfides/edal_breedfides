@@ -17,6 +17,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import de.ipk_gatersleben.bit.bi.edal.helper.EdalDirectoryVisitorWithMetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
@@ -59,7 +61,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
-import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 import de.ipk_gatersleben.bit.bi.edal.test.EdalDefaultTestCase;
 
 public class SearchTest extends EdalDefaultTestCase{
@@ -96,20 +97,21 @@ public class SearchTest extends EdalDefaultTestCase{
 		map.put("displayedPage", 1l);
 		map.put("whereToSearch", "Metadata");		
 		json = new JSONObject(map);
+		SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
 
 		
-		JSONObject result = Search.advancedSearch(json);
+		JSONObject result = searchProvider.advancedSearch(json);
 		//find 3 datasets
 		Assertions.assertEquals(3, result.get("hitSize"));
 		
 		json.put("hitType", PublicVersionIndexWriterThread.FILE);
-		result = Search.advancedSearch(json);
+		result = searchProvider.advancedSearch(json);
 		//find 9 files
 		Assertions.assertEquals(9, result.get("hitSize"));
 		
 		json.put("whereToSearch", EnumIndexField.CONTENT.value());
 		json.put("existingQuery", new TermQuery(new Term(EnumIndexField.CONTENT.value(),"test")).toString());
-		result = Search.advancedSearch(json);
+		result = searchProvider.advancedSearch(json);
 		//search for content
 		Assertions.assertEquals(9, result.get("hitSize"));
 		JSONArray hitArray = (JSONArray) result.get("results");
@@ -128,30 +130,35 @@ public class SearchTest extends EdalDefaultTestCase{
 			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				for(int i = 0; i < 5; i++) {
-					json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
-					json.put("whereToSearch", "Metadata");
-					json.put("existingQuery", "Title:test1");
-					JSONObject result = Search.advancedSearch(json);
-					Assertions.assertEquals(1, result.get("hitSize"));
-					
-					json.put("existingQuery", "Creator:Smith");
-					result = Search.advancedSearch(json);
-					Assertions.assertEquals(1, result.get("hitSize"));
-					
-					json.put("hitType", PublicVersionIndexWriterThread.FILE);
-					result = Search.advancedSearch(json);
-					Assertions.assertEquals(3, result.get("hitSize"));
-					
-					json.put("existingQuery", "Creator:Peter");
-					result = Search.advancedSearch(json);
-					Assertions.assertEquals(9, result.get("hitSize"));
-					
-					json.put("existingQuery", "Content:test");
-					json.put("whereToSearch", EnumIndexField.CONTENT.value());
-					result = Search.advancedSearch(json);
-					Assertions.assertEquals(9, result.get("hitSize"));
-				}
+				try {
+					SearchProvider threadSearchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+					for(int i = 0; i < 5; i++) {
+						json.put("hitType", PublicVersionIndexWriterThread.PUBLICREFERENCE);
+						json.put("whereToSearch", "Metadata");
+						json.put("existingQuery", "Title:test1");
+						JSONObject result = threadSearchProvider.advancedSearch(json);
+						Assertions.assertEquals(1, result.get("hitSize"));
+						
+						json.put("existingQuery", "Creator:Smith");
+						result = threadSearchProvider.advancedSearch(json);
+						Assertions.assertEquals(1, result.get("hitSize"));
+						
+						json.put("hitType", PublicVersionIndexWriterThread.FILE);
+						result = threadSearchProvider.advancedSearch(json);
+						Assertions.assertEquals(3, result.get("hitSize"));
+						
+						json.put("existingQuery", "Creator:Peter");
+						result = threadSearchProvider.advancedSearch(json);
+						Assertions.assertEquals(9, result.get("hitSize"));
+						
+						json.put("existingQuery", "Content:test");
+						json.put("whereToSearch", EnumIndexField.CONTENT.value());
+						result = threadSearchProvider.advancedSearch(json);
+						Assertions.assertEquals(9, result.get("hitSize"));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} 
 				latch.countDown();
 			}
 		}

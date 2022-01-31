@@ -13,10 +13,8 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -28,15 +26,12 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.BreakIterator;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,38 +45,7 @@ import javax.mail.internet.InternetAddress;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.MultiTerms;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.highlight.Highlighter;
-import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
-import org.apache.lucene.search.highlight.QueryScorer;
-import org.apache.lucene.search.highlight.SimpleFragmenter;
-import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
-import org.apache.lucene.search.highlight.TextFragment;
-import org.apache.lucene.search.highlight.TokenSources;
-import org.apache.lucene.search.uhighlight.Passage;
-import org.apache.lucene.search.uhighlight.PassageFormatter;
-import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
-import org.apache.lucene.search.uhighlight.WholeBreakIterator;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -98,9 +62,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.NativeLuceneIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
@@ -111,7 +72,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
-import de.ipk_gatersleben.bit.bi.edal.sample.Search;
 
 /**
  * VeloCity template generator to create HTML output for
@@ -1539,13 +1499,14 @@ class VeloCityHtmlGenerator {
 		
 		context.put("directory", PublicVersionIndexWriterThread.DIRECTORY);
 		
-		HashMap<String, String> filterOptions = Search.getInitialFilterOptions();
-		
-		context.put("minYear", Integer.valueOf(filterOptions.get(Search.MIN_YEAR)));
-		
-		context.put("maxYear", Integer.valueOf(filterOptions.get(Search.MAX_YEAR)));
-		
-		context.put("maxFileSize", Long.valueOf(filterOptions.get(Search.MAX_FILE_SIZE)));
+		try {
+			HashMap<String, String> filterOptions = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance().getInitialFilterOptions();		
+		    for (Entry<String,String> pair : filterOptions.entrySet()){
+		        context.put(pair.getKey(), pair.getValue());
+		    }
+		} catch (Exception e) {
+			DataManager.getImplProv().getLogger().debug("Error generating the initial filter options: "+e.getMessage());
+		}
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		

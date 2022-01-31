@@ -11,31 +11,24 @@
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
-/**
- * Copyright (c) 2021 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
- *
- * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
- * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
- * documentation material. This means, you must give appropriate credit, provide a link to the license, and indicate
- * if changes were made. You are free to copy and redistribute e!DAL in any medium or format. You are also free to
- * adapt, remix, transform, and build upon e!DAL for any purpose, even commercially.
- *
- *  Contributors:
- *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
- */
+
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Calendar;
+import java.util.HashSet;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -46,6 +39,7 @@ import org.apache.lucene.search.Query;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.ManagedAsync;
+import org.hibernate.Session;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -54,11 +48,19 @@ import org.json.simple.parser.ParseException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
-import de.ipk_gatersleben.bit.bi.edal.sample.Search;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 
 @Path("extendedSearch")
-public class EdalMessageExtendedSearch {
+public class EdalSearchRestEndpoints {
+	
+	private final String LOCATIONS = "locations";
+	private final String ACCESSES = "accesses";
+	private final String DOWNLOADS = "downloads";
+	private final String TITLE = "title";
 
 	/**
 	 * Rest function to find indexed Files/datasets
@@ -72,9 +74,9 @@ public class EdalMessageExtendedSearch {
 	public JSONObject extendedSearch(String json) {
 		JSONParser parser = new JSONParser();
 		try {
-			return Search.advancedSearch((JSONObject) parser.parse(json));
+			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			return searchProvider.advancedSearch((JSONObject) parser.parse(json));
 		} catch (Exception e) {
-			e.printStackTrace();
 			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
 			return new JSONObject();
 		}
@@ -95,13 +97,14 @@ public class EdalMessageExtendedSearch {
 	public String parseQuery(String json) throws JsonParseException, JsonMappingException, IOException {
 		JSONParser parser = new JSONParser();
 		try {
-			Query query = Search.parseToLuceneQuery((JSONObject) parser.parse(json));
+			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			Query query = searchProvider.parseToLuceneQuery((JSONObject) parser.parse(json));
 			if(query == null) {
 				return "";
 			}
 			return query.toString();
-		} catch (ParseException e) {
-			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
+		} catch (Exception e) {
+			DataManager.getImplProv().getLogger().debug("Error occured in REST Endpoint parseQuery(): "+e.getMessage());
 			return "";
 		}
 	}
@@ -118,7 +121,8 @@ public class EdalMessageExtendedSearch {
 	public JSONArray drillDown(String json) {
 		JSONParser parser = new JSONParser();
 		try {
-			return Search.drillDown(Search.buildQueryFromJSON((JSONObject)parser.parse(json)));
+			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			return searchProvider.drillDown(searchProvider.buildQueryFromJSON((JSONObject)parser.parse(json)));
 		} catch (Exception e) {
 			DataManager.getImplProv().getLogger().debug("Error at REST drilldown: "+e.getMessage());
 			return new JSONArray();
@@ -138,9 +142,74 @@ public class EdalMessageExtendedSearch {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject requestObj = (JSONObject) parser.parse(json);
-			return Search.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
+			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			return searchProvider.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
 		} catch (Exception e) {
-			return null;
+			DataManager.getImplProv().getLogger().debug("Error at REST getHighlightedSections: "+e.getMessage());
+			return new JSONObject();
+		}
+	}
+	
+	
+	
+	/**
+	 * Search for indexed publicreferences
+	 * @param keyword The given search keyword
+	 * @return The hits wrapped as JSONObject in a JSONArray
+	 */
+	@GET
+	@Path("/{keyword}")
+	@ManagedAsync
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
+		HashSet<Integer> ids = new HashSet<Integer>();
+		try {
+			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			ids = searchProvider.searchByKeyword(keyword, false, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		} catch (Exception e) {
+			DataManager.getImplProv().getLogger().debug("Error at REST getHighlightedSections: "+e.getMessage());
+			return new JSONArray();
+		} 
+		JSONArray results = new JSONArray();
+		Session session = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSessionFactory().openSession();
+		for(Integer id : ids) {
+			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
+			JSONObject obj = new JSONObject();
+			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
+			try {
+				obj.put("doi", reference.getAssignedID());
+			} catch (PublicReferenceException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obj.put(TITLE, reference.getVersion().getMetaData().toString());
+			String internalID = reference.getInternalID();
+			obj.put(DOWNLOADS, String.valueOf(VeloCityHtmlGenerator.downloadedVolume.get(internalID)));
+			obj.put(ACCESSES, String.valueOf(VeloCityHtmlGenerator.uniqueAccessNumbers.get(internalID)));	
+			if(VeloCityHtmlGenerator.ipMap.get(internalID) != null) {
+				obj.put(LOCATIONS,
+						GenerateLocations.generateGpsLocationsToJson(VeloCityHtmlGenerator.ipMap.get(internalID)));
+			}
+			results.add(obj);
+		}
+		return results;
+	}
+	/**
+	 * Fuzzy Search for indexed publicreference 
+	 * @param keyword keyword The given search keyword
+	 * @return The hits wrapped as JSONObject in a JSONArray
+	 */
+	@GET
+	@ManagedAsync
+	@Path("/{keyword}/fuzzy")
+	@Produces(MediaType.APPLICATION_JSON)
+	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
+		try {
+			return DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance()
+					.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		} catch (Exception e) {
+			DataManager.getImplProv().getLogger().debug("Error at REST getHighlightedSections: "+e.getMessage());
+			return new HashSet<Integer>();
 		}
 	}
 	

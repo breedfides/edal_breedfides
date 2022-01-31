@@ -10,8 +10,7 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package de.ipk_gatersleben.bit.bi.edal.sample;
-
+package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -37,8 +36,8 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
-import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
@@ -55,7 +54,6 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -63,6 +61,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHitCountCollector;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -77,32 +76,33 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataFileImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 
-public class Search {
+/**
+ * Implementaion of the {@link SearchProvider} interface
+ * 
+ * @author Ralfs
+ *
+ */
+public class SearchProviderImplementation implements SearchProvider {
 	
-	public static final String MIN_YEAR = "minYear";
-	public static final String MAX_YEAR = "maxYear";
-	public static final String MAX_FILE_SIZE = "maxSize";
-	public static final String[] METADATA_FIELDS = { EnumIndexField.TITLE.value(), EnumIndexField.SIZE.value(),
+	public final String MIN_YEAR = "minYear";
+	
+	public final String MAX_YEAR = "maxYear";
+	
+	public final String MAX_FILE_SIZE = "maxFileSize";
+
+	public final String[] METADATA_FIELDS = { EnumIndexField.TITLE.value(), EnumIndexField.SIZE.value(),
 			EnumIndexField.VERSIONID.value(), EnumIndexField.ENTITYID.value(), EnumIndexField.PRIMARYENTITYID.value(),
 			EnumIndexField.ENTITYTYPE.value(), EnumIndexField.DOCID.value(),EnumIndexField.PUBLICID.value(),
 			EnumIndexField.REVISION.value(), EnumIndexField.INTERNALID.value(),EnumIndexField.CONTENT.value(),
 			EnumIndexField.FILETYPE.value() };
 
-	/**
-	 * Searches the index with the given query information
-	 * @param requestObject Wrapped query information: "existingQuery","hitType",
-	 *  	  "pageIndex", "pageArraySize", "filters", "queries", "bottomResultId", "displayedPage","whereToSearch"
-	 * @return The results and the associated facets wrapped in JSONObjects/Arrays
-	 */
+
 	@SuppressWarnings("unchecked")
-	public static JSONObject advancedSearch(JSONObject requestObject) {
+	public JSONObject advancedSearch(JSONObject requestObject) {
 		JSONObject result = new JSONObject();
 		Query buildedQuery = buildQueryFromJSON(requestObject, result);
 		CountDownLatch internalCountDownLatch = new CountDownLatch(1);		
@@ -183,7 +183,7 @@ public class Search {
 			pageSize = ((int) (long) scoreDocs.length);
 		}
 		Document doc = null;
-		Set<String> fields = Set.of(Search.METADATA_FIELDS);
+		Set<String> fields = Set.of(METADATA_FIELDS);
 		for (int i = 0; i < pageSize; i++) {
 			try {
 				doc = manager.searcher.doc(scoreDocs[i].doc, fields);
@@ -348,274 +348,14 @@ public class Search {
 		}
 		return result;
 	}
-
-	/**
-	 * Producses a query if the parameters contain the keyword "Content"
-	 * @param existingQuery User entered Query
-	 * @param jsonArray List of additional user entered queries
-	 * @return A Query that only contains useful terms for highlighting
-	 */
-	private static Query extractContentQuery(String existingQuery, JSONArray jsonArray) {
-		QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
-		parser.setDefaultOperator(Operator.AND);
-		StringJoiner contentQuery = new StringJoiner(" ");
-		String parsedQuery = "";
-		if(existingQuery.length() > 0) {
-			try {
-				parsedQuery = parser.parse(existingQuery).toString();
-			} catch (ParseException e) {
-				try {
-					parsedQuery = parser.parse(QueryParser.escape(existingQuery)).toString();
-				} catch (ParseException e1) {
-					DataManager.getImplProv().getLogger().debug(e.getMessage());
-				}
-			}
-			if(parsedQuery.contains(EnumIndexField.CONTENT.value())) {
-				contentQuery.add(parsedQuery);
-			}	
-		}
-		for(Object query : jsonArray) {
-			if(query instanceof String) {
-				if(((String)query).contains(EnumIndexField.CONTENT.value())) {
-					contentQuery.add((String)query);
-				}
-			}
-		}
-		String toParse = contentQuery.toString();
-		if(toParse.length() > 0) {
-			try {
-				return parser.parse(contentQuery.toString());
-			} catch (ParseException e) {
-				try {
-					return parser.parse(QueryParser.escape(contentQuery.toString()));
-				} catch (ParseException e1) {
-					return null;
-				}
-			}
-		}else {
-			return null;
-		}
-	}
-
-	/**
-	 * Parses the given wrapped lucene field and the keyword to a valid lucene query
-	 * @param requestObject The query parts wrapped in a JSONObject
-	 * @return The parsed Lucene Query
-	 */
-	public static Query parseToLuceneQuery(JSONObject requestObject) {
-		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
-		final CharArraySet stopSet = new CharArraySet(
-				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
-		stopSet.addAll(defaultStopWords);
-		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
-		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
-		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(), analyzer);
-		pars.setDefaultOperator(Operator.AND);
-		String type = ((String) requestObject.get("type"));
-		String keyword = (String) requestObject.get("searchterm");
-		QueryParser queryParser = new QueryParser(type, analyzer);
-		queryParser.setDefaultOperator(Operator.AND);
-		try {
-			if (type.equals("humanQuery")) {
-				if (keyword.charAt(0) != '+' && keyword.charAt(0) != '-') {
-					keyword = '+' + keyword;
-				}
-				return pars.parse(QueryParser.escape((String) requestObject.get("searchterm")));
-			}
-			if ((boolean) requestObject.get("fuzzy")) {
-				keyword = keyword + '~';
-			}
-			keyword = Occur.valueOf((String) requestObject.get("occur")) + keyword;
-			return queryParser.parse(keyword);
-		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
-			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
-		}
-		return null;
-	}
-
-	/**
-	 * Builds the valid Query string from a JSONObject that contains the following inforamtion: 
-	 * "filters", "type", "searchterm", "hitType"
-	 * @param json The RequestObject that should contain query information and optional filters
-	 * @return A Lucene query string
-	 */
-	public static String buildQueryFromJSON(JSONObject json) {
-		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(),
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
-		pars.setDefaultOperator(Operator.AND);
-		StringJoiner queryJoiner = new StringJoiner(" ");
-		JSONArray filters = (JSONArray) json.get("filters");
-		Query luceneQuery = null;
-		for (Object obj : filters) {
-			JSONObject queryData = (JSONObject) obj;
-			String type = ((String) queryData.get("type"));
-			String keyword = (String) queryData.get("searchterm");
-			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
-				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
-				String lower = DateTools.timeToString(
-						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				String upper = DateTools.timeToString(
-						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false,
-						false);
-			} else if (type.equals(EnumIndexField.SIZE.value())) {
-				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
-						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
-						false, false);
-			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
-				keyword.replace("\\", "");
-				String fileTypeQuery = EnumIndexField.FILETYPE + ":" + keyword;
-				try {
-					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
-				} catch (ParseException e) {
-					DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
-				}
-			}
-			if (luceneQuery != null) {
-				DataManager.getImplProv().getLogger().debug(luceneQuery.toString());
-				queryJoiner.add(Occur.MUST.toString() + luceneQuery.toString());
-			}
-		}
-		String hitType = (String) json.get("hitType");
-		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
-			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.FILE)) {
-			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE));
-		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
-			luceneQuery = new TermQuery(
-					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY));
-		} else {
-			return null;
-		}
-		queryJoiner.add(luceneQuery.toString());
-		return queryJoiner.toString();
-	}
-
-	/**
-	 * Drills down on a Lucene query to obtain the related facets
-	 * @param query The query String
-	 * @return The facets wrapped as JSONObjects in a JSONArray
-	 */
-	public static JSONArray drillDown(String query) {
-		try {
-			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
-			queryParser.setDefaultOperator(Operator.AND);
-			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
-
-			FacetsConfig config = DataManager.getFacetsConfig();
-			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
-			FacetsCollector fc = new FacetsCollector();
-			FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
-			List<FacetResult> results = new ArrayList<>();
-
-			try {				
-				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.CONTRIBUTORNAME.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.SUBJECT.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.TITLE.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
-			} catch (Exception e) {
-				DataManager.getSearchManager().release(manager);
-				return new JSONArray();
-			}
-			DataManager.getSearchManager().release(manager);
-			JSONArray result = new JSONArray();
-			for (FacetResult facet : results) {
-				if (facet == null)
-					continue;
-				JSONObject jsonFacet = new JSONObject();
-				if (facet.dim.equals(EnumIndexField.CREATORNAME.value()))
-					jsonFacet.put("category", EnumIndexField.PERSON.value());
-				else if (facet.dim.equals(EnumIndexField.CONTRIBUTORNAME.value()))
-					jsonFacet.put("category", EnumIndexField.CONTRIBUTOR.value());
-				else
-					jsonFacet.put("category", facet.dim);
-				jsonFacet.put("sortedByHits", facet.labelValues);
-				result.add(jsonFacet);
-			}
-			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return new JSONArray();
-	}
 	
-	/**
-	 * Getter for the MIN/MAX values of the creation dates and the max file size that are stored in the index
-	 * @return The MIN/MAX values wrapped in a <String, String>HashMap
-	 */
-	public static HashMap<String, String> getInitialFilterOptions() {
-		try {
-			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
-			FacetsConfig config = DataManager.getFacetsConfig();
-			FacetsCollector fc = new FacetsCollector();
-			BooleanQuery booleanQuery = new BooleanQuery.Builder()
-				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.FILE)), BooleanClause.Occur.SHOULD)
-				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
-				    .build();
-			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
-			List<FacetResult> results = new ArrayList<>();
-			try {				
-				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.SIZE.value()));
-				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.STARTDATE.value()));
-			} catch (Exception e) {
-				e.printStackTrace();
-				DataManager.getSearchManager().release(manager);
-				return new HashMap<String, String>();
-			}finally {
-				DataManager.getSearchManager().release(manager);	
-			}
-			HashMap<String, String> result = new HashMap<String, String>();
-			for (FacetResult facet : results) {
-				if (facet == null)
-					continue;
-				if(facet.dim.equals(EnumIndexField.SIZE.value())) {
-					long maxFileSize = 0;
-					for(LabelAndValue lav : facet.labelValues) {
-						long size = Long.valueOf(lav.label.replaceFirst("^0+(?!$)", ""));
-						if(size > maxFileSize) {
-							maxFileSize = size;
-						}
-					}
-					result.put(Search.MAX_FILE_SIZE, Long.toString(maxFileSize));
-				}else if(facet.dim.equals(EnumIndexField.STARTDATE.value())) {
-					int minYear = Integer.MAX_VALUE;
-					int maxYear = 0;
-					for(LabelAndValue lav : facet.labelValues) {
-						int year = Integer.valueOf(lav.label.substring(0,4));
-						if(year <= minYear) {
-							minYear = year;
-						}
-						if(year > maxYear) {
-							maxYear = year;
-						}
-					}
-					result.put(Search.MIN_YEAR, Integer.toString(minYear));
-					result.put(Search.MAX_YEAR, Integer.toString(maxYear));
-				}
-			}
-			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return new HashMap<String, String>();
-	}
-
 	/**
 	 * Builds a valid Lucene Query from the given wrapped information
 	 * @param jsonArray The wrapped query information
 	 * @param result The JSONObject to which the parsedQuery will get attached
 	 * @return The parsed query
 	 */
-	public static Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
+	private Query buildQueryFromJSON(JSONObject jsonArray, JSONObject result) {
 		BooleanQuery.Builder finalQuery = new BooleanQuery.Builder();
 		String whereToSearch = (String) jsonArray.get("whereToSearch");
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
@@ -711,15 +451,252 @@ public class Search {
 	}
 
 	/**
-	 * Method to get the top 10 highlighted passages for a Document
-	 * 
-	 * @param doc The Document to be highlighted
-	 * @param q   The Query that should contain a keyword for highlighting
-	 * @return The Highlighted passages wrapped in a JSONObject
-	 * @throws IOException
-	 * @throws ParseException
+	 * Producses a query if the parameters contain the keyword "Content"
+	 * @param existingQuery User entered Query
+	 * @param jsonArray List of additional user entered queries
+	 * @return A Query that only contains useful terms for highlighting
 	 */
-	public static JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
+	private Query extractContentQuery(String existingQuery, JSONArray jsonArray) {
+		QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), ((FileSystemImplementationProvider)DataManager.getImplProv()).getWriter().getAnalyzer());
+		parser.setDefaultOperator(Operator.AND);
+		StringJoiner contentQuery = new StringJoiner(" ");
+		String parsedQuery = "";
+		if(existingQuery.length() > 0) {
+			try {
+				parsedQuery = parser.parse(existingQuery).toString();
+			} catch (ParseException e) {
+				try {
+					parsedQuery = parser.parse(QueryParser.escape(existingQuery)).toString();
+				} catch (ParseException e1) {
+					DataManager.getImplProv().getLogger().debug(e.getMessage());
+				}
+			}
+			if(parsedQuery.contains(EnumIndexField.CONTENT.value())) {
+				contentQuery.add(parsedQuery);
+			}	
+		}
+		for(Object query : jsonArray) {
+			if(query instanceof String) {
+				if(((String)query).contains(EnumIndexField.CONTENT.value())) {
+					contentQuery.add((String)query);
+				}
+			}
+		}
+		String toParse = contentQuery.toString();
+		if(toParse.length() > 0) {
+			try {
+				return parser.parse(contentQuery.toString());
+			} catch (ParseException e) {
+				try {
+					return parser.parse(QueryParser.escape(contentQuery.toString()));
+				} catch (ParseException e1) {
+					return null;
+				}
+			}
+		}else {
+			return null;
+		}
+	}
+
+	public Query parseToLuceneQuery(JSONObject requestObject) {
+		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
+		final CharArraySet stopSet = new CharArraySet(
+				FileSystemImplementationProvider.STOPWORDS.size() + defaultStopWords.size(), false);
+		stopSet.addAll(defaultStopWords);
+		stopSet.addAll(FileSystemImplementationProvider.STOPWORDS);
+		StandardAnalyzer analyzer = new StandardAnalyzer(stopSet);
+		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(), analyzer);
+		pars.setDefaultOperator(Operator.AND);
+		String type = ((String) requestObject.get("type"));
+		String keyword = (String) requestObject.get("searchterm");
+		QueryParser queryParser = new QueryParser(type, analyzer);
+		queryParser.setDefaultOperator(Operator.AND);
+		try {
+			if (type.equals("humanQuery")) {
+				if (keyword.charAt(0) != '+' && keyword.charAt(0) != '-') {
+					keyword = '+' + keyword;
+				}
+				return pars.parse(QueryParser.escape((String) requestObject.get("searchterm")));
+			}
+			if ((boolean) requestObject.get("fuzzy")) {
+				keyword = keyword + '~';
+			}
+			keyword = Occur.valueOf((String) requestObject.get("occur")) + keyword;
+			return queryParser.parse(keyword);
+		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
+			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
+		}
+		return null;
+	}
+
+
+	public String buildQueryFromJSON(JSONObject json) {
+		QueryParser pars = new QueryParser(EnumIndexField.ALL.value(),
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
+		pars.setDefaultOperator(Operator.AND);
+		StringJoiner queryJoiner = new StringJoiner(" ");
+		JSONArray filters = (JSONArray) json.get("filters");
+		Query luceneQuery = null;
+		for (Object obj : filters) {
+			JSONObject queryData = (JSONObject) obj;
+			String type = ((String) queryData.get("type"));
+			String keyword = (String) queryData.get("searchterm");
+			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
+				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
+				String lower = DateTools.timeToString(
+						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				String upper = DateTools.timeToString(
+						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false,
+						false);
+			} else if (type.equals(EnumIndexField.SIZE.value())) {
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
+						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
+						false, false);
+			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
+				keyword.replace("\\", "");
+				String fileTypeQuery = EnumIndexField.FILETYPE + ":" + keyword;
+				try {
+					luceneQuery = pars.parse(QueryParser.escape(fileTypeQuery));
+				} catch (ParseException e) {
+					DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
+				}
+			}
+			if (luceneQuery != null) {
+				DataManager.getImplProv().getLogger().debug(luceneQuery.toString());
+				queryJoiner.add(Occur.MUST.toString() + luceneQuery.toString());
+			}
+		}
+		String hitType = (String) json.get("hitType");
+		if (hitType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+			luceneQuery = new TermQuery(
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.FILE)) {
+			luceneQuery = new TermQuery(
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.FILE));
+		} else if (hitType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+			luceneQuery = new TermQuery(
+					new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.DIRECTORY));
+		} else {
+			return null;
+		}
+		queryJoiner.add(luceneQuery.toString());
+		return queryJoiner.toString();
+	}
+
+
+	public JSONArray drillDown(String query) {
+		try {
+			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
+			queryParser.setDefaultOperator(Operator.AND);
+			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
+
+			FacetsConfig config = DataManager.getFacetsConfig();
+			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
+			FacetsCollector fc = new FacetsCollector();
+			FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
+			List<FacetResult> results = new ArrayList<>();
+
+			try {				
+				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
+				results.add(facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.CONTRIBUTORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.SUBJECT.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.TITLE.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
+			} catch (Exception e) {
+				DataManager.getSearchManager().release(manager);
+				return new JSONArray();
+			}
+			DataManager.getSearchManager().release(manager);
+			JSONArray result = new JSONArray();
+			for (FacetResult facet : results) {
+				if (facet == null)
+					continue;
+				JSONObject jsonFacet = new JSONObject();
+				if (facet.dim.equals(EnumIndexField.CREATORNAME.value()))
+					jsonFacet.put("category", EnumIndexField.PERSON.value());
+				else if (facet.dim.equals(EnumIndexField.CONTRIBUTORNAME.value()))
+					jsonFacet.put("category", EnumIndexField.CONTRIBUTOR.value());
+				else
+					jsonFacet.put("category", facet.dim);
+				jsonFacet.put("sortedByHits", facet.labelValues);
+				result.add(jsonFacet);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new JSONArray();
+	}
+	
+
+	public HashMap<String, String> getInitialFilterOptions() {
+		try {
+			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
+			FacetsConfig config = DataManager.getFacetsConfig();
+			FacetsCollector fc = new FacetsCollector();
+			BooleanQuery booleanQuery = new BooleanQuery.Builder()
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.FILE)), BooleanClause.Occur.SHOULD)
+				    .add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(),PublicVersionIndexWriterThread.PUBLICREFERENCE)), BooleanClause.Occur.SHOULD)
+				    .build();
+			FacetsCollector.search(manager.searcher, new DrillDownQuery(config,booleanQuery ), 50000, fc);
+			List<FacetResult> results = new ArrayList<>();
+			try {				
+				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.SIZE.value()));
+				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.STARTDATE.value()));
+			} catch (Exception e) {
+				e.printStackTrace();
+				DataManager.getSearchManager().release(manager);
+				return new HashMap<String, String>();
+			}finally {
+				DataManager.getSearchManager().release(manager);	
+			}
+			HashMap<String, String> result = new HashMap<String, String>();
+			for (FacetResult facet : results) {
+				if (facet == null)
+					continue;
+				if(facet.dim.equals(EnumIndexField.SIZE.value())) {
+					long maxFileSize = 0;
+					for(LabelAndValue lav : facet.labelValues) {
+						long size = Long.valueOf(lav.label.replaceFirst("^0+(?!$)", ""));
+						if(size > maxFileSize) {
+							maxFileSize = size;
+						}
+					}
+					result.put(MAX_FILE_SIZE, Long.toString(maxFileSize));
+				}else if(facet.dim.equals(EnumIndexField.STARTDATE.value())) {
+					int minYear = Integer.MAX_VALUE;
+					int maxYear = 0;
+					for(LabelAndValue lav : facet.labelValues) {
+						int year = Integer.valueOf(lav.label.substring(0,4));
+						if(year <= minYear) {
+							minYear = year;
+						}
+						if(year > maxYear) {
+							maxYear = year;
+						}
+					}
+					result.put(MIN_YEAR, Integer.toString(minYear));
+					result.put(MAX_YEAR, Integer.toString(maxYear));
+				}
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new HashMap<String, String>();
+	}
+
+	
+
+
+	public JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
 		SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
 		Query query = new TermQuery(new Term(EnumIndexField.DOCID.value(), doc));
 		ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
@@ -756,14 +733,7 @@ public class Search {
 		return result;
 	}
 
-	/**
-	 * Searches on all Metadata Lucene fields with the given keyword/query string
-	 * @param keyword The given keyword
-	 * @param fuzzy if true it will run a fuzzy search
-	 * @param entityType The desired Entity types (dataset/file/directory)
-	 * @return The found version IDs wrapped in a HashSet
-	 */
-	public static HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
+	public HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
 		final long startTime = System.currentTimeMillis();
 		IndexReader reader = null;
 		try {

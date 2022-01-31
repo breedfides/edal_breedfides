@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
@@ -96,6 +97,13 @@ public interface ImplementationProvider {
 	 * @return the implementing class of {@link PrimaryDataFile}.
 	 */
 	Class<? extends PrimaryDataFile> getPrimaryDataFileProvider();
+	
+	/**
+	 * Getter for the {@link SearchProvider} implementation class
+	 * 
+	 * @return the implementing class of {@link SearchProvider}
+	 */
+	Class<? extends SearchProvider> getSearchProvider();
 
 	/**
 	 * Check if a root {@link PrimaryDataDirectory} exists and return it or
