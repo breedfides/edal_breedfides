@@ -102,6 +102,14 @@ table#report tr td.edal-report-title {
 }
 
 table#report tr td.edal-report-doi {
+  width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+table#report tr td.edal-report-doi-search {
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -509,9 +509,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -533,7 +531,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;	
 		}
@@ -579,9 +577,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -597,7 +593,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;	
 		}
@@ -924,9 +920,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -948,7 +942,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;	
 		}
@@ -992,9 +986,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -1016,7 +1008,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;	
 		}
@@ -1076,9 +1068,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 			StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
 			QueryParser queryAlgorithm = new QueryParser(EnumIndexField.ALGORITHM.value(),standardAnalyzer);
@@ -1111,7 +1101,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;	
 		}
@@ -1258,9 +1248,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						.getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 		   //create the BooleanQuery query object
@@ -1274,7 +1262,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 			return versionIDList;
 		}
@@ -1472,9 +1460,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 		   //create the BooleanQuery query object
@@ -1492,7 +1478,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 			return versionIDList;
 		}
@@ -1545,9 +1531,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -1568,7 +1552,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 	        return versionIDList;		
 		}
@@ -1677,9 +1661,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 								getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 						reader = DirectoryReader.open(indexDirectory);
 					} catch (IOException e) {
-						((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-						.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-						e.printStackTrace();
+						DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 					}
 			    	IndexSearcher searcher = new IndexSearcher(reader);
 			    	
@@ -1701,7 +1683,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 				        }
 					} catch (IOException e) {
-						e.printStackTrace();
+						DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 					}
 			        return versionIDList;
 				}
@@ -1824,8 +1806,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			try {
 		    	Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 		    	reader = DirectoryReader.open(indexDirectory);
-			} catch (IOException e1) {
-				e1.printStackTrace();
+			} catch (IOException e) {
+				DataManager.getImplProv().getLogger().info("Error opening the Lucene Index: "+e.getMessage());
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	String[] fields = {EnumIndexField.TITLE.value(),EnumIndexField.DESCRIPTION.value(),EnumIndexField.COVERAGE.value(),EnumIndexField.IDENTIFIER.value(),
@@ -1843,15 +1825,14 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					luceneQuery = parser.parse(keyword);
 				}
 				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Lucenequery: "+luceneQuery.toString());
-			} catch (ParseException e1) {
-				e1.printStackTrace();
+			} catch (ParseException e) {
+				DataManager.getImplProv().getLogger().info("Lucene parsing error: "+e.getMessage());
 			}
 	        ScoreDoc[] hits = null;
 			try {
 				hits = searcher.search(luceneQuery, 50000).scoreDocs;
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (IOException e) {
+				DataManager.getImplProv().getLogger().info("IO error while searching: "+e.getMessage());
 			}
 	    	versionIDList = new ArrayList<>();
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger().info("Hits Size: "+hits.length);
@@ -1861,7 +1842,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 					doc = searcher.doc(hits[i].doc);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 				}
 	        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 	        }
@@ -2148,9 +2129,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -2187,7 +2166,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().info("Error while searching a specific Document: "+e.getMessage());
 			}
 
 	        return versionIDList;
@@ -2306,9 +2285,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -2340,7 +2317,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 
 	        return versionIDList;
@@ -2494,9 +2471,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				Directory indexDirectory = FSDirectory.open(Paths.get(((FileSystemImplementationProvider)DataManager.getImplProv()).getIndexDirectory().toString(),"Master_Index"));
 				reader = DirectoryReader.open(indexDirectory);
 			} catch (IOException e) {
-				((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug(e.getMessage()+" \n (tried to open FSDirectory/creating IndexReader)");
 			}
 	    	IndexSearcher searcher = new IndexSearcher(reader);
 	    	
@@ -2524,7 +2499,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		        	versionIDList.add(Integer.parseInt(doc.get("versionID")));
 		        }
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Error when searching for a specifc document: "+e.getMessage());
 			}
 
 	        return versionIDList;

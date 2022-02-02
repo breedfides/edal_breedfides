@@ -53,10 +53,15 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSyste
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicReferenceImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 
 @Path("extendedSearch")
 public class EdalSearchRestEndpoints {
 	
+	private static final String DOI = "doi";
+	private static final String YEAR = "year";
+	private static final String QUERY = "query";
+	private static final String DOC = "doc";
 	private final String LOCATIONS = "locations";
 	private final String ACCESSES = "accesses";
 	private final String DOWNLOADS = "downloads";
@@ -64,18 +69,18 @@ public class EdalSearchRestEndpoints {
 
 	/**
 	 * Rest function to find indexed Files/datasets
-	 * @param json A container that shoul have specific Information
+	 * @param jsonWithQueryInformation A container that shoul have specific Information
 	 * @return The found files/version information wrapped in a JSONArray
 	 */
 	@Path("/search")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject extendedSearch(String json) {
+	public JSONObject extendedSearch(String jsonWithQueryInformation) {
 		JSONParser parser = new JSONParser();
 		try {
 			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			return searchProvider.advancedSearch((JSONObject) parser.parse(json));
+			return searchProvider.advancedSearch((JSONObject) parser.parse(jsonWithQueryInformation));
 		} catch (Exception e) {
 			DataManager.getImplProv().getLogger().debug("Error occured when parsing String parameter to JSONArray");
 			return new JSONObject();
@@ -84,45 +89,42 @@ public class EdalSearchRestEndpoints {
 	
 	/**
 	 * REST function to parse a String to a Lucene query
-	 * @param json The String to parse
+	 * @param jsonWrappedQuery The String to parse
 	 * @return The parsed Lucene query
-	 * @throws JsonParseException
-	 * @throws JsonMappingException
-	 * @throws IOException
 	 */
 	@Path("/parsequery")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.TEXT_PLAIN)
-	public String parseQuery(String json) throws JsonParseException, JsonMappingException, IOException {
+	public String parseQuery(String jsonWrappedQuery) {
 		JSONParser parser = new JSONParser();
 		try {
 			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			Query query = searchProvider.parseToLuceneQuery((JSONObject) parser.parse(json));
+			Query query = searchProvider.parseToLuceneQuery((JSONObject) parser.parse(jsonWrappedQuery));
 			if(query == null) {
 				return "";
 			}
 			return query.toString();
 		} catch (Exception e) {
 			DataManager.getImplProv().getLogger().debug("Error occured in REST Endpoint parseQuery(): "+e.getMessage());
-			return "";
+			return new String();
 		}
 	}
 	
 	/**
 	 * Drills down with a given query to return Lists of objects with [term/nubmer of hits] (Facets)
-	 * @param json The given query information
+	 * @param jsonWithQueryInformation The given query information
 	 * @return The facets
 	 */
 	@Path("/drillDown")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONArray drillDown(String json) {
+	public JSONArray drillDown(String jsonWithQueryInformation) {
 		JSONParser parser = new JSONParser();
 		try {
 			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			return searchProvider.drillDown(searchProvider.buildQueryFromJSON((JSONObject)parser.parse(json)));
+			return searchProvider.drillDown(searchProvider.buildQueryFromJSON((JSONObject)parser.parse(jsonWithQueryInformation)));
 		} catch (Exception e) {
 			DataManager.getImplProv().getLogger().debug("Error at REST drilldown: "+e.getMessage());
 			return new JSONArray();
@@ -131,19 +133,19 @@ public class EdalSearchRestEndpoints {
 	
 	/**
 	 * Finds and highlights sections that contain the given query term(s)
-	 * @param json Query information
+	 * @param jsonWithQuery Query information
 	 * @return The most relevant highlighted text sections
 	 */
 	@Path("/getHighlightedSections")
 	@POST
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject getHighlightedSections(String json) {
+	public JSONObject getHighlightedSections(String jsonWithQuery) {
 		try {
 			JSONParser parser = new JSONParser();
-			JSONObject requestObj = (JSONObject) parser.parse(json);
+			JSONObject requestObj = (JSONObject) parser.parse(jsonWithQuery);
 			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			return searchProvider.getHighlightedSections((String)requestObj.get("doc"),(String)requestObj.get("query"));
+			return searchProvider.getHighlightedSections((String)requestObj.get(DOC),(String)requestObj.get(QUERY));
 		} catch (Exception e) {
 			DataManager.getImplProv().getLogger().debug("Error at REST getHighlightedSections: "+e.getMessage());
 			return new JSONObject();
@@ -157,11 +159,13 @@ public class EdalSearchRestEndpoints {
 	 * @param keyword The given search keyword
 	 * @return The hits wrapped as JSONObject in a JSONArray
 	 */
+	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/{keyword}")
 	@ManagedAsync
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONArray keywordSearch(@PathParam("keyword") String keyword) {
+		
 		HashSet<Integer> ids = new HashSet<Integer>();
 		try {
 			SearchProvider searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
@@ -175,12 +179,15 @@ public class EdalSearchRestEndpoints {
 		for(Integer id : ids) {
 			PublicReferenceImplementation reference = session.get(PublicReferenceImplementation.class, id);
 			JSONObject obj = new JSONObject();
-			obj.put("year", reference.getAcceptedDate().get(Calendar.YEAR));
-			try {
-				obj.put("doi", reference.getAssignedID());
-			} catch (PublicReferenceException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if(reference.getPublicationStatus().equals(PublicationStatus.ACCEPTED)) {
+				obj.put(YEAR, reference.getAcceptedDate().get(Calendar.YEAR));
+				try {
+					obj.put(DOI, reference.getAssignedID());
+				} catch (PublicReferenceException e) {
+					DataManager.getImplProv().getLogger().debug("No PublicReference ID set: "+e.getMessage());
+				}
+			}else {
+				continue;
 			}
 			obj.put(TITLE, reference.getVersion().getMetaData().toString());
 			String internalID = reference.getInternalID();
@@ -193,24 +200,6 @@ public class EdalSearchRestEndpoints {
 			results.add(obj);
 		}
 		return results;
-	}
-	/**
-	 * Fuzzy Search for indexed publicreference 
-	 * @param keyword keyword The given search keyword
-	 * @return The hits wrapped as JSONObject in a JSONArray
-	 */
-	@GET
-	@ManagedAsync
-	@Path("/{keyword}/fuzzy")
-	@Produces(MediaType.APPLICATION_JSON)
-	public HashSet<Integer> fuzzyKeywordSearch(@PathParam("keyword") String keyword) {
-		try {
-			return DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance()
-					.searchByKeyword(keyword, true, PublicVersionIndexWriterThread.PUBLICREFERENCE);
-		} catch (Exception e) {
-			DataManager.getImplProv().getLogger().debug("Error at REST getHighlightedSections: "+e.getMessage());
-			return new HashSet<Integer>();
-		}
 	}
 	
 	@GET
@@ -276,8 +265,7 @@ public class EdalSearchRestEndpoints {
 			out.flush();
 			out.close();
 		} catch (IOException e) {
-
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error at REST writeToFile: "+e.getMessage());
 		}
 
 	}

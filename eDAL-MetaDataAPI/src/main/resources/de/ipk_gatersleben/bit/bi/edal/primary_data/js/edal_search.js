@@ -53,7 +53,7 @@ let EdalReport = new function() {
             title: "DOI",
             data: "doi",
             width: "10%",
-            class: "edal-report-doi",
+            class: "edal-report-doi-search",
             render: function (data, type, row) {
                 return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
             }
@@ -69,7 +69,7 @@ let EdalReport = new function() {
       {
           title: "Filename",
           width: "20%",
-          class: "edal-report-doi",
+          class: "edal-report-doi-search",
           render: function (data, type, row) {
               return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
           }
@@ -106,7 +106,7 @@ let EdalReport = new function() {
           title: "DOI",
           data: "doi",
           width: "8%",
-          class: "edal-report-doi",
+          class: "edal-report-doi-search",
           render: function (data, type, row) {
               return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
           }
@@ -122,7 +122,7 @@ let EdalReport = new function() {
         {
             title: "Filename",
             width: "25%",
-            class: "edal-report-doi",
+            class: "edal-report-doi-search",
             render: function (data, type, row) {
                 return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
             }
@@ -150,7 +150,7 @@ let EdalReport = new function() {
             title: "DOI",
             data: "doi",
             width: "10%",
-            class: "edal-report-doi",
+            class: "edal-report-doi-search",
             render: function (data, type, row) {
                 return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
             }
@@ -174,7 +174,7 @@ let EdalReport = new function() {
         {
             title: "Directory",
             width: "25%",
-            class: "edal-report-doi",
+            class: "edal-report-doi-search",
             render: function (data, type, row) {
                 return '<a href="'+serverURL+'/DOI/'+row.link+'" target="_blank">'+row.fileName+'</a>';
             }
@@ -183,7 +183,7 @@ let EdalReport = new function() {
             title: "DOI",
             data: "doi",
             width: "10%",
-            class: "edal-report-doi",
+            class: "edal-report-doi-search",
             render: function (data, type, row) {
                 return '<a href="http://dx.doi.org/'+data+'" target="_blank">'+data+'</a>';
             }

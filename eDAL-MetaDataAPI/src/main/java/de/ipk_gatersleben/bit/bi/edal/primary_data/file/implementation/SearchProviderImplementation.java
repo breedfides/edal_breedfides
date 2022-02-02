@@ -88,6 +88,21 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
  */
 public class SearchProviderImplementation implements SearchProvider {
 	
+	private static final String TILDE = "~";
+
+	/** The last result of a resultlist, needed for pagination  **/
+	private static final String BOTTOM_RESULT_SCORE = "bottomResultScore";
+
+	private static final String BOTTOM_RESULT_ID = "bottomResultId";
+
+	private static final String PAGE_SIZE = "pageSize";
+
+	private static final String PAGE_INDEX = "pageIndex";
+
+	private static final String PAGE_ARRAY_SIZE = "pageArraySize";
+
+	private static final String DISPLAYED_PAGE = "displayedPage";
+
 	public final String MIN_YEAR = "minYear";
 	
 	public final String MAX_YEAR = "maxYear";
@@ -119,16 +134,16 @@ public class SearchProviderImplementation implements SearchProvider {
 		SearcherAndTaxonomy manager = null;
 		try {
 			manager = DataManager.getSearchManager().acquire();
-		} catch (IOException e2) {
-			e2.printStackTrace();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
 			return result;
 		}
 		DataManager.getImplProv().getLogger().debug(buildedQuery.toString());
 		TopDocs topDocs = null;
-		int currentPageNumber = ((int) (long) requestObject.get("displayedPage"));
-		int pageArraySize = ((int) (long) requestObject.get("pageArraySize"));
-		int pageIndex = ((int) (long) requestObject.get("pageIndex"));
-		int pageSize = ((int) (long) requestObject.get("pageSize"));
+		int currentPageNumber = ((int) (long) requestObject.get(DISPLAYED_PAGE));
+		int pageArraySize = ((int) (long) requestObject.get(PAGE_ARRAY_SIZE));
+		int pageIndex = ((int) (long) requestObject.get(PAGE_INDEX));
+		int pageSize = ((int) (long) requestObject.get(PAGE_SIZE));
 		try {
 			if (pageArraySize == 0 || currentPageNumber == 1) {
 				DataManager.getImplProv().getLogger()
@@ -137,9 +152,9 @@ public class SearchProviderImplementation implements SearchProvider {
 			} else {
 				ScoreDoc bottomScoreDoc = null;
 				bottomScoreDoc = manager.searcher.search(new TermQuery(
-						new Term(EnumIndexField.DOCID.value(), (String) requestObject.get("bottomResultId"))),
+						new Term(EnumIndexField.DOCID.value(), (String) requestObject.get(BOTTOM_RESULT_ID))),
 						5).scoreDocs[0];
-				bottomScoreDoc.score = ((float) (double) requestObject.get("bottomResultScore"));
+				bottomScoreDoc.score = ((float) (double) requestObject.get(BOTTOM_RESULT_SCORE));
 				topDocs = manager.searcher.searchAfter(bottomScoreDoc, buildedQuery, pageSize * 3);
 			}
 			if (requestObject.get("hitSize") == null) {
@@ -153,8 +168,8 @@ public class SearchProviderImplementation implements SearchProvider {
 			DataManager.getImplProv().getLogger().debug("IOexception on searching: "+e.getMessage());
 		}
 		result.put("hitSizeDescription", "");
-		result.put("displayedPage", (long) requestObject.get("displayedPage"));
-		result.put("pageIndex", pageIndex);
+		result.put(DISPLAYED_PAGE, (long) requestObject.get(DISPLAYED_PAGE));
+		result.put(PAGE_INDEX, pageIndex);
 		// DataManager.getImplProv().getLogger().info("Finished Query with:
 		// "+topDocs.totalHits.value);
 		String whereToSearch = (String) requestObject.get("whereToSearch");
@@ -264,7 +279,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		Set<String> set = Set.of(new String[] { EnumIndexField.DOCID.value() });
 		if (pageArraySize == 0) {
 			page.put("bottomResult", null);
-			page.put("bottomResultScore", 0);
+			page.put(BOTTOM_RESULT_SCORE, 0);
 			page.put("page", 1);
 			page.put("index", 0);
 			pageArray.add(page);
@@ -278,7 +293,7 @@ public class SearchProviderImplementation implements SearchProvider {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
 									.get(EnumIndexField.DOCID.value()));
-							page.put("bottomResultScore", scoreDocs[index].score);
+							page.put(BOTTOM_RESULT_SCORE, scoreDocs[index].score);
 							page.put("page", i + 1);
 							page.put("index", i);
 							pageArray.add(page);
@@ -305,7 +320,7 @@ public class SearchProviderImplementation implements SearchProvider {
 						try {
 							page.put("bottomResult", manager.searcher.doc(scoreDocs[index].doc, set)
 									.get(EnumIndexField.DOCID.value()));
-							page.put("bottomResultScore", scoreDocs[index].score);
+							page.put(BOTTOM_RESULT_SCORE, scoreDocs[index].score);
 							page.put("page", i + 1 + pageArraySize);
 							page.put("index", i + pageArraySize);
 							pageArray.add(page);
@@ -332,10 +347,10 @@ public class SearchProviderImplementation implements SearchProvider {
 					DataManager.getSearchManager().release(manager);
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				DataManager.getImplProv().getLogger().debug("Couldnt close SearcherManager: "+e.getMessage());
 			}
 		}
-		result.put("bottomResultScore", scoreDocs[pageSize - 1].score);
+		result.put(BOTTOM_RESULT_SCORE, scoreDocs[pageSize - 1].score);
 		if(Thread.interrupted()) {
 			result.put("facets", new JSONArray());
 		}else {
@@ -380,8 +395,8 @@ public class SearchProviderImplementation implements SearchProvider {
 				}
 				result.put("parsedQuery", queryString.toString());
 				queryJoiner.add(queryString);
-			} catch (ParseException e1) {
-				e1.printStackTrace();
+			} catch (ParseException e) {
+				DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
 			}
 		JSONArray queries = (JSONArray) jsonArray.get("queries");
 		if (queries != null) {
@@ -628,8 +643,10 @@ public class SearchProviderImplementation implements SearchProvider {
 				result.add(jsonFacet);
 			}
 			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IOException ioError) {
+			DataManager.getImplProv().getLogger().debug("Low level index error when retrieving Facets: "+ioError.getMessage());
+		} catch (ParseException parserError) {
+			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+parserError.getMessage());
 		}
 		return new JSONArray();
 	}
@@ -651,7 +668,6 @@ public class SearchProviderImplementation implements SearchProvider {
 				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.SIZE.value()));
 				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.STARTDATE.value()));
 			} catch (Exception e) {
-				e.printStackTrace();
 				DataManager.getSearchManager().release(manager);
 				return new HashMap<String, String>();
 			}finally {
@@ -687,8 +703,8 @@ public class SearchProviderImplementation implements SearchProvider {
 				}
 			}
 			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("Low level index error when generating the initial filter values: "+e.getMessage());
 		}
 		return new HashMap<String, String>();
 	}
@@ -696,54 +712,51 @@ public class SearchProviderImplementation implements SearchProvider {
 	
 
 
-	public JSONObject getHighlightedSections(String doc, String q) throws IOException, ParseException {
-		SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
-		Query query = new TermQuery(new Term(EnumIndexField.DOCID.value(), doc));
-		ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
-		JSONObject result = new JSONObject();
-		if (hits.length > 0) {
-			Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
-					.getAnalyzer();
-			QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), analyzer);
-			Highlighter highlighter = new Highlighter(
-					new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"),
-					new QueryScorer(parser.parse(q)));
-			highlighter.setTextFragmenter(new SimpleFragmenter(300));// 48
-			Document document = manager.searcher.doc(hits[0].doc);
-			TokenStream tokenStream = TokenSources.getAnyTokenStream(manager.searcher.getIndexReader(), hits[0].doc,
-					EnumIndexField.CONTENT.value(), analyzer);
-			TextFragment[] fragments;
-			try {
-				fragments = highlighter.getBestTextFragments(tokenStream,
-						document.get(EnumIndexField.CONTENT.value()), false, 10);
-				List<String> snipets = new ArrayList<>();
-				for (TextFragment fragment : fragments) {
-					if (fragment.getScore() > 0.0) {
-						snipets.add(fragment.toString());
+	public JSONObject getHighlightedSections(String docId, String queryString) {
+		try {
+			SearcherAndTaxonomy manager = DataManager.getSearchManager().acquire();
+			Query query = new TermQuery(new Term(EnumIndexField.DOCID.value(), docId));
+			ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
+			JSONObject result = new JSONObject();
+			if (hits.length > 0) {
+				Analyzer analyzer = ((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter()
+						.getAnalyzer();
+				QueryParser parser = new QueryParser(EnumIndexField.CONTENT.value(), analyzer);
+				Highlighter highlighter = new Highlighter(
+						new SimpleHTMLFormatter("<span style='color:#0275d8; font-weight:bold;'>", "</span>"),
+						new QueryScorer(parser.parse(queryString)));
+				highlighter.setTextFragmenter(new SimpleFragmenter(300));// 48
+				Document document = manager.searcher.doc(hits[0].doc);
+				TokenStream tokenStream = TokenSources.getAnyTokenStream(manager.searcher.getIndexReader(), hits[0].doc,
+						EnumIndexField.CONTENT.value(), analyzer);
+				TextFragment[] fragments;
+				try {
+					fragments = highlighter.getBestTextFragments(tokenStream,
+							document.get(EnumIndexField.CONTENT.value()), false, 10);
+					List<String> snipets = new ArrayList<>();
+					for (TextFragment fragment : fragments) {
+						if (fragment.getScore() > 0.0) {
+							snipets.add(fragment.toString());
+						}
 					}
+					result.put(EnumIndexField.CONTENT.value(), snipets);
+				} catch (IOException | InvalidTokenOffsetsException e) {
+					result.put("msg", "There was an Error, Document not found.");
 				}
-				result.put(EnumIndexField.CONTENT.value(), snipets);
-			} catch (IOException | InvalidTokenOffsetsException e) {
+
+			} else {
 				result.put("msg", "There was an Error, Document not found.");
 			}
-
-		} else {
-			result.put("msg", "There was an Error, Document not found.");
+			return result;
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("IOError occured when working with Lucene index: "+e.getMessage());
+		} catch (ParseException e) {
+			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+e.getMessage());
 		}
-		return result;
+		return new JSONObject();
 	}
 
 	public HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType) {
-		final long startTime = System.currentTimeMillis();
-		IndexReader reader = null;
-		try {
-			Directory indexDirectory = FSDirectory.open(Paths.get(
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getIndexDirectory().toString(),
-					"Master_Index"));
-			reader = DirectoryReader.open(indexDirectory);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
 		BooleanQuery.setMaxClauseCount(10000);
 		CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 		final CharArraySet stopSet = new CharArraySet(
@@ -763,7 +776,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		parser.setDefaultOperator(QueryParser.OR_OPERATOR);
 		org.apache.lucene.search.Query luceneQuery = null;
 		if (fuzzy) {
-			keyword += "~";
+			keyword += TILDE;
 		}
 		try {
 			luceneQuery = parser.parse(keyword);

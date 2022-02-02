@@ -251,7 +251,7 @@ public class DataManager {
 	}
 	/**
 	 * Getter for the TaxonomyReader
-	 * @return
+	 * @return The TaxonomyReady
 	 */
 	public static TaxonomyReader getTaxonomyReader() {
 		return taxoReader;
@@ -259,7 +259,7 @@ public class DataManager {
 	
 	/**
 	 * Getter for the FacetsConfig
-	 * @return
+	 * @return The FacetsConfig for faceted indexing
 	 */
 	public static FacetsConfig getFacetsConfig() {
 		return config;
@@ -267,7 +267,7 @@ public class DataManager {
 
 	/**
 	 * Getter for the SearcherManager
-	 * @return
+	 * @return The SearcherManager
 	 */
 	public static SearcherTaxonomyManager getSearchManager() {
 		return searchManager;

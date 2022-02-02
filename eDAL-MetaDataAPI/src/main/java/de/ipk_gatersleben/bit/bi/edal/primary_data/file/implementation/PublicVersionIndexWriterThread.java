@@ -126,6 +126,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	private DirectoryReader directoryReader;
 	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), PUBLIC_LAST_ID);
+	private boolean isInTestMode = false;
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
 			Logger implementationProviderLogger, IndexWriter writer, DirectoryTaxonomyWriter taxoWriter) {
@@ -156,7 +157,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				this.setLastID((int) ois.readObject());
 				ois.close();
 			} catch (IOException | ClassNotFoundException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("Error reading the last indexed stored id: " + e.getMessage());
 			}
 		}
 		this.indexLogger.debug("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
@@ -208,11 +209,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			Predicate predicateId = criteriaBuilder.gt(root.get(ID), PublicVersionIndexWriterThread.getLastID());
 			Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS),
 					PublicationStatus.ACCEPTED);
-			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
-			if(DataManager.getConfiguration() == null) {
-				System.out.print("# CONFIG NULL!");
-			}
-			if (DataManager.getConfiguration().isInTestMode()) {
+			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);			
+			if (isInTestMode) {
 				criteria.where(criteriaBuilder.and(predicateId, predicateType))
 						.orderBy(criteriaBuilder.asc(root.get(ID)));
 			} else {
@@ -482,7 +480,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					this.indexLogger.debug("Error writing the native_last_id: " + e.getMessage());
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				this.indexLogger.debug("Error commting new indexed Documents: " + e.getMessage());
 			}
 			flushedObjects += FETCH_SIZE;
 			if (this.indexedVersions > 0 && pubRef > PublicVersionIndexWriterThread.getLastID()) {
@@ -581,7 +579,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 						}
 					} catch (NumberFormatException e) {
-						e.printStackTrace();
 						this.indexLogger.debug("String conversion failed: " + e.getMessage());
 						fileSize = -1;
 					}
@@ -740,7 +737,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		try {
 			this.latch.await();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			this.indexLogger.debug("IndexThread was interrupted while waiting: " + e.getMessage());
 		}
 
 		this.implementationProviderLogger.info("Start reseting index structure...");
@@ -752,7 +749,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			numberDocs += reader.numDocs();
 			reader.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.indexLogger.debug("Error closing the IndexReader: " + e.getMessage());
 		}
 		this.indexWriterThreadLogger.debug("Number of docs after index rebuild: " + numberDocs);
 		// final FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -791,8 +788,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 	/**
 	 * Getter for the last indexed Publicreference ID
-	 * 
-	 * @return
+	 * @return The last indexed version ID of this Thread
 	 */
 	protected static int getLastID() {
 		return PublicVersionIndexWriterThread.lastIndexedID;
@@ -831,5 +827,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
+	}
+
+	public void setTestMode(boolean inTestMode) {
+		this.isInTestMode = inTestMode;	
 	}
 }

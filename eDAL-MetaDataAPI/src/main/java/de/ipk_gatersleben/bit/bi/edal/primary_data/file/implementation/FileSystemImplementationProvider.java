@@ -113,6 +113,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
 public class FileSystemImplementationProvider
 		implements ImplementationProvider {
 
+	private static final String FACETS = "Facets";
+
+	private static final String MASTER_INDEX = "Master_Index";
+
 	private static final String EDALDB_DBNAME = "edaldb";
 
 	private Logger logger = null;
@@ -435,7 +439,7 @@ public class FileSystemImplementationProvider
 			} else {
 				try {
 					Directory indexingDirectory = FSDirectory
-							.open(Paths.get(indexDirectory.toString(), "Master_Index"));
+							.open(Paths.get(indexDirectory.toString(), MASTER_INDEX));
 					TieredMergePolicy pol = new TieredMergePolicy();		
 					CharArraySet defaultStopWords = EnglishAnalyzer.ENGLISH_STOP_WORDS_SET;
 					final CharArraySet stopSet = new CharArraySet(STOPWORDS.size()+defaultStopWords.size(), false);
@@ -443,15 +447,13 @@ public class FileSystemImplementationProvider
 					stopSet.addAll(STOPWORDS);
 					IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
-					writer = new IndexWriter(indexingDirectory, writerConfig);		
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				try {
-					this.facetDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(), "Facets"));
+					writer = new IndexWriter(indexingDirectory, writerConfig);	
+					this.facetDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(), FACETS));
 					taxoWriter = new DirectoryTaxonomyWriter(facetDirectory);
 				} catch (IOException e) {
-					e.printStackTrace();
+					this.getLogger().error(
+							"System wasn't able to create/open Lucene Index!");
+					System.exit(0);
 				}
 				indexWriterThreads
 						.add(new NativeLuceneIndexWriterThread(
@@ -467,6 +469,7 @@ public class FileSystemImplementationProvider
 						indexWriterThreads.size());
 				indexWriterThreads.get(0).setCountDownLatch(this.countDownLatch);
 				indexWriterThreads.get(1).setCountDownLatch(this.countDownLatch);
+				((PublicVersionIndexWriterThread)indexWriterThreads.get(1)).setTestMode(configuration.isInTestMode());
 				this.setIndexThread(indexWriterThreads.get(0));
 				this.setPublicVersionWriter(
 						(PublicVersionIndexWriterThread) indexWriterThreads

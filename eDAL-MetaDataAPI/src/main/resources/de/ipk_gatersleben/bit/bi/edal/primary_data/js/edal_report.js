@@ -228,8 +228,6 @@ let EdalReport = new function() {
                   if (searchword === null) {
                       //self.datatable.search('').columns(5).search(self.yearFilter).draw();
                       self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
                       self.datatable.destroy();
                       self.renderDatatable();
                       var totalAccesses = 0;
@@ -247,19 +245,16 @@ let EdalReport = new function() {
                       document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
                   } else {
                       //self.datatable.search(searchword).columns(5).search(self.yearFilter).draw();
-                      //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/keywordsearch/"+self.yearFilter);
+                      //self.reportData = $.get("http://bit-58.ipk-gatersleben.de/rest/extendedSearch/"+self.yearFilter);
                       self.ID++;
                       var requestId = self.ID;
-                      $.get( serverURL+"/rest/keywordsearch/"+self.yearFilter, function( data ) {
+                      $.get( serverURL+"/rest/extendedSearch/"+self.yearFilter, function( data ) {
                           self.reportData = data;
-                          console.log("Data:")
-                          console.log(self.reportData);
                           if(self.ID == requestId){
                             self.datatable.destroy();
                             self.renderDatatable();
                             var totalAccesses = 0;
                             var totalDownloadVolume = 0;
-                            console.log("stringContent: "+data[1].downloads);
                             self.reportData.forEach((item) => {
                               var accesses = parseInt(item.accesses);
                               if(!isNaN(accesses)){
@@ -278,8 +273,6 @@ let EdalReport = new function() {
                   if (searchword === null) {
                       //self.datatable.search('').columns().search('').draw();
                       self.reportData = self.initReportData;
-                      console.log("Data:")
-                      console.log(self.reportData);
                       self.datatable.destroy();
                       self.renderDatatable();
                       var totalAccesses = 0;
@@ -293,22 +286,20 @@ let EdalReport = new function() {
                         if(!isNaN(vol)){
                           totalDownloadVolume += parseInt(item.downloads);
                         }
-                        console.log("totalVolume: "+totalDownloadVolume)
                       });
                       document.getElementById("statisticsSpan").innerHTML = "DOIs: "+self.reportData.length+" - distinct client IP addresses: "+totalAccesses+" - download volume: "+self.niceBytes(totalDownloadVolume);
                   } else {
                       self.ID++;
                       var requestId = self.ID;
-                      $.get( serverURL+"/rest/keywordsearch/"+searchword, function( data ) {
+                      $.get( serverURL+"/rest/extendedSearch/"+searchword, function( data ) {
                           self.reportData = data;
-                          console.log("ID: "+requestId+"Data:")
-                          console.log(self.reportData);
                           if(self.ID == requestId){
                             self.datatable.destroy();
+                            $("#report tbody").empty();
+                            $("#report thead").empty();
                             self.renderDatatable();
                             var totalAccesses = 0;
                             var totalDownloadVolume = 0;
-                            console.log("stringContent: "+data[1].downloads);
                             self.reportData.forEach((item) => {
                               var accesses = parseInt(item.accesses);
                               if(!isNaN(accesses)){

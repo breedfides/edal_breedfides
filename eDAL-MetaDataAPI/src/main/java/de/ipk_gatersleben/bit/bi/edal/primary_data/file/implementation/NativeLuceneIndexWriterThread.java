@@ -119,7 +119,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.implementation.MyUnt
 /**
  * IndexWriterThread class to realize manual indexing strategy
  * 
- * @author arendd
+ * @author arendd, Ralfs
  */
 public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 
@@ -422,7 +422,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	 */
 	private String getString(UntypedData data) {
 		String string = data.getString();
-		return string == null ? "" : string;
+		return string == null ? new String() : string;
 	}
 
 	/**
@@ -478,6 +478,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 	
 	/**
 	 * Getter for the last indexed ID of this Thread
+	 * @return The last indexed version id
 	 */
 	public int getLastID() {
 		return this.lastIndexedID;
