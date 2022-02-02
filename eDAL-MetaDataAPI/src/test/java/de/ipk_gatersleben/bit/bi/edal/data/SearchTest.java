@@ -157,7 +157,7 @@ public class SearchTest extends EdalDefaultTestCase{
 						Assertions.assertEquals(9, result.get("hitSize"));
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("Error creating the Searchprovider: "+e.getMessage());
 				} 
 				latch.countDown();
 			}
@@ -175,10 +175,8 @@ public class SearchTest extends EdalDefaultTestCase{
 		FileUtils.deleteDirectory(new File(PATH.toString()));
 	}
 	static void createDataset() throws IOException {
-		System.out.println("PREPARING");
 		File dir = PATH.toFile();
 		if(!dir.exists()) {
-			System.out.println("creating "+PATH.toAbsolutePath().toString());
 			dir.mkdir();
 		}		
 		for(int j = 0; j < 3; j++) {
