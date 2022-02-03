@@ -178,13 +178,6 @@ public class DataManager {
 	private static ExecutorService listExecutorService = null;
 	private static ExecutorService velocityExecutorService = null;
 
-	/**
-	 * Manages the reopining and sharing of IndexSearcher instances
-	 */
-	private static SearcherTaxonomyManager searchManager;
-	
-	private static TaxonomyReader taxoReader = null;
-	private static FacetsConfig config = new FacetsConfig();
 
 	static {
 
@@ -217,12 +210,7 @@ public class DataManager {
 		DataManager.DEFAULT_PERMISSIONS.put(new ALLPrincipal(), methods);
 
 		DataManager.resetDefaultPermissions();
-		
-		config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
-		config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
-		config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
-		config.setMultiValued(EnumIndexField.TITLE.value(), true);
-		config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
+
 
 		try {
 			DataManager.rootCheat = new InternetAddress(ROOT_CHEAT);
@@ -248,29 +236,6 @@ public class DataManager {
 		} catch (ReflectiveOperationException e) {
 			throw new EdalException("Unable to initiate ServiceProvider");
 		}
-	}
-	/**
-	 * Getter for the TaxonomyReader
-	 * @return The TaxonomyReady
-	 */
-	public static TaxonomyReader getTaxonomyReader() {
-		return taxoReader;
-	}
-	
-	/**
-	 * Getter for the FacetsConfig
-	 * @return The FacetsConfig for faceted indexing
-	 */
-	public static FacetsConfig getFacetsConfig() {
-		return config;
-	}
-
-	/**
-	 * Getter for the SearcherManager
-	 * @return The SearcherManager
-	 */
-	public static SearcherTaxonomyManager getSearchManager() {
-		return searchManager;
 	}
 
 	/**
@@ -419,13 +384,7 @@ public class DataManager {
 		if (DataManager.stopLatch.getCount() == 0) {
 			DataManager.stopLatch = new CountDownLatch(1);
 		}
-		IndexWriter writer = ((FileSystemImplementationProvider)implementationProvider).getWriter();
-		DirectoryTaxonomyWriter taxoWriter = ((FileSystemImplementationProvider)implementationProvider).getTaxoWriter();
-		try {
-			searchManager = new SearcherTaxonomyManager(writer, new SearcherFactory(), taxoWriter);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+
 		/**
 		 * set the current subject and implementation provider in ThreadLocal variable
 		 * to bound both to the thread
@@ -907,10 +866,7 @@ public class DataManager {
 
 		DataManager.alreadyClosed = true;
 
-		waitForConnectionClose();
-		waitForSessionFactoryClose();
 		// checkLastIds();
-		// checkDb();
 	}
 
 	public static void waitForShutDown() {
@@ -977,52 +933,4 @@ public class DataManager {
 		outputStream.flush();
 	}
 
-	public static void waitForConnectionClose() {
-		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider) getImplProv());
-		try {
-			while (!((FileSystemImplementationProvider) getImplProv()).getConnection().isClosed()) {
-				implProvi.getLogger().info("DB STILL OPEN!");
-				Thread.sleep(1000);
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public static void waitForSessionFactoryClose() {
-		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider) getImplProv());
-		while (((FileSystemImplementationProvider) getImplProv()).getSessionFactory().isOpen()) {
-			try {
-				implProvi.getLogger().info("SESSIONFACTORY STILL OPEN");
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-
-	public static void checkDb() {
-		FileSystemImplementationProvider implProvi = ((FileSystemImplementationProvider) getImplProv());
-		Path path = implProvi.getConfiguration().getMountPath();
-		try {
-			if (Files.exists(Paths.get(path.toString(), "edaldb.mv.db")))
-				Files.delete(Paths.get(path.toString(), "edaldb.mv.db"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			if (Files.exists(Paths.get(path.toString(), "edaldb.trace.db")))
-				Files.delete(Paths.get(path.toString(), "edaldb.trace.db"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
 }

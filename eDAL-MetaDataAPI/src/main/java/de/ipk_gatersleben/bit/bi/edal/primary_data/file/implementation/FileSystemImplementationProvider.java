@@ -42,10 +42,14 @@ import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
+import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.TieredMergePolicy;
+import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.ehcache.CacheManager;
@@ -166,11 +170,26 @@ public class FileSystemImplementationProvider
 	private CacheManager cacheManager = null;
 	
 	private Directory facetDirectory = null;
+	
+
+	/**
+	 * Manages the reopining and sharing of IndexSearcher instances
+	 */
+	private static SearcherTaxonomyManager searchManager;
+	
+	private static TaxonomyReader taxoReader = null;
+	private static FacetsConfig config = new FacetsConfig();
 
 	public FileSystemImplementationProvider(
 			EdalConfiguration configuration) {
 
 		this.configuration = configuration;
+		
+		config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
+		config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
+		config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
+		config.setMultiValued(EnumIndexField.TITLE.value(), true);
+		config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
 
 		try {
 			this.setDatabaseUsername(this.getConfiguration()
@@ -419,6 +438,7 @@ public class FileSystemImplementationProvider
 		/* enable statistics log of the SessionFactory */
 		this.getSessionFactory().getStatistics()
 				.setStatisticsEnabled(true);
+		
 
 		if (!this.isAutoIndexing()) {
 			List<IndexWriterThread> indexWriterThreads = new ArrayList<>();
@@ -476,6 +496,11 @@ public class FileSystemImplementationProvider
 								.get(1));
 				this.getIndexThread().start();
 				this.getPublicVersionWriter().start();
+				try {
+					searchManager = new SearcherTaxonomyManager(writer, new SearcherFactory(), taxoWriter);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 			}
 		}
 	}
@@ -853,6 +878,30 @@ public class FileSystemImplementationProvider
 	
 	public Directory getFacetDirectory() {
 		return facetDirectory;
+	}
+	
+	/**
+	 * Getter for the TaxonomyReader
+	 * @return The TaxonomyReady
+	 */
+	public TaxonomyReader getTaxonomyReader() {
+		return taxoReader;
+	}
+	
+	/**
+	 * Getter for the FacetsConfig
+	 * @return The FacetsConfig for faceted indexing
+	 */
+	public FacetsConfig getFacetsConfig() {
+		return config;
+	}
+
+	/**
+	 * Getter for the SearcherManager
+	 * @return The SearcherManager
+	 */
+	public SearcherTaxonomyManager getSearchManager() {
+		return searchManager;
 	}
 
 	public Path getIndexDirectory() {

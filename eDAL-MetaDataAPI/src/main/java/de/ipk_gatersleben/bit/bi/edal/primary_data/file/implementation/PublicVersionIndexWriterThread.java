@@ -37,6 +37,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
+import javax.transaction.Transactional;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.Logger;
@@ -240,7 +241,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				indexPublicReference(publicRef, internalId, session);
 				this.setLastID(publicRef);
 				try {
-					DataManager.getSearchManager().maybeRefresh();
+					((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().maybeRefresh();
 				} catch (IOException e) {
 					this.indexLogger.debug("Error while refreshing the SearcherManager: " + e.getMessage());
 				}
