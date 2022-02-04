@@ -540,13 +540,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			/** "Reindex" the retrieved document with additional information **/
 			try {
 				Document doc = searcher.doc(versionHit[0].doc);
-				String filetype = FilenameUtils.getExtension(doc.get(EnumIndexField.TITLE.value()));
 				addFacets(doc);
 				writer.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
 				doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
 				StringBuilder docIDBuilder = new StringBuilder(doc.get(EnumIndexField.PRIMARYENTITYID.value()))
 						.append(HYPHEN);
 				if (entityType.equals(PublicVersionIndexWriterThread.FILE)) {
+					String filetype = FilenameUtils.getExtension(doc.get(EnumIndexField.TITLE.value()));
 					docIDBuilder.append(1);				
 					// skip this field, if file has no extension
 					if (filetype != null && !filetype.isEmpty()) {
