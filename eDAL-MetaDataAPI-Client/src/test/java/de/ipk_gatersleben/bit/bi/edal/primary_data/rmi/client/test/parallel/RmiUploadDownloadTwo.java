@@ -27,9 +27,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import junit.framework.Assert;
-
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Assertions;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -152,7 +151,7 @@ public class RmiUploadDownloadTwo {
 			System.out.println("false");
 		}
 
-		Assert.assertEquals(Files.size(START_INPUT_PATH), Files.size(START_OUTPUT_PATH));
+		Assertions.assertEquals(Files.size(START_INPUT_PATH), Files.size(START_OUTPUT_PATH));
 
 		FileUtils.deleteDirectory(START_OUTPUT_PATH.getParent().toFile());
 

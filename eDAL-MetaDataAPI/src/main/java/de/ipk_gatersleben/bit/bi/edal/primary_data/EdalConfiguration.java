@@ -494,9 +494,9 @@ public final class EdalConfiguration {
 	
 
 	public void setHibernateIndexing(int configValue) {
-		if(configValue == this.HIBERNATE_SEARCH_INDEXING)
+		if(configValue == EdalConfiguration.HIBERNATE_SEARCH_INDEXING)
 			this.indexingStrategy = true;
-		else if(configValue == this.NATIVE_LUCENE_INDEXING)
+		else if(configValue == EdalConfiguration.NATIVE_LUCENE_INDEXING)
 			this.indexingStrategy = false;
 	}
 	

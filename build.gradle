@@ -1,16 +1,16 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "5.0.0"
-  id "com.github.hierynomus.license" version "0.14.0"
+  id "com.github.johnrengelman.shadow" version "6.1.0"
+  id "com.github.hierynomus.license" version "0.15.0"
   id "net.researchgate.release" version "2.6.0"
-  id "io.codearte.nexus-staging" version "0.21.2"
-  id "org.openjfx.javafxplugin" version "0.0.9"
+  id "io.codearte.nexus-staging" version "0.30.0"
+  id "org.openjfx.javafxplugin" version "0.0.11"
 }
 
 project.ext {
-    aspectjVersion = '1.9.5'
-    jerseyVersion = '2.27'
-    jettyVersion = '9.4.32.v20200930'
-    junitVersion = '5.6.0'
+    aspectjVersion = '1.9.7'
+    jerseyVersion = '2.35'
+    jettyVersion = '9.4.44.v20210927'
+    junitVersion = '5.7.0'
 }
 
 apply plugin: 'eclipse'
@@ -27,12 +27,12 @@ allprojects {
 	apply plugin:'org.openjfx.javafxplugin'
 	
 	repositories {
-		maven {url 'https://www.jitpack.io' 
-		 	content {
-        		includeGroupByRegex "com\\.github\\.develar.*"
-        		//includeGroupByRegex "com\\.github\\.h2database.*"
-    		}	
-    	}
+	//maven {url 'https://www.jitpack.io' 
+	//	 	content {
+    //    		includeGroupByRegex "com\\.github\\.develar.*"
+    //    		//includeGroupByRegex "com\\.github\\.h2database.*"
+    //		}	
+    //	}
 	    mavenCentral()
 	    jcenter()
 	    maven {url "https://oss.sonatype.org/content/repositories/snapshots"}
@@ -40,6 +40,11 @@ allprojects {
 	    maven {url "https://maven.eveoh.nl/content/repositories/releases"}
         maven {url "https://plugins.gradle.org/m2/"}
 	}
+	//show deprecation warnings
+	tasks.withType(JavaCompile) {
+		options.compilerArgs << "-Xlint:deprecation"
+	}
+	//show deprecation warnings
 	
 	sourceCompatibility = JavaVersion.VERSION_12
 	targetCompatibility = JavaVersion.VERSION_12
@@ -246,36 +251,31 @@ project.tasks.afterReleaseBuild.dependsOn project.getSubprojects().collect({it.g
 project(':eDAL-MetaDataAPI') {	
  	dependencies {
 	   
-	   
-	   
-	    compile group: 'commons-io', name: 'commons-io', version:'2.6'
+	    compile group: 'commons-io', name: 'commons-io', version:'2.11.0'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
 	    compile group: 'com.h2database', name: 'h2', version:'1.4.199'
     	/*compile ('com.github.h2database:h2database:master-SNAPSHOT'){
         	exclude group: 'org.apache.lucene'
     	}*/
 		//compile group: 'org.hibernate', name: 'hibernate-search-orm', version:'5.11.5.Final'*/
-		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Beta11'
-    	compile group: 'org.hibernate.search', name: 'hibernate-search-backend-lucene', version: '6.0.0.Beta11'
+		compile group: 'org.hibernate.search', name: 'hibernate-search-mapper-orm', version: '6.0.0.Final'
+    	compile group: 'org.hibernate.search', name: 'hibernate-search-backend-lucene', version: '6.0.0.Final'
     	// https://mvnrepository.com/artifact/org.apache.lucene/lucene-highlighter
 		compile group: 'org.apache.lucene', name: 'lucene-highlighter', version: '8.7.0'
 		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-backward-codecs
 		compile group: 'org.apache.lucene', name: 'lucene-backward-codecs', version: '8.7.0'
 		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-misc
 		compile group: 'org.apache.lucene', name: 'lucene-misc', version: '8.7.0'
-		
-		
-    	
-    	
-		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.22.Final'
-		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.4.22.Final'
-		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.4.22.Final'
-	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.6.1'
+		    	
+		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.6.5.Final'
+		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.6.5.Final'
+		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.6.5.Final'
+	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.9.9'
 	
-	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.0'
-	    compile group: 'org.apache.commons', name: 'commons-lang3', version:'3.8.1'
+	    compile group: 'org.apache.velocity', name: 'velocity-engine-core', version:'2.3'
+	    compile group: 'org.apache.commons', name: 'commons-lang3', version:'3.12.0'
 	    compile group: 'com.sun.mail', name: 'javax.mail', version:'1.6.2'
-	    compile group: 'org.quartz-scheduler', name: 'quartz', version:'2.3.0'
+	    compile group: 'org.quartz-scheduler', name: 'quartz', version:'2.3.2'
 	    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: jettyVersion
 	    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: jettyVersion
 	    compile group: 'org.eclipse.jetty.http2', name: 'http2-server', version: jettyVersion
@@ -289,13 +289,12 @@ project(':eDAL-MetaDataAPI') {
 		compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.17.1'
 		
 	    compile group: 'com.maxmind.geoip2', name: 'geoip2', version:'2.12.0'
-	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.19.1'
+	    compile group: 'org.apache.tika', name: 'tika-core', version:'1.28'
 	    
-		compile group: 'org.bidib.com.github.markusbernhardt', name: 'proxy-vole', version: '1.0.10'
+		compile group: 'org.bidib.com.github.markusbernhardt', name: 'proxy-vole', version: '1.0.15'
 				  
 	 	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
 	  	
-	   	   	
 	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
 	    	   	
@@ -342,6 +341,15 @@ project(':eDAL-MetaDataAPI') {
 		delete new File(homePath, "edaltest/")
 		followSymlinks = true
 	  }
+	  
+	  task cleanUpTestDirectoryClient(type: Delete) {
+		  
+		  def homePath = ant.properties['user.home']
+		  println homePath
+		  delete new File(homePath, "TEST_READ/")
+		  followSymlinks = true
+		}
+	  test.finalizedBy(cleanUpTestDirectoryClient)
 	test.finalizedBy(cleanUpTestDirectoryAPI)
 }
 
@@ -349,7 +357,7 @@ project(':eDAL-MetaDataAPI') {
 project(':eDAL-MetaDataAPI-Server') {
 	dependencies {
 		compile project(':eDAL-MetaDataAPI')
-	    compile group: 'commons-cli', name: 'commons-cli', version:'1.4'
+	    compile group: 'commons-cli', name: 'commons-cli', version:'1.5.0'
 	   	compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.2'
 	}
 
@@ -393,12 +401,5 @@ project(':eDAL-MetaDataAPI-Client') {
 		archives shadowJar
 	}
 	
-	task cleanUpTestDirectoryClient(type: Delete) {
-		
-		def homePath = ant.properties['user.home']
-		println homePath
-		delete new File(homePath, "TEST_READ/")
-		followSymlinks = true
-	  }
-	test.finalizedBy(cleanUpTestDirectoryClient)
+	
 }

@@ -17,12 +17,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.Policy;
 import java.security.Principal;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,13 +44,6 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.security.auth.Subject;
 
-import org.apache.lucene.facet.FacetsConfig;
-import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
-import org.apache.lucene.facet.taxonomy.TaxonomyReader;
-import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.search.SearcherFactory;
-import org.apache.lucene.search.SearcherManager;
 import org.eclipse.jetty.util.thread.ThreadPool;
 
 import de.ipk_gatersleben.bit.bi.edal.aspectj.security.GrantableMethods.Methods;
@@ -66,10 +55,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ALLPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CleanBrokenEntitiesThread;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ListThread;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.MetaDataImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.RebuildIndexThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.CheckReviewStatusThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
@@ -831,19 +817,19 @@ public class DataManager {
 			DataManager.checkReviewStatusThread.done();
 		}
 		long finish = System.currentTimeMillis();
-		implementationprovider.getLogger().info("\nTime: " + (finish - start));
+		implementationprovider.getLogger().info("Time: " + (finish - start));
 		start = System.currentTimeMillis();
 		if (!DataManager.calculateThread.getState().equals(Thread.State.TERMINATED)) {
 			implementationprovider.getLogger().info("Trying to shutdown calculateThread");
 			DataManager.calculateThread.done();
 		}
 		finish = System.currentTimeMillis();
-		implementationprovider.getLogger().info("\nTime: " + (finish - start));
+		implementationprovider.getLogger().info("Time: " + (finish - start));
 		implementationprovider.getLogger().info("Trying to shutdown ImplProvider");
 		start = System.currentTimeMillis();
 		DataManager.getImplProv().shutdown();
 		finish = System.currentTimeMillis();
-		implementationprovider.getLogger().info("\nTime: " + (finish - start));
+		implementationprovider.getLogger().info("Time: " + (finish - start));
 		if (DataManager.server != null) {
 			DataManager.server.stop();
 			DataManager.server = null;

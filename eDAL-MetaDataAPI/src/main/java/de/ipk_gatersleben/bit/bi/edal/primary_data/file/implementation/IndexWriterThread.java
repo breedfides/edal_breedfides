@@ -13,58 +13,18 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.util.ExecutorServices;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.LongPoint;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.search.mapper.orm.work.SearchIndexingPlan;
 import org.hibernate.search.mapper.orm.work.SearchWorkspace;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSum;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.CheckSumType;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataFormat;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DateEvents;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDate;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalDateRange;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EmptyMetaData;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Identifier;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.IdentifierRelation;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 
 /**
  * @author ralfs

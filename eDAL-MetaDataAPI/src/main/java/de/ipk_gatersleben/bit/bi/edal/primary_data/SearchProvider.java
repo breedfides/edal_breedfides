@@ -12,11 +12,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
