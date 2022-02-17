@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -1582,7 +1583,6 @@ class VeloCityHtmlGenerator {
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HomeTemplate.xml",
 				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
-
 		try {
 			output.flush();
 			output.close();
@@ -1592,43 +1592,35 @@ class VeloCityHtmlGenerator {
 		return output;
 	}
 	
-	class MyTerm implements Comparable<MyTerm>{
-		
-		private String term;
-		private int frequence;
-		
-		public MyTerm(String term, int frequence) {
-			this.term = term;
-			this.frequence = frequence;
+	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String email) throws EdalException {
+		final VelocityContext context = new VelocityContext();
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", ok.getCode());
+		context.put("email", email);
+		/* set serverURL */
+		try {
+			context.put("serverURL", EdalHttpServer.getServerURL());
+		} catch (EdalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		public String getTerm() {
-			return term;
-		}
-
-		@Override
-		public int compareTo(MyTerm myTerm) {
-			return this.term.compareTo(myTerm.term);
-		}
+		context.put("title", "e!DAL - DirectoryUpload");
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		
-	}
-	
-	public static List<String> getTerms() {
-		return fileTypes;
-	}
+		final StringWriter output = new StringWriter();
 
-	public static long getMaxFileSize() {
-		return maxFileSize;
-	}
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
-	public static int getMinYear() {
-		return minYear;
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
 	}
-
-	public static int getMaxYear() {
-		return maxYear;
-	}
-
 
 
 }

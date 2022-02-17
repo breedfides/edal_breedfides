@@ -22,8 +22,10 @@ import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -41,9 +43,22 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpHost;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
@@ -51,6 +66,10 @@ import org.eclipse.jetty.http.HttpStatus.Code;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -86,6 +105,9 @@ public class EdalHttpHandler extends AbstractHandler {
 
 	public static WebPageCache contentPageCache = new WebPageCache("contentpage");
 	public static WebPageCache reportPageCache = new WebPageCache("reportpage");
+	
+	private final String CLIENT_ID = "YzEyOThmNzctZWEzNC00NDJiLTgyNDQtNGE2YTE0OGQyZGMx";
+	private final String CLIENT_SECRET = "QU9sSk5IcWZfLV84NEEwVTd1MkI0LWJ5V0N0djBjdGVhTVN1Q3Brd2RPRkp4TUZ4YkFyOWZaS241WjV5RjNEdzA3MmZNeGt0R0thVTBib3VLU2lxYnJF";
 
 	static VeloCityHtmlGenerator velocityHtmlGenerator;
 
@@ -617,6 +639,18 @@ public class EdalHttpHandler extends AbstractHandler {
 								this.sendContent(response, HttpStatus.Code.OK, id, query);
 							}
 							break;
+						case CALLBACK:
+							this.sendDirectoryUploadTemplate(request.getParameter("code"), response, HttpStatus.Code.OK);
+						case OAUTH:
+							try {
+								String REDIRECT_URI = "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback";
+								response.sendRedirect("https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
+										+ "&scope=email%20profile%20openid" + "&client_id="
+										+ new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8") + "&redirect_uri="
+										+ REDIRECT_URI);
+							} catch (EdalConfigurationException e) {
+								this.sendMessage(response, HttpStatus.Code.INTERNAL_SERVER_ERROR, "EdalExcpetion.. "+e.getMessage());
+							}
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -635,6 +669,84 @@ public class EdalHttpHandler extends AbstractHandler {
 				}
 			}
 			response.flushBuffer();
+		}
+	}
+
+	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, Code ok) {
+		//Obtain accessToken
+		try {
+			CloseableHttpClient httpclient;
+			InetSocketAddress address = EdalConfiguration.guessProxySettings();
+			String httpProxyHost = address == null ? "" : address.getHostName();
+			int httpProxyPort = address == null ? 0 : address.getPort();
+			if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
+
+				httpclient = HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
+						.setDefaultCookieStore(new BasicCookieStore())
+						.setRedirectStrategy(new LaxRedirectStrategy()).build();
+			} else {
+				httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
+						.setRedirectStrategy(new LaxRedirectStrategy()).build();
+			}
+
+			List<NameValuePair> data = new ArrayList<NameValuePair>();
+			data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
+			data.add(
+					new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
+			data.add(new BasicNameValuePair("grant_type", "authorization_code"));
+			data.add(new BasicNameValuePair("redirect_uri", "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback"));
+			data.add(new BasicNameValuePair("code", requestCode));
+
+			HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
+
+			httpPost.setEntity(new UrlEncodedFormEntity(data));
+
+			CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
+
+			if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
+
+				String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
+
+				String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
+						.get("access_token").toString();
+				
+				JerseyClient client = JerseyClientBuilder.createClient();
+				
+				String resultOfUserinformationRequest = client
+						.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
+						.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
+				
+				client.close();
+				
+				JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);
+
+				String fullname = jsonobj.get("name").toString();
+				String email = jsonobj.get("email").toString();
+
+				final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUpload(response, ok, email).toString();
+				
+				response.setStatus(ok.getCode());
+				
+				response.addHeader("Access-Control-Allow-Origin", "*");
+
+				response.setContentType("text/html");
+				
+				OutputStream responseBody = response.getOutputStream();
+				responseBody.write(htmlOutput.getBytes());
+				responseBody.close();
+
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.setStatus(ok.getCode());
+			try {
+				response.sendRedirect(EdalHttpServer.getServerURL()+":"+DataManager.getConfiguration().getHttpPort()+"/oauth");
+			} catch (IOException | EdalException | EdalConfigurationException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			this.sendMessage(response, HttpStatus.Code.BAD_REQUEST, "Missing request code");
 		}
 	}
 
