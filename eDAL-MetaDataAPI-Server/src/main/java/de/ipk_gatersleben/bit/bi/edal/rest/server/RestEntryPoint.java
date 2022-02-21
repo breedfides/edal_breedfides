@@ -24,6 +24,8 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Locale;
 
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -56,7 +58,11 @@ import com.google.gson.Gson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
@@ -67,6 +73,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import javafx.application.Platform;
 
@@ -204,17 +211,17 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntity")
 	@POST
-	public String uploadEntity(String request) {
-		JSONObject data = new JSONObject();
+	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("name") String name, @FormDataParam("email") String email, @FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring) throws InterruptedException {
+		//JSONObject data = new JSONObject();
 		try {
-			data = (JSONObject) new JSONParser().parse(request);
-			String[] pathArray = ((String) data.get("name")).split("\\\\");
-			String type = (String) data.get("type");
+			//data = (JSONObject) new JSONParser().parse(request);
+			String[] pathArray = name.split("\\\\");
+			//String type = (String) data.get("type");
 			
 			Subject subject = new Subject();
-			subject.getPrincipals().add(new ElixirPrincipal((String) data.get("email")));
+			subject.getPrincipals().add(new ElixirPrincipal(email));
 			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			System.out.println((String)data.get("name"));
+			System.out.println(name);
 			if(pathArray.length > 1) {
 				int j = 0;
 			}
@@ -226,10 +233,13 @@ public class RestEntryPoint {
 				}
 				if(type.equals("Directory")) {
 					PrimaryDataDirectory newDataSet = parent.createPrimaryDataDirectory(pathArray[lastIndex]);
+					JSONObject metadatajson = null;
+					metadatajson = (JSONObject) new JSONParser().parse(metadatastring);
+					String authorr = metadatajson == null ? "nometadata" : (String)metadatajson.get("author");
 					if(pathArray.length == 1) {
 						MetaData metadata = newDataSet.getMetaData().clone();
 						Persons persons = new Persons();
-						NaturalPerson np = new NaturalPerson("Peter", "Ralfs",
+						NaturalPerson np = new NaturalPerson("Peter", authorr,
 								"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraﬂe 3",
 								"06466", "Germany");
 						persons.add(np);
@@ -253,7 +263,13 @@ public class RestEntryPoint {
 						newDataSet.setMetaData(metadata);
 					}
 				}else {
-					parent.createPrimaryDataFile(pathArray[pathArray.length-1]);
+					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length-1]);
+					try {
+						file.store(uploadedInputStream);
+					} catch (PrimaryDataFileException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}else {
 				return "500";
@@ -272,6 +288,19 @@ public class RestEntryPoint {
 			e.printStackTrace();
 		}
 		return "500";
+	}
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("publishDataset")
+	@POST
+	public String publishDataset(String request) throws PrimaryDataDirectoryException, AddressException, PublicReferenceException, PrimaryDataEntityException, ParseException {
+		JSONObject data = (JSONObject) new JSONParser().parse(request);
+		Subject subject = new Subject();
+		subject.getPrincipals().add(new ElixirPrincipal((String) data.get("email")));
+		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+		PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity((String) data.get("name"));
+		entity.addPublicReference(PersistentIdentifier.DOI);
+		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress((String) data.get("email")));
+		return "success";
 	}
 	
 
@@ -381,9 +410,9 @@ public class RestEntryPoint {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFile(
 		@FormDataParam("file") InputStream uploadedInputStream,
-		@FormDataParam("file") FormDataContentDisposition fileDetail) {
+		@FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("name") String name ) {
 
-		String uploadedFileLocation = "d://uploaded/" + fileDetail.getFileName();
+		String uploadedFileLocation = "d://uploaded/" + name;
 
 		// save it
 		writeToFile(uploadedInputStream, uploadedFileLocation);

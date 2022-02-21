@@ -14,6 +14,7 @@ package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Locale;
 
 import javax.mail.internet.AddressException;
@@ -74,6 +75,10 @@ public class EdalRestServer {
 		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
 
 		EdalHttpServer server = DataManager.getHttpServer();
+//		
+//		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("uploadtest2");
+//		
+//		List<PrimaryDataEntity> entities = dir.listPrimaryDataEntities();
 
 		HandlerCollection currentHandler = server.getHandlers();
 
