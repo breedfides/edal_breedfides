@@ -12,6 +12,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -35,6 +38,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryExce
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
@@ -54,18 +58,20 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class EdalRestServer {
 
 	public static ImplementationProvider implProv= null;
+	private static File OUTPUTFILES = new File(System.getProperty("user.home")
+			+ File.separatorChar + "output");
 	
 	
-	public static void startRestServer() {
-		
-	}
-	
-	public static void main(String[] args) throws AddressException, EdalConfigurationException,
-			PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
-
-		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
-				new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
-				new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"));
+	public static PrimaryDataDirectory startRestServer(EdalConfiguration config) throws AddressException, EdalConfigurationException,
+	PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException  {
+		EdalConfiguration configuration ;
+		if(config == null) {
+			configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
+					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
+					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"));
+		}else {
+			configuration = config;
+		}
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		configuration.setHttpPort(6789);
 		configuration.setUseSSL(false);
@@ -75,10 +81,10 @@ public class EdalRestServer {
 		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
 
 		EdalHttpServer server = DataManager.getHttpServer();
+		
+//		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
 //		
-//		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("uploadtest2");
-//		
-//		List<PrimaryDataEntity> entities = dir.listPrimaryDataEntities();
+//		loadDir(dir);
 
 		HandlerCollection currentHandler = server.getHandlers();
 
@@ -96,8 +102,55 @@ public class EdalRestServer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return root;
 		//uploadZip(root, "Dataset12", "Ralfs1");
+	}
+	
+	public static void main(String[] args) throws AddressException, EdalConfigurationException,
+			PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
 
+		startRestServer(null);
+
+	}
+	
+	private static void loadDir(final PrimaryDataDirectory currentDirectory)
+			throws PrimaryDataDirectoryException, PrimaryDataFileException,
+			FileNotFoundException {
+
+		final List<PrimaryDataEntity> list = currentDirectory
+				.listPrimaryDataEntities();
+
+		if (list != null) {
+			for (final PrimaryDataEntity primaryDataEntity : list) {
+
+				if (!primaryDataEntity.isDirectory()) {
+					PrimaryDataFile file = (PrimaryDataFile) primaryDataEntity;
+
+					File tmp = new File(OUTPUTFILES.getAbsolutePath()
+							+ File.separatorChar + primaryDataEntity);
+
+					if (!tmp.exists()) {
+						try {
+							tmp.getParentFile().mkdirs();
+							tmp.createNewFile();
+						} catch (IOException e) {
+							System.out.println("couldn't create File");
+						}
+					}
+
+					FileOutputStream outputStream = new FileOutputStream(tmp);
+					file.read(outputStream);
+
+				}
+				if (primaryDataEntity.isDirectory()) {
+					OUTPUTFILES = new File(OUTPUTFILES.getAbsolutePath()
+							+ File.separatorChar + primaryDataEntity);
+					loadDir((PrimaryDataDirectory) primaryDataEntity);
+				}
+			}
+			OUTPUTFILES = new File(OUTPUTFILES.getParentFile()
+					.getAbsolutePath());
+		}
 	}
 	
 	public static void uploadZip(PrimaryDataDirectory currentDirectory, String title, String author)

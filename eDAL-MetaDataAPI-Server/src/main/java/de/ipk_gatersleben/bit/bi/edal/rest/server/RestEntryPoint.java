@@ -13,15 +13,19 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.Locale;
 
 import javax.mail.internet.AddressException;
@@ -95,11 +99,72 @@ public class RestEntryPoint {
 		info.server = System.getProperty("os.name") + " " + System.getProperty("os.version");
 		return info;
 	}
-	
+
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("authenticate")
 	@POST
-	public String authenticate(String email) throws Exception {
+	public String authenticate(@FormDataParam("email") String email) throws Exception {
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		System.out.println(email);
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+
+		LoginContext ctx = null;
+		try {
+			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
+			ctx.login();
+			Thread.currentThread().setContextClassLoader(currentClassLoader);
+			Platform.setImplicitExit(true);
+			Subject subject = ctx.getSubject();
+			// return (String) jsonEmail.get("email");
+//			StreamingOutput stream = new StreamingOutput() {
+//				@Override
+//				public void write(OutputStream os) throws IOException, WebApplicationException {
+//					ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
+//					objectOutputStream.writeObject(subject);
+//					objectOutputStream.flush();
+//				}
+//			};			
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = null;
+			try {
+			  out = new ObjectOutputStream(bos);   
+			  out.writeObject(subject);
+			  out.flush();
+			  byte[] yourBytes = bos.toByteArray();			
+				return Base64.getEncoder().encodeToString(yourBytes);
+			} finally {
+			  try {
+			    bos.close();
+			  } catch (IOException ex) {
+			    // ignore close exception
+			  }
+			}
+			// PrimaryDataDirectory root =
+			// DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+		} catch (final LoginException e) {
+
+			int result = 0;
+			if (e.getCause() == null) {
+				result = (Integer) JOptionPane.showConfirmDialog(null,
+						"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
+						"Login to Elixir", JOptionPane.YES_NO_OPTION);
+			} else {
+				result = (Integer) JOptionPane.showConfirmDialog(null,
+						"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
+						"Login to Elixir+", JOptionPane.YES_NO_OPTION);
+			}
+
+		}
+		return "";
+//		JSONObject obj = new JSONObject();
+//		obj.put("email", jsonEmail.get("email"));
+//		return obj;
+	}
+
+	@Produces("text/html; charset=UTF-8")
+	@Path("authenticateEmail")
+	@POST
+	public String authenticateEmail(String email) throws Exception {
 		Gson gson = new Gson();
 
 		JSONObject jsonEmail = (JSONObject) new JSONParser().parse(email);
@@ -113,7 +178,7 @@ public class RestEntryPoint {
 			ctx.login();
 			Thread.currentThread().setContextClassLoader(currentClassLoader);
 			Platform.setImplicitExit(true);
-			Subject subject =  ctx.getSubject();
+			Subject subject = ctx.getSubject();
 			return (String) jsonEmail.get("email");
 //			StreamingOutput stream = new StreamingOutput() {
 //			    @Override
@@ -135,8 +200,7 @@ public class RestEntryPoint {
 			int result = 0;
 			if (e.getCause() == null) {
 				result = (Integer) JOptionPane.showConfirmDialog(null,
-						"Your login attempt was not successful !\nReason: " + "no null name allowed"
-								+ "\nTry again ?",
+						"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
 						"Login to Elixir", JOptionPane.YES_NO_OPTION);
 			} else {
 				result = (Integer) JOptionPane.showConfirmDialog(null,
@@ -150,15 +214,46 @@ public class RestEntryPoint {
 //		obj.put("email", jsonEmail.get("email"));
 //		return obj;
 	}
-    
-	@Produces(MediaType.TEXT_PLAIN)
+
+	@Produces("text/html; charset=UTF-8")
 	@Path("reuseSubject")
 	@POST
-	public String reuseSubject(String subjectString){
-		Gson gson = new Gson();
-		Subject subject = gson.fromJson(subjectString, Subject.class);
-		System.out.println("json_: "+subject.toString());
-		return subject.toString();
+	public String reuseSubject(@FormDataParam("subject") String src) {
+		
+		try {
+			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(src));		
+			ObjectInputStream oi = new ObjectInputStream(in);
+			Subject subject = (Subject) oi.readObject();
+			PrimaryDataDirectory dir = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+			System.out.println(dir.getName());
+			return subject.toString();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		ObjectInputStream in;
+//		try {
+//			in = new ObjectInputStream(rawData);
+//			// Method for deserialization of object
+//			Subject subject = (Subject) in.readObject();
+//
+//			return subject.toString();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (ClassNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return "failed";
+		catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PrimaryDataDirectoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return src;
 	}
 
 	@Produces(MediaType.TEXT_PLAIN)
@@ -196,47 +291,50 @@ public class RestEntryPoint {
 //					"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 //			entity.setMetaData(metadata);
 			System.out.println(root);
-			System.out.println("json_: "+subject.toString());
+			System.out.println("json_: " + subject.toString());
 
 			for (Principal p : subject.getPrincipals()) {
 				return p.toString();
 			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		return "bummer";
 	}
-	
+
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntity")
 	@POST
-	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("name") String name, @FormDataParam("email") String email, @FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring) throws InterruptedException {
-		//JSONObject data = new JSONObject();
+	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
+			@FormDataParam("name") String name, @FormDataParam("email") String email,
+			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring)
+			throws InterruptedException {
+		// JSONObject data = new JSONObject();
 		try {
-			//data = (JSONObject) new JSONParser().parse(request);
+			// data = (JSONObject) new JSONParser().parse(request);
 			String[] pathArray = name.split("\\\\");
-			//String type = (String) data.get("type");
-			
+			// String type = (String) data.get("type");
+
 			Subject subject = new Subject();
 			subject.getPrincipals().add(new ElixirPrincipal(email));
 			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
 			System.out.println(name);
-			if(pathArray.length > 1) {
+			if (pathArray.length > 1) {
 				int j = 0;
 			}
-			if(pathArray.length > 0) {
+			if (pathArray.length > 0) {
 				PrimaryDataDirectory parent = root;
-				int lastIndex = pathArray.length-1;
-				for(int i = 0; i < lastIndex; i++) {
+				int lastIndex = pathArray.length - 1;
+				for (int i = 0; i < lastIndex; i++) {
 					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
 				}
-				if(type.equals("Directory")) {
+				if (type.equals("Directory")) {
 					PrimaryDataDirectory newDataSet = parent.createPrimaryDataDirectory(pathArray[lastIndex]);
 					JSONObject metadatajson = null;
 					metadatajson = (JSONObject) new JSONParser().parse(metadatastring);
-					String authorr = metadatajson == null ? "nometadata" : (String)metadatajson.get("author");
-					if(pathArray.length == 1) {
+					String authorr = metadatajson == null ? "nometadata" : (String) metadatajson.get("author");
+					if (pathArray.length == 1) {
 						MetaData metadata = newDataSet.getMetaData().clone();
 						Persons persons = new Persons();
 						NaturalPerson np = new NaturalPerson("Peter", authorr,
@@ -246,8 +344,9 @@ public class RestEntryPoint {
 						metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 						metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,
 								new LegalPerson("e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP)",
-										"IPK Gatersleben, Seeland OT Gatersleben, Corrensstraße 3", "06466", "Germany"));
-				
+										"IPK Gatersleben, Seeland OT Gatersleben, Corrensstraße 3", "06466",
+										"Germany"));
+
 						Subjects subjects = new Subjects();
 						subjects.add(new UntypedData("wheat"));
 						subjects.add(new UntypedData("transcriptional network"));
@@ -257,13 +356,13 @@ public class RestEntryPoint {
 						metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 						metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
 						metadata.setElementValue(EnumDublinCoreElements.TITLE,
-								new UntypedData(pathArray[pathArray.length-1]));
+								new UntypedData(pathArray[pathArray.length - 1]));
 						metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 								"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 						newDataSet.setMetaData(metadata);
 					}
-				}else {
-					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length-1]);
+				} else {
+					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
 					try {
 						file.store(uploadedInputStream);
 					} catch (PrimaryDataFileException e) {
@@ -271,7 +370,7 @@ public class RestEntryPoint {
 						e.printStackTrace();
 					}
 				}
-			}else {
+			} else {
 				return "500";
 			}
 			return "200";
@@ -289,10 +388,12 @@ public class RestEntryPoint {
 		}
 		return "500";
 	}
+
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
-	public String publishDataset(String request) throws PrimaryDataDirectoryException, AddressException, PublicReferenceException, PrimaryDataEntityException, ParseException {
+	public String publishDataset(String request) throws PrimaryDataDirectoryException, AddressException,
+			PublicReferenceException, PrimaryDataEntityException, ParseException {
 		JSONObject data = (JSONObject) new JSONParser().parse(request);
 		Subject subject = new Subject();
 		subject.getPrincipals().add(new ElixirPrincipal((String) data.get("email")));
@@ -302,7 +403,6 @@ public class RestEntryPoint {
 		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress((String) data.get("email")));
 		return "success";
 	}
-	
 
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Path("sendSubjectAndObject")
@@ -348,23 +448,20 @@ public class RestEntryPoint {
 //
 //		return EdalRestServer.getEntityMetadata(uuid, Long.valueOf(version));
 //	}
-	
+
 	@GET
-    @Path("/pdf")
-    public Response downloadPdfFile()
-    {
-        StreamingOutput fileStream =  new StreamingOutput(){
-            @Override
-            public void write(java.io.OutputStream output) throws IOException, WebApplicationException 
-            {
-                try
-                {
+	@Path("/pdf")
+	public Response downloadPdfFile() {
+		StreamingOutput fileStream = new StreamingOutput() {
+			@Override
+			public void write(java.io.OutputStream output) throws IOException, WebApplicationException {
+				try {
 //                	File dir = Paths.get(System.getProperty("user.home"), "Search_Test").toFile();
 //            		if(!dir.exists()) {
 //            			dir.mkdir();
 //            		}
 //            		
-                	java.nio.file.Path path = Paths.get(System.getProperty("user.home"), "Search_Test","111.txt");
+					java.nio.file.Path path = Paths.get(System.getProperty("user.home"), "Search_Test", "111.txt");
 //                	FileWriter myWriter = new FileWriter(path.toString());
 //        			BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
 //        			String s = "This is a test for indexing the content of text files.";
@@ -377,40 +474,33 @@ public class RestEntryPoint {
 //                    //byte[] data = Files.readAllBytes(path);
 //                    output.write(data);
 //                    output.flush();
-                	
-                    final int BUFFER_SIZE = 1024*1024; //this is actually bytes
 
-                    FileInputStream fis = new FileInputStream(path.toFile());
-                    byte[] buffer = new byte[BUFFER_SIZE]; 
-                    int read = 0;
-                    while( ( read = fis.read( buffer ) ) > 0 ){
-                        output.write(buffer);
-                        output.flush();
-                    }
+					final int BUFFER_SIZE = 1024 * 1024; // this is actually bytes
 
-                    fis.close();
-                    
-                    
-                    
-                } 
-                catch (Exception e) 
-                {
-                    throw new WebApplicationException("File Not Found !!");
-                }
-            }
-        };
-        return Response
-                .ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
-                .header("content-disposition","attachment; filename = build.txt")
-                .build();
-    }
-	
+					FileInputStream fis = new FileInputStream(path.toFile());
+					byte[] buffer = new byte[BUFFER_SIZE];
+					int read = 0;
+					while ((read = fis.read(buffer)) > 0) {
+						output.write(buffer);
+						output.flush();
+					}
+
+					fis.close();
+
+				} catch (Exception e) {
+					throw new WebApplicationException("File Not Found !!");
+				}
+			}
+		};
+		return Response.ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
+				.header("content-disposition", "attachment; filename = build.txt").build();
+	}
+
 	@POST
 	@Path("/upload")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response uploadFile(
-		@FormDataParam("file") InputStream uploadedInputStream,
-		@FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("name") String name ) {
+	public Response uploadFile(@FormDataParam("file") InputStream uploadedInputStream,
+			@FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("name") String name) {
 
 		String uploadedFileLocation = "d://uploaded/" + name;
 
@@ -422,13 +512,13 @@ public class RestEntryPoint {
 		return Response.status(200).entity(output).build();
 
 	}
-	
+
 	@POST
 	@Path("/uploadDirectory")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadDirectory(FormDataMultiPart multiPart) {
-		
-		for(BodyPart part : multiPart.getBodyParts()) {
+
+		for (BodyPart part : multiPart.getBodyParts()) {
 			System.out.println(part.getContentDisposition().getFileName());
 		}
 //		String uploadedFileLocation = "d://uploaded/" + fileDetail.getFileName();
@@ -444,12 +534,10 @@ public class RestEntryPoint {
 	}
 
 	// save uploaded file to new location
-	private void writeToFile(InputStream uploadedInputStream,
-		String uploadedFileLocation) {
+	private void writeToFile(InputStream uploadedInputStream, String uploadedFileLocation) {
 
 		try {
-			OutputStream out = new FileOutputStream(new File(
-					uploadedFileLocation));
+			OutputStream out = new FileOutputStream(new File(uploadedFileLocation));
 			int read = 0;
 			byte[] bytes = new byte[1024];
 
@@ -460,7 +548,7 @@ public class RestEntryPoint {
 			out.flush();
 			out.close();
 		} catch (IOException e) {
-			DataManager.getImplProv().getLogger().debug("Error at REST writeToFile: "+e.getMessage());
+			DataManager.getImplProv().getLogger().debug("Error at REST writeToFile: " + e.getMessage());
 		}
 
 	}
@@ -472,11 +560,11 @@ class ServerInfo {
 	public String server;
 }
 
-class SimpleCallbackHandler implements CallbackHandler{
-	
+class SimpleCallbackHandler implements CallbackHandler {
+
 	final String username;
-	
-	SimpleCallbackHandler(String username){
+
+	SimpleCallbackHandler(String username) {
 		this.username = username;
 	}
 
@@ -487,7 +575,7 @@ class SimpleCallbackHandler implements CallbackHandler{
 				final NameCallback nc = (NameCallback) callback;
 				nc.setName(username);
 			}
-		}		
+		}
 	}
-	
+
 }
