@@ -34,11 +34,11 @@
         <div class="d-flex flexrowfill mt-2" >
             <div class="d-flex flex-column width65">
                 <label style="margin: 0">Title</label>
-                <input class="form-control"  placeholder="Please enter a short, but clear title here.."></input>
+                <input id="input_title" class="form-control"  placeholder="Please enter a short, but clear title here.."></input>
             </div>
             <div class="d-flex flex-column width35 ml-2">
                 <label style="margin-bottom:0;">Language</label>
-                <select class="form-control">
+                <select id="select_language" class="form-control">
                   #foreach($item in $languages)
                   <option>$item</option>
                   #end
@@ -49,7 +49,7 @@
         <div class="d-flex mt-2 flexrowfill" style="flex-grow:1">
             <div class="d-flex flex-column width65">
                 <label>Description</label>
-                <textarea class="form-control" style="height: 100%;"></textarea>
+                <textarea id="text_description" class="form-control" style="height: 100%;"></textarea>
             </div>
             <div class="d-flex flex-column width35 ml-2">
                 <label>Subjects</label>
@@ -100,43 +100,43 @@
                 <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
                 <div class="mt-1">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="option1" checked>
+                        <input class="form-check-input" type="radio" name="radios" id="radio1" value="CC0 1.0 Universal (Creative Commons Public Domain Dedication)" checked>
                         <label class="form-check-label" for="exampleRadios1">
                         CC0 1.0 Universal (Creative Commons Public Domain Dedication)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio2" value="CC BY 4.0 (Creative Commons Attribution)">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY 4.0 (Creative Commons Attribution)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio3" value="CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)">
                         <label class="form-check-label" for="exampleRadios2">
-                        CCC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
+                        CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio4" value="CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio5" value="CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio6" value="CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <input class="form-check-input" type="radio" name="radios" id="radio7" value="CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)
                         </label>
@@ -182,6 +182,16 @@ function uploadPost(){
     }
 });
 }
+
+  function getInputMetadata(){
+    let metadata = {
+      "title":$('#input_title').val(),
+      "language":$('#select_language').val(),
+      "description":$('#text_description').val(),
+      "license": $('input[name=radios]:checked').val(),
+    };
+    console.log(metadata);
+  }
 
 
     function addSubjectRow(){

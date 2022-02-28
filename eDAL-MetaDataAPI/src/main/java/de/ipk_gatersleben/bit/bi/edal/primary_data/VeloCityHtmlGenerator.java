@@ -13,10 +13,12 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
@@ -29,6 +31,7 @@ import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +46,9 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
@@ -75,6 +81,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SimpleCallbackHandler;
+import javafx.application.Platform;
 
 /**
  * VeloCity template generator to create HTML output for
@@ -1595,10 +1604,41 @@ class VeloCityHtmlGenerator {
 	}
 	
 	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String email) throws EdalException {
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		System.out.println(email);
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
 		final VelocityContext context = new VelocityContext();
 		context.put("charset", DEFAULT_CHARSET.toString());
 		context.put("responseCode", ok.getCode());
-		context.put("email", email);
+		LoginContext ctx = null;
+		try {
+			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
+			ctx.login();
+		}catch(LoginException e) {
+			e.printStackTrace();
+		}
+		Thread.currentThread().setContextClassLoader(currentClassLoader);
+		Platform.setImplicitExit(true);
+		Subject subject = ctx.getSubject();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream out = null;
+		try {
+			try {
+				  out = new ObjectOutputStream(bos);   
+				  out.writeObject(subject);
+				  out.flush();
+				  byte[] yourBytes = bos.toByteArray();			
+					context.put("email", Base64.getEncoder().encodeToString(yourBytes));
+				} finally {
+				  try {
+				    bos.close();
+				  } catch (IOException ex) {
+				    // ignore close exception
+				  }
+				}
+		}catch(IOException e) {
+			e.printStackTrace();
+		}
 		
 		List<String> allLanguages = new ArrayList<String>();
 		String[] languages = Locale.getISOLanguages();

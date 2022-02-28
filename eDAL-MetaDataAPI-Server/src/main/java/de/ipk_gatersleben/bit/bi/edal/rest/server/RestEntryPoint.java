@@ -68,6 +68,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SimpleCallbackHandler;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
@@ -560,22 +561,22 @@ class ServerInfo {
 	public String server;
 }
 
-class SimpleCallbackHandler implements CallbackHandler {
-
-	final String username;
-
-	SimpleCallbackHandler(String username) {
-		this.username = username;
-	}
-
-	@Override
-	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-		for (final Callback callback : callbacks) {
-			if (callback instanceof NameCallback) {
-				final NameCallback nc = (NameCallback) callback;
-				nc.setName(username);
-			}
-		}
-	}
-
-}
+//class SimpleCallbackHandler implements CallbackHandler {
+//
+//	final String username;
+//
+//	SimpleCallbackHandler(String username) {
+//		this.username = username;
+//	}
+//
+//	@Override
+//	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+//		for (final Callback callback : callbacks) {
+//			if (callback instanceof NameCallback) {
+//				final NameCallback nc = (NameCallback) callback;
+//				nc.setName(username);
+//			}
+//		}
+//	}
+//
+//}
