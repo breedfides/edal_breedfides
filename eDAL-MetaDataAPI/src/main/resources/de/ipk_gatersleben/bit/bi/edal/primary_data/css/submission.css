@@ -1,0 +1,95 @@
+* {
+    box-sizing: border-box;
+  }
+
+body{
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    /* Background image is centered vertically and horizontally at all times */
+    background-position: center center;
+    /* Background image doesn’t tile */
+    background-repeat: no-repeat;
+    /* Background image is fixed in the viewport so that it doesn’t move when the content’s height is greater than the image’s height */
+    background-attachment: fixed;
+    /* This is what makes the background image rescale based on the container’s size */
+    background-size: cover;
+    /* Set a background color that will be displayed while the background image is loading */
+}
+
+label{
+  font-weight: 500;
+}
+
+.glass{
+    /* From https://css.glass */
+    width:100%;
+    height: 100%;
+    overflow-y: auto; /* allows scrolling without losing glass effect */
+}
+
+.width65{
+  width: 65%;
+}
+
+.width35{
+  width: 35%;
+}
+
+.flexrowfill{
+    width: 97vw;
+}
+
+.flexcolfill{
+    height: 100%;
+    width:100%;
+}
+
+table, th, td {
+    border: 1px solid;
+  }
+
+
+.container{
+    /*height: 100%;*/
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin:0px auto;
+    padding:0;
+    color: black;
+}
+
+#dropzone {
+  text-align: center;
+  border: 2px dashed #636e72;
+  border-radius: 5px;
+  width: 50%;
+  min-width: fit-content;
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1.5;
+  min-height: 50px;
+}
+
+#boxtitle {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  color: black;
+  font: 300 1.5em "Arial", sans-serif;
+}
+
+.header{
+    text-align: center;
+}
+
+.btn {
+    font-family: Rubik, Helvetica, sans-serif;
+  }
+
+  .btn:hover .btn-slide-show-text1 {
+    margin-left: 65px;
+  }

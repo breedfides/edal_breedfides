@@ -35,8 +35,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
@@ -1597,6 +1599,16 @@ class VeloCityHtmlGenerator {
 		context.put("charset", DEFAULT_CHARSET.toString());
 		context.put("responseCode", ok.getCode());
 		context.put("email", email);
+		
+		List<String> allLanguages = new ArrayList<String>();
+		String[] languages = Locale.getISOLanguages();
+		for (int i = 0; i < languages.length; i++){
+		    Locale loc = new Locale(languages[i]);	    
+		    allLanguages.add(loc.getDisplayLanguage(Locale.ENGLISH));
+		}
+		
+		context.put("languages", allLanguages);
+		
 		/* set serverURL */
 		try {
 			context.put("serverURL", EdalHttpServer.getServerURL());

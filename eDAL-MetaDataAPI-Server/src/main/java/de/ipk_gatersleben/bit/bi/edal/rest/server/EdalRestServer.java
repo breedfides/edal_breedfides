@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Locale;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
