@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 
 import javax.mail.internet.AddressException;
@@ -49,10 +50,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang3.LocaleUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -62,6 +65,7 @@ import com.google.gson.Gson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
@@ -70,14 +74,18 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SimpleCallbackHandler;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EdalLanguage;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumCCLicense;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.EnumDublinCoreElements;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.LegalPerson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.ORCID;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Person;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Persons;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import javafx.application.Platform;
@@ -232,21 +240,7 @@ public class RestEntryPoint {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//		ObjectInputStream in;
-//		try {
-//			in = new ObjectInputStream(rawData);
-//			// Method for deserialization of object
-//			Subject subject = (Subject) in.readObject();
-//
-//			return subject.toString();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (ClassNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		return "failed";
+
 		catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -303,6 +297,47 @@ public class RestEntryPoint {
 
 		return "bummer";
 	}
+	
+	
+	//function for dataset creation with metadata
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("uploadEntityAndMetadata")
+	@POST
+	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("subject") String subjectString) {
+		try {
+			//decode subject
+			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
+			ObjectInputStream oi = new ObjectInputStream(in);
+			Subject subject = (Subject) oi.readObject();	
+			
+			Object metadataObject = new JSONParser().parse(metadataString);
+			if(metadataObject instanceof JSONObject) {
+				MetaDataWrapper metadataWrapper = new MetaDataWrapper((JSONObject) metadataObject);
+				PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+				PrimaryDataDirectory newDataSet = root.createPrimaryDataDirectory(metadataWrapper.getTitle().toString());
+				MetaData metadata = newDataSet.getMetaData().clone();
+				metadata.setElementValue(EnumDublinCoreElements.TITLE,metadataWrapper.getTitle());
+				metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION,metadataWrapper.getDescription());
+				metadata.setElementValue(EnumDublinCoreElements.SUBJECT, metadataWrapper.getSubjects());
+				metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, metadataWrapper.getLanguage());
+				metadata.setElementValue(EnumDublinCoreElements.CREATOR, metadataWrapper.getCreators());
+				metadata.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, metadataWrapper.getContributors());
+				metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, metadataWrapper.getLegalpersons());
+				metadata.setElementValue(EnumDublinCoreElements.RIGHTS, metadataWrapper.getLicense());						
+				newDataSet.setMetaData(metadata);
+				return "200";
+			}else {
+				throw new WebApplicationException(Response.Status.FORBIDDEN);
+			}
+		} catch (ParseException | IOException | ClassNotFoundException | PrimaryDataDirectoryException | ORCIDException | MetaDataException | CloneNotSupportedException | PrimaryDataEntityVersionException e) {
+			e.printStackTrace();
+			throw new WebApplicationException(Response.Status.FORBIDDEN);
+		}
+				
+	}
+	
+	
+	//function for testing if entity with this title already exists
 
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntity")
@@ -313,12 +348,14 @@ public class RestEntryPoint {
 			throws InterruptedException {
 		// JSONObject data = new JSONObject();
 		try {
+			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
+			ObjectInputStream oi = new ObjectInputStream(in);
+			Subject subject = (Subject) oi.readObject();	
+			
 			// data = (JSONObject) new JSONParser().parse(request);
 			String[] pathArray = name.split("\\\\");
 			// String type = (String) data.get("type");
 
-			Subject subject = new Subject();
-			subject.getPrincipals().add(new ElixirPrincipal(email));
 			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
 			System.out.println(name);
 			if (pathArray.length > 1) {
@@ -375,34 +412,42 @@ public class RestEntryPoint {
 				return "500";
 			}
 			return "200";
-		} catch (ParseException | PrimaryDataDirectoryException e) {
+		} catch (ParseException | PrimaryDataDirectoryException | MetaDataException | CloneNotSupportedException | PrimaryDataEntityVersionException | IOException e) {
 			e.printStackTrace();
-		} catch (MetaDataException e) {
+			return "500";
+		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CloneNotSupportedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (PrimaryDataEntityVersionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
+			return "500";
 		}
-		return "500";
 	}
+	
 
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
-	public String publishDataset(String request) throws PrimaryDataDirectoryException, AddressException,
+	public String publishDataset(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name) throws PrimaryDataDirectoryException, AddressException,
 			PublicReferenceException, PrimaryDataEntityException, ParseException {
-		JSONObject data = (JSONObject) new JSONParser().parse(request);
-		Subject subject = new Subject();
-		subject.getPrincipals().add(new ElixirPrincipal((String) data.get("email")));
-		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-		PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity((String) data.get("name"));
-		entity.addPublicReference(PersistentIdentifier.DOI);
-		entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress((String) data.get("email")));
-		return "success";
+		InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
+		ObjectInputStream oi;
+		try {
+			oi = new ObjectInputStream(in);
+			Subject subject = (Subject) oi.readObject();	
+			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+			PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity(name);
+			String email = "null";
+			for(Principal p : subject.getPrincipals()) {
+				email = p.getName();
+				break;
+			}
+			entity.addPublicReference(PersistentIdentifier.DOI);
+			entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email));
+			return "success";
+		}catch (IOException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "500";
+		}
 	}
 
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -559,6 +604,120 @@ public class RestEntryPoint {
 @XmlRootElement
 class ServerInfo {
 	public String server;
+}
+
+class MetaDataWrapper {
+	private UntypedData title;
+	private UntypedData description;
+	private UntypedData license;
+	private EdalLanguage language;
+	private Subjects subjects;
+	private Persons creators;
+	private Persons contributors;
+	private LegalPerson legalPerson;
+	
+	public MetaDataWrapper(JSONObject metadataObject) throws ORCIDException {
+		this.title = new UntypedData((String) metadataObject.get("title"));
+		this.description = new UntypedData((String) metadataObject.get("description"));
+		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataObject.get("license")).name());
+		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get("language")));
+		subjects = new Subjects();
+		JSONArray subjectsArr = (JSONArray) metadataObject.get("subjects");
+		for(Object subjectObject : subjectsArr) {
+			subjects.add(new UntypedData((String) ((JSONObject)subjectObject).get("name")));
+		}
+		this.creators = new Persons();
+		this.contributors = new Persons();
+		this.legalPerson = new LegalPerson("null","null","null","null");
+		JSONArray persons = (JSONArray) metadataObject.get("creators");
+		for(Object personObj : persons) {
+			JSONObject person = (JSONObject) personObj;
+			String type = ((String) person.get("type")).toLowerCase();
+			if(type.equals("legalperson")) {
+				this.legalPerson = new LegalPerson((String) person.get("legalName"),  (String) person.get("addressLine"), (String) person.get("zip"), (String) person.get("country"));
+			}else {
+				Person parsedPerson;
+				if(person.get("orcid") == null) {
+					parsedPerson = new NaturalPerson((String) person.get("givenName"), (String) person.get("lastName"), (String) person.get("addressLine"),
+							(String) person.get("zip"), (String) person.get("country"));
+				}else {
+					parsedPerson = new NaturalPerson((String) person.get("givenName"), (String) person.get("lastName"), (String) person.get("addressLine"),
+							(String) person.get("zip"), (String) person.get("country"), new ORCID((String) person.get("orcid")));
+				}
+				if(type.equals("creator")) {
+					creators.add(parsedPerson);
+				}else if(type.equals("contributor")) {
+					contributors.add(parsedPerson);
+				}
+			}
+		}
+	}
+
+	public UntypedData getTitle() {
+		return title;
+	}
+
+	public void setTitle(UntypedData title) {
+		this.title = title;
+	}
+
+	public UntypedData getDescription() {
+		return description;
+	}
+
+	public void setDescription(UntypedData description) {
+		this.description = description;
+	}
+
+	public UntypedData getLicense() {
+		return license;
+	}
+
+	public void setLicense(UntypedData license) {
+		this.license = license;
+	}
+
+	public EdalLanguage getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(EdalLanguage language) {
+		this.language = language;
+	}
+
+	public Subjects getSubjects() {
+		return subjects;
+	}
+
+	public void setSubjects(Subjects subjects) {
+		this.subjects = subjects;
+	}
+
+	public Persons getCreators() {
+		return creators;
+	}
+
+	public void setCreators(Persons creators) {
+		this.creators = creators;
+	}
+
+	public Persons getContributors() {
+		return contributors;
+	}
+
+	public void setContributors(Persons contributors) {
+		this.contributors = contributors;
+	}
+
+	public LegalPerson getLegalpersons() {
+		return this.legalPerson;
+	}
+
+	public void setLegalpersons(LegalPerson legalperson) {
+		this.legalPerson = legalperson;
+	}
+	
+	
 }
 
 //class SimpleCallbackHandler implements CallbackHandler {

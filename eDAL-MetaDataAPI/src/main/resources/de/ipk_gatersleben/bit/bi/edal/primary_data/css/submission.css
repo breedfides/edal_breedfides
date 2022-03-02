@@ -79,7 +79,7 @@ table, th, td {
   vertical-align: middle;
   text-align: center;
   color: black;
-  font: 300 1.5em "Arial", sans-serif;
+  font: 300 .5em "Arial", sans-serif;
 }
 
 .header{

@@ -75,7 +75,7 @@
                 <div class="h-75 border border-secondary" style="min-height: 140px; max-height: 170px; overflow-y: auto;">
                     <table id="author_table" class="table table-bordered table-hover table-sm w-100">
                         <tbody>
-                            <thead class="thead-light">
+                            <thead class="thead-light" id="author_thead">
                                 <tr>
                                     <th>Firstname</th>
                                     <th>Lastname</th>
@@ -100,43 +100,43 @@
                 <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
                 <div class="mt-1">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio1" value="CC0 1.0 Universal (Creative Commons Public Domain Dedication)" checked>
+                        <input class="form-check-input" type="radio" name="radios" id="radio1" value="CC010" checked>
                         <label class="form-check-label" for="exampleRadios1">
                         CC0 1.0 Universal (Creative Commons Public Domain Dedication)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio2" value="CC BY 4.0 (Creative Commons Attribution)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio2" value="CCBY40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY 4.0 (Creative Commons Attribution)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio3" value="CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio3" value="CCBYSA40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio4" value="CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio4" value="CCBYND40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio5" value="CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio5" value="CCBYNC40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio6" value="CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio6" value="CCBYNCSA40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio7" value="CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)">
+                        <input class="form-check-input" type="radio" name="radios" id="radio7" value="CCBYNCND40">
                         <label class="form-check-label" for="exampleRadios2">
                         CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)
                         </label>
@@ -160,6 +160,7 @@
 var email = "$email";
 var serverURL = "$serverURL";
 console.log("velocity email: "+email)
+let globalMetadata = {};
 
 function uploadPost(){
   console.log("triggered uploadPost()");
@@ -184,13 +185,39 @@ function uploadPost(){
 }
 
   function getInputMetadata(){
-    let metadata = {
-      "title":$('#input_title').val(),
-      "language":$('#select_language').val(),
-      "description":$('#text_description').val(),
-      "license": $('input[name=radios]:checked').val(),
-    };
-    console.log(metadata);
+    globalMetadata.title = $('#input_title').val();
+    globalMetadata.description = $('#text_description').val();
+    globalMetadata.language = $('#select_language').val();
+    globalMetadata.license = $('input[name=radios]:checked').val();
+    let persons = [];
+    var tb = $('#author_table:eq(0) tbody');
+    tb.find("tr").each(function(index, element) {
+      var colSize = $(element).find('td').length;
+      console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
+      let currentPerson = {};
+      $(element).find('td').each(function(index, element) {
+      var $th = $(element).closest('table').find('th').eq(index);
+        if(index < 7){
+          currentPerson[$th.text()] = $(element).text();
+          var colVal = $(element).text();
+          console.log("    Value in col " + (index + 1) + " : " + colVal.trim());
+        }else if(index == 7){
+          currentPerson[$th.text()] = $(element).find('select').val();
+        }
+      });
+      console.log("finished person_ "+JSON.stringify(currentPerson));
+      persons.push(currentPerson);
+    });
+    globalMetadata.persons = persons;
+
+    let subjects = [];
+    var tb = $('#subject_table:eq(0) tbody');
+    tb.find("tr").each(function(index, element) {
+      console.log($(element).children('td:first').text());
+      subjects.push($(element).children('td:first').text());
+    });
+    globalMetadata.subjects = subjects;
+    console.log(JSON.stringify(globalMetadata));
   }
 
 
@@ -201,7 +228,7 @@ function uploadPost(){
     }
 
     function addAuthorRow(){
-        markup = "<tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        markup = "<tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
     }
@@ -210,7 +237,7 @@ function uploadPost(){
         $(row).parents("tr").remove();
     }
     let dropzone = document.getElementById("dropzone");
-    let listing = document.getElementById("listing");
+    let listing = document.getElementById("boxtitle");
     let stack = [];
 
     async function traverse(item, container, metadata){
@@ -226,17 +253,17 @@ function uploadPost(){
           payload.append("name",fullPath);
           payload.append("type",type);
           payload.append("email",email);
-          if(currentItem[1] == ""){
-            //payload.metadata = metadata;
-            payload.append("metadata",JSON.stringify(metadata));
-          }else{
-            payload.append("metadata",null);
-          }
           console.log("payload: "+payload);
           if(currentItem[0].isFile){
             let result = await uploadEntity(payload, currentItem[0]);
           }else{
-            let result = await uploadEntity(payload, null);
+            //root directory of dataset?
+            if(currentItem[1] == ""){
+              let result = await uploadEntityAndMetadata(payload, null);
+            }else{
+              let result = await uploadEntity(payload, null);
+            }
+
           }
           let elem = document.createElement("li");
           elem.textContent = fullPath;
@@ -267,6 +294,29 @@ function uploadPost(){
       });
     }
 
+    function uploadEntityAndMetadata(requestData){
+      return new Promise(async (resolve) => {
+      requestData.append("subject",email);
+      requestData.append("metadata",globalMetadata);
+        jQuery.ajax({
+          url: serverURL+"/restfull/api/uploadEntityAndMetadata",
+          data: requestData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          method: 'POST',
+          type: 'POST', // For jQuery < 1.9
+          success: function(resData){
+              resolve("finished dir upload "+resData);
+          }
+      });
+        //$.post( serverURL+"/restfull/api/uploadEntity", requestData, function(data){
+        //  resolve("finished!!");
+        //});
+      });
+    }
+
+    //upload directory (item null), else upload file
     function uploadEntity(requestData, item){
       return new Promise(async (resolve) => {
         console.log("item_ !"+item);
@@ -396,8 +446,20 @@ function uploadPost(){
             //let resolveMsg = await scanFiles(item, listing, "");
             let msg = await traverse(item, listing, {author:"RalfsJS"});
             //console.log(msg);
-            $.post( serverURL+"/restfull/api/publishDataset", JSON.stringify({email:email, name:item.name}), function(data){
-              console.log("entity got published");
+            let form = new FormData();
+            form.append("subject",email);
+            form.append("name", item.name);
+            jQuery.ajax({
+              url: serverURL+"/restfull/api/publishDataset",
+              data: form,
+              cache: false,
+              contentType: false,
+              processData: false,
+              method: 'POST',
+              type: 'POST',
+              success: function(resData){
+                  console.log("publish() response: "+resData);
+              }
             });
         }
       }

@@ -97,6 +97,8 @@ public class EdalRestServer {
 		jerseyServlet.setInitParameter("jersey.config.server.provider.packages",
 				"de.ipk_gatersleben.bit.bi.edal.rest.server");
 		jerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
+		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter");
+
 
 		currentHandler.prependHandler(restHandler);
 		try {
