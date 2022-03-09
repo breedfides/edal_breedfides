@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
@@ -303,7 +304,7 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntityAndMetadata")
 	@POST
-	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("subject") String subjectString) {
+	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("subject") String subjectString,@FormDataParam("name") String entityName) {
 		try {
 			//decode subject
 			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
@@ -315,6 +316,7 @@ public class RestEntryPoint {
 				MetaDataWrapper metadataWrapper = new MetaDataWrapper((JSONObject) metadataObject);
 				PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
 				PrimaryDataDirectory newDataSet = root.createPrimaryDataDirectory(metadataWrapper.getTitle().toString());
+				System.out.println("created root with name: "+metadataWrapper.getTitle().toString());
 				MetaData metadata = newDataSet.getMetaData().clone();
 				metadata.setElementValue(EnumDublinCoreElements.TITLE,metadataWrapper.getTitle());
 				metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION,metadataWrapper.getDescription());
@@ -325,6 +327,7 @@ public class RestEntryPoint {
 				metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, metadataWrapper.getLegalpersons());
 				metadata.setElementValue(EnumDublinCoreElements.RIGHTS, metadataWrapper.getLicense());						
 				newDataSet.setMetaData(metadata);
+				newDataSet.createPrimaryDataDirectory(entityName.substring(1));
 				return "200";
 			}else {
 				throw new WebApplicationException(Response.Status.FORBIDDEN);
@@ -344,61 +347,28 @@ public class RestEntryPoint {
 	@POST
 	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
 			@FormDataParam("name") String name, @FormDataParam("email") String email,
-			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring)
-			throws InterruptedException {
+			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring, @FormDataParam("datasetRoot") String datasetRoot)  {
 		// JSONObject data = new JSONObject();
+		String[] pathArray = name.split("/");
 		try {
 			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
 			ObjectInputStream oi = new ObjectInputStream(in);
 			Subject subject = (Subject) oi.readObject();	
 			
 			// data = (JSONObject) new JSONParser().parse(request);
-			String[] pathArray = name.split("\\\\");
 			// String type = (String) data.get("type");
-
-			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			System.out.println(name);
-			if (pathArray.length > 1) {
-				int j = 0;
-			}
+			PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+			PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
 			if (pathArray.length > 0) {
 				PrimaryDataDirectory parent = root;
 				int lastIndex = pathArray.length - 1;
-				for (int i = 0; i < lastIndex; i++) {
+				for (int i = 1; i < lastIndex; i++) {
 					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
 				}
 				if (type.equals("Directory")) {
-					PrimaryDataDirectory newDataSet = parent.createPrimaryDataDirectory(pathArray[lastIndex]);
-					JSONObject metadatajson = null;
-					metadatajson = (JSONObject) new JSONParser().parse(metadatastring);
-					String authorr = metadatajson == null ? "nometadata" : (String) metadatajson.get("author");
-					if (pathArray.length == 1) {
-						MetaData metadata = newDataSet.getMetaData().clone();
-						Persons persons = new Persons();
-						NaturalPerson np = new NaturalPerson("Peter", authorr,
-								"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraße 3",
-								"06466", "Germany");
-						persons.add(np);
-						metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-						metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,
-								new LegalPerson("e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP)",
-										"IPK Gatersleben, Seeland OT Gatersleben, Corrensstraße 3", "06466",
-										"Germany"));
-
-						Subjects subjects = new Subjects();
-						subjects.add(new UntypedData("wheat"));
-						subjects.add(new UntypedData("transcriptional network"));
-						subjects.add(new UntypedData("genie3"));
-						subjects.add(new UntypedData("transcriptomics"));
-						EdalLanguage lang = new EdalLanguage(Locale.ENGLISH);
-						metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-						metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-						metadata.setElementValue(EnumDublinCoreElements.TITLE,
-								new UntypedData(pathArray[pathArray.length - 1]));
-						metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
-								"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
-						newDataSet.setMetaData(metadata);
-					}
+					System.out.println("Created:");
+					System.out.println(Arrays.toString(pathArray));
+					parent.createPrimaryDataDirectory(pathArray[lastIndex]);
 				} else {
 					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
 					try {
@@ -412,7 +382,8 @@ public class RestEntryPoint {
 				return "500";
 			}
 			return "200";
-		} catch (ParseException | PrimaryDataDirectoryException | MetaDataException | CloneNotSupportedException | PrimaryDataEntityVersionException | IOException e) {
+		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
+			System.out.println(Arrays.toString(pathArray));
 			e.printStackTrace();
 			return "500";
 		} catch (ClassNotFoundException e1) {
@@ -623,26 +594,26 @@ class MetaDataWrapper {
 		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get("language")));
 		subjects = new Subjects();
 		JSONArray subjectsArr = (JSONArray) metadataObject.get("subjects");
-		for(Object subjectObject : subjectsArr) {
-			subjects.add(new UntypedData((String) ((JSONObject)subjectObject).get("name")));
+		for(Object subjectStr : subjectsArr) {
+			subjects.add(new UntypedData((String) subjectStr));
 		}
 		this.creators = new Persons();
 		this.contributors = new Persons();
 		this.legalPerson = new LegalPerson("null","null","null","null");
-		JSONArray persons = (JSONArray) metadataObject.get("creators");
+		JSONArray persons = (JSONArray) metadataObject.get("persons");
 		for(Object personObj : persons) {
 			JSONObject person = (JSONObject) personObj;
-			String type = ((String) person.get("type")).toLowerCase();
+			String type = ((String) person.get("Type")).toLowerCase();
 			if(type.equals("legalperson")) {
-				this.legalPerson = new LegalPerson((String) person.get("legalName"),  (String) person.get("addressLine"), (String) person.get("zip"), (String) person.get("country"));
+				this.legalPerson = new LegalPerson((String) person.get("Legalname"),  (String) person.get("Adress"), (String) person.get("Zip"), (String) person.get("Country"));
 			}else {
 				Person parsedPerson;
-				if(person.get("orcid") == null) {
-					parsedPerson = new NaturalPerson((String) person.get("givenName"), (String) person.get("lastName"), (String) person.get("addressLine"),
-							(String) person.get("zip"), (String) person.get("country"));
+				if(((String)person.get("ORCID")).isEmpty()) {
+					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Adress"),
+							(String) person.get("Zip"), (String) person.get("Country"));
 				}else {
-					parsedPerson = new NaturalPerson((String) person.get("givenName"), (String) person.get("lastName"), (String) person.get("addressLine"),
-							(String) person.get("zip"), (String) person.get("country"), new ORCID((String) person.get("orcid")));
+					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Adress"),
+							(String) person.get("Zip"), (String) person.get("Country"), new ORCID((String) person.get("ORCID")));
 				}
 				if(type.equals("creator")) {
 					creators.add(parsedPerson);

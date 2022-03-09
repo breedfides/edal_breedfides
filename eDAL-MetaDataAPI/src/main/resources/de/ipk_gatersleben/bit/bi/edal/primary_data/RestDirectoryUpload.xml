@@ -27,7 +27,8 @@
 
         <div class="mt-2" id="dropzone">
             <div id="boxtitle">
-              Drop a file or directory
+              <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
+              <p id="droplabel" style="margin-bottom:0;">Drop a file or directory</p>
             </div>
           </div>
 
@@ -40,7 +41,7 @@
                 <label style="margin-bottom:0;">Language</label>
                 <select id="select_language" class="form-control">
                   #foreach($item in $languages)
-                  <option>$item</option>
+                  <option value="$item[0]">$item[1]</option>
                   #end
                 </select>
             </div>
@@ -146,324 +147,26 @@
 
             <div class="d-flex flex-column width35">
                 <label>Embargo</label>
-                <input type="date" class="form-control w-50" name="dateofbirth" id="dateofbirth">
+                <input type="date" class="form-control w-25 mt-1" name="dateofbirth" id="dateofbirth">
+                <button id="submitBtn" class= "btn btn-outline-secondary btn-sm w-25 mt-2" onclick="startUpload()" disabled>Submit</button>
             </div>
-        </div>
-        <div>
-            <button class= "btn btn-outline-secondary btn-sm">Submit</button>
         </div>
     </div>
 </div>
 <!--button type="button" class="btn btn-primary" onclick="login()">Elixir AAI Log in</button> -->
 
+<script src="$serverURL/JS/edal_upload.js"></script>
 <script>
+let dropzone = document.getElementById("dropzone");
+let listing = document.getElementById("boxtitle");
+let stack = [];
+let emptyDirectories = 0;
 var email = "$email";
 var serverURL = "$serverURL";
+var fileSystemEntry = null;
 console.log("velocity email: "+email)
 let globalMetadata = {};
 
-function uploadPost(){
-  console.log("triggered uploadPost()");
-  let myfile = $("fileInput").val();
-  //$.post(serverURL+"/restfull/api/upload",{file:myfile}, function(data){
-  //  console.log("uploaded single file");
-  //})
-  let data = new FormData();
-  data.append('file',myfile);
-  jQuery.ajax({
-    url: serverURL+"/restfull/api/upload",
-    data: data,
-    cache: false,
-    contentType: false,
-    processData: false,
-    method: 'POST',
-    type: 'POST', // For jQuery < 1.9
-    success: function(resData){
-        alert(resData);
-    }
-});
-}
-
-  function getInputMetadata(){
-    globalMetadata.title = $('#input_title').val();
-    globalMetadata.description = $('#text_description').val();
-    globalMetadata.language = $('#select_language').val();
-    globalMetadata.license = $('input[name=radios]:checked').val();
-    let persons = [];
-    var tb = $('#author_table:eq(0) tbody');
-    tb.find("tr").each(function(index, element) {
-      var colSize = $(element).find('td').length;
-      console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
-      let currentPerson = {};
-      $(element).find('td').each(function(index, element) {
-      var $th = $(element).closest('table').find('th').eq(index);
-        if(index < 7){
-          currentPerson[$th.text()] = $(element).text();
-          var colVal = $(element).text();
-          console.log("    Value in col " + (index + 1) + " : " + colVal.trim());
-        }else if(index == 7){
-          currentPerson[$th.text()] = $(element).find('select').val();
-        }
-      });
-      console.log("finished person_ "+JSON.stringify(currentPerson));
-      persons.push(currentPerson);
-    });
-    globalMetadata.persons = persons;
-
-    let subjects = [];
-    var tb = $('#subject_table:eq(0) tbody');
-    tb.find("tr").each(function(index, element) {
-      console.log($(element).children('td:first').text());
-      subjects.push($(element).children('td:first').text());
-    });
-    globalMetadata.subjects = subjects;
-    console.log(JSON.stringify(globalMetadata));
-  }
-
-
-    function addSubjectRow(){
-        markup = "<tr><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
-        tableBody = $("#subject_table > tbody");
-        tableBody.append(markup);
-    }
-
-    function addAuthorRow(){
-        markup = "<tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
-        tableBody = $("#author_table > tbody");
-        tableBody.append(markup);
-    }
-
-    function deleteRow(row){
-        $(row).parents("tr").remove();
-    }
-    let dropzone = document.getElementById("dropzone");
-    let listing = document.getElementById("boxtitle");
-    let stack = [];
-
-    async function traverse(item, container, metadata){
-      return new Promise(async (resolve) => {
-        console.log("started traverse with stack");
-        stack.push([item,"",container]);
-        while(stack.length > 0){
-          let currentItem = stack.pop();
-          let fullPath = currentItem[1] == "" ? currentItem[0].name : currentItem[1]+"\\"+currentItem[0].name;
-          let type = currentItem[0].isDirectory ? "Directory" : "File";
-          //let payload = {name:fullPath, type:type, email:email};
-          let payload = new FormData();
-          payload.append("name",fullPath);
-          payload.append("type",type);
-          payload.append("email",email);
-          console.log("payload: "+payload);
-          if(currentItem[0].isFile){
-            let result = await uploadEntity(payload, currentItem[0]);
-          }else{
-            //root directory of dataset?
-            if(currentItem[1] == ""){
-              let result = await uploadEntityAndMetadata(payload, null);
-            }else{
-              let result = await uploadEntity(payload, null);
-            }
-
-          }
-          let elem = document.createElement("li");
-          elem.textContent = fullPath;
-          currentItem[2].appendChild(elem);
-          if(currentItem[0].isDirectory){
-            console.log("its a dir -> reading sub tree");
-            let directoryReader = currentItem[0].createReader();
-            let directoryContainer = document.createElement("ul");
-            currentItem[2].appendChild(directoryContainer);
-            let test = await readChilds(directoryReader, fullPath, directoryContainer);
-          }
-        }
-        resolve("FINISHED!!!!");
-      });
-    }
-
-    function readChilds(reader, fullPath, directoryContainer){
-      return new Promise((resolve) => {
-        reader.readEntries(function(entries) {
-            console.log("entries");
-            console.log(entries);
-            entries.forEach(function(entry) {
-              const arr = [entry, fullPath, directoryContainer];
-              stack.push(arr);
-            });
-            resolve("finished with reading directory");
-        });
-      });
-    }
-
-    function uploadEntityAndMetadata(requestData){
-      return new Promise(async (resolve) => {
-      requestData.append("subject",email);
-      requestData.append("metadata",globalMetadata);
-        jQuery.ajax({
-          url: serverURL+"/restfull/api/uploadEntityAndMetadata",
-          data: requestData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          method: 'POST',
-          type: 'POST', // For jQuery < 1.9
-          success: function(resData){
-              resolve("finished dir upload "+resData);
-          }
-      });
-        //$.post( serverURL+"/restfull/api/uploadEntity", requestData, function(data){
-        //  resolve("finished!!");
-        //});
-      });
-    }
-
-    //upload directory (item null), else upload file
-    function uploadEntity(requestData, item){
-      return new Promise(async (resolve) => {
-        console.log("item_ !"+item);
-        if(item == null){
-          requestData.append('file',null);
-          jQuery.ajax({
-            url: serverURL+"/restfull/api/uploadEntity",
-            data: requestData,
-            cache: false,
-            contentType: false,
-            processData: false,
-            method: 'POST',
-            type: 'POST', // For jQuery < 1.9
-            success: function(resData){
-                resolve("finished dir upload "+resData);
-            }
-        });
-          //$.post( serverURL+"/restfull/api/uploadEntity", requestData, function(data){
-          //  resolve("finished!!");
-          //});
-        }else{
-          console.log("file uploaded!"+item);
-          item.file(async function (file){
-          requestData.append('file',file);
-          jQuery.ajax({
-            url: serverURL+"/restfull/api/uploadEntity",
-            data: requestData,
-            cache: false,
-            contentType: false,
-            processData: false,
-            method: 'POST',
-            type: 'POST', // For jQuery < 1.9
-            success: function(resData){
-              resolve("finished file upload "+resData);
-            }
-            });
-            //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
-              //resolve("finished!!");
-            //});
-          });
-        }
-      });
-    }
-
-    function scanFiles(item, container, path) {
-      return new Promise((resolve) => {
-        console.log("started scanFiles Function");
-        let elem = document.createElement("li");
-        let fullPath = path == "" ? item.name : path+"\\"+item.name;
-        let requestData = {name:fullPath, email:email};
-        elem.textContent = fullPath;
-        container.appendChild(elem);
-        if (item.isDirectory) {
-          requestData.type = "Directory";
-          $.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data) {
-            let directoryReader = item.createReader();
-            let directoryContainer = document.createElement("ul");
-            container.appendChild(directoryContainer);
-            let promises = [];
-            directoryReader.readEntries(async function(entries) {
-                entries.forEach(function(entry) {
-                  promises.push(new Promise(async (resolve) => {
-                    let result = await scanFiles(entry, directoryContainer, fullPath);
-                    resolve(result);
-                  }));
-                });
-            });
-            Promise.all(promises).then(function(){
-                  console.log("finished promise all");
-                  resolve("finished");
-            });
-          });
-        }else{
-          requestData.type = "File";
-          $.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
-            resolve("finished!!");
-          });
-        }
-      });
-    }
-
-    function auth(){
-      console.log("test auth");
-      let data = new FormData();
-      data.append("email",email);
-
-      jQuery.ajax({
-        url: serverURL+"/restfull/api/authenticate",
-        data: data,
-        cache: false,
-        contentType: false,
-        processData: false,
-        method: 'POST',
-        type: 'POST',
-        success: function(serialized){
-        let payload = new FormData();
-        payload.append("subject",serialized);
-        jQuery.ajax({
-          url: serverURL+"/restfull/api/reuseSubject",
-          data: payload,
-          cache: false,
-          contentType: false,
-          processData: false,
-          method: 'POST',
-          type: 'POST',
-          success: function(resData){
-              console.log("auth() response: "+resData);
-          }
-        });
-        }
-      });
-    }
-
-    dropzone.addEventListener("dragover", function(event) {
-        event.preventDefault();
-    }, false);
-    dropzone.addEventListener("drop", async function(event) {
-      let items = event.dataTransfer.items;
-
-      event.preventDefault();
-      listing.textContent = "";
-
-      for (let i=0; i<items.length; i++) {
-        let item = items[i].webkitGetAsEntry();
-
-        if (item) {
-            //let resolveMsg = await scanFiles(item, listing, "");
-            let msg = await traverse(item, listing, {author:"RalfsJS"});
-            //console.log(msg);
-            let form = new FormData();
-            form.append("subject",email);
-            form.append("name", item.name);
-            jQuery.ajax({
-              url: serverURL+"/restfull/api/publishDataset",
-              data: form,
-              cache: false,
-              contentType: false,
-              processData: false,
-              method: 'POST',
-              type: 'POST',
-              success: function(resData){
-                  console.log("publish() response: "+resData);
-              }
-            });
-        }
-      }
-    }, false);
 
 </script>
 </body>

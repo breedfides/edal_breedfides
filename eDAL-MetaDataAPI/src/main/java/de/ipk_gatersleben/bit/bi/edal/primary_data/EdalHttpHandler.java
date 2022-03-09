@@ -651,6 +651,9 @@ public class EdalHttpHandler extends AbstractHandler {
 							} catch (EdalConfigurationException e) {
 								this.sendMessage(response, HttpStatus.Code.INTERNAL_SERVER_ERROR, "EdalExcpetion.. "+e.getMessage());
 							}
+						case GIF:
+							this.sendGif(response, "spinner.gif", "image/gif");
+							break;
 						default:
 							this.sendMessage(response, HttpStatus.Code.FORBIDDEN,
 									"Unknown function '" + methodToken + "' used !");
@@ -670,6 +673,50 @@ public class EdalHttpHandler extends AbstractHandler {
 			}
 			response.flushBuffer();
 		}
+	}
+
+	private void sendGif(HttpServletResponse response, String fileName, String contentType) {
+		try {
+
+			InputStream file = EdalHttpHandler.class.getResourceAsStream(fileName);
+
+			int fileSize = file.available();
+
+			response.setContentType(contentType);
+
+			response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
+			response.setContentLength(fileSize);
+
+			response.setStatus(HttpStatus.Code.OK.getCode());
+
+			CountDownLatch countDownLatch = new CountDownLatch(1);
+
+			final OutputStream responseBody = response.getOutputStream();
+			// copy entity bytes stream to HTTP stream
+			final PipedInputStream httpIn = new PipedInputStream(EdalConfiguration.STREAM_BUFFER_SIZE);
+			final PipedOutputStream pipedOut = new PipedOutputStream(httpIn);
+
+			final PipedWriteThread pipedWriteThread = new PipedWriteThread(httpIn, responseBody, countDownLatch,
+					fileSize);
+			final PipedReadEmbeddedFileThread pipedReadThread = new PipedReadEmbeddedFileThread(fileName, file,
+					pipedOut);
+
+			DataManager.getJettyExecutorService().execute(pipedReadThread);
+			DataManager.getJettyExecutorService().execute(pipedWriteThread);
+
+			try {
+				countDownLatch.await();
+				file.close();
+				pipedOut.close();
+				httpIn.close();
+			} catch (InterruptedException e) {
+				DataManager.getImplProv().getLogger().error("Unable to wait for sending file: " + e.getMessage());
+			}
+			responseBody.close();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().error("Unable to send file: " + e.getMessage());
+		}
+		
 	}
 
 	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, Code ok) {

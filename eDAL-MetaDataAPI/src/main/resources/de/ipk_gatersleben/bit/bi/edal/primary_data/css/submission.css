@@ -71,7 +71,8 @@ table, th, td {
   align-items: center;
   justify-content: center;
   flex-grow: 1.5;
-  min-height: 50px;
+  min-height: 80px;
+  overflow: none;
 }
 
 #boxtitle {
@@ -79,7 +80,8 @@ table, th, td {
   vertical-align: middle;
   text-align: center;
   color: black;
-  font: 300 .5em "Arial", sans-serif;
+  font: 300 1.2em "Arial", sans-serif;
+  overflow: auto;
 }
 
 .header{
@@ -93,3 +95,40 @@ table, th, td {
   .btn:hover .btn-slide-show-text1 {
     margin-left: 65px;
   }
+
+  .lds-facebook {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-facebook div {
+  display: inline-block;
+  position: absolute;
+  left: 8px;
+  width: 16px;
+  background: rgba(92,92,92,.2);
+  animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+}
+.lds-facebook div:nth-child(1) {
+  left: 8px;
+  animation-delay: -0.24s;
+}
+.lds-facebook div:nth-child(2) {
+  left: 32px;
+  animation-delay: -0.12s;
+}
+.lds-facebook div:nth-child(3) {
+  left: 56px;
+  animation-delay: 0;
+}
+@keyframes lds-facebook {
+  0% {
+    top: 8px;
+    height: 64px;
+  }
+  50%, 100% {
+    top: 24px;
+    height: 32px;
+  }
+}
