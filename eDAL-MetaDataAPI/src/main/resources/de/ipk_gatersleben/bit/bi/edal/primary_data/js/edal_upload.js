@@ -1,7 +1,11 @@
+const worker = new Worker("/js/edal_traverse.js");
+let files = {};
 
 async function startUpload(){
     //let msg = await traverse(fileSystemEntry, listing);
-    let msg = await traverse(fileSystemEntry);
+    await startUpload2();
+    //let msg = await traverse(fileSystemEntry);
+
     $('#submitBtn').prop('disabled', true);
     //console.log(msg);
     let form = new FormData();
@@ -20,13 +24,93 @@ async function startUpload(){
       }
     });
   }
+
+async function startUpload2(){
+    let metadata = getInputMetadata();
+    await uploadEntityAndMetadata(metadata.title,metadata);
+    await uploadEntity2(fileSystemEntry.name, null);
+
+    for (var key in files) {
+        if (files.hasOwnProperty(key)) {
+            if(files[key].isDirectory){
+                await uploadEntity2(key, null);
+            }else{
+                await uploadEntity2(key, files[key].file);
+            }
+        }
+    }
+}
+
+async function uploadEntity2(path, file){
+    return new Promise(async (resolve) => {
+        let payload = new FormData();
+        payload.append("name",path);
+        payload.append("email",email);
+        payload.append("datasetRoot",globalMetadata.title);
+        if(file == null){
+          payload.append("type","Directory");
+          payload.append('file',null);
+          jQuery.ajax({
+            url: serverURL+"/restfull/api/uploadEntity",
+            data: payload,
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: 'POST',
+            type: 'POST', // For jQuery < 1.9
+            success: function(resData){
+                resolve("finished dir upload "+resData);
+            }
+        });
+        }else{
+            payload.set("name",path);
+            payload.append('file',file);
+            payload.append("type","File");
+            jQuery.ajax({
+                url: serverURL+"/restfull/api/uploadEntity",
+                data: payload,
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST', // For jQuery < 1.9
+                success: function(resData){
+                resolve("finished file upload "+resData);
+                }
+                });
+                //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
+                //resolve("finished!!");
+                //});
+        }
+    });
+  }
   
-  const emptyFileCounter = new Worker("/js/edal_traverse.js");
-  emptyFileCounter.onmessage = (event) => {
-      const { data } = event;
-      alert("empty files: "+data);
-  };
-  
+//   emptyFileCounter.onmessage = (event) => {
+//       const { data } = event;
+//       alert("empty files: "+data);
+//   };
+worker.onmessage = (evt) => {
+    if (typeof evt.data === 'string') {
+        document.querySelector("pre").textContent = JSON.stringify( evt.data, (key, value) => {
+            if( value instanceof Blob ) {
+              return { name: value.name, size: value.size, type: value.type };
+            }
+            return value;
+          }, 4 );
+    }else{
+        files = evt.data.traversed;
+        document.querySelector("pre").textContent = `${ evt.data.processed } files, ${ evt.data.emptyDirs } empty directories, ${ evt.data.emptyFiles } empty files`;
+        console.log(JSON.stringify(evt.data.traversed));
+        for (var key in files) {
+            if (files.hasOwnProperty(key)) {
+                //console.log(key + " -> " + files[key].path.toString());
+                console.log(key+" "+JSON.stringify(files[key]));
+                $('#submitBtn').prop('disabled', false);
+            }
+        }
+    }
+
+  }
   
   dropzone.addEventListener("dragover", function(event) {
       event.preventDefault();
@@ -37,27 +121,44 @@ async function startUpload(){
     event.preventDefault();
   
     for (let i=0; i<items.length; i++) {
-      let item = items[i].webkitGetAsEntry();
-  
-      if (item) {
-          console.log("dropped directory_ "+item.name);
-          document.getElementById('loading-indicator').style.display = "block";
-          document.getElementById('droplabel').style.display = "none";
-          emptyDirectories = 0;
-          fileSystemEntry = item;
-          $('#droplabel').text(item.fullPath);
-          //let resolveMsg = scanFiles(item);
-          console.log("item:");
-          console.log(item);
-          //emptyFileCounter.postMessage(item);
-          traverseDirectory2(item).then(() => {
-            document.getElementById('loading-indicator').style.display = "none";
-            document.getElementById('droplabel').style.display = "block";
-          });
-          $('#submitBtn').prop('disabled', false);
+      //let item = items[i].webkitGetAsEntry();
+      let item = await items[i].getAsFileSystemHandle();
+      console.log("dropped item");
+      if(item.kind == 'directory'){
+        fileSystemEntry = item;
+        //const dirHandle = await showDirectoryPicker();
+        $('#droplabel').text(item.name);
+        worker.postMessage( item );
+        break;
       }
+
+  
+    //   if (item) {
+    //       console.log("dropped directory_ "+item.name);
+    //       document.getElementById('loading-indicator').style.display = "block";
+    //       document.getElementById('droplabel').style.display = "none";
+    //       emptyDirectories = 0;
+    //       fileSystemEntry = item;
+    //       $('#droplabel').text(item.fullPath);
+    //       //let resolveMsg = scanFiles(item);
+    //       console.log("item:");
+    //       console.log(item);
+    //       //emptyFileCounter.postMessage(item);
+    //       traverseDirectory2(item).then(() => {
+    //         document.getElementById('loading-indicator').style.display = "none";
+    //         document.getElementById('droplabel').style.display = "block";
+    //       });
+    //       $('#submitBtn').prop('disabled', false);
+    //   }
     }
   }, false);
+
+  async function chooseDirectory(){
+    const dirHandle = await showDirectoryPicker();
+    $('#droplabel').text(dirHandle.name);
+    fileSystemEntry = dirHandle;
+    worker.postMessage( dirHandle );  
+  }
   
   function uploadPost(){
     console.log("triggered uploadPost()");
@@ -85,7 +186,7 @@ async function startUpload(){
       globalMetadata.title = $('#input_title').val();
       globalMetadata.description = $('#text_description').val();
       globalMetadata.language = $('#select_language').val();
-      globalMetadata.license = $('input[name=radios]:checked').val();
+      globalMetadata.license = $('#select_license').val();
       let persons = [];
       var tb = $('#author_table:eq(0) tbody');
       tb.find("tr").each(function(index, element) {
@@ -154,7 +255,7 @@ async function startUpload(){
                     requests++;
                     let result = await uploadEntityAndMetadata(currentItem.fullPath ,getInputMetadata()).then((result) => {
                         requests--;
-                    });;
+                    });
                   }else{
                     if(currentItem.isDirectory){
                         let result = await uploadEntity(currentItem);
@@ -172,7 +273,7 @@ async function startUpload(){
             let test = await readChilds(directoryReader);
           }
         }
-        resolve("FINISHED!!!!");
+        resolve("Finished!");
       });
     }
   

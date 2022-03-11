@@ -28,7 +28,7 @@
         <div class="mt-2" id="dropzone">
             <div id="boxtitle">
               <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
-              <p id="droplabel" style="margin-bottom:0;">Drop a file or directory</p>
+              <p id="droplabel" onclick="chooseDirectory();" style="margin-bottom:0;">Drop a file or directory</p>
             </div>
           </div>
 
@@ -47,14 +47,17 @@
             </div>
         </div>
 
-        <div class="d-flex mt-2 flexrowfill" style="flex-grow:1">
+        <div class="d-flex mt-2 flexrowfill" style="flex-grow:2">
             <div class="d-flex flex-column width65">
                 <label>Description</label>
                 <textarea id="text_description" class="form-control" style="height: 100%;"></textarea>
             </div>
             <div class="d-flex flex-column width35 ml-2">
-                <label>Subjects</label>
-                <div class="h-75 border border-secondary" style="min-height: 126px;max-height: 128px;overflow-y: auto;">
+                <div>
+                    <label>Subjects</label>
+                    <button class="btn btn-outline-secondary btn-sm mb-1 ml-3" onclick="addSubjectRow()" style="width:fit-content">Add Subject</button>
+                </div>
+                <div class="border border-secondary" style="min-height: 126px;max-height: 100%;overflow-y: auto;">
                     <table id="subject_table" class="table table-bordered table-hover table-sm">
                         <tbody>
                             <thead class="thead-light">
@@ -66,13 +69,15 @@
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="addSubjectRow()" style="width:fit-content">Add Subject</button>
             </div>
         </div>
 
         <div class="d-flex mt-2 flexrowfill" style="flex-grow:2">
             <div class="d-flex flex-column" style="flex-grow:1;">
-                <label>Authors:</label>
+                <div>
+                    <label>Authors</label>
+                    <button class="btn btn-outline-secondary btn-sm mb-1 ml-3" onclick="addAuthorRow()" style="width:fit-content">Add Author</button>
+                </div>
                 <div class="h-75 border border-secondary" style="min-height: 140px; max-height: 170px; overflow-y: auto;">
                     <table id="author_table" class="table table-bordered table-hover table-sm w-100">
                         <tbody>
@@ -92,64 +97,34 @@
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="addAuthorRow()" style="width:fit-content">Add Author</button>
             </div>
         </div>
 
-        <div class="d-flex mt-1 flexrowfill" style="flex-grow:1">
-            <div class="d-flex flex-column width65">
-                <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
-                <div class="mt-1">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio1" value="CC010" checked>
-                        <label class="form-check-label" for="exampleRadios1">
-                        CC0 1.0 Universal (Creative Commons Public Domain Dedication)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio2" value="CCBY40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY 4.0 (Creative Commons Attribution)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio3" value="CCBYSA40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio4" value="CCBYND40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio5" value="CCBYNC40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio6" value="CCBYNCSA40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="radios" id="radio7" value="CCBYNCND40">
-                        <label class="form-check-label" for="exampleRadios2">
-                        CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)
-                        </label>
-                    </div>
+            <div class="d-flex mt-1 flexrowfill" style="flex-grow:1">
+            <div class="d-flex flex-row width65">
+                <div class="d-flex flex-column width65 mr-2">
+                    <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
+                    <select id="select_license" class="form-control mt-1">
+                        <option value="CC010">CC0 1.0 Universal (Creative Commons Public Domain Dedication)</option>
+                        <option value="CCBY40">CC BY 4.0 (Creative Commons Attribution)</option>
+                        <option value="CCBYSA40">CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)</option>
+                        <option value="CCBYND40">CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)</option>
+                        <option value="CCBYNC40">CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)</option>
+                        <option value="CCBYNCSA40">CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)</option>
+                        <option value="CCBYNCND40">CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)</option>
+                    </select>
+
+                </div>
+                <div class="d-flex flex-column width35">
+                    <label style="margin-bottom:0;">Embargo</label>
+                    <input type="date" class="form-control mt-1" name="dateofbirth" id="dateofbirth">
                 </div>
             </div>
-
-            <div class="d-flex flex-column width35">
-                <label>Embargo</label>
-                <input type="date" class="form-control w-25 mt-1" name="dateofbirth" id="dateofbirth">
-                <button id="submitBtn" class= "btn btn-outline-secondary btn-sm w-25 mt-2" onclick="startUpload()" disabled>Submit</button>
+            <div class="d-flex flex-column width35" style="align-items:center;">
+                <pre  style="margin-bottom:0;min-width:5px;">&nbsp</pre>
+                <button id="submitBtn" class= "btn btn-outline-secondary w-25 mt-1" onclick="startUpload()" disabled>Submit</button>
             </div>
+
         </div>
     </div>
 </div>

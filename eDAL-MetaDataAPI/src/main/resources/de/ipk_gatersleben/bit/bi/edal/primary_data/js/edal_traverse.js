@@ -1,55 +1,90 @@
-onmessage = async function(e) {
-  const empyDirectories = traverseDirectory(e.data);
-  postMessage(empyDirectories);
+let processed = 0;
+let emptyDirs = 0;
+let emptyFiles = 0;
+let root = {};
+onmessage = async (evt) => {
+  processed = 0; 
+  emptyDirs = 0; 
+  emptyFiles = 0;
+  root = evt.data;
+  const out = {};
+  const dirHandle = evt.data;  
+  await handleDirectoryEntry( dirHandle, out);
+  console.log("finish traversing via WORKER");
+  let result = {
+    traversed:out,
+    processed:processed,
+    emptyDirs:emptyDirs,
+    emptyFiles:emptyFiles,
+  };
+  postMessage( result );
 };
 
-function traverseDirectory(entry) {
-  console.log(entry);
-  const reader = entry.createReader();
-  let countReads = 0;
-  // Resolved when the entire directory is traversed
-  return new Promise((resolveDirectory) => {
-    setTimeout(() => {
-      const iterationAttempts = [];
-      const errorHandler = () => {};
-      function readEntries() {
-        countReads++;
-        // According to the FileSystem API spec, readEntries() must be called until
-        // it calls the callback with an empty array.
-        reader.readEntries((batchEntries) => {
-          if (!batchEntries.length) {
-            // Done iterating this particular directory
-            if(countReads == 1){
-              //if the results at first read was empty -> inc counter
-              emptyDirectories++;
-              $('#boxtitle').text(fileSystemEntry.fullPath+" empty entries: "+emptyDirectories);
-            }
-            resolveDirectory(Promise.all(iterationAttempts));
-          } else {
-            // Add a list of promises for each directory entry.  If the entry is itself
-            // a directory, then that promise won't resolve until it is fully traversed.
-            iterationAttempts.push(Promise.all(batchEntries.map((batchEntry) => {
-              if (batchEntry.isDirectory) {
-                console.log("dir: "+batchEntry.name);
-                return traverseDirectory(batchEntry);
-              }else{
-              batchEntry.file((file) => {
-                if(file.size == 0){
-                  emptyDirectories++;
-                  $('#boxtitle').text(fileSystemEntry.fullPath+" empty entries: "+emptyDirectories);
-                }
-              });
-              }
-              return Promise.resolve(batchEntry);
-            })));
-            // Try calling readEntries() again for the same dir, according to spec
-            readEntries();
-          }
-        }, errorHandler);
+//create array of files
+async function handleDirectoryEntry( dirHandle, out ) {
+  let filecounter = 0;
+  for await (const entry of dirHandle.values()) {
+    postMessage( `${ processed++ } files` );
+    const path = await root.resolve(entry);
+    path.unshift(root.name);
+    if (entry.kind === "file"){
+      const file = await entry.getFile();
+      if(file.size > 0){
+        console.log(processed+"   "+path.join("/"));
+        out[path.join("/")] = {file:file,isDirectory:false};
+        filecounter++;
+      }else{
+        emptyFiles++;
       }
-      // initial call to recursive entry reader function
-      readEntries();
-    }, 50);
-
-  });
+    }else if(entry.kind === "directory") {
+      const newHandle = await dirHandle.getDirectoryHandle( entry.name, { create: false } );
+      out[path.join("/")] = {isDirectory:true};
+      let hasFiles = await handleDirectoryEntry( newHandle, out );
+      if(hasFiles){
+        filecounter++;
+      }else{
+        delete out[path.join("/")];
+      }
+    }
+  }
+  if(filecounter == 0){
+    emptyDirs++;
+    return false;
+  }
+  return true;
 }
+
+
+//created json tree of traveres Dir
+// async function handleDirectoryEntry( dirHandle, out ) {
+//   let filecounter = 0;
+//   for await (const entry of dirHandle.values()) {
+//     postMessage( `${ processed++ } files` );
+//     if (entry.kind === "file"){
+//       const path = await root.resolve(entry);
+//       console.log(path.toString());
+//       const file = await entry.getFile();
+//       if(file.size > 0){
+//         out[ path.toString() ] = file;
+//         filecounter++;
+//       }else{
+//         emptyFiles++;
+//       }
+//     }
+//     if (entry.kind === "directory") {
+//       const newHandle = await dirHandle.getDirectoryHandle( entry.name, { create: false } );
+//       const newOut = out[ entry.name ] = {};
+//       let hasFiles = await handleDirectoryEntry( newHandle, newOut );
+//       if(hasFiles){
+//         filecounter++;
+//       }else{
+//         delete out[entry.name];
+//       }
+//     }
+//   }
+//   if(filecounter == 0){
+//     emptyDirs++;
+//     return false;
+//   }
+//   return true;
+// }

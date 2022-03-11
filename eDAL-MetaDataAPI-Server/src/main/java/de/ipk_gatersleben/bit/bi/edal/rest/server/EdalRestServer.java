@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.rest.server;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -81,7 +82,6 @@ public class EdalRestServer {
 		EdalRestServer.implProv = new FileSystemImplementationProvider(configuration);
 
 		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
-
 		EdalHttpServer server = DataManager.getHttpServer();
 		
 //		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
