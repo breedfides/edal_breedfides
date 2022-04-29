@@ -13,10 +13,12 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +84,12 @@ public class EdalRestServer {
 		EdalRestServer.implProv = new FileSystemImplementationProvider(configuration);
 
 		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
+//		root.createPrimaryDataFile("broken");
+//		root.createPrimaryDataFile("test");
+//		PrimaryDataFile file = (PrimaryDataFile) root.getPrimaryDataEntity("broken");
+//		InputStream input = new FileInputStream("test.txt");
+//		file.store(input);
+//		input.close();
 		EdalHttpServer server = DataManager.getHttpServer();
 		
 //		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
@@ -97,7 +105,7 @@ public class EdalRestServer {
 		jerseyServlet.setInitParameter("jersey.config.server.provider.packages",
 				"de.ipk_gatersleben.bit.bi.edal.rest.server");
 		jerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
-		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter");
+		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter,org.glassfish.jersey.media.multipart.MultiPartFeature");
 
 
 		currentHandler.prependHandler(restHandler);

@@ -1,4 +1,5 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.test;
+
 /**
  * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -12,6 +13,9 @@ package de.ipk_gatersleben.bit.bi.edal.rest.test;
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
@@ -25,13 +29,25 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 
+import org.eclipse.jetty.util.ajax.JSON;
+import org.json.simple.JSONObject;
+import org.junit.AfterClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.rules.TemporaryFolder;
+
+import com.sun.mail.iap.Response;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -48,7 +64,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateExce
 import de.ipk_gatersleben.bit.bi.edal.rest.server.EdalRestServer;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
-public class EdalRestTest{
+public class EdalRestTest {
 
 	private static int HTTPS_PORT = 8443;
 	private static int HTTP_PORT = 8080;
@@ -59,9 +75,12 @@ public class EdalRestTest{
 	private static final String DATACITE_USERNAME = "";
 	private static final int MIN_PORT_NUMBER = 49152;
 	private static final int MAX_PORT_NUMBER = 65535;
+	private final String METADATA_JSON = "{\"title\":\"my dataset title\",\"description\":\"Some description to describe this dataset.\",\"language\":\"de\",\"license\":\"CC010\",\"persons\":[{\"Firstname\":\"Eric\",\"Lastname\":\"Ralfs\",\"ORCID\":\"\",\"Legalname\":\"\",\"Adress\":\"Kingstr 26\",\"Zip\":\"25708\",\"Country\":\"Marne\",\"Type\":\"Creator\"}],\"subjects\":[\"A subject\"]};";
 
 	public EdalConfiguration configuration = null;
 	public Path mountPath = null;
+
+	private final String ENC_EMAIL = "rO0ABXNyABtqYXZheC5zZWN1cml0eS5hdXRoLlN1YmplY3SMsjKTADP6aAMAAloACHJlYWRPbmx5TAAKcHJpbmNpcGFsc3QAD0xqYXZhL3V0aWwvU2V0O3hwAHNyACVqYXZhLnV0aWwuQ29sbGVjdGlvbnMkU3luY2hyb25pemVkU2V0BsPCeQLu3zwCAAB4cgAsamF2YS51dGlsLkNvbGxlY3Rpb25zJFN5bmNocm9uaXplZENvbGxlY3Rpb24qYfhNCZyZtQMAAkwAAWN0ABZMamF2YS91dGlsL0NvbGxlY3Rpb247TAAFbXV0ZXh0ABJMamF2YS9sYW5nL09iamVjdDt4cHNyACVqYXZheC5zZWN1cml0eS5hdXRoLlN1YmplY3QkU2VjdXJlU2V0bcwygBdVficDAANJAAV3aGljaEwACGVsZW1lbnRzdAAWTGphdmEvdXRpbC9MaW5rZWRMaXN0O0wABnRoaXMkMHQAHUxqYXZheC9zZWN1cml0eS9hdXRoL1N1YmplY3Q7eHAAAAABc3IAFGphdmEudXRpbC5MaW5rZWRMaXN0DClTXUpgiCIDAAB4cHcEAAAAAXNyAEFkZS5pcGtfZ2F0ZXJzbGViZW4uYml0LmJpLmVkYWwucHJpbWFyeV9kYXRhLmxvZ2luLkVsaXhpclByaW5jaXBhbAAAAAAAAAABAgABTAAEbmFtZXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hwdAAYcmFsZnNAaXBrLWdhdGVyc2xlYmVuLmRleHEAfgACeHEAfgAHeHg=";
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -75,13 +94,10 @@ public class EdalRestTest{
 		EdalRestTest.HTTP_PORT = port;
 
 		try {
-			this.configuration = new EdalConfiguration(EdalRestTest.DATACITE_USERNAME,
-					EdalRestTest.DATACITE_PASSWORD, EdalRestTest.DATACITE_PREFIX,
-					new InternetAddress(EdalRestTest.EMAIL),
-					new InternetAddress(EdalRestTest.EMAIL),
-					new InternetAddress(EdalRestTest.EMAIL),
-					new InternetAddress(EdalRestTest.ROOT_USER),
-					"imap.ipk-gatersleben.de","","");
+			this.configuration = new EdalConfiguration(EdalRestTest.DATACITE_USERNAME, EdalRestTest.DATACITE_PASSWORD,
+					EdalRestTest.DATACITE_PREFIX, new InternetAddress(EdalRestTest.EMAIL),
+					new InternetAddress(EdalRestTest.EMAIL), new InternetAddress(EdalRestTest.EMAIL),
+					new InternetAddress(EdalRestTest.ROOT_USER), "imap.ipk-gatersleben.de", "", "");
 			this.configuration.setHttpPort(EdalRestTest.HTTP_PORT);
 			this.configuration.setHttpsPort(EdalRestTest.HTTPS_PORT);
 
@@ -95,23 +111,71 @@ public class EdalRestTest{
 			throw new EdalException(e);
 		}
 	}
-	
-	@Test
-	public void testServer() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
+
+	// @Test
+	public void testServer() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
+			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
+			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
 		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
-		
+
 		Client client = ClientBuilder.newClient();
 		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/test");
 		String result = webTarget.request(MediaType.TEXT_PLAIN).get(String.class);
-		System.out.println("response: "+result);
-		
+		System.out.println(result);
+		Assertions.assertTrue("Test".equals(result));
+
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		DataManager.shutdown();
+	}
+
+	@Test
+	public void testUpload() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
+			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
+			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
+		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
+		String dir = "uploadtest";
+		File file1 = new File(dir + File.separator + "file1.txt");
+		File file2 = new File(dir + File.separator + "file2.txt");
+		file1.getParentFile().mkdirs();
+		file1.createNewFile();
+		file2.createNewFile();
+		String str = "test";
+//		BufferedWriter writer1 = new BufferedWriter(new FileWriter(file1.getPath(), true));
+//		BufferedWriter writer2 = new BufferedWriter(new FileWriter(file2.getPath(), true));
+//		for (int i = 0; i < 90000000; i++) {
+//			writer1.append(' ');
+//			writer1.append(str);
+//			writer2.append(' ');
+//			writer2.append(str);
+//		}
+//		writer1.close();
+//		writer2.close();
+
+		Form form = new Form();
+		form.param("subject", ENC_EMAIL);
+		form.param("name", "test");
+		form.param("metadata", new JSONObject().toJSONString());
+		Client client = ClientBuilder.newClient();
+		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/uploadEntityAndMetadata");
+		Builder request = webTarget.request().accept(MediaType.TEXT_PLAIN);
+		request.header("contentType", MediaType.APPLICATION_FORM_URLENCODED);
+		request.header("processData", false);
+		javax.ws.rs.core.Response response = request.post(Entity.form(form));
+		System.out.println("response okay? "+response);
+		//Assertions.assertTrue("Test".equals(result));
+
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@AfterEach
@@ -123,8 +187,7 @@ public class EdalRestTest{
 	/**
 	 * Checks to see if a specific port is available.
 	 *
-	 * @param port
-	 *            the port to check for availability
+	 * @param port the port to check for availability
 	 */
 	public static boolean available(int port) {
 		if (port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {

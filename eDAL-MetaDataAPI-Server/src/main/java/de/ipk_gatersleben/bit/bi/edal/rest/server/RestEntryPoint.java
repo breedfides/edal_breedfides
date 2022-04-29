@@ -22,30 +22,29 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
-import java.util.Locale;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.swing.JOptionPane;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -66,7 +65,6 @@ import com.google.gson.Gson;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
@@ -98,7 +96,7 @@ public class RestEntryPoint {
 	@Path("test")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String test() {
-		return "Test2";
+		return "Test";
 	}
 
 	@GET
@@ -110,147 +108,6 @@ public class RestEntryPoint {
 		return info;
 	}
 
-	@Produces(MediaType.TEXT_PLAIN)
-	@Path("authenticate")
-	@POST
-	public String authenticate(@FormDataParam("email") String email) throws Exception {
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-		System.out.println(email);
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
-
-		LoginContext ctx = null;
-		try {
-			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
-			ctx.login();
-			Thread.currentThread().setContextClassLoader(currentClassLoader);
-			Platform.setImplicitExit(true);
-			Subject subject = ctx.getSubject();
-			// return (String) jsonEmail.get("email");
-//			StreamingOutput stream = new StreamingOutput() {
-//				@Override
-//				public void write(OutputStream os) throws IOException, WebApplicationException {
-//					ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
-//					objectOutputStream.writeObject(subject);
-//					objectOutputStream.flush();
-//				}
-//			};			
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = null;
-			try {
-			  out = new ObjectOutputStream(bos);   
-			  out.writeObject(subject);
-			  out.flush();
-			  byte[] yourBytes = bos.toByteArray();			
-				return Base64.getEncoder().encodeToString(yourBytes);
-			} finally {
-			  try {
-			    bos.close();
-			  } catch (IOException ex) {
-			    // ignore close exception
-			  }
-			}
-			// PrimaryDataDirectory root =
-			// DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-		} catch (final LoginException e) {
-
-			int result = 0;
-			if (e.getCause() == null) {
-				result = (Integer) JOptionPane.showConfirmDialog(null,
-						"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
-						"Login to Elixir", JOptionPane.YES_NO_OPTION);
-			} else {
-				result = (Integer) JOptionPane.showConfirmDialog(null,
-						"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
-						"Login to Elixir+", JOptionPane.YES_NO_OPTION);
-			}
-
-		}
-		return "";
-//		JSONObject obj = new JSONObject();
-//		obj.put("email", jsonEmail.get("email"));
-//		return obj;
-	}
-
-	@Produces("text/html; charset=UTF-8")
-	@Path("authenticateEmail")
-	@POST
-	public String authenticateEmail(String email) throws Exception {
-		Gson gson = new Gson();
-
-		JSONObject jsonEmail = (JSONObject) new JSONParser().parse(email);
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
-
-		LoginContext ctx = null;
-		try {
-			ctx = new LoginContext("Elixir", new SimpleCallbackHandler((String) jsonEmail.get("email")));
-			ctx.login();
-			Thread.currentThread().setContextClassLoader(currentClassLoader);
-			Platform.setImplicitExit(true);
-			Subject subject = ctx.getSubject();
-			return (String) jsonEmail.get("email");
-//			StreamingOutput stream = new StreamingOutput() {
-//			    @Override
-//			    public void write(OutputStream os) throws IOException,
-//			    WebApplicationException {
-//		    	 ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
-//		    	 objectOutputStream.writeObject(subject);
-//		    	 objectOutputStream.flush();
-//			    }
-//			  };
-//		    	 ByteArrayOutputStream output = new ByteArrayOutputStream();
-//		    	 stream.write(output);
-//		    	 System.out.println("1.");
-//		    	 System.out.println(new String(output.toByteArray(), "UTF-8"));
-//			  return Response.ok(stream).build();
-//			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-		} catch (final LoginException e) {
-
-			int result = 0;
-			if (e.getCause() == null) {
-				result = (Integer) JOptionPane.showConfirmDialog(null,
-						"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
-						"Login to Elixir", JOptionPane.YES_NO_OPTION);
-			} else {
-				result = (Integer) JOptionPane.showConfirmDialog(null,
-						"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
-						"Login to Elixir+", JOptionPane.YES_NO_OPTION);
-			}
-
-		}
-		return null;
-//		JSONObject obj = new JSONObject();
-//		obj.put("email", jsonEmail.get("email"));
-//		return obj;
-	}
-
-	@Produces("text/html; charset=UTF-8")
-	@Path("reuseSubject")
-	@POST
-	public String reuseSubject(@FormDataParam("subject") String src) {
-		
-		try {
-			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(src));		
-			ObjectInputStream oi = new ObjectInputStream(in);
-			Subject subject = (Subject) oi.readObject();
-			PrimaryDataDirectory dir = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			System.out.println(dir.getName());
-			return subject.toString();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (PrimaryDataDirectoryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return src;
-	}
 
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("sendSubject")
@@ -261,33 +118,6 @@ public class RestEntryPoint {
 			subject.getPrincipals().add(new ElixirPrincipal(subjectString));
 			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
 			PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity("REST");
-			System.out.println(entity.getMetaData());
-//			MetaData metadata = entity.getMetaData().clone();
-//			Persons persons = new Persons();
-//			NaturalPerson np = new NaturalPerson("Peter", "Ralfs",
-//					"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraﬂe 3",
-//					"06466", "Germany");
-//			persons.add(np);
-//			metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
-//			metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,
-//					new LegalPerson("e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP)",
-//							"IPK Gatersleben, Seeland OT Gatersleben, Corrensstraﬂe 3", "06466", "Germany"));
-//	
-//			Subjects subjects = new Subjects();
-//			subjects.add(new UntypedData("wheat"));
-//			subjects.add(new UntypedData("transcriptional network"));
-//			subjects.add(new UntypedData("genie3"));
-//			subjects.add(new UntypedData("transcriptomics"));
-//			EdalLanguage lang = new EdalLanguage(Locale.ENGLISH);
-//			metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
-//			metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-//			metadata.setElementValue(EnumDublinCoreElements.TITLE,
-//					new UntypedData("REST"));
-//			metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
-//					"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
-//			entity.setMetaData(metadata);
-			System.out.println(root);
-			System.out.println("json_: " + subject.toString());
 
 			for (Principal p : subject.getPrincipals()) {
 				return p.toString();
@@ -296,9 +126,26 @@ public class RestEntryPoint {
 			e.printStackTrace();
 		}
 
-		return "bummer";
+		return "error";
 	}
 	
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("checkIfExists")
+	@POST
+	public Boolean checkIfExists(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name) {
+		try {
+			//decode subject
+			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
+			ObjectInputStream oi = new ObjectInputStream(in);
+			Subject subject = (Subject) oi.readObject();	
+			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+			root.getPrimaryDataEntity(name);
+			return true;
+		} catch (IOException | ClassNotFoundException | PrimaryDataDirectoryException e) {
+			return false;
+		}
+				
+	}
 	
 	//function for dataset creation with metadata
 	@Produces(MediaType.TEXT_PLAIN)
@@ -350,6 +197,7 @@ public class RestEntryPoint {
 			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring, @FormDataParam("datasetRoot") String datasetRoot)  {
 		// JSONObject data = new JSONObject();
 		String[] pathArray = name.split("/");
+		System.out.println(name);
 		try {
 			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
 			ObjectInputStream oi = new ObjectInputStream(in);
@@ -383,7 +231,6 @@ public class RestEntryPoint {
 			}
 			return "200";
 		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
-			System.out.println(Arrays.toString(pathArray));
 			e.printStackTrace();
 			return "500";
 		} catch (ClassNotFoundException e1) {
@@ -392,8 +239,151 @@ public class RestEntryPoint {
 			return "500";
 		}
 	}
+
+	
+    private ResumableInfo getResumableInfo(HttpServletRequest request) throws ServletException {
+        String base_dir = System.getProperty("user.home");
+
+        int resumableChunkSize          = HttpUtils.toInt(request.getParameter("resumableChunkSize"), -1);
+        long resumableTotalSize         = HttpUtils.toLong(request.getParameter("resumableTotalSize"), -1);
+        String resumableIdentifier      = request.getParameter("resumableIdentifier");
+        String resumableFilename        = request.getParameter("resumableFilename");
+        String resumableRelativePath    = request.getParameter("resumableRelativePath");
+        //Here we add a ".temp" to every upload file to indicate NON-FINISHED
+        new File(base_dir).mkdir();
+        String resumableFilePath        = new File(base_dir, resumableFilename).getAbsolutePath() + ".temp";
+
+        ResumableInfoStorage storage = ResumableInfoStorage.getInstance();
+
+        ResumableInfo info = storage.get(resumableChunkSize, resumableTotalSize,
+                resumableIdentifier, resumableFilename, resumableRelativePath, resumableFilePath);
+        if (!info.vaild())         {
+            storage.remove(info);
+            throw new ServletException("Invalid request params.");
+        }
+        return info;
+    }
+	
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Path("resumableFileUpload")
+	@POST
+	public String resumableFileUpload(@Context HttpServletRequest request,@FormDataParam("file") InputStream uploadedInputStream,
+			@FormDataParam("file") FormDataContentDisposition fileMetaData,  @QueryParam("email") String email,
+			@QueryParam("datasetRoot") String datasetRoot, @QueryParam("resumableRelativePath") String relativePath,@QueryParam("resumableChunkNumber") int resumableChunkNumber,@QueryParam("resumableChunkSize") int resumableChunkSize)  {
+		// JSONObject data = new JSONObject();
+		try {
+			System.out.println("------------------ "+relativePath+" --------------------");
+			String test = fileMetaData.getFileName();
+			 ResumableInfo info = getResumableInfo(request);
+
+		        RandomAccessFile raf = new RandomAccessFile(info.resumableFilePath, "rw");
+
+		        //Seek to position
+		        raf.seek((resumableChunkNumber - 1) * (long)info.resumableChunkSize);
+
+		        //Save to file
+		        InputStream is = uploadedInputStream;
+		        long readed = 0;
+		        long content_length = request.getContentLength();
+		        byte[] bytes = new byte[1024 * 100];
+		        while(readed < content_length) {
+		            int r = is.read(bytes);
+		            System.out.println(r);
+		            if (r < 0)  {
+		                break;
+		            }
+		            raf.write(bytes, 0, r);
+		            readed += r;
+		        }
+		        raf.close();
+
+
+		        //Mark as uploaded.
+		        info.uploadedChunks.add(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber));
+		        if (info.checkIfUploadFinished()) { //Check if all chunks uploaded, and change filename
+		            ResumableInfoStorage.getInstance().remove(info);
+			         // STEP 2:  Use Channels to convert to InputStream
+		            InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
+					ObjectInputStream oi = new ObjectInputStream(in);
+					Subject subject = (Subject) oi.readObject();	
+					
+					// data = (JSONObject) new JSONParser().parse(request);
+					// String type = (String) data.get("type");
+					PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+					PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
+			         
+						root.createPrimaryDataFile(fileMetaData.getFileName()).store(new FileInputStream(new File(info.resumableFilePath)));;
+			         
+		            System.out.println("finished file");
+		        } else {
+		            //response.getWriter().print("Upload");
+		        }
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
 	
 
+		
+		return "200";
+//		try {
+//
+//			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
+//			ObjectInputStream oi = new ObjectInputStream(in);
+//			Subject subject = (Subject) oi.readObject();	
+//			
+//			// data = (JSONObject) new JSONParser().parse(request);
+//			// String type = (String) data.get("type");
+//			PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+//			PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
+//			if (pathArray.length > 0) {
+//				PrimaryDataDirectory parent = root;
+//				int lastIndex = pathArray.length - 1;
+//				for (int i = 1; i < lastIndex; i++) {
+//					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
+//				}
+//				if (type.equals("Directory")) {
+//					System.out.println("Created:");
+//					System.out.println(Arrays.toString(pathArray));
+//					parent.createPrimaryDataDirectory(pathArray[lastIndex]);
+//				} else {
+//					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
+//					try {
+//						file.store(uploadedInputStream);
+//					} catch (PrimaryDataFileException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				}
+//			} else {
+//				return "500";
+//			}
+//			return "200";
+//		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
+//			e.printStackTrace();
+//			return "500";
+//		} catch (ClassNotFoundException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//			return "500";
+//		}
+	}
+	
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Path("isFileUploaded")
+	@GET
+	public Response isFileUploaded(@Context HttpServletRequest request,@Context HttpServletResponse response,@QueryParam("resumableRelativePath") String relativePath,@QueryParam("resumableChunkNumber") int resumableChunkNumber,@QueryParam("resumableChunkSize") int resumableChunkSize) throws ServletException  {
+
+        ResumableInfo info = getResumableInfo(request);
+
+        if (info.uploadedChunks.contains(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber))) {
+        	return Response.status(200).build();
+        } else {
+        	return Response.status(404).build();
+        }
+	}
+	
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
@@ -689,7 +679,152 @@ class MetaDataWrapper {
 	}
 	
 	
+	
+	
 }
+
+//@Produces(MediaType.TEXT_PLAIN)
+//@Path("authenticate")
+//@POST
+//public String authenticate(@FormDataParam("email") String email) throws Exception {
+//	final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+//	System.out.println(email);
+//	Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+//
+//	LoginContext ctx = null;
+//	try {
+//		ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
+//		ctx.login();
+//		Thread.currentThread().setContextClassLoader(currentClassLoader);
+//		Platform.setImplicitExit(true);
+//		Subject subject = ctx.getSubject();
+//		// return (String) jsonEmail.get("email");
+////		StreamingOutput stream = new StreamingOutput() {
+////			@Override
+////			public void write(OutputStream os) throws IOException, WebApplicationException {
+////				ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
+////				objectOutputStream.writeObject(subject);
+////				objectOutputStream.flush();
+////			}
+////		};			
+//		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//		ObjectOutputStream out = null;
+//		try {
+//		  out = new ObjectOutputStream(bos);   
+//		  out.writeObject(subject);
+//		  out.flush();
+//		  byte[] yourBytes = bos.toByteArray();			
+//			return Base64.getEncoder().encodeToString(yourBytes);
+//		} finally {
+//		  try {
+//		    bos.close();
+//		  } catch (IOException ex) {
+//		    // ignore close exception
+//		  }
+//		}
+//		// PrimaryDataDirectory root =
+//		// DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+//	} catch (final LoginException e) {
+//
+//		int result = 0;
+//		if (e.getCause() == null) {
+//			result = (Integer) JOptionPane.showConfirmDialog(null,
+//					"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
+//					"Login to Elixir", JOptionPane.YES_NO_OPTION);
+//		} else {
+//			result = (Integer) JOptionPane.showConfirmDialog(null,
+//					"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
+//					"Login to Elixir+", JOptionPane.YES_NO_OPTION);
+//		}
+//
+//	}
+//	return "";
+////	JSONObject obj = new JSONObject();
+////	obj.put("email", jsonEmail.get("email"));
+////	return obj;
+//}
+//
+//@Produces("text/html; charset=UTF-8")
+//@Path("authenticateEmail")
+//@POST
+//public String authenticateEmail(String email) throws Exception {
+//	Gson gson = new Gson();
+//
+//	JSONObject jsonEmail = (JSONObject) new JSONParser().parse(email);
+//	final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+//
+//	Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+//
+//	LoginContext ctx = null;
+//	try {
+//		ctx = new LoginContext("Elixir", new SimpleCallbackHandler((String) jsonEmail.get("email")));
+//		ctx.login();
+//		Thread.currentThread().setContextClassLoader(currentClassLoader);
+//		Platform.setImplicitExit(true);
+//		Subject subject = ctx.getSubject();
+//		return (String) jsonEmail.get("email");
+////		StreamingOutput stream = new StreamingOutput() {
+////		    @Override
+////		    public void write(OutputStream os) throws IOException,
+////		    WebApplicationException {
+////	    	 ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
+////	    	 objectOutputStream.writeObject(subject);
+////	    	 objectOutputStream.flush();
+////		    }
+////		  };
+////	    	 ByteArrayOutputStream output = new ByteArrayOutputStream();
+////	    	 stream.write(output);
+////	    	 System.out.println("1.");
+////	    	 System.out.println(new String(output.toByteArray(), "UTF-8"));
+////		  return Response.ok(stream).build();
+////		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+//	} catch (final LoginException e) {
+//
+//		int result = 0;
+//		if (e.getCause() == null) {
+//			result = (Integer) JOptionPane.showConfirmDialog(null,
+//					"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
+//					"Login to Elixir", JOptionPane.YES_NO_OPTION);
+//		} else {
+//			result = (Integer) JOptionPane.showConfirmDialog(null,
+//					"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
+//					"Login to Elixir+", JOptionPane.YES_NO_OPTION);
+//		}
+//
+//	}
+//	return null;
+////	JSONObject obj = new JSONObject();
+////	obj.put("email", jsonEmail.get("email"));
+////	return obj;
+//}
+//
+//@Produces("text/html; charset=UTF-8")
+//@Path("reuseSubject")
+//@POST
+//public String reuseSubject(@FormDataParam("subject") String src) {
+//	
+//	try {
+//		InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(src));		
+//		ObjectInputStream oi = new ObjectInputStream(in);
+//		Subject subject = (Subject) oi.readObject();
+//		PrimaryDataDirectory dir = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
+//		System.out.println(dir.getName());
+//		return subject.toString();
+//	} catch (IOException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	}
+//
+//	catch (ClassNotFoundException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	} catch (PrimaryDataDirectoryException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	}
+//	return src;
+//}
+
 
 //class SimpleCallbackHandler implements CallbackHandler {
 //

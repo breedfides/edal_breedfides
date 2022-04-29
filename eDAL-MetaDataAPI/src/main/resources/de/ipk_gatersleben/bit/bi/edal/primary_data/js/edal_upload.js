@@ -1,44 +1,280 @@
 const worker = new Worker("/js/edal_traverse.js");
 let files = {};
+let numberOfFiles = 0;
+let keytimer;
+let titleAlreadyExists = false;
+let storage = localStorage;
+
+var resumable;
+  
+function checkIfExists(input){
+    if($(input).val() != ''){
+        clearTimeout(keytimer);
+        keytimer = setTimeout(() => {
+            let form = new FormData();
+            form.append("subject",email);
+            form.append("name",$(input).val());
+            jQuery.ajax({
+                url: serverURL+"/restfull/api/checkIfExists",
+                data: form,
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                success: function(titleExists){
+                    if(titleExists === 'true'){
+                        titleAlreadyExists = true;
+                        $('#input_title').removeClass( "is-valid" ).addClass('is-invalid');
+                        input.setCustomValidity("Already exists! Please choose another name.");
+                        input.reportValidity();
+                    }else{
+                        titleAlreadyExists = false;
+                        $('#input_title').removeClass( "is-invalid" ).addClass('is-valid');
+                    }                                                                   
+                }
+              });
+        }, 700);
+    }
+}
+
+function validateInputs(){
+    let failedValidations = new Map();
+    //validate title and description
+    let element = document.getElementById('input_title');
+    if(element.value == ""){
+        failedValidations.set(element,{label:'Missing Title: ',text:'Please set a title.'});
+    }
+    if(titleAlreadyExists){
+        failedValidations.set(element,{label:'Title Already exists: ',text:'Please set a new title.'});
+    }
+    element = document.getElementById('text_description');
+    if(element.value == ""){
+        failedValidations.set(element,{label:'Missing Description: ',text:'Please set a description.'});
+    }
+
+    //validate authors
+    let authorsIncomplete = false;
+    var tb = $('#author_table:eq(0) tbody');
+    tb.find("tr").each(function(index, element) {
+      var colSize = $(element).find('td').length;
+      console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
+      $(element).find('td').each(function(index, element) {
+      var $th = $(element).closest('table').find('th').eq(index);
+        //index == 2 = orcid, allowed to be empty
+        if(index > 0 && index < 8 && element.isContentEditable && index != 3){
+          var colVal = $(element).text();
+          if(!colVal){
+            authorsIncomplete = true;
+          }
+        }
+      });
+    });
+    $('#alert-information').empty();
+    if(authorsIncomplete){
+        $('#alert-information').append('<strong>Missing Author: </strong>Please set at least one author for this publication.');
+        if(!failedValidations.size){
+            $('.alert').slideDown();
+            return false;
+        }
+        failedValidations.set(tb,{label:'Missing Authors: ',text:'Please set at least one author for this publication.'});
+    }
+    //validate if at least one subject is set
+    let noSubject = true;
+    tb = $('#subject_table:eq(0) tbody');
+    tb.find("tr").each(function(index, element) {
+      if($(element).children('td:nth-child(2)').text()){
+        noSubject = false;
+      }
+    });
+    if(noSubject){
+        $('#alert-information').append('<strong>Missing Subject: </strong>Please fill in at least one subject for this publication.');
+        if(!failedValidations.size){
+            $('.alert').slideDown();
+            return false;
+        }
+    }
+    //validate if a dataset was selected
+
+    if(fileSystemEntry == null){
+        $('#alert-information').append('<strong>Missing Dataset: </strong>Please drop or select a dataset to be uploaded.');
+        if(!failedValidations.size){
+            $('.alert').slideDown();
+            return false;
+        }
+    }
+    // if map only contains
+    console.log(failedValidations.get(0));
+    if(failedValidations.size > 1){
+        for (const [key, value] of failedValidations.entries()) {
+            $('#alert-information').append(`<strong>${value.label}</strong>${value.text}`);
+            $('#alert-information').append('<br>');
+          }
+        $('.alert').slideDown();
+        return false;
+    }else{
+        if(failedValidations.size == 1){
+            for (const [key, value] of failedValidations.entries()) {
+                key.setCustomValidity(value.text);
+                key.reportValidity();
+            }
+            $('.alert').slideUp();
+            return false;
+        }
+        return true;;
+    }
+}
+
+function storeInputs(){
+  var tb = $('#author_table:eq(0) tbody');
+  tb.find("tr").each(function(index, element) {
+    var colSize = $(element).find('td').length;
+    console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
+    $(element).find('td').each(function(index, element) {
+    var $th = $(element).closest('table').find('th').eq(index);
+      //index == 2 = orcid, allowed to be empty
+      if(index > 0 && index < 8 && element.isContentEditable){
+        storage.setItem($th.text(),$(element).text());
+      }
+    });
+  });
+  storage.setItem('language',$("#select_language").prop('selectedIndex'));
+}
 
 async function startUpload(){
     //let msg = await traverse(fileSystemEntry, listing);
-    await startUpload2();
+    if(validateInputs()){
+        storeInputs();
+        startUpload2();
+        $('#submitBtn').prop('disabled', true);
+    }
     //let msg = await traverse(fileSystemEntry);
 
-    $('#submitBtn').prop('disabled', true);
     //console.log(msg);
-    let form = new FormData();
-    form.append("subject",email);
-    form.append("name", globalMetadata.title);
-    jQuery.ajax({
-      url: serverURL+"/restfull/api/publishDataset",
-      data: form,
-      cache: false,
-      contentType: false,
-      processData: false,
-      method: 'POST',
-      type: 'POST',
-      success: function(resData){
-          console.log("publish() response: "+resData);
-      }
-    });
+    // let form = new FormData();
+    // form.append("subject",email);
+    // form.append("name", globalMetadata.title);
+    // jQuery.ajax({
+    //   url: serverURL+"/restfull/api/publishDataset",
+    //   data: form,
+    //   cache: false,
+    //   contentType: false,
+    //   processData: false,
+    //   method: 'POST',
+    //   type: 'POST',
+    //   success: function(resData){
+    //       console.log("publish() response: "+resData);
+    //   }
+    // });
   }
 
 async function startUpload2(){
+    var height = document.getElementById('submitBtn').clientHeight;
+    $('.progress-bar').css('transition','width .6s linear');
+    $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
+    $('.progress-bar').css('background-color','#0275d8');
+    $('#submitBtn').css('width','50%');
+    $('.progress').css('height','12px');
+    //remove submit btn text
+    $('#submitBtn').contents().filter(function(){
+        return this.nodeType === 3;
+    }).remove();
+    $('#submitBtn').css('height',height);
+    numberOfFiles = Object.keys(files).length+2;
     let metadata = getInputMetadata();
     await uploadEntityAndMetadata(metadata.title,metadata);
     await uploadEntity2(fileSystemEntry.name, null);
+    $('.progress-bar').css('width',`${((2/numberOfFiles).toFixed(1))*100}%`);
+    // resumable = new Resumable({
+    //     target: serverURL+"/restfull/api/resumableFileUpload",
+    //     testTarget: serverURL+"/restfull/api/isFileUploaded",
+    //     query: {
+    //         email:email,
+    //         datasetRoot:metadata.title,
+    //     },
+    //   });
 
-    for (var key in files) {
-        if (files.hasOwnProperty(key)) {
-            if(files[key].isDirectory){
-                await uploadEntity2(key, null);
-            }else{
-                await uploadEntity2(key, files[key].file);
+    //   resumable.on('complete', function(){
+    //     let form = new FormData();
+    //     form.append("subject",email);
+    //     form.append("name", globalMetadata.title);
+    //     jQuery.ajax({
+    //     url: serverURL+"/restfull/api/publishDataset",
+    //     data: form,
+    //     cache: false,
+    //     contentType: false,
+    //     processData: false,
+    //     method: 'POST',
+    //     type: 'POST',
+    //     success: function(resData){
+    //         console.log("publish() response: "+resData);
+    //     }
+    //     });
+    //   });
+    async function iterateFiles(files){
+        let requests = 0;
+        let counter = 0;
+        let length = Object.keys(files).length
+        return new Promise(async (resolve) => {
+            for (var key in files) {
+                counter++;
+                if (files.hasOwnProperty(key)) {
+                    if(files[key].isDirectory){
+                        await uploadEntity2(key, null);
+                        updateUploadedFiles(counter);
+                    }else{
+                        if(requests < 10){
+                            requests++;
+                            uploadEntity2(key, files[key].file).then(() => {
+                                requests--
+                                updateUploadedFiles(counter);
+                                if(counter == length && requests == 0){
+                                    $('.progress-bar').css('transition','width .1s linear');
+                                    $('.progress-bar').css('width','0%');
+                                    setTimeout(() => {
+                                        $('.progress-bar').css('background-color','#5cb85c');
+                                        $('.progress-bar').css('transition','width .6s ease');
+                                        $('.progress-bar').css('width','40%');
+                                    },600); 
+                                    $('#file-counter-info').text("Finished uploading! Publishing initiated..");
+                                    let form = new FormData();
+                                    form.append("subject",email);
+                                    form.append("name", globalMetadata.title);
+                                    jQuery.ajax({
+                                      url: serverURL+"/restfull/api/publishDataset",
+                                      data: form,
+                                      cache: false,
+                                      contentType: false,
+                                      processData: false,
+                                      method: 'POST',
+                                      type: 'POST',
+                                      success: function(resData){
+                                        $('.progress-bar').css('width','100%');
+                                        titleAlreadyExists = true;
+                                        setTimeout(() => {$('#file-counter-info').text("Finished!");},600);                                                                            
+                                      }
+                                    });
+                                }
+                            });
+                        }else{
+                            await uploadEntity2(key, files[key].file);
+                            updateUploadedFiles(counter);
+                        }
+                        //resumable.addFile(files[key].file);
+                    }
+                }
             }
-        }
+        });
+        
     }
+    iterateFiles(files);
+
+    //resumable.upload();
+}
+
+async function updateUploadedFiles(counter){
+    $('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
+    $('.progress-bar').css('width',`${(Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100}%`);
 }
 
 async function uploadEntity2(path, file){
@@ -104,7 +340,6 @@ worker.onmessage = (evt) => {
         for (var key in files) {
             if (files.hasOwnProperty(key)) {
                 //console.log(key + " -> " + files[key].path.toString());
-                console.log(key+" "+JSON.stringify(files[key]));
                 $('#submitBtn').prop('disabled', false);
             }
         }
@@ -126,6 +361,13 @@ worker.onmessage = (evt) => {
       console.log("dropped item");
       if(item.kind == 'directory'){
         fileSystemEntry = item;
+        $('.progress').css('height','0');
+        $('.progress-bar').css('width','0%');
+        $('#submitBtn').css('width','25%');
+        $('#submitBtn').contents().filter(function(){
+            return this.nodeType === 3;
+        }).remove();
+        $('#submitBtn').append('Start upload');
         //const dirHandle = await showDirectoryPicker();
         $('#droplabel').text(item.name);
         worker.postMessage( item );
@@ -195,11 +437,11 @@ worker.onmessage = (evt) => {
         let currentPerson = {};
         $(element).find('td').each(function(index, element) {
         var $th = $(element).closest('table').find('th').eq(index);
-          if(index < 7){
+          if(index > 0 && index < 8){
             currentPerson[$th.text()] = $(element).text();
             var colVal = $(element).text();
             console.log("    Value in col " + (index + 1) + " : " + colVal.trim());
-          }else if(index == 7){
+          }else if(index == 8){
             currentPerson[$th.text()] = $(element).find('select').val();
           }
         });
@@ -211,8 +453,9 @@ worker.onmessage = (evt) => {
       let subjects = [];
       var tb = $('#subject_table:eq(0) tbody');
       tb.find("tr").each(function(index, element) {
-        console.log($(element).children('td:first').text());
-        subjects.push($(element).children('td:first').text());
+          if($(element).children('td:nth-child(2)').text()){
+            subjects.push($(element).children('td:nth-child(2)').text());
+          }
       });
       globalMetadata.subjects = subjects;
       console.log(JSON.stringify(globalMetadata));
@@ -221,15 +464,39 @@ worker.onmessage = (evt) => {
   
   
     function addSubjectRow(){
-        markup = "<tr><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
     }
   
     function addAuthorRow(){
-        markup = "<tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
+    }
+
+    function disablePointlessCells(element){
+        let row = $(element).parent().parent();
+        console.log($(element).val());
+        if($(element).val() == 'Creator' || $(element).val() == 'Contributor'){
+            $(row).find("td:eq(1)").css('background-color','white');
+            $(row).find("td:eq(1)").attr('contenteditable','true');
+            $(row).find("td:eq(2)").css('background-color','white');
+            $(row).find("td:eq(2)").attr('contenteditable','true');
+            $(row).find("td:eq(3)").css('background-color','white');
+            $(row).find("td:eq(3)").attr('contenteditable','true');
+            $(row).find("td:eq(4)").css('background-color','rgba(22,22,22,.05)');
+            $(row).find("td:eq(4)").attr('contenteditable','false');
+        }else{
+            $(row).find("td:eq(1)").attr('contenteditable','false');
+            $(row).find("td:eq(1)").css('background-color','rgba(22,22,22,.05)');
+            $(row).find("td:eq(2)").attr('contenteditable','false');
+            $(row).find("td:eq(2)").css('background-color','rgba(22,22,22,.05)');
+            $(row).find("td:eq(3)").attr('contenteditable','false');
+            $(row).find("td:eq(3)").css('background-color','rgba(22,22,22,.05)');
+            $(row).find("td:eq(4)").attr('contenteditable','true');
+            $(row).find("td:eq(4)").css('background-color','white');
+        }
     }
   
     function deleteRow(row){

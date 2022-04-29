@@ -1,149 +1,180 @@
 <!DOCTYPE html>
 <html>
-<head>
+    <head>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css?family=Rubik">
-          <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
-          <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="css/submission.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+            <link rel="stylesheet" href="css/submission.css">
 
-<title>e!DAL Data Submission</title>
-</head>
+                <title>e!DAL Data Submission</title>
+            </head>
 
-<body>
-<div class="glass">
-    <div class="container flexcolfill pb-1">
+            <body>
+                <div class="glass">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert" style="display:none;margin:.5em .5em 1em .5em">
+                        <button type="button" class="close" onclick="$('.alert').slideUp();" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <div id="alert-information">
+                            <strong>Congratulations!</strong> You successfully tied your shoelace!
+                        </div>
+                    </div>
+                    <div class="container flexcolfill pb-1">
 
-        <div class="header flexrowfill">
-            <img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" style="float:left;">
-            <button class="btn btn-outline-secondary mt-2">Login with Elixir</button>
-            <img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" style="float:right;">
-        </div>
+                        <div class="header flexrowfill">
+                            <img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" style="float:left;">
+                                <button class="btn btn-outline-secondary mt-2">Login with Elixir</button>
+                                <img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" style="float:right;">
+                                </div>
 
-        <!-- <img src="edalheader.png" class="mt-1 flexrowfill"> -->
+                                <!-- <img src="edalheader.png" class="mt-1 flexrowfill"> -->
 
-        <div class="mt-2" id="dropzone">
-            <div id="boxtitle">
-              <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
-              <p id="droplabel" onclick="chooseDirectory();" style="margin-bottom:0;">Drop a file or directory</p>
-            </div>
-          </div>
+                                <div class="mt-2" id="dropzone">
+                                    <div id="boxtitle">
+                                        <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
+                                        <p id="droplabel" onclick="chooseDirectory();" style="margin-bottom:0;">Drop a file or directory</p>
+                                    </div>
+                                </div>
 
-        <div class="d-flex flexrowfill mt-2" >
-            <div class="d-flex flex-column width65">
-                <label style="margin: 0">Title</label>
-                <input id="input_title" class="form-control"  placeholder="Please enter a short, but clear title here.."></input>
-            </div>
-            <div class="d-flex flex-column width35 ml-2">
-                <label style="margin-bottom:0;">Language</label>
-                <select id="select_language" class="form-control">
-                  #foreach($item in $languages)
-                  <option value="$item[0]">$item[1]</option>
-                  #end
-                </select>
-            </div>
-        </div>
+                                <div class="d-flex flexrowfill mt-2">
+                                    <div class="d-flex flex-column width65">
+                                        <label style="margin: 0">Title</label>
+                                        <input id="input_title" required class="form-control" onkeyup="checkIfExists(this)" placeholder="Please enter a short, but clear title here.."></input>
+                                    </div>
+                                    <div class="d-flex flex-column width35 ml-2">
+                                        <label style="margin-bottom:0;">Language</label>
+                                        <select id="select_language" class="form-control">
+                                        #foreach($item in $languages)
+                                            <option value="$item[0]">$item[1]</option>
+                                        #end
+                                        </select>
+                                    </div>
+                                </div>
 
-        <div class="d-flex mt-2 flexrowfill" style="flex-grow:2">
-            <div class="d-flex flex-column width65">
-                <label>Description</label>
-                <textarea id="text_description" class="form-control" style="height: 100%;"></textarea>
-            </div>
-            <div class="d-flex flex-column width35 ml-2">
-                <div>
-                    <label>Subjects</label>
-                    <button class="btn btn-outline-secondary btn-sm mb-1 ml-3" onclick="addSubjectRow()" style="width:fit-content">Add Subject</button>
-                </div>
-                <div class="border border-secondary" style="min-height: 126px;max-height: 100%;overflow-y: auto;">
-                    <table id="subject_table" class="table table-bordered table-hover table-sm">
-                        <tbody>
-                            <thead class="thead-light">
-                                <tr>
-                                    <th class="w-75">Subject</th>
-                                    <th>Remove</th>
-                                </tr>
-                             </thead>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                                <div class="d-flex mt-2 flexrowfill">
+                                    <div class="d-flex flex-column width65">
+                                        <label>Description</label>
+                                        <textarea required id="text_description" class="form-control" style="height: 23vh;"></textarea>
+                                    </div>
+                                    <div class="d-flex flex-column width35 ml-2">
+                                        <div>
+                                            <label>Subjects</label>
+                                        </div>
+                                        <div class="border border-secondary" style="height:23vh;overflow-y: auto;">
+                                            <table id="subject_table" class="table table-bordered table-hover table-sm">
+                                                <tbody>
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th>Add subject</th>
+                                                            <th class="width65">Subject</th>
+                                                            <th>Remove</th>
+                                                        </tr>
+                                                    </thead>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
 
-        <div class="d-flex mt-2 flexrowfill" style="flex-grow:2">
-            <div class="d-flex flex-column" style="flex-grow:1;">
-                <div>
-                    <label>Authors</label>
-                    <button class="btn btn-outline-secondary btn-sm mb-1 ml-3" onclick="addAuthorRow()" style="width:fit-content">Add Author</button>
-                </div>
-                <div class="h-75 border border-secondary" style="min-height: 140px; max-height: 170px; overflow-y: auto;">
-                    <table id="author_table" class="table table-bordered table-hover table-sm w-100">
-                        <tbody>
-                            <thead class="thead-light" id="author_thead">
-                                <tr>
-                                    <th>Firstname</th>
-                                    <th>Lastname</th>
-                                    <th>ORCID</th>
-                                    <th>Legalname</th>
-                                    <th>Adress</th>
-                                    <th>Zip</th>
-                                    <th>Country</th>
-                                    <th>Type</th>
-                                    <th>Remove</th>
-                                </tr>
-                            </thead>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                                <div class="d-flex mt-2 flexrowfill" style="height:fit-content">
+                                    <div class="d-flex flex-column" style="height:fit-content;flex-grow:1">
+                                        <div>
+                                            <label>Authors</label>
+                                        </div>
+                                        <div class="border border-secondary" style="height:23vh; overflow-y: auto;">
+                                            <table id="author_table" class="table table-bordered table-hover table-sm w-100">
+                                                <tbody>
+                                                    <thead class="thead-light" id="author_thead">
+                                                        <tr>
+                                                            <th style="width:100px">Add author</th>
+                                                            <th>Firstname</th>
+                                                            <th>Lastname</th>
+                                                            <th>ORCID</th>
+                                                            <th>Legalname</th>
+                                                            <th>Adress</th>
+                                                            <th>Zip</th>
+                                                            <th>Country</th>
+                                                            <th>Type</th>
+                                                            <th style="width:100px">Remove</th>
+                                                        </tr>
+                                                    </thead>
 
-            <div class="d-flex mt-1 flexrowfill" style="flex-grow:1">
-            <div class="d-flex flex-row width65">
-                <div class="d-flex flex-column width65 mr-2">
-                    <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
-                    <select id="select_license" class="form-control mt-1">
-                        <option value="CC010">CC0 1.0 Universal (Creative Commons Public Domain Dedication)</option>
-                        <option value="CCBY40">CC BY 4.0 (Creative Commons Attribution)</option>
-                        <option value="CCBYSA40">CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)</option>
-                        <option value="CCBYND40">CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)</option>
-                        <option value="CCBYNC40">CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)</option>
-                        <option value="CCBYNCSA40">CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)</option>
-                        <option value="CCBYNCND40">CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)</option>
-                    </select>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
 
-                </div>
-                <div class="d-flex flex-column width35">
-                    <label style="margin-bottom:0;">Embargo</label>
-                    <input type="date" class="form-control mt-1" name="dateofbirth" id="dateofbirth">
-                </div>
-            </div>
-            <div class="d-flex flex-column width35" style="align-items:center;">
-                <pre  style="margin-bottom:0;min-width:5px;">&nbsp</pre>
-                <button id="submitBtn" class= "btn btn-outline-secondary w-25 mt-1" onclick="startUpload()" disabled>Submit</button>
-            </div>
+                                <div class="d-flex mt-1 flexrowfill">
+                                    <div class="d-flex flex-row width65">
+                                        <div class="d-flex flex-column width65 mr-2">
+                                            <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
+                                                <select id="select_license" class="form-control mt-1">
+                                                    <option value="CC010">CC0 1.0 Universal (Creative Commons Public Domain Dedication)</option>
+                                                    <option value="CCBY40">CC BY 4.0 (Creative Commons Attribution)</option>
+                                                    <option value="CCBYSA40">CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)</option>
+                                                    <option value="CCBYND40">CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)</option>
+                                                    <option value="CCBYNC40">CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)</option>
+                                                    <option value="CCBYNCSA40">CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)</option>
+                                                    <option value="CCBYNCND40">CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)</option>
+                                                </select>
 
-        </div>
-    </div>
-</div>
-<!--button type="button" class="btn btn-primary" onclick="login()">Elixir AAI Log in</button> -->
+                                            </div>
+                                            <div class="d-flex flex-column width35">
+                                                <label style="margin-bottom:0;">Embargo</label>
+                                                <input type="date" class="form-control mt-1" name="dateofbirth" id="dateofbirth">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column width35" style="align-items:center;">
+                                                <pre id="file-counter-info" style="margin-bottom:0;min-width:5px;">&nbsp</pre>
 
-<script src="$serverURL/JS/edal_upload.js"></script>
-<script>
+                                                <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="startUpload()">Start upload<div class="progress w-100 submitbtn">
+                                                    <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
+                                                </div>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!--button type="button" class="btn btn-primary" onclick="login()">Elixir AAI Log in</button> -->
+
+                            <script src="$serverURL/JS/edal_upload.js"></script>
+                            <script src="$serverURL/JS/resumable.js"></script>
+                            <script>
 let dropzone = document.getElementById("dropzone");
 let listing = document.getElementById("boxtitle");
+
 let stack = [];
 let emptyDirectories = 0;
 var email = "$email";
 var serverURL = "$serverURL";
 var fileSystemEntry = null;
-console.log("velocity email: "+email)
+console.log("velocity email: "+email);
 let globalMetadata = {};
 
+    $( document ).ready(function() {
+        function getStoredInput(key){
+            return storage.getItem(key) == null ? '' : storage.getItem(key);
+        }
+        $('#submitBtn').css('transition:width','.6s ease!important');
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td><td class='text-center'><button class='btn btn-outline-secondary btn-sm' disabled>&#x2716</button></td></tr>";
+        tableBody = $("#author_table > tbody");
+        tableBody.append(markup);
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td class='text-center' contenteditable><button disabled class='btn btn-outline-secondary btn-sm'>&#x2716</button></td></tr>";
+        tableBody = $("#subject_table > tbody");
+        tableBody.append(markup);
 
-</script>
-</body>
+        if(storage.getItem('language') != null){
+            $('#select_language').prop('selectedIndex', storage.getItem('language'));
+        }
+    });
 
-</html>
+
+                </script>
+            </body>
+
+        </html>

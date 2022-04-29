@@ -17,6 +17,10 @@ body{
     /* Set a background color that will be displayed while the background image is loading */
 }
 
+button:focus{
+  outline: 0!important;
+}
+
 label{
   font-weight: 500;
 }
@@ -60,6 +64,13 @@ table, th, td {
     color: black;
 }
 
+.submitbtn{
+  width:9vw;
+  height:0;
+  min-width:fit-content;
+  transition: all .6s ease;
+}
+
 #dropzone {
   text-align: center;
   border: 2px dashed #636e72;
@@ -70,7 +81,6 @@ table, th, td {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  flex-grow: 1.5;
   min-height: 80px;
   overflow: none;
 }

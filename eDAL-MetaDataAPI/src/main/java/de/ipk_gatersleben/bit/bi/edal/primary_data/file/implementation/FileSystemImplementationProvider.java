@@ -821,13 +821,18 @@ public class FileSystemImplementationProvider
 			final List<SupportedPrincipals> privatePrincipals = session
 					.createQuery(principalCriteria).list();
 
-			final List<SupportedPrincipals> publicPrincipals = new ArrayList<SupportedPrincipals>(
-					supportedPrincipals.size());
-
-			for (final Class<? extends Principal> clazz : supportedPrincipals) {
+			int size = supportedPrincipals.size();
+			
+			final List<SupportedPrincipals> publicPrincipals = new ArrayList<SupportedPrincipals>(size);
+			
+			for(int i = 0; i < supportedPrincipals.size(); i++) {
 				publicPrincipals
-						.add(new SupportedPrincipals(clazz));
+					.add(new SupportedPrincipals(supportedPrincipals.get(i)));
 			}
+//			for (final Class<? extends Principal> clazz : supportedPrincipals) {
+//				publicPrincipals
+//						.add(new SupportedPrincipals(clazz));
+//			}
 			if (privatePrincipals
 					.containsAll(publicPrincipals)) {
 				DataManager.getImplProv().getLogger()

@@ -20,7 +20,7 @@ onmessage = async (evt) => {
   postMessage( result );
 };
 
-//create array of files
+//create "array" of files
 async function handleDirectoryEntry( dirHandle, out ) {
   let filecounter = 0;
   for await (const entry of dirHandle.values()) {
