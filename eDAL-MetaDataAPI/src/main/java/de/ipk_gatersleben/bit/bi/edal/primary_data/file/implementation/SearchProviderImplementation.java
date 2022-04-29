@@ -413,11 +413,11 @@ public class SearchProviderImplementation implements SearchProvider {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false, false);
+				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, true, true);
 			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				query = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
-						false, false);
+						true, true);
 			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
 				QueryParser queryParser = new QueryParser(type, analyzer);
 				queryParser.setDefaultOperator(Operator.AND);
@@ -558,12 +558,12 @@ public class SearchProviderImplementation implements SearchProvider {
 						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
 				String upper = DateTools.timeToString(
 						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, false,
-						false);
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, true,
+						true);
 			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
-						false, false);
+						true, true);
 			} else if (type.equals(EnumIndexField.FILETYPE.value())) {
 				keyword.replace("\\", "");
 				String fileTypeQuery = EnumIndexField.FILETYPE + ":" + keyword;
