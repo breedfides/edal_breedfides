@@ -301,7 +301,11 @@ project(':eDAL-MetaDataAPI') {
 	  	
 	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
-	    	   	
+	    	
+	    	
+	       	 
+	   	compile group: 'org.glassfish.jersey.test-framework', name: 'jersey-test-framework-core', version: jerseyVersion
+	   	compile group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: jerseyVersion
 	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: jerseyVersion
 	    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: jerseyVersion
 	    compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version: jerseyVersion

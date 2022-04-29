@@ -37,14 +37,18 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.jetty.util.ajax.JSON;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.test.JerseyTest;
 import org.json.simple.JSONObject;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 
 import com.sun.mail.iap.Response;
@@ -64,7 +68,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateExce
 import de.ipk_gatersleben.bit.bi.edal.rest.server.EdalRestServer;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
-public class EdalRestTest {
+public class EdalRestTest{
 
 	private static int HTTPS_PORT = 8443;
 	private static int HTTP_PORT = 8080;
@@ -82,7 +86,8 @@ public class EdalRestTest {
 
 	private final String ENC_EMAIL = "rO0ABXNyABtqYXZheC5zZWN1cml0eS5hdXRoLlN1YmplY3SMsjKTADP6aAMAAloACHJlYWRPbmx5TAAKcHJpbmNpcGFsc3QAD0xqYXZhL3V0aWwvU2V0O3hwAHNyACVqYXZhLnV0aWwuQ29sbGVjdGlvbnMkU3luY2hyb25pemVkU2V0BsPCeQLu3zwCAAB4cgAsamF2YS51dGlsLkNvbGxlY3Rpb25zJFN5bmNocm9uaXplZENvbGxlY3Rpb24qYfhNCZyZtQMAAkwAAWN0ABZMamF2YS91dGlsL0NvbGxlY3Rpb247TAAFbXV0ZXh0ABJMamF2YS9sYW5nL09iamVjdDt4cHNyACVqYXZheC5zZWN1cml0eS5hdXRoLlN1YmplY3QkU2VjdXJlU2V0bcwygBdVficDAANJAAV3aGljaEwACGVsZW1lbnRzdAAWTGphdmEvdXRpbC9MaW5rZWRMaXN0O0wABnRoaXMkMHQAHUxqYXZheC9zZWN1cml0eS9hdXRoL1N1YmplY3Q7eHAAAAABc3IAFGphdmEudXRpbC5MaW5rZWRMaXN0DClTXUpgiCIDAAB4cHcEAAAAAXNyAEFkZS5pcGtfZ2F0ZXJzbGViZW4uYml0LmJpLmVkYWwucHJpbWFyeV9kYXRhLmxvZ2luLkVsaXhpclByaW5jaXBhbAAAAAAAAAABAgABTAAEbmFtZXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hwdAAYcmFsZnNAaXBrLWdhdGVyc2xlYmVuLmRleHEAfgACeHEAfgAHeHg=";
 
-	@BeforeEach
+	
+	@Before
 	public void setUp() throws Exception {
 
 		int port = ThreadLocalRandom.current().nextInt(MIN_PORT_NUMBER, MAX_PORT_NUMBER);
@@ -122,7 +127,7 @@ public class EdalRestTest {
 		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/test");
 		String result = webTarget.request(MediaType.TEXT_PLAIN).get(String.class);
 		System.out.println(result);
-		Assertions.assertTrue("Test".equals(result));
+		Assert.assertTrue("Test".equals(result));
 
 		try {
 			Thread.sleep(5000);
@@ -157,16 +162,14 @@ public class EdalRestTest {
 //		writer1.close();
 //		writer2.close();
 
-		Form form = new Form();
-		form.param("subject", ENC_EMAIL);
-		form.param("name", "test");
-		form.param("metadata", new JSONObject().toJSONString());
+		FormDataMultiPart form = new FormDataMultiPart()
+		        .field("subject", ENC_EMAIL)
+		        .field("name", "test");
 		Client client = ClientBuilder.newClient();
+		client.register(MultiPartFeature.class);
 		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/uploadEntityAndMetadata");
 		Builder request = webTarget.request().accept(MediaType.TEXT_PLAIN);
-		request.header("contentType", MediaType.APPLICATION_FORM_URLENCODED);
-		request.header("processData", false);
-		javax.ws.rs.core.Response response = request.post(Entity.form(form));
+		javax.ws.rs.core.Response response = request.post(Entity.entity(form, form.getMediaType()));
 		System.out.println("response okay? "+response);
 		//Assertions.assertTrue("Test".equals(result));
 
@@ -178,7 +181,7 @@ public class EdalRestTest {
 		}
 	}
 
-	@AfterEach
+	@After
 	public void tearDown() throws Exception {
 		DataManager.shutdown();
 //		EdalHelpers.cleanMountPath(mountPath);
