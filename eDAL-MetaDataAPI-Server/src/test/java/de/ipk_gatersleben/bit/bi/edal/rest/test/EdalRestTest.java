@@ -1,22 +1,9 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.test;
 
-/**
- * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
- *
- * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
- * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
- * documentation material. This means, you must give appropriate credit, provide a link to the license, and indicate
- * if changes were made. You are free to copy and redistribute e!DAL in any medium or format. You are also free to
- * adapt, remix, transform, and build upon e!DAL for any purpose, even commercially.
- *
- *  Contributors:
- *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
- */
-
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.nio.file.Files;
@@ -30,28 +17,17 @@ import javax.mail.internet.InternetAddress;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 
-import org.eclipse.jetty.util.ajax.JSON;
-import org.glassfish.jersey.client.ClientConfig;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.glassfish.jersey.test.JerseyTest;
-import org.json.simple.JSONObject;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import com.sun.mail.iap.Response;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
@@ -79,7 +55,7 @@ public class EdalRestTest{
 	private static final String DATACITE_USERNAME = "";
 	private static final int MIN_PORT_NUMBER = 49152;
 	private static final int MAX_PORT_NUMBER = 65535;
-	private final String METADATA_JSON = "{\"title\":\"my dataset title\",\"description\":\"Some description to describe this dataset.\",\"language\":\"de\",\"license\":\"CC010\",\"persons\":[{\"Firstname\":\"Eric\",\"Lastname\":\"Ralfs\",\"ORCID\":\"\",\"Legalname\":\"\",\"Adress\":\"Kingstr 26\",\"Zip\":\"25708\",\"Country\":\"Marne\",\"Type\":\"Creator\"}],\"subjects\":[\"A subject\"]};";
+	private final String METADATA_JSON = "{\"title\":\"my dataset title\",\"description\":\"Some description to describe this dataset.\",\"language\":\"de\",\"license\":\"CC010\",\"persons\":[{\"Firstname\":\"Eric\",\"Lastname\":\"Ralfs\",\"ORCID\":\"\",\"Legalname\":\"\",\"Adress\":\"Kingstr 26\",\"Zip\":\"25708\",\"Country\":\"Marne\",\"Type\":\"Creator\"}],\"subjects\":[\"A subject\"]}";
 
 	public EdalConfiguration configuration = null;
 	public Path mountPath = null;
@@ -117,7 +93,7 @@ public class EdalRestTest{
 		}
 	}
 
-	// @Test
+	//@Test
 	public void testServer() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
 			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
@@ -130,7 +106,7 @@ public class EdalRestTest{
 		Assert.assertTrue("Test".equals(result));
 
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -141,8 +117,7 @@ public class EdalRestTest{
 	@Test
 	public void testUpload() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
 			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
-			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
-		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException, InterruptedException {
 		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
 		String dir = "uploadtest";
 		File file1 = new File(dir + File.separator + "file1.txt");
@@ -164,27 +139,46 @@ public class EdalRestTest{
 
 		FormDataMultiPart form = new FormDataMultiPart()
 		        .field("subject", ENC_EMAIL)
-		        .field("name", "test");
+		        .field("name", "test")
+		        .field("metadata", METADATA_JSON);
+		javax.ws.rs.core.Response response = postRequest("uploadEntityAndMetadata", form);
+		System.out.println("response okay?: "+response);
+		String actual = root.getPrimaryDataEntity("my dataset title").getName();
+		Assert.assertEquals("my dataset title", actual);
+		form = new FormDataMultiPart()
+		        .field("name", "neu")
+		        .field("email", ENC_EMAIL)
+		        .field("datasetRoot", "my dataset title")
+		        .field("type", "Directory");
+		response = postRequest("uploadEntity", form);
+		System.out.println("response okay?: "+response);
+		actual = ((PrimaryDataDirectory)root.getPrimaryDataEntity("my dataset title")).getPrimaryDataEntity("neu").getName();
+		Assert.assertEquals("neu", actual);
+		File initialFile = new File("neu"+File.separator+"Das ist ein test.txt");
+	    InputStream targetStream = new FileInputStream(initialFile);
+		form = new FormDataMultiPart()
+		        .field("name", "neu/Das ist ein test")
+		        .field("file", targetStream, MediaType.MULTIPART_FORM_DATA_TYPE)
+		        .field("email", ENC_EMAIL)
+		        .field("datasetRoot", "my dataset title")
+		        .field("type", "File");
+		response = postRequest("uploadEntity", form);
+		Thread.sleep(2000);
+		targetStream.close();
+		
+	}
+	
+	private javax.ws.rs.core.Response postRequest(String endpoint, FormDataMultiPart form) {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
-		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/uploadEntityAndMetadata");
+		WebTarget webTarget = client.target("http://localhost:6789/restfull/api").path(endpoint);
 		Builder request = webTarget.request().accept(MediaType.TEXT_PLAIN);
-		javax.ws.rs.core.Response response = request.post(Entity.entity(form, form.getMediaType()));
-		System.out.println("response okay? "+response);
-		//Assertions.assertTrue("Test".equals(result));
-
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		return request.post(Entity.entity(form, form.getMediaType()));
 	}
 
 	@After
 	public void tearDown() throws Exception {
 		DataManager.shutdown();
-//		EdalHelpers.cleanMountPath(mountPath);
 	}
 
 	/**

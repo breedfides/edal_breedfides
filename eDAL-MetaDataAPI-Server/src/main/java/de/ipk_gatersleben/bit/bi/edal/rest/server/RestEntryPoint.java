@@ -199,6 +199,9 @@ public class RestEntryPoint {
 		String[] pathArray = name.split("/");
 		System.out.println(name);
 		try {
+			if(type.equals("File")) {
+				int o = 2;
+			}
 			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
 			ObjectInputStream oi = new ObjectInputStream(in);
 			Subject subject = (Subject) oi.readObject();	
@@ -210,7 +213,7 @@ public class RestEntryPoint {
 			if (pathArray.length > 0) {
 				PrimaryDataDirectory parent = root;
 				int lastIndex = pathArray.length - 1;
-				for (int i = 1; i < lastIndex; i++) {
+				for (int i = 0; i < lastIndex; i++) {
 					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
 				}
 				if (type.equals("Directory")) {
@@ -240,149 +243,6 @@ public class RestEntryPoint {
 		}
 	}
 
-	
-    private ResumableInfo getResumableInfo(HttpServletRequest request) throws ServletException {
-        String base_dir = System.getProperty("user.home");
-
-        int resumableChunkSize          = HttpUtils.toInt(request.getParameter("resumableChunkSize"), -1);
-        long resumableTotalSize         = HttpUtils.toLong(request.getParameter("resumableTotalSize"), -1);
-        String resumableIdentifier      = request.getParameter("resumableIdentifier");
-        String resumableFilename        = request.getParameter("resumableFilename");
-        String resumableRelativePath    = request.getParameter("resumableRelativePath");
-        //Here we add a ".temp" to every upload file to indicate NON-FINISHED
-        new File(base_dir).mkdir();
-        String resumableFilePath        = new File(base_dir, resumableFilename).getAbsolutePath() + ".temp";
-
-        ResumableInfoStorage storage = ResumableInfoStorage.getInstance();
-
-        ResumableInfo info = storage.get(resumableChunkSize, resumableTotalSize,
-                resumableIdentifier, resumableFilename, resumableRelativePath, resumableFilePath);
-        if (!info.vaild())         {
-            storage.remove(info);
-            throw new ServletException("Invalid request params.");
-        }
-        return info;
-    }
-	
-	@Produces(MediaType.TEXT_PLAIN)
-	@Consumes({MediaType.MULTIPART_FORM_DATA})
-	@Path("resumableFileUpload")
-	@POST
-	public String resumableFileUpload(@Context HttpServletRequest request,@FormDataParam("file") InputStream uploadedInputStream,
-			@FormDataParam("file") FormDataContentDisposition fileMetaData,  @QueryParam("email") String email,
-			@QueryParam("datasetRoot") String datasetRoot, @QueryParam("resumableRelativePath") String relativePath,@QueryParam("resumableChunkNumber") int resumableChunkNumber,@QueryParam("resumableChunkSize") int resumableChunkSize)  {
-		// JSONObject data = new JSONObject();
-		try {
-			System.out.println("------------------ "+relativePath+" --------------------");
-			String test = fileMetaData.getFileName();
-			 ResumableInfo info = getResumableInfo(request);
-
-		        RandomAccessFile raf = new RandomAccessFile(info.resumableFilePath, "rw");
-
-		        //Seek to position
-		        raf.seek((resumableChunkNumber - 1) * (long)info.resumableChunkSize);
-
-		        //Save to file
-		        InputStream is = uploadedInputStream;
-		        long readed = 0;
-		        long content_length = request.getContentLength();
-		        byte[] bytes = new byte[1024 * 100];
-		        while(readed < content_length) {
-		            int r = is.read(bytes);
-		            System.out.println(r);
-		            if (r < 0)  {
-		                break;
-		            }
-		            raf.write(bytes, 0, r);
-		            readed += r;
-		        }
-		        raf.close();
-
-
-		        //Mark as uploaded.
-		        info.uploadedChunks.add(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber));
-		        if (info.checkIfUploadFinished()) { //Check if all chunks uploaded, and change filename
-		            ResumableInfoStorage.getInstance().remove(info);
-			         // STEP 2:  Use Channels to convert to InputStream
-		            InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
-					ObjectInputStream oi = new ObjectInputStream(in);
-					Subject subject = (Subject) oi.readObject();	
-					
-					// data = (JSONObject) new JSONParser().parse(request);
-					// String type = (String) data.get("type");
-					PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-					PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
-			         
-						root.createPrimaryDataFile(fileMetaData.getFileName()).store(new FileInputStream(new File(info.resumableFilePath)));;
-			         
-		            System.out.println("finished file");
-		        } else {
-		            //response.getWriter().print("Upload");
-		        }
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-	
-
-		
-		return "200";
-//		try {
-//
-//			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
-//			ObjectInputStream oi = new ObjectInputStream(in);
-//			Subject subject = (Subject) oi.readObject();	
-//			
-//			// data = (JSONObject) new JSONParser().parse(request);
-//			// String type = (String) data.get("type");
-//			PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-//			PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
-//			if (pathArray.length > 0) {
-//				PrimaryDataDirectory parent = root;
-//				int lastIndex = pathArray.length - 1;
-//				for (int i = 1; i < lastIndex; i++) {
-//					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
-//				}
-//				if (type.equals("Directory")) {
-//					System.out.println("Created:");
-//					System.out.println(Arrays.toString(pathArray));
-//					parent.createPrimaryDataDirectory(pathArray[lastIndex]);
-//				} else {
-//					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
-//					try {
-//						file.store(uploadedInputStream);
-//					} catch (PrimaryDataFileException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
-//			} else {
-//				return "500";
-//			}
-//			return "200";
-//		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
-//			e.printStackTrace();
-//			return "500";
-//		} catch (ClassNotFoundException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//			return "500";
-//		}
-	}
-	
-	@Produces(MediaType.TEXT_PLAIN)
-	@Consumes({MediaType.MULTIPART_FORM_DATA})
-	@Path("isFileUploaded")
-	@GET
-	public Response isFileUploaded(@Context HttpServletRequest request,@Context HttpServletResponse response,@QueryParam("resumableRelativePath") String relativePath,@QueryParam("resumableChunkNumber") int resumableChunkNumber,@QueryParam("resumableChunkSize") int resumableChunkSize) throws ServletException  {
-
-        ResumableInfo info = getResumableInfo(request);
-
-        if (info.uploadedChunks.contains(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber))) {
-        	return Response.status(200).build();
-        } else {
-        	return Response.status(404).build();
-        }
-	}
 	
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")

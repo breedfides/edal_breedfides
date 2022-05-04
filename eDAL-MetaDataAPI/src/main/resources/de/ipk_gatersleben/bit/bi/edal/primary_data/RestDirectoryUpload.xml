@@ -36,6 +36,7 @@
                                     <div id="boxtitle">
                                         <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
                                         <p id="droplabel" onclick="chooseDirectory();" style="margin-bottom:0;">Drop a file or directory</p>
+                                        <pre id="file-counter-info" style="margin-bottom:0;min-width:5px;"></pre>
                                     </div>
                                 </div>
 
@@ -68,9 +69,8 @@
                                                 <tbody>
                                                     <thead class="thead-light">
                                                         <tr>
-                                                            <th>Add subject</th>
-                                                            <th class="width65">Subject</th>
-                                                            <th>Remove</th>
+                                                            <th style="width:100px">Add/Remove</th>
+                                                            <th >Subject</th>
                                                         </tr>
                                                     </thead>
                                                 </tbody>
@@ -89,7 +89,7 @@
                                                 <tbody>
                                                     <thead class="thead-light" id="author_thead">
                                                         <tr>
-                                                            <th style="width:100px">Add author</th>
+                                                            <th style="width:100px">Add/Remove</th>
                                                             <th>Firstname</th>
                                                             <th>Lastname</th>
                                                             <th>ORCID</th>
@@ -98,7 +98,6 @@
                                                             <th>Zip</th>
                                                             <th>Country</th>
                                                             <th>Type</th>
-                                                            <th style="width:100px">Remove</th>
                                                         </tr>
                                                     </thead>
 
@@ -129,8 +128,7 @@
                                                 </div>
                                             </div>
                                             <div class="d-flex flex-column width35" style="align-items:center;">
-                                                <pre id="file-counter-info" style="margin-bottom:0;min-width:5px;">&nbsp</pre>
-
+                                                <pre style="margin-bottom:0;min-width:5px;">&nbsp</pre>
                                                 <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="startUpload()">Start upload<div class="progress w-100 submitbtn">
                                                     <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
                                                 </div>
@@ -161,10 +159,10 @@ let globalMetadata = {};
             return storage.getItem(key) == null ? '' : storage.getItem(key);
         }
         $('#submitBtn').css('transition:width','.6s ease!important');
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td><td class='text-center'><button class='btn btn-outline-secondary btn-sm' disabled>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addAuthorRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' disabled>-</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td class='text-center' contenteditable><button disabled class='btn btn-outline-secondary btn-sm'>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addSubjectRow()' style='width:fit-content'>+</button><button disabled class='btn btn-outline-secondary btn-sm'>-</button></td><td contenteditable></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
 

@@ -369,7 +369,7 @@ worker.onmessage = (evt) => {
         }).remove();
         $('#submitBtn').append('Start upload');
         //const dirHandle = await showDirectoryPicker();
-        $('#droplabel').text(item.name);
+        $('#droplabel').text("Directory: "+item.name);
         worker.postMessage( item );
         break;
       }
@@ -464,13 +464,13 @@ worker.onmessage = (evt) => {
   
   
     function addSubjectRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addSubjectRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
     }
   
     function addAuthorRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addAuthorRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
     }

@@ -974,6 +974,7 @@ public class FileSystemImplementationProvider
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} finally {
+				
 				if (writer != null) {
 					try {
 						writer.close();
