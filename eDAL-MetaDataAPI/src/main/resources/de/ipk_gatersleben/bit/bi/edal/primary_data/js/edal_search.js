@@ -773,8 +773,8 @@ let EdalReport = new function() {
       let oldHitType = this.currentRequestData.hitType;
       this.currentRequestData["hitType"] = document.querySelector('input[name = "hitType"]:checked').value;
       if($('#slider-range').slider("values")[0] > minYear || $('#slider-range').slider("values")[1] < maxYear){
-        let lowbound = $('#slider-range').slider("values")[0]+"-01-01";
-        let highbound = $('#slider-range').slider("values")[1]+"-12-31";
+        let lowbound = $('#slider-range').slider("values")[0].toString();
+        let highbound = $('#slider-range').slider("values")[1].toString();
         if(lowbound != "" && highbound != ""){
           this.filters.push({"type":STARTDATE,"lower":lowbound,"upper":highbound,"fuzzy":false,"Occur":"And"});
         }

@@ -406,14 +406,15 @@ public class SearchProviderImplementation implements SearchProvider {
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
 			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
-				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
-				String lower = DateTools.timeToString(
-						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				String upper = DateTools.timeToString(
-						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, true, true);
+//				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+//				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
+//				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
+//				String lower = DateTools.timeToString(
+//						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+//				String upper = DateTools.timeToString(
+//						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				query = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), (String)queryData.get("lower"), (String)queryData.get("upper"), true,
+						true);
 			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				query = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
 						String.format("%014d", queryData.get("lower")), String.format("%014d", queryData.get("upper")),
@@ -551,14 +552,14 @@ public class SearchProviderImplementation implements SearchProvider {
 			String type = ((String) queryData.get("type"));
 			String keyword = (String) queryData.get("searchterm");
 			if (type.equals(EnumIndexField.STARTDATE.value()) || type.equals(EnumIndexField.ENDDATE.value())) {
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
-				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
-				String lower = DateTools.timeToString(
-						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				String upper = DateTools.timeToString(
-						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
-				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), lower, upper, true,
+//				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy", Locale.ENGLISH);
+//				LocalDateTime lowerDate = LocalDate.parse((String) queryData.get("lower"), formatter).atStartOfDay();
+//				LocalDateTime upperDate = LocalDate.parse((String) queryData.get("upper"), formatter).atStartOfDay();
+//				String lower = DateTools.timeToString(
+//						ZonedDateTime.of(lowerDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+//				String upper = DateTools.timeToString(
+//						ZonedDateTime.of(upperDate, ZoneId.of("UTC")).toInstant().toEpochMilli(), Resolution.YEAR);
+				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.STARTDATE.value(), (String)queryData.get("lower"), (String)queryData.get("upper"), true,
 						true);
 			} else if (type.equals(EnumIndexField.SIZE.value())) {
 				luceneQuery = TermRangeQuery.newStringRange(EnumIndexField.SIZE.value(),
