@@ -4,6 +4,7 @@ let numberOfFiles = 0;
 let keytimer;
 let titleAlreadyExists = false;
 let storage = localStorage;
+let currentAuthorRow = null;
 
 var resumable;
   
@@ -464,15 +465,73 @@ worker.onmessage = (evt) => {
   
   
     function addSubjectRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addSubjectRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
     }
   
     function addAuthorRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addAuthorRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
+    }
+
+    function searchORCIDsOfRow(row){
+      currentAuthorRow = row;
+      let form = new FormData();
+      let firstName = $(row.childNodes[1]).text();
+      let lastName = $(row.childNodes[2]).text();
+
+      $('#orcids').empty();
+      if(!firstName || firstName.length === 0 || !lastName || lastName.length === 0){
+        $("#modal-orcid-title").text(`Please set a first name and a last name'`);
+        $('#orcids').text("0 orcids match this name");
+        $('#myModal').modal('show');
+        return;
+      }else{
+        $("#modal-orcid-title").text(`Please choose the correct ORCID for '${firstName} ${lastName}'`);
+      }
+      console.log(`${serverURL}/restfull/api/searchORCID/${firstName}/${lastName}`);
+      $.post(`${serverURL}/restfull/api/searchORCID/${firstName}/${lastName}`,function(ids){
+        if(ids.length > 0){
+          ids.forEach( (id, index) => {
+            let orcidUrl = "https://orcid.org/"+id;
+            let wrapped = '<div class="d-flex my-2"><button class="btn" >Choose</button><a class="mx-3 vertical-centerd-text" href='+orcidUrl+' target="_blank">'+orcidUrl+'</a><div class="vertical-centerd-text">'+firstName+' '+lastName+'</div></div>';
+            $('#orcids').append(wrapped);
+            document.getElementById('orcids').childNodes[index].childNodes[0].onclick = () => { 
+              $('#myModal').modal('hide');
+              let div = document.createElement("div");
+              $(row.childNodes[3]).empty();
+              $(row.childNodes[3]).append(div);
+              $(div).text(id);
+              div.classList.add("link");
+              div.onclick = () => { searchORCIDsOfRow(row); $('#myModal').modal('show');};
+            };
+          })
+        }else{
+          $('#orcids').text("0 orcids match this name");
+        }
+      } );
+    }
+
+    function setOrcid(){
+      if(currentAuthorRow != null){
+        let div = document.createElement("div");
+        $(currentAuthorRow.childNodes[3]).empty();
+        if(document.getElementById("modal-input").value.length === 0){
+          let btn = "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
+          $(currentAuthorRow.childNodes[3]).append(btn);
+        }else{
+          $(currentAuthorRow.childNodes[3]).append(div);
+          $(div).text(document.getElementById("modal-input").value);
+          div.classList.add("link");
+          div.onclick = () => { searchORCIDsOfRow(currentAuthorRow); $('#myModal').modal('show');};
+        }
+      }
+    }
+
+    function setORCID(cell, id){
+      console.log(cell+" "+ id);
     }
 
     function disablePointlessCells(element){

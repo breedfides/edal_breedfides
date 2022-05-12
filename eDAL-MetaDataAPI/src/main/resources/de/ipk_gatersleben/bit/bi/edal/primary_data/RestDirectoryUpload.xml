@@ -5,21 +5,41 @@
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+        
             <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
             <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
             <link rel="stylesheet" href="css/submission.css">
-
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
                 <title>e!DAL Data Submission</title>
             </head>
 
             <body>
                 <div class="glass">
+
+                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
+                        <div class="modal-content">
+                        <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
+                            <h4 class="modal-title" id="modal-orcid-title">Modal title</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body" id="orcids" style="margin: 0 auto;padding: .5rem;">
+                        </div>
+                        <div class="modal-footer" style="justify-content:center;height:60px;">
+                        <a class="mr-3" style="width:230px" href="https://orcid.org/orcid-search/search" target="_blank">Search by myself</a>
+                        <input class="form-control" id="modal-input" placeholder="Orcid.."></input>
+                            <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Save & Close</button>                    
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
                     <div class="alert alert-warning alert-dismissible fade show" role="alert" style="display:none;margin:.5em .5em 1em .5em">
                         <button type="button" class="close" onclick="$('.alert').slideUp();" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         <div id="alert-information">
-                            <strong>Congratulations!</strong> You successfully tied your shoelace!
+                            
                         </div>
                     </div>
                     <div class="container flexcolfill pb-1">
@@ -92,7 +112,7 @@
                                                             <th style="width:100px">Add/Remove</th>
                                                             <th>Firstname</th>
                                                             <th>Lastname</th>
-                                                            <th>ORCID</th>
+                                                            <th style="width:170px">ORCID</th>
                                                             <th>Legalname</th>
                                                             <th>Adress</th>
                                                             <th>Zip</th>
@@ -159,10 +179,10 @@ let globalMetadata = {};
             return storage.getItem(key) == null ? '' : storage.getItem(key);
         }
         $('#submitBtn').css('transition:width','.6s ease!important');
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addAuthorRow()' style='width:fit-content'>+</button><button class='btn btn-outline-secondary btn-sm' disabled>-</button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm mr-1' onclick='addSubjectRow()' style='width:fit-content'>+</button><button disabled class='btn btn-outline-secondary btn-sm'>-</button></td><td contenteditable></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
 

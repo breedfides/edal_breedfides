@@ -25,6 +25,18 @@ label{
   font-weight: 500;
 }
 
+.vertical-centerd-text{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.link:hover{
+  color: #4285F4;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .glass{
     /* From https://css.glass */
     width:100%;

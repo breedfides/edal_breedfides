@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -41,6 +42,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -186,6 +188,24 @@ public class RestEntryPoint {
 				
 	}
 	
+	//function for dataset creation with metadata
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("searchORCID/{firstName}/{lastName}")
+	@POST
+	public JSONArray searchORCID(@PathParam("firstName") String firstName, @PathParam("lastName") String lastName) {
+		JSONArray idArray = new JSONArray();
+		try {
+			List<ORCID> ids =  ORCID.getOrcidsByName(firstName, lastName);
+			for(ORCID id : ids) {
+				idArray.add(id.getOrcid());
+			}
+			return idArray;
+		} catch (ORCIDException e) {
+			return idArray;
+		}
+				
+	}
+	
 	
 	//function for testing if entity with this title already exists
 
@@ -222,8 +242,11 @@ public class RestEntryPoint {
 					parent.createPrimaryDataDirectory(pathArray[lastIndex]);
 				} else {
 					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
+					System.out.println("Starting store function __");
 					try {
 						file.store(uploadedInputStream);
+						System.out.println("finished store function __");
+
 					} catch (PrimaryDataFileException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

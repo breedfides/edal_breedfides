@@ -10,7 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -20,8 +24,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.junit.After;
@@ -42,7 +46,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
 import de.ipk_gatersleben.bit.bi.edal.rest.server.EdalRestServer;
-import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class EdalRestTest{
 
@@ -141,7 +144,7 @@ public class EdalRestTest{
 		        .field("subject", ENC_EMAIL)
 		        .field("name", "test")
 		        .field("metadata", METADATA_JSON);
-		javax.ws.rs.core.Response response = postRequest("uploadEntityAndMetadata", form);
+		Response response = postRequest("uploadEntityAndMetadata", form);
 		System.out.println("response okay?: "+response);
 		String actual = root.getPrimaryDataEntity("my dataset title").getName();
 		Assert.assertEquals("my dataset title", actual);
@@ -162,9 +165,27 @@ public class EdalRestTest{
 		        .field("email", ENC_EMAIL)
 		        .field("datasetRoot", "my dataset title")
 		        .field("type", "File");
-		response = postRequest("uploadEntity", form);
-		Thread.sleep(2000);
+		
+		Runnable runnableTask = () -> {
+			FormDataMultiPart form2 = new FormDataMultiPart()
+			        .field("name", "neu/Das ist ein test")
+			        .field("file", targetStream, MediaType.MULTIPART_FORM_DATA_TYPE)
+			        .field("email", ENC_EMAIL)
+			        .field("datasetRoot", "my dataset title")
+			        .field("type", "File");
+			postRequest("uploadEntity", form2);
+		};
+
+		
+		ExecutorService executor = Executors.newFixedThreadPool(1);
+		executor.execute(runnableTask);
+		
+		Thread.sleep(4000);
+		System.out.println("shuztdown start");
+		executor.shutdownNow();
+		System.out.println("shutdownfiished");
 		targetStream.close();
+		Thread.sleep(10000);
 		
 	}
 	
