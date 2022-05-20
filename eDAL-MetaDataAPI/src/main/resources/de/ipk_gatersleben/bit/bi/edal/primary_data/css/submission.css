@@ -93,8 +93,11 @@ table, th, td {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
   overflow: none;
+}
+
+.table-rows{
+  min-height: 30%;
 }
 
 #boxtitle {
@@ -116,8 +119,13 @@ table, th, td {
   text-decoration: underline;
 }
 
+.smaller{
+  min-height: 7%;
+}
+
 .header{
     text-align: center;
+    min-height: 7%;
 }
 
 .btn {

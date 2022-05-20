@@ -131,7 +131,6 @@ public class EdalHttpHandler extends AbstractHandler {
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
-
 		if (checkForRobots(request)) {
 			this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "blocked");
 		} else {

@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -46,6 +47,9 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -54,7 +58,18 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -71,6 +86,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataEntityVersionImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
@@ -632,6 +650,18 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		
+		//Enum Liste für jede pflanzenart mit Synonyme
+		final String[] taxonSearchValues = new String[] {"barley","wheat","weed"};
+		SearchProvider searchProvider;
+		try {
+			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			List<String> taxons = searchProvider.taxonSearch(taxonSearchValues, internalId);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+
 
 		/** set date of the PublicReference */
 		context.put(VeloCityHtmlGenerator.STRING_DATE, date);
@@ -1092,6 +1122,17 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		
+		final String[] taxonSearchValues = new String[] {"barley","wheat","weed"};
+		SearchProvider searchProvider;
+		try {
+			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			List<String> taxons = searchProvider.taxonSearch(taxonSearchValues, internalId);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		
 		/** set identifier type */
 		context.put(VeloCityHtmlGenerator.STRING_IDENTIFIER_TYPE, identifierType.toString());
 
