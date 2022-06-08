@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -808,7 +810,7 @@ public class SearchProviderImplementation implements SearchProvider {
 	}
 
 	@Override
-	public List<String> taxonSearch(String[] taxonSearchValues, String internalId) {
+	public List<String> taxonSearch(String internalId) {
 		SearcherAndTaxonomy manager = null;
 		try {
 			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
@@ -816,34 +818,41 @@ public class SearchProviderImplementation implements SearchProvider {
 			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
 			return new ArrayList<String>();
 		}
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-		CriteriaQuery<PrimaryDataEntityVersionImplementation> criteria = criteriaBuilder
-				.createQuery(PrimaryDataEntityVersionImplementation.class);
-		Root<PrimaryDataEntityVersionImplementation> root = criteria.from(PrimaryDataEntityVersionImplementation.class);
-		criteria.where(criteriaBuilder.equal(root.get("primaryEntityId"), internalId));
-		PrimaryDataEntityVersionImplementation version = session.createQuery(criteria).getSingleResult();
+		System.out.println(internalId);
 		List<String> list = new ArrayList<String>();
-
-		if(version != null) {
-			try {
-				for(String keyword : taxonSearchValues) {
-					BooleanQuery.Builder query = new BooleanQuery.Builder();
-					query.add(new TermQuery(new Term(EnumIndexField.INTERNALID.value(), Integer.toString(version.getId()))), Occur.SHOULD);
-					query.add(new TermQuery(new Term(EnumIndexField.TITLE.value(), keyword)), Occur.SHOULD);
-					query.add(new TermQuery(new Term(EnumIndexField.DESCRIPTION.value(), keyword)), Occur.SHOULD);
-					query.add(new TermQuery(new Term(EnumIndexField.SUBJECT.value(), keyword)), Occur.SHOULD);
-					if(manager.searcher.search(query.build(), 1000).totalHits.value > 0) {
-						list.add(keyword);
-						System.out.println("added: "+keyword);
-					}
+		
+		List<Taxon> taxons = Stream.of(EnumTaxon.values())
+			    .map(EnumTaxon::value)
+			    .collect(Collectors.toList());
+		
+		try {
+			for(Taxon taxon : taxons) {
+				
+				BooleanQuery.Builder idQuery = new BooleanQuery.Builder()
+				.add(new TermQuery(new Term(EnumIndexField.INTERNALID.value(), internalId)), Occur.MUST)
+				.add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.MUST);
+				
+				BooleanQuery.Builder idTaxonQuery = new BooleanQuery.Builder()
+				.add(idQuery.build(), Occur.MUST);
+				BooleanQuery.Builder taxonQuery = new BooleanQuery.Builder();
+				for(String keyword : taxon.getSynonyms()) {
+					taxonQuery.add(new TermQuery(new Term(EnumIndexField.TITLE.value(), keyword)), Occur.SHOULD)
+							.add(new TermQuery(new Term(EnumIndexField.DESCRIPTION.value(), keyword)), Occur.SHOULD)
+							.add(new TermQuery(new Term(EnumIndexField.SUBJECT.value(), keyword)), Occur.SHOULD);
+				}	
+				idTaxonQuery.add(taxonQuery.build(), Occur.MUST);
+				Query q = idTaxonQuery.build();
+				System.out.println(q.toString());
+				if(manager.searcher.search(q, 1).totalHits.value > 0) {
+					list.add(taxon.getName());
+					System.out.println("added: "+taxon.getName());
 				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-		}
-
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
 		return list;
 
 	}

@@ -13,6 +13,7 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
 import java.io.ByteArrayInputStream;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,10 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -90,6 +94,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import javafx.application.Platform;
+
 
 @Path("api")
 public class RestEntryPoint {
@@ -206,6 +211,19 @@ public class RestEntryPoint {
 				
 	}
 	
+	//function for dataset creation with metadata
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("getProgress")
+	@POST
+	public String getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
+		if(ProgressionMap.getInstance().getMap().get(email+name) != null){
+			return Integer.toString(ProgressionMap.getInstance().getMap().get(email+name));	
+		}else {
+			return "0";
+		}
+		
+	}
+	
 	
 	//function for testing if entity with this title already exists
 
@@ -214,7 +232,8 @@ public class RestEntryPoint {
 	@POST
 	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
 			@FormDataParam("name") String name, @FormDataParam("email") String email,
-			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring, @FormDataParam("datasetRoot") String datasetRoot)  {
+			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring,
+			@FormDataParam("datasetRoot") String datasetRoot, @FormDataParam("size") String size)  {
 		// JSONObject data = new JSONObject();
 		String[] pathArray = name.split("/");
 		System.out.println(name);
@@ -243,8 +262,9 @@ public class RestEntryPoint {
 				} else {
 					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
 					System.out.println("Starting store function __");
-					try {
-						file.store(uploadedInputStream);
+					try {				
+						ProgressInputStream pis = new ProgressInputStream(ProgressionMap.getInstance().getMap(), uploadedInputStream, Long.parseLong(size), email+name);
+						file.store(pis);
 						System.out.println("finished store function __");
 
 					} catch (PrimaryDataFileException e) {

@@ -17,25 +17,59 @@
                 <div class="glass">
 
                     <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                    <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
-                        <div class="modal-content">
-                        <div class="modal-header d-flex" style='height:50px;background-color: #00b3f4;background-image: url("header_bg2.png");'>
-                            <h4 class="modal-title" id="modal-orcid-title" style="font-size:1.3rem;">Modal title</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        </div>
-                        <div class="modal-body" id="orcids" style="margin: 0 auto;padding: .5rem;">
-                        </div>
-                        <div class="modal-footer" style="justify-content:center;height:60px;">
-                        <a class="mr-3" style="width:230px" href="https://orcid.org/orcid-search/search" target="_blank">Search by myself</a>
-                        <input class="form-control" id="modal-input" placeholder="Orcid.."></input>
-                            <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Save & Close</button>                    
-                        </div>
+                        <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
+                            <div class="modal-content">
+                            <div class="modal-header d-flex" style='height:50px;background-color: #00b3f4;background-image: url("header_bg2.png");'>
+                                <h4 class="modal-title" id="modal-orcid-title" style="font-size:1.3rem;">Modal title</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body" id="orcids" style="margin: 0 auto;padding: .5rem;">
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;height:60px;">
+                            <a class="mr-3" style="width:230px" href="https://orcid.org/orcid-search/search" target="_blank">Search by myself</a>
+                            <input class="form-control" id="modal-input" placeholder="Orcid.."></input>
+                                <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Save & Close</button>                    
+                            </div>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
+                            <div class="modal-content" style="min-width: 250px;width: 25vw;">
+                            <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
+                                <h4 class="modal-title" style="font-size:1.3rem;">Upload Process Progression</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body d-flex flex-column" id="upload-body" style="padding: .5rem;">
+                                <div class="d-flex flex-row" style="text-align:center;align-items:center;">
+                                    <div style="min-width:150px">Overall progress:</div>
+                                    <div class="progress w-100 submitbtn">
+                                            <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
+                                    </div>
+
+                                    
+                                </div>
+                                <div class="parallel-uploads p-2 d-flex flex-column mt-2" style="border: 1px solid #ced4da;min-height:50px;">
+                                    <div class="d-flex flex-row" style="text-align:center;align-items:center;">
+                                        <div style="min-width:150px">Overall progress:</div>
+                                        <div class="progress w-100 submitbtn">
+                                                <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
+                                        </div>
+                                    
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;height:60px;">
+                                <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Close</button>                    
+                            </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="alert alert-warning alert-dismissible fade show" role="alert" style="display:none;margin:.5em .5em 1em .5em">
-                        <button type="button" class="close" onclick="$('.alert').slideUp();" aria-label="Close">
+                        <button type="button" class="close" onclick="$('.alert').hide();" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         <div id="alert-information">
@@ -149,9 +183,10 @@
                                             </div>
                                             <div class="d-flex flex-column width35" style="align-items:center;">
                                                 <pre style="margin-bottom:0;min-width:5px;">&nbsp</pre>
-                                                <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="startUpload()">Start upload<div class="progress w-100 submitbtn">
+                                            <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="startUpload()">Start upload
+                                            <div class="progress w-100 submitbtn">
                                                     <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
-                                                </div>
+                                            </div>
                                             </button>
                                         </div>
 

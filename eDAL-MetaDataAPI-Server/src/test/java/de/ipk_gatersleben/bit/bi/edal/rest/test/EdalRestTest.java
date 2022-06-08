@@ -9,6 +9,8 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -159,33 +161,42 @@ public class EdalRestTest{
 		Assert.assertEquals("neu", actual);
 		File initialFile = new File("neu"+File.separator+"Das ist ein test.txt");
 	    InputStream targetStream = new FileInputStream(initialFile);
-		form = new FormDataMultiPart()
-		        .field("name", "neu/Das ist ein test")
-		        .field("file", targetStream, MediaType.MULTIPART_FORM_DATA_TYPE)
-		        .field("email", ENC_EMAIL)
-		        .field("datasetRoot", "my dataset title")
-		        .field("type", "File");
 		
-		Runnable runnableTask = () -> {
-			FormDataMultiPart form2 = new FormDataMultiPart()
-			        .field("name", "neu/Das ist ein test")
-			        .field("file", targetStream, MediaType.MULTIPART_FORM_DATA_TYPE)
-			        .field("email", ENC_EMAIL)
-			        .field("datasetRoot", "my dataset title")
-			        .field("type", "File");
-			postRequest("uploadEntity", form2);
-		};
+	    
+	    
+	    new Thread()
+	    {
+	        public void run() {
+	        	FormDataMultiPart form2 = new FormDataMultiPart()
+				        .field("name", "neu/Das ist ein test")
+				        .field("file", targetStream, MediaType.MULTIPART_FORM_DATA_TYPE)
+				        .field("email", ENC_EMAIL)
+				        .field("datasetRoot", "my dataset title")
+				        .field("type", "File")
+				        .field("size", Long.toString(initialFile.length()));
+				postRequest("uploadEntity", form2);
+	        }
+	    }.start();
+	    
+	    new Thread()
+	    {
+	        public void run() {
+	        	for(int i = 0; i < 35; i++) {
+					System.out.println(postRequest("getProgress", new FormDataMultiPart()
+					        .field("name", "neu/Das ist ein test")
+					        .field("email", ENC_EMAIL)).readEntity(String.class));
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+	        }
+	    }.start();
+	    
+	    Thread.sleep(40000);
 
-		
-		ExecutorService executor = Executors.newFixedThreadPool(1);
-		executor.execute(runnableTask);
-		
-		Thread.sleep(4000);
-		System.out.println("shuztdown start");
-		executor.shutdownNow();
-		System.out.println("shutdownfiished");
-		targetStream.close();
-		Thread.sleep(10000);
 		
 	}
 	

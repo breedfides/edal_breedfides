@@ -44,14 +44,20 @@ function validateInputs(){
     //validate title and description
     let element = document.getElementById('input_title');
     if(element.value == ""){
-        failedValidations.set(element,{label:'Missing Title: ',text:'Please set a title.'});
+      element.setCustomValidity('Please set a title.');
+      element.reportValidity();
+      return false;
     }
     if(titleAlreadyExists){
-        failedValidations.set(element,{label:'Title Already exists: ',text:'Please set a new title.'});
+        element.setCustomValidity('Please set a new title.');
+        element.reportValidity();
+        return false;
     }
     element = document.getElementById('text_description');
     if(element.value == ""){
-        failedValidations.set(element,{label:'Missing Description: ',text:'Please set a description.'});
+      element.setCustomValidity('Please set a description.');
+      element.reportValidity();
+      return false;
     }
 
     //validate authors
@@ -75,7 +81,7 @@ function validateInputs(){
     if(authorsIncomplete){
         $('#alert-information').append('<strong>Missing Author: </strong>Please set at least one author for this publication.');
         if(!failedValidations.size){
-            $('.alert').slideDown();
+            $('.alert').show();
             return false;
         }
         failedValidations.set(tb,{label:'Missing Authors: ',text:'Please set at least one author for this publication.'});
@@ -91,7 +97,7 @@ function validateInputs(){
     if(noSubject){
         $('#alert-information').append('<strong>Missing Subject: </strong>Please fill in at least one subject for this publication.');
         if(!failedValidations.size){
-            $('.alert').slideDown();
+            $('.alert').show();
             return false;
         }
     }
@@ -100,7 +106,7 @@ function validateInputs(){
     if(fileSystemEntry == null){
         $('#alert-information').append('<strong>Missing Dataset: </strong>Please drop or select a dataset to be uploaded.');
         if(!failedValidations.size){
-            $('.alert').slideDown();
+            $('.alert').show();
             return false;
         }
     }
@@ -111,7 +117,7 @@ function validateInputs(){
             $('#alert-information').append(`<strong>${value.label}</strong>${value.text}`);
             $('#alert-information').append('<br>');
           }
-        $('.alert').slideDown();
+        $('.alert').show();
         return false;
     }else{
         if(failedValidations.size == 1){
@@ -119,7 +125,7 @@ function validateInputs(){
                 key.setCustomValidity(value.text);
                 key.reportValidity();
             }
-            $('.alert').slideUp();
+            $('.alert').hide();
             return false;
         }
         return true;;
@@ -145,6 +151,7 @@ function storeInputs(){
 async function startUpload(){
     //let msg = await traverse(fileSystemEntry, listing);
     if(validateInputs()){
+        $('#myModal2').modal('show');
         storeInputs();
         startUpload2();
         $('#submitBtn').prop('disabled', true);
@@ -286,6 +293,7 @@ async function uploadEntity2(path, file){
         payload.append("datasetRoot",globalMetadata.title);
         if(file == null){
           payload.append("type","Directory");
+      
           payload.append('file',null);
           jQuery.ajax({
             url: serverURL+"/restfull/api/uploadEntity",
@@ -302,6 +310,7 @@ async function uploadEntity2(path, file){
         }else{
             payload.set("name",path);
             payload.append('file',file);
+            payload.append('size',file.size);
             payload.append("type","File");
             jQuery.ajax({
                 url: serverURL+"/restfull/api/uploadEntity",

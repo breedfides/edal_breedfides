@@ -652,15 +652,15 @@ class VeloCityHtmlGenerator {
 		}
 		
 		//Enum Liste für jede pflanzenart mit Synonyme
-		final String[] taxonSearchValues = new String[] {"barley","wheat","weed"};
 		SearchProvider searchProvider;
 		try {
 			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			List<String> taxons = searchProvider.taxonSearch(taxonSearchValues, internalId);
+			context.put("taxon",searchProvider.taxonSearch(internalId));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} 
+		
 
 
 		/** set date of the PublicReference */
@@ -1123,11 +1123,10 @@ class VeloCityHtmlGenerator {
 			}
 		}
 		
-		final String[] taxonSearchValues = new String[] {"barley","wheat","weed"};
 		SearchProvider searchProvider;
 		try {
 			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			List<String> taxons = searchProvider.taxonSearch(taxonSearchValues, internalId);
+			context.put("taxon",searchProvider.taxonSearch(internalId));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

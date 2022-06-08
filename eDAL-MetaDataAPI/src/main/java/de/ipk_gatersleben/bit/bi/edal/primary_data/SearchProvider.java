@@ -82,7 +82,7 @@ public interface SearchProvider {
 	 */
 	HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType);
 	
-	List<String> taxonSearch(String[] taxonSearchValues, String internalId);
+	List<String> taxonSearch(String internalId);
 
 
 }
