@@ -50,14 +50,8 @@
 
                                     
                                 </div>
-                                <div class="parallel-uploads p-2 d-flex flex-column mt-2" style="border: 1px solid #ced4da;min-height:50px;">
-                                    <div class="d-flex flex-row" style="text-align:center;align-items:center;">
-                                        <div style="min-width:150px">Overall progress:</div>
-                                        <div class="progress w-100 submitbtn">
-                                                <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
-                                        </div>
+                                <div class="parallel-uploads p-2 d-flex flex-column mt-2">
                                     
-                                    </div>
 
                                 </div>
                             </div>

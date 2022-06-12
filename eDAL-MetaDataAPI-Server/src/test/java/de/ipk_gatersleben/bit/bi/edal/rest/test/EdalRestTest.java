@@ -182,6 +182,7 @@ public class EdalRestTest{
 	    {
 	        public void run() {
 	        	for(int i = 0; i < 35; i++) {
+	        		//change post to get
 					System.out.println(postRequest("getProgress", new FormDataMultiPart()
 					        .field("name", "neu/Das ist ein test")
 					        .field("email", ENC_EMAIL)).readEntity(String.class));

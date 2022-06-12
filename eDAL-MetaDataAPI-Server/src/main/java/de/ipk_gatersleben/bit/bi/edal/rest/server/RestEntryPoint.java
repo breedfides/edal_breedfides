@@ -215,11 +215,11 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("getProgress")
 	@POST
-	public String getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
+	public int getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
 		if(ProgressionMap.getInstance().getMap().get(email+name) != null){
-			return Integer.toString(ProgressionMap.getInstance().getMap().get(email+name));	
+			return ProgressionMap.getInstance().getMap().get(email+name);	
 		}else {
-			return "0";
+			return 0;
 		}
 		
 	}

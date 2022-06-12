@@ -6,8 +6,14 @@ let titleAlreadyExists = false;
 let storage = localStorage;
 let currentAuthorRow = null;
 
+/* set the limit of possible parallel file uploads */
+const numberOfParallelUploads = 10;
+
 var resumable;
-  
+
+
+/* Input validation function that makes a REST call to test if
+ the entered title already exists for the current user */
 function checkIfExists(input){
     if($(input).val() != ''){
         clearTimeout(keytimer);
@@ -308,6 +314,7 @@ async function uploadEntity2(path, file){
             }
         });
         }else{
+
             payload.set("name",path);
             payload.append('file',file);
             payload.append('size',file.size);
@@ -324,11 +331,47 @@ async function uploadEntity2(path, file){
                 resolve("finished file upload "+resData);
                 }
                 });
+
+               /* Add progress ui for this file with the key as ID to upload progresses dialog  */
+                
+               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div style='min-width:150px'>${file.name} (${niceBytes(file.size)}):</div><div class='progress w-100 submitbtn' style='height:12px;'><div id=${path} style='width:0%;transition:width .6s linear!important'></div></div></div>`;
+               $(".parallel-uploads").append(markup);
+               updateFileProgress(path);
+
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
                 //resolve("finished!!");
                 //});
         }
     });
+  }
+
+  function updateFileProgress(path){
+    let payload = new FormData();
+    payload.append('email',email);
+    payload.append('name',path);
+    jQuery.ajax({
+      url: serverURL+"/restfull/api/getProgress",
+      data: payload,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'POST',
+      type: 'POST', // For jQuery < 1.9
+      success: function(progress){
+        console.log(path);
+        if(100 >= progress){
+            console.log("finsihed file upload progress");
+            document.getElementById(path).style.backgroundColor ="rgb(92, 184, 92)";
+            document.getElementById(path).style.width =`${progress}%`;
+        }else if(progress < 100){
+          console.log("file upload progress display continues");
+          document.getElementById(path).style.width =`${progress}%`;
+          setTimeout(function (){
+            updateFileProgress(path)                    
+          }, 3000);
+        }
+      }
+      });
   }
   
 //   emptyFileCounter.onmessage = (event) => {
@@ -902,3 +945,23 @@ worker.onmessage = (evt) => {
       }
     });
   }
+
+      /* converts bytes to the human readable equivalent */
+    function niceBytes(bytes)  {
+        let self = this;
+        const thresh = 1024;
+        const dp = 1;
+        if (Math.abs(bytes) < thresh) {
+          return bytes + ' B';
+        }
+  
+        let u = -1;
+        const r = 10**dp;
+  
+        do {
+          bytes /= thresh;
+          ++u;
+        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < self.units.length - 1);
+  
+        return bytes.toFixed(dp).replace(".", ",") + ' ' + self.units[u];
+      };
