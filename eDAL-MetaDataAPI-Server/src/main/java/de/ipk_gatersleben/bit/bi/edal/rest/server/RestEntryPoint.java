@@ -217,8 +217,11 @@ public class RestEntryPoint {
 	@POST
 	public int getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
 		if(ProgressionMap.getInstance().getMap().get(email+name) != null){
-			return ProgressionMap.getInstance().getMap().get(email+name);	
+			int result = ProgressionMap.getInstance().getMap().get(email+name);	
+			System.out.println("if in get Progress for: "+name+" "+result+"%");
+			return result;	
 		}else {
+			System.out.println("else in get Progress for: "+name);
 			return 0;
 		}
 		

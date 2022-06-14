@@ -21,7 +21,7 @@ body{
   border: 1px solid #ced4da;
   min-height:50px;
   overflow-y: auto;
-  max-height: 250px;
+  max-height: 350px;
 }
 
 button:focus{
@@ -89,6 +89,21 @@ table, th, td {
   min-width:fit-content;
   transition: all .6s ease;
 }
+
+.file-progress-name{
+  width:150px;
+  width: 20vw;
+  direction: rtl;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.single-file-progressbar{
+  width:0%;
+  transition:width 1.9s ease!important;
+  background-color:rgb(2, 117, 216);
+  color: white;
+}
+
 
 #dropzone {
   text-align: center;

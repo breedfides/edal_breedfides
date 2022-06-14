@@ -5,9 +5,12 @@ let keytimer;
 let titleAlreadyExists = false;
 let storage = localStorage;
 let currentAuthorRow = null;
+//for calculation of readable filesizes instead of raw bits and bytes
+let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
 /* set the limit of possible parallel file uploads */
-const numberOfParallelUploads = 10;
+const numberOfParallelUploads = 5;
+const updateProgressTimeout = 1000;
 
 var resumable;
 
@@ -188,7 +191,7 @@ async function startUpload2(){
     $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
     $('.progress-bar').css('background-color','#0275d8');
     $('#submitBtn').css('width','50%');
-    $('.progress').css('height','12px');
+    $('.progress').css('height','17px');
     //remove submit btn text
     $('#submitBtn').contents().filter(function(){
         return this.nodeType === 3;
@@ -228,10 +231,13 @@ async function startUpload2(){
     async function iterateFiles(files){
         let requests = 0;
         let counter = 0;
+        $('.parallel-uploads').empty();
         let length = Object.keys(files).length
         return new Promise(async (resolve) => {
             for (var key in files) {
                 counter++;
+                const progress_id = "file-no-"+counter;
+                console.log("progrss-id vor nutzung: "+progress_id)
                 if (files.hasOwnProperty(key)) {
                     if(files[key].isDirectory){
                         await uploadEntity2(key, null);
@@ -239,7 +245,7 @@ async function startUpload2(){
                     }else{
                         if(requests < 10){
                             requests++;
-                            uploadEntity2(key, files[key].file).then(() => {
+                            uploadEntity2(key, files[key].file, progress_id).then(() => {
                                 requests--
                                 updateUploadedFiles(counter);
                                 if(counter == length && requests == 0){
@@ -264,6 +270,7 @@ async function startUpload2(){
                                       type: 'POST',
                                       success: function(resData){
                                         $('.progress-bar').css('width','100%');
+                                        $('.progress-bar').css('transition','width 1.8s ease');
                                         titleAlreadyExists = true;
                                         setTimeout(() => {$('#file-counter-info').text("Finished!");},600);                                                                            
                                       }
@@ -271,7 +278,7 @@ async function startUpload2(){
                                 }
                             });
                         }else{
-                            await uploadEntity2(key, files[key].file);
+                            await uploadEntity2(key, files[key].file,progress_id);
                             updateUploadedFiles(counter);
                         }
                         //resumable.addFile(files[key].file);
@@ -289,9 +296,10 @@ async function startUpload2(){
 async function updateUploadedFiles(counter){
     $('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
     $('.progress-bar').css('width',`${(Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100}%`);
+    $('.progress-bar').text(`${Math.round((Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100)}%`);
 }
 
-async function uploadEntity2(path, file){
+async function uploadEntity2(path, file, progressIdentifier){
     return new Promise(async (resolve) => {
         let payload = new FormData();
         payload.append("name",path);
@@ -332,11 +340,10 @@ async function uploadEntity2(path, file){
                 }
                 });
 
-               /* Add progress ui for this file with the key as ID to upload progresses dialog  */
-                
-               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div style='min-width:150px'>${file.name} (${niceBytes(file.size)}):</div><div class='progress w-100 submitbtn' style='height:12px;'><div id=${path} style='width:0%;transition:width .6s linear!important'></div></div></div>`;
-               $(".parallel-uploads").append(markup);
-               updateFileProgress(path);
+               /* Add progress ui for this file with the key as ID to upload progresses dialog  */         
+               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;display:none;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
+               $(".parallel-uploads").append(markup);      
+               updateFileProgress(path, progressIdentifier, 0);
 
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
                 //resolve("finished!!");
@@ -345,7 +352,7 @@ async function uploadEntity2(path, file){
     });
   }
 
-  function updateFileProgress(path){
+  async function updateFileProgress(path, progressId, updates){
     let payload = new FormData();
     payload.append('email',email);
     payload.append('name',path);
@@ -358,17 +365,32 @@ async function uploadEntity2(path, file){
       method: 'POST',
       type: 'POST', // For jQuery < 1.9
       success: function(progress){
-        console.log(path);
-        if(100 >= progress){
-            console.log("finsihed file upload progress");
-            document.getElementById(path).style.backgroundColor ="rgb(92, 184, 92)";
-            document.getElementById(path).style.width =`${progress}%`;
-        }else if(progress < 100){
+        console.log(progressId);
+        if(progress >= 100){
+          if(updates == 0){
+            $(".parallel-uploads").parent().show();
+          }
+            document.getElementById(progressId).style.width ="100%";
+            animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
+            setTimeout(function (){
+              document.getElementById(progressId).style.backgroundColor ="rgb(92, 184, 92)";                  
+            }, updateProgressTimeout);
+        }else if(progress > 0 && progress < 100){
+          if(updates == 0){
+            $(".parallel-uploads").parent().show();
+          }
+          updates++;
           console.log("file upload progress display continues");
-          document.getElementById(path).style.width =`${progress}%`;
+          document.getElementById(progressId).style.width = progress+"%";
+          animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), progress, updateProgressTimeout);
+          //$(`#${progressId}`).text(`${progress}%`);
           setTimeout(function (){
-            updateFileProgress(path)                    
-          }, 3000);
+            updateFileProgress(path, progressId, updates)                    
+          }, updateProgressTimeout);
+        }else{
+          setTimeout(function (){
+            updateFileProgress(path, progressId, updates)                    
+          }, updateProgressTimeout);
         }
       }
       });
@@ -961,7 +983,40 @@ worker.onmessage = (evt) => {
         do {
           bytes /= thresh;
           ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < self.units.length - 1);
+        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
   
-        return bytes.toFixed(dp).replace(".", ",") + ' ' + self.units[u];
+        return bytes.toFixed(dp).replace(".", ",") + ' ' + units[u];
       };
+
+      /* Helper function to animate the increasing progression % text on progress-bars*/
+      function animateValue(id, start, end, duration) {
+        // assumes integer values for start and end
+        
+        var obj = document.getElementById(id);
+        var range = end - start;
+        // no timer shorter than 50ms (not really visible any way)
+        var minTimer = 50;
+        // calc step time to show all interediate values
+        var stepTime = Math.abs(Math.floor(duration / range));
+        
+        // never go below minTimer
+        stepTime = Math.max(stepTime, minTimer);
+        
+        // get current time and calculate desired end time
+        var startTime = new Date().getTime();
+        var endTime = startTime + duration;
+        var timer;
+      
+        function run() {
+            var now = new Date().getTime();
+            var remaining = Math.max((endTime - now) / duration, 0);
+            var value = Math.round(end - (remaining * range));
+            obj.innerHTML = value+"%";
+            if (value == end) {
+                clearInterval(timer);
+            }
+        }
+        
+        timer = setInterval(run, stepTime);
+        run();
+    }

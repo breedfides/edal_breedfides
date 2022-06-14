@@ -34,9 +34,9 @@
                         </div>
                     </div>
 
-                    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" data-keyboard="false">
                         <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
-                            <div class="modal-content" style="min-width: 250px;width: 25vw;">
+                            <div class="modal-content" style="min-width: 250px;width: 40vw;">
                             <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
                                 <h4 class="modal-title" style="font-size:1.3rem;">Upload Process Progression</h4>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -45,14 +45,12 @@
                                 <div class="d-flex flex-row" style="text-align:center;align-items:center;">
                                     <div style="min-width:150px">Overall progress:</div>
                                     <div class="progress w-100 submitbtn">
-                                            <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
+                                            <div class="progress-bar" id="parent-progress-bar" style="width:0%;transition:width .6s linear!important">0%</div>
                                     </div>
-
-                                    
+                 
                                 </div>
                                 <div class="parallel-uploads p-2 d-flex flex-column mt-2">
                                     
-
                                 </div>
                             </div>
                             <div class="modal-footer" style="justify-content:center;height:60px;">
