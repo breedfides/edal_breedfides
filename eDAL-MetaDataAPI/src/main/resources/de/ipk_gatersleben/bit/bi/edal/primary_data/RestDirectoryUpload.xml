@@ -38,29 +38,41 @@
                         <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
                             <div class="modal-content" style="min-width: 250px;width: 40vw;">
                             <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
-                                <h4 class="modal-title" style="font-size:1.3rem;">Upload Process Progression</h4>
+                                <h4 class="modal-title" style="font-size:1.3rem;">Upload Progress</h4>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             </div>
                             <div class="modal-body d-flex flex-column" id="upload-body" style="padding: .5rem;">
                                 <div class="d-flex flex-row" style="text-align:center;align-items:center;">
-                                    <div style="min-width:150px">Overall progress:</div>
+                                    <div style="min-width:150px">Progress:</div>
                                     <div class="progress w-100 submitbtn">
-                                            <div class="progress-bar" id="parent-progress-bar" style="width:0%;transition:width .6s linear!important">0%</div>
+                                            <div class="progress-bar" id="parent-progress-bar" style="width:0%;transition:width .6s linear!important;background-color:rgb(2, 117, 216);">0%</div>
                                     </div>
                  
                                 </div>
                                 <div class="parallel-uploads p-2 d-flex flex-column mt-2">
                                     
+                                </div >
+
+                                <div id="summary_agreement" class="p-2 d-flex flex-column mt-2">
+                                    <div id="summary"></div>
+                                    <div class="d-flex flex-row p-2">
+                                        <input onchange="toggleStartUpload()" type="checkbox"/>
+                                        <label>I accept the Deposition and License Agreement</label>
+                                        <a href="https://edal-pgp.ipk-gatersleben.de/document/PGP-contract.pdf" target="_blank"><img class="v-icon" src="https://webapps.ipk-gatersleben.de/edal-pgp/VAADIN/themes/mytheme/img/pdf_icon.png"><span>PDF</span></a>
+                                    </div>
                                 </div>
                             </div>
                             <div class="modal-footer" style="justify-content:center;height:60px;">
-                                <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Close</button>                    
+                                <div class="d-flex flex-row p-2">
+                                    <button id="upload-start-button" type="button" class="btn btn-default" onclick="startUpload()" data-dismiss="modal" disabled>Start</button>   
+                                    <button id="upload-close-button" type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Close</button>   
+                                </div>                 
                             </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert" style="display:none;margin:.5em .5em 1em .5em">
+                    <div class="alert alert-primary alert-dismissible fade show" role="alert" style="display:none;margin:.5em .5em 1em .5em">
                         <button type="button" class="close" onclick="$('.alert').hide();" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -68,6 +80,7 @@
                             
                         </div>
                     </div>
+
                     <div class="container flexcolfill pb-1">
 
                         <div class="header flexrowfill">
@@ -111,7 +124,7 @@
                                             <label>Subjects</label>
                                         </div>
                                         <div class="border border-secondary" style="height:23vh;overflow-y: auto;">
-                                            <table id="subject_table" class="table table-bordered table-hover table-sm">
+                                            <table id="subject_table" class="table table-bordered table-hover table-sm mb-2">
                                                 <tbody>
                                                     <thead class="thead-light">
                                                         <tr>
@@ -121,6 +134,9 @@
                                                     </thead>
                                                 </tbody>
                                             </table>
+                                            <div id="addSubjectButtonDiv">
+                                                <button class='btn btn-outline-secondary btn-sm mb-2' onclick='addSubjectRow()' style='width:fit-content'>+</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -131,16 +147,16 @@
                                             <label>Authors</label>
                                         </div>
                                         <div class="border border-secondary" style="height:23vh; overflow-y: auto;">
-                                            <table id="author_table" class="table table-bordered table-hover table-sm w-100">
+                                            <table id="author_table" class="table table-bordered table-hover table-sm w-100 mb-2">
                                                 <tbody>
                                                     <thead class="thead-light" id="author_thead">
                                                         <tr>
-                                                            <th style="width:100px">Add/Remove</th>
+                                                            <th id="addRemoveAuthor" style="width:100px">Add/Remove</th>
                                                             <th>Firstname</th>
                                                             <th>Lastname</th>
                                                             <th style="width:170px">ORCID</th>
                                                             <th>Legalname</th>
-                                                            <th>Adress</th>
+                                                            <th>Address</th>
                                                             <th>Zip</th>
                                                             <th>Country</th>
                                                             <th>Type</th>
@@ -149,6 +165,7 @@
 
                                                 </tbody>
                                             </table>
+                                            <div id="addAuthorButtonDiv"><button id="addAuthorButton" class='btn btn-outline-secondary btn-sm mb-2' onclick='addAuthorRow()' style='width:fit-content'>+</button></div>
                                         </div>
                                     </div>
                                 </div>
@@ -175,7 +192,7 @@
                                             </div>
                                             <div class="d-flex flex-column width35" style="align-items:center;">
                                                 <pre style="margin-bottom:0;min-width:5px;">&nbsp</pre>
-                                            <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="startUpload()">Start upload
+                                            <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="showUploadDialog()">Start upload
                                             <div class="progress w-100 submitbtn">
                                                     <div class="progress-bar" style="width:0%;transition:width .6s linear!important"></div>
                                             </div>
@@ -200,22 +217,77 @@ var serverURL = "$serverURL";
 var fileSystemEntry = null;
 console.log("velocity email: "+email);
 let globalMetadata = {};
+let authors = [];
 
     $( document ).ready(function() {
+        $('#submitBtn').css('transition:width','.6s ease!important');
         function getStoredInput(key){
             return storage.getItem(key) == null ? '' : storage.getItem(key);
         }
-        $('#submitBtn').css('transition:width','.6s ease!important');
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addAuthorRow()' style='width:fit-content'>+</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>";
+        //create authors array from stored inputs
         tableBody = $("#author_table > tbody");
-        tableBody.append(markup);
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='addSubjectRow()' style='width:fit-content'>+</button></td><td contenteditable></td></tr>";
-        tableBody = $("#subject_table > tbody");
-        tableBody.append(markup);
+        if(storage.authors != null){
+            authors = JSON.parse(storage.authors);
+            if(!jQuery.isEmptyObject(storage.authors)){
+                authors.forEach ((author, index) => {
+                    //use orcid if exists, else add the orcid search button
+                    let orcid = author.hasOwnProperty('ORCID') ? author.ORCID : "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode);' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
+                    markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable>"+author.Firstname+"</td><td contenteditable>"+author.Lastname+"</td><td class='text-center'>"+orcid+"</td><td contenteditable>"+author.Legalname+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
+                    tableBody.append(markup);
+                    let table = document.getElementById("author_table");
+                    let lastRow = table.rows[table.rows.length-1];
+                    let lastCell = lastRow.cells[lastRow.cells.length-1];
+                    console.log("last cell_ "+lastCell.firstChild);
+                    lastCell.firstChild.selectedIndex = author.Type === "Creator" ? 0 : 1;
+                });
+            }
 
-        if(storage.getItem('language') != null){
-            $('#select_language').prop('selectedIndex', storage.getItem('language'));
+        }else{
+            markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td contenteditable></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>"; 
+            tableBody.append(markup);
         }
+
+        //create subjects from stored inputs
+        tableBody = $("#subject_table > tbody");
+        if(storage.subjects != null){
+            subjects = JSON.parse(storage.subjects);
+            subjects.forEach((subject, index) => {
+                markup =  `<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable>${subject}</td></tr>`;
+                tableBody.append(markup);
+            });
+        }else{
+            markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
+            tableBody.append(markup);
+        }
+        
+
+
+        $("#addAuthorButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+        $("#addSubjectButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+
+        if(storage.language != null){
+            $('#select_language').prop('selectedIndex', storage.language);
+        }
+        if(storage.license != null){
+            $('#select_license').prop('selectedIndex', storage.license);
+        }
+        if(storage.description != null){
+            $('#text_description').val(storage.description);
+        }
+
+           document.getElementById("dropzone").addEventListener("dragover", () => {
+               let element = document.getElementById("dropzone");
+                if(!element.classList.contains("drag")){
+                    element.classList.add("drag");
+                }
+                    $("#dropzone").toggleClass("drag");
+            });
+           document.getElementById("dropzone").addEventListener("dragleave", () => {
+               let element = document.getElementById("dropzone");
+                if(element.classList.contains("drag")){
+                    element.classList.remove("drag");
+                }
+            }); 
     });
 
 

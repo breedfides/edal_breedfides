@@ -12,6 +12,9 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
+/*
+ * Enumeration with names and related synonyms for the classification of a species.
+ */
 public enum EnumTaxon{
 	
 	
@@ -31,6 +34,9 @@ public enum EnumTaxon{
 
 }
 
+/*
+ * For classification of a species
+ */
 class Taxon{
 	
 	private String[] synonyms;

@@ -2,6 +2,8 @@
     box-sizing: border-box;
   }
 
+
+
 body{
     height: 100vh;
     width: 100vw;
@@ -17,11 +19,30 @@ body{
     /* Set a background color that will be displayed while the background image is loading */
 }
 
+.alert{
+  z-index: 1;
+  position: absolute;
+  left:0;
+  right:0;
+  top: 5px;
+  margin: 0 auto!important;
+  width: 50vw;
+}
+
 .parallel-uploads{
   border: 1px solid #ced4da;
   min-height:50px;
   overflow-y: auto;
   max-height: 350px;
+  display:none!important;
+}
+
+#addAuthorButtonDiv{
+  text-align: center;
+}
+
+#addSubjectButtonDiv{
+  text-align: center;
 }
 
 button:focus{
@@ -116,6 +137,11 @@ table, th, td {
   align-items: center;
   justify-content: center;
   overflow: none;
+}
+
+.drag {
+  box-shadow: inset 0px 0px 0px 2px #00C;
+  background-color: #ced4da;
 }
 
 .table-rows{

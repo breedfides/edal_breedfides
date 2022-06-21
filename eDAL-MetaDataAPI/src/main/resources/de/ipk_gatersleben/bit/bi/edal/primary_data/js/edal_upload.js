@@ -3,13 +3,14 @@ let files = {};
 let numberOfFiles = 0;
 let keytimer;
 let titleAlreadyExists = false;
+let checkingTitle = false;
 let storage = localStorage;
 let currentAuthorRow = null;
 //for calculation of readable filesizes instead of raw bits and bytes
 let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
 /* set the limit of possible parallel file uploads */
-const numberOfParallelUploads = 5;
+const numberOfParallelUploads = 6;
 const updateProgressTimeout = 1000;
 
 var resumable;
@@ -24,6 +25,7 @@ function checkIfExists(input){
             let form = new FormData();
             form.append("subject",email);
             form.append("name",$(input).val());
+            checkingTitle = true;
             jQuery.ajax({
                 url: serverURL+"/restfull/api/checkIfExists",
                 data: form,
@@ -41,7 +43,8 @@ function checkIfExists(input){
                     }else{
                         titleAlreadyExists = false;
                         $('#input_title').removeClass( "is-invalid" ).addClass('is-valid');
-                    }                                                                   
+                    }   
+                    checkingTitle = false;                                                                
                 }
               });
         }, 700);
@@ -49,6 +52,10 @@ function checkIfExists(input){
 }
 
 function validateInputs(){
+  if(checkingTitle){
+    //stop and let the user click again, wait for server side title validation
+    return;
+  }
     let failedValidations = new Map();
     //validate title and description
     let element = document.getElementById('input_title');
@@ -76,7 +83,6 @@ function validateInputs(){
       var colSize = $(element).find('td').length;
       console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
       $(element).find('td').each(function(index, element) {
-      var $th = $(element).closest('table').find('th').eq(index);
         //index == 2 = orcid, allowed to be empty
         if(index > 0 && index < 8 && element.isContentEditable && index != 3){
           var colVal = $(element).text();
@@ -141,29 +147,47 @@ function validateInputs(){
     }
 }
 
+/* Persist entered input to the localstorage */
 function storeInputs(){
   var tb = $('#author_table:eq(0) tbody');
+  let personArray = [];
   tb.find("tr").each(function(index, element) {
     var colSize = $(element).find('td').length;
-    console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
+    let temp_person = {};
     $(element).find('td').each(function(index, element) {
     var $th = $(element).closest('table').find('th').eq(index);
       //index == 2 = orcid, allowed to be empty
-      if(index > 0 && index < 8 && element.isContentEditable){
-        storage.setItem($th.text(),$(element).text());
+      if(element.isContentEditable){
+        temp_person[$th.text()] = $(element).text();
+      }else if(index == 8){
+        temp_person[$th.text()] = $(element).find('select').val();
+      }else if(index == 3 && !element.querySelector('button')){
+        temp_person[$th.text()] = `<div class='link' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'>${$(element).text()}</div>`;
+      }
+    });
+    personArray.push(temp_person);
+  });
+  storage.setItem("authors",JSON.stringify(personArray));
+  tb = $('#subject_table:eq(0) tbody');
+  let subjectArray = [];
+  tb.find("tr").each(function(index, element) {
+    $(element).find('td').each(function(index, element) {
+      if(index > 0){
+        subjectArray.push($(element).text());
       }
     });
   });
-  storage.setItem('language',$("#select_language").prop('selectedIndex'));
+  storage.setItem("subjects", JSON.stringify(subjectArray));
+  storage.setItem("language", $("#select_language").prop('selectedIndex'));
+  storage.setItem("description", $("#text_description").val());
+  storage.setItem("license", $("#select_license").prop('selectedIndex'));
 }
 
-async function startUpload(){
+async function showUploadDialog(){
     //let msg = await traverse(fileSystemEntry, listing);
     if(validateInputs()){
         $('#myModal2').modal('show');
         storeInputs();
-        startUpload2();
-        $('#submitBtn').prop('disabled', true);
     }
     //let msg = await traverse(fileSystemEntry);
 
@@ -185,7 +209,66 @@ async function startUpload(){
     // });
   }
 
-async function startUpload2(){
+  function toggleStartUpload(){
+    console.log("test3432");
+  }
+
+  async function startUpload(){
+    if(fileSystemEntry.kind == "directory"){
+      startDirectoryUpload();
+    }else if(fileSystemEntry.kind == "file"){
+      startSingleFileUpload();
+    }
+    $('#submitBtn').prop('disabled', true);
+  }
+
+async function startSingleFileUpload(){
+  var height = document.getElementById('submitBtn').clientHeight;
+  $('.progress-bar').css('transition','width .6s linear');
+  $('.progress-bar').css('background-color','#0275d8');
+  $('#submitBtn').css('width','50%');
+  $('.progress').css('height','17px');
+  //remove submit btn text
+  $('#submitBtn').contents().filter(function(){
+      return this.nodeType === 3;
+  }).remove();
+  $('#submitBtn').css('height',height);
+  let metadata = getInputMetadata();
+  await uploadEntityAndMetadata(metadata.title,metadata);
+  const file = await fileSystemEntry.getFile();
+  files["file"] = file;
+  uploadSingleEntityDataset(fileSystemEntry.name, file).then(() => {
+    $('.progress-bar').css('transition','width .1s linear');
+    $('.progress-bar').css('width','0%');
+    setTimeout(() => {
+        $('.progress-bar').css('background-color','#5cb85c');
+        $('.progress-bar').css('transition','width .6s ease');
+        $('.progress-bar').css('width','40%');
+    },600); 
+    let form = new FormData();
+    form.append("subject",email);
+    form.append("name", globalMetadata.title);
+    jQuery.ajax({
+      url: serverURL+"/restfull/api/publishDataset",
+      data: form,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'POST',
+      type: 'POST',
+      success: function(resData){
+        $('.progress-bar').css('width','100%');
+        $('.progress-bar').css('transition','width 1.8s ease');
+        titleAlreadyExists = true;
+        setTimeout(() => {$('#file-counter-info').text("Finished!");},600);                                                                            
+      }
+    });
+  });
+}
+
+
+async function startDirectoryUpload(){
+  console.log("started directory upload");
     var height = document.getElementById('submitBtn').clientHeight;
     $('.progress-bar').css('transition','width .6s linear');
     $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
@@ -202,32 +285,6 @@ async function startUpload2(){
     await uploadEntityAndMetadata(metadata.title,metadata);
     await uploadEntity2(fileSystemEntry.name, null);
     $('.progress-bar').css('width',`${((2/numberOfFiles).toFixed(1))*100}%`);
-    // resumable = new Resumable({
-    //     target: serverURL+"/restfull/api/resumableFileUpload",
-    //     testTarget: serverURL+"/restfull/api/isFileUploaded",
-    //     query: {
-    //         email:email,
-    //         datasetRoot:metadata.title,
-    //     },
-    //   });
-
-    //   resumable.on('complete', function(){
-    //     let form = new FormData();
-    //     form.append("subject",email);
-    //     form.append("name", globalMetadata.title);
-    //     jQuery.ajax({
-    //     url: serverURL+"/restfull/api/publishDataset",
-    //     data: form,
-    //     cache: false,
-    //     contentType: false,
-    //     processData: false,
-    //     method: 'POST',
-    //     type: 'POST',
-    //     success: function(resData){
-    //         console.log("publish() response: "+resData);
-    //     }
-    //     });
-    //   });
     async function iterateFiles(files){
         let requests = 0;
         let counter = 0;
@@ -294,9 +351,12 @@ async function startUpload2(){
 }
 
 async function updateUploadedFiles(counter){
+  setTimeout(function (){
     $('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
     $('.progress-bar').css('width',`${(Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100}%`);
-    $('.progress-bar').text(`${Math.round((Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100)}%`);
+    $('.progress-bar').text(`${Math.round((Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100)}%`);                 
+  }, updateProgressTimeout);
+
 }
 
 async function uploadEntity2(path, file, progressIdentifier){
@@ -341,7 +401,7 @@ async function uploadEntity2(path, file, progressIdentifier){
                 });
 
                /* Add progress ui for this file with the key as ID to upload progresses dialog  */         
-               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;display:none;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
+               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
                $(".parallel-uploads").append(markup);      
                updateFileProgress(path, progressIdentifier, 0);
 
@@ -349,6 +409,31 @@ async function uploadEntity2(path, file, progressIdentifier){
                 //resolve("finished!!");
                 //});
         }
+    });
+  }
+
+  async function uploadSingleEntityDataset(path, file){
+    return new Promise(async (resolve) => {
+      let payload = new FormData();
+      payload.append("email",email);
+      payload.append("datasetRoot",globalMetadata.title);
+      payload.set("name",path);
+      payload.append('file',file);
+      payload.append('size',file.size);
+      payload.append("type","File");
+      jQuery.ajax({
+          url: serverURL+"/restfull/api/uploadEntity",
+          data: payload,
+          cache: false,
+          contentType: false,
+          processData: false,
+          method: 'POST',
+          type: 'POST', // For jQuery < 1.9
+          success: function(resData){
+          resolve("finished file upload "+resData);
+          }
+          });   
+         updateFileProgress(path, "parent-progress-bar", 0);
     });
   }
 
@@ -367,18 +452,12 @@ async function uploadEntity2(path, file, progressIdentifier){
       success: function(progress){
         console.log(progressId);
         if(progress >= 100){
-          if(updates == 0){
-            $(".parallel-uploads").parent().show();
-          }
             document.getElementById(progressId).style.width ="100%";
             animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
             setTimeout(function (){
               document.getElementById(progressId).style.backgroundColor ="rgb(92, 184, 92)";                  
             }, updateProgressTimeout);
         }else if(progress > 0 && progress < 100){
-          if(updates == 0){
-            $(".parallel-uploads").parent().show();
-          }
           updates++;
           console.log("file upload progress display continues");
           document.getElementById(progressId).style.width = progress+"%";
@@ -430,44 +509,54 @@ worker.onmessage = (evt) => {
   
     event.preventDefault();
   
-    for (let i=0; i<items.length; i++) {
-      //let item = items[i].webkitGetAsEntry();
-      let item = await items[i].getAsFileSystemHandle();
-      console.log("dropped item");
-      if(item.kind == 'directory'){
-        fileSystemEntry = item;
-        $('.progress').css('height','0');
-        $('.progress-bar').css('width','0%');
-        $('#submitBtn').css('width','25%');
-        $('#submitBtn').contents().filter(function(){
-            return this.nodeType === 3;
-        }).remove();
-        $('#submitBtn').append('Start upload');
-        //const dirHandle = await showDirectoryPicker();
-        $('#droplabel').text("Directory: "+item.name);
-        worker.postMessage( item );
-        break;
-      }
-
-  
-    //   if (item) {
-    //       console.log("dropped directory_ "+item.name);
-    //       document.getElementById('loading-indicator').style.display = "block";
-    //       document.getElementById('droplabel').style.display = "none";
-    //       emptyDirectories = 0;
-    //       fileSystemEntry = item;
-    //       $('#droplabel').text(item.fullPath);
-    //       //let resolveMsg = scanFiles(item);
-    //       console.log("item:");
-    //       console.log(item);
-    //       //emptyFileCounter.postMessage(item);
-    //       traverseDirectory2(item).then(() => {
-    //         document.getElementById('loading-indicator').style.display = "none";
-    //         document.getElementById('droplabel').style.display = "block";
-    //       });
-    //       $('#submitBtn').prop('disabled', false);
-    //   }
+    //let item = items[i].webkitGetAsEntry();
+    let item = await items[0].getAsFileSystemHandle();
+    console.log("dropped item");
+    if(item.kind == 'directory'){
+      fileSystemEntry = item;
+      $('.progress').css('height','0');
+      $('.progress-bar').css('width','0%');
+      $('#submitBtn').css('width','25%');
+      $('#submitBtn').contents().filter(function(){
+          return this.nodeType === 3;
+      }).remove();
+      $('#submitBtn').append('Start upload');
+      //const dirHandle = await showDirectoryPicker();
+      $('#droplabel').text("Directory: "+item.name);
+      
+      worker.postMessage( item );
+    }else if(item.kind == 'file'){
+      $('.progress').css('height','0');
+      $('.progress-bar').css('width','0%');
+      $('#submitBtn').css('width','25%');
+      $('#submitBtn').contents().filter(function(){
+          return this.nodeType === 3;
+      }).remove();
+      $('#submitBtn').append('Start upload');
+      //const dirHandle = await showDirectoryPicker();
+      $('#droplabel').text("File: "+item.name);
+      console.log("dropped file!");
+      fileSystemEntry = item;
     }
+
+    
+      //   if (item) {
+      //       console.log("dropped directory_ "+item.name);
+      //       document.getElementById('loading-indicator').style.display = "block";
+      //       document.getElementById('droplabel').style.display = "none";
+      //       emptyDirectories = 0;
+      //       fileSystemEntry = item;
+      //       $('#droplabel').text(item.fullPath);
+      //       //let resolveMsg = scanFiles(item);
+      //       console.log("item:");
+      //       console.log(item);
+      //       //emptyFileCounter.postMessage(item);
+      //       traverseDirectory2(item).then(() => {
+      //         document.getElementById('loading-indicator').style.display = "none";
+      //         document.getElementById('droplabel').style.display = "block";
+      //       });
+      //       $('#submitBtn').prop('disabled', false);
+      //   }
   }, false);
 
   async function chooseDirectory(){
@@ -545,12 +634,14 @@ worker.onmessage = (evt) => {
     }
   
     function addAuthorRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td style='background-color:rgba(22,22,22,0.05)'></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm' onchange='disablePointlessCells(this);'><option>Creator</option><option>Contributor</option><option value='legalperson'>Legal person</option></select></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
+        document.getElementById("addAuthorButton").scrollIntoView();
     }
 
     function searchORCIDsOfRow(row){
+      $('#myModal').modal('show');
       currentAuthorRow = row;
       let form = new FormData();
       let firstName = $(row.childNodes[1]).text();
@@ -606,30 +697,6 @@ worker.onmessage = (evt) => {
 
     function setORCID(cell, id){
       console.log(cell+" "+ id);
-    }
-
-    function disablePointlessCells(element){
-        let row = $(element).parent().parent();
-        console.log($(element).val());
-        if($(element).val() == 'Creator' || $(element).val() == 'Contributor'){
-            $(row).find("td:eq(1)").css('background-color','white');
-            $(row).find("td:eq(1)").attr('contenteditable','true');
-            $(row).find("td:eq(2)").css('background-color','white');
-            $(row).find("td:eq(2)").attr('contenteditable','true');
-            $(row).find("td:eq(3)").css('background-color','white');
-            $(row).find("td:eq(3)").attr('contenteditable','true');
-            $(row).find("td:eq(4)").css('background-color','rgba(22,22,22,.05)');
-            $(row).find("td:eq(4)").attr('contenteditable','false');
-        }else{
-            $(row).find("td:eq(1)").attr('contenteditable','false');
-            $(row).find("td:eq(1)").css('background-color','rgba(22,22,22,.05)');
-            $(row).find("td:eq(2)").attr('contenteditable','false');
-            $(row).find("td:eq(2)").css('background-color','rgba(22,22,22,.05)');
-            $(row).find("td:eq(3)").attr('contenteditable','false');
-            $(row).find("td:eq(3)").css('background-color','rgba(22,22,22,.05)');
-            $(row).find("td:eq(4)").attr('contenteditable','true');
-            $(row).find("td:eq(4)").css('background-color','white');
-        }
     }
   
     function deleteRow(row){

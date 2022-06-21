@@ -181,7 +181,6 @@ public class RestEntryPoint {
 				metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, metadataWrapper.getLegalpersons());
 				metadata.setElementValue(EnumDublinCoreElements.RIGHTS, metadataWrapper.getLicense());						
 				newDataSet.setMetaData(metadata);
-				newDataSet.createPrimaryDataDirectory(entityName.substring(1));
 				return "200";
 			}else {
 				throw new WebApplicationException(Response.Status.FORBIDDEN);
@@ -241,9 +240,6 @@ public class RestEntryPoint {
 		String[] pathArray = name.split("/");
 		System.out.println(name);
 		try {
-			if(type.equals("File")) {
-				int o = 2;
-			}
 			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
 			ObjectInputStream oi = new ObjectInputStream(in);
 			Subject subject = (Subject) oi.readObject();	
@@ -252,6 +248,7 @@ public class RestEntryPoint {
 			// String type = (String) data.get("type");
 			PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
 			PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
+			//if file child of directory -> walk Tree and find the parent of this child
 			if (pathArray.length > 0) {
 				PrimaryDataDirectory parent = root;
 				int lastIndex = pathArray.length - 1;
@@ -500,15 +497,15 @@ class MetaDataWrapper {
 		for(Object personObj : persons) {
 			JSONObject person = (JSONObject) personObj;
 			String type = ((String) person.get("Type")).toLowerCase();
-			if(type.equals("legalperson")) {
-				this.legalPerson = new LegalPerson((String) person.get("Legalname"),  (String) person.get("Adress"), (String) person.get("Zip"), (String) person.get("Country"));
+			if((String) person.get("Legalname") != null) {				
+				this.legalPerson = new LegalPerson((String) person.get("Legalname"),  (String) person.get("Address"), (String) person.get("Zip"), (String) person.get("Country"));
 			}else {
 				Person parsedPerson;
 				if(((String)person.get("ORCID")).isEmpty()) {
-					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Adress"),
+					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Address"),
 							(String) person.get("Zip"), (String) person.get("Country"));
 				}else {
-					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Adress"),
+					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Address"),
 							(String) person.get("Zip"), (String) person.get("Country"), new ORCID((String) person.get("ORCID")));
 				}
 				if(type.equals("creator")) {
