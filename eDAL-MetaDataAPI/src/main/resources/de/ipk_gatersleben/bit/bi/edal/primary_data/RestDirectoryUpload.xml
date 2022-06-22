@@ -54,16 +54,16 @@
                                 </div >
 
                                 <div id="summary_agreement" class="p-2 d-flex flex-column mt-2">
-                                    <div id="summary"></div>
-                                    <div class="d-flex flex-row p-2">
-                                        <input onchange="toggleStartUpload()" type="checkbox"/>
-                                        <label>I accept the Deposition and License Agreement</label>
+                                    <div id="summary" class="py-2"></div>
+                                    <div class="d-flex flex-row p-2 user-agreement-flex">
+                                        <input onchange="toggleStartUpload()" class="mr-2" type="checkbox"/>
+                                        <label class="mr-2" style="margin-bottom:0;">I accept the Deposition and License Agreement</label>
                                         <a href="https://edal-pgp.ipk-gatersleben.de/document/PGP-contract.pdf" target="_blank"><img class="v-icon" src="https://webapps.ipk-gatersleben.de/edal-pgp/VAADIN/themes/mytheme/img/pdf_icon.png"><span>PDF</span></a>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer" style="justify-content:center;height:60px;">
-                                <div class="d-flex flex-row p-2">
+                                <div class="d-flex flex-row p-2 w-50 justify-content-around">
                                     <button id="upload-start-button" type="button" class="btn btn-default" onclick="startUpload()" data-dismiss="modal" disabled>Start</button>   
                                     <button id="upload-close-button" type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Close</button>   
                                 </div>                 

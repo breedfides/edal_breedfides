@@ -144,8 +144,32 @@ table, th, td {
   background-color: #ced4da;
 }
 
+table.preview{
+  border: none;
+}
+
+
+#summary td, #summary th{
+  border: none;
+}
+
+.user-agreement-flex{
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+}
+
 .table-rows{
   min-height: 30%;
+}
+
+#summary{
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  max-height: 80vh;
+  overflow-y: auto;
+  max-width: 90vw;
+  overflow-x: auto;
 }
 
 #boxtitle {

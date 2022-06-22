@@ -183,11 +183,49 @@ function storeInputs(){
   storage.setItem("license", $("#select_license").prop('selectedIndex'));
 }
 
+/* Fill summary section with a table of entered metadata */
+function setSummary(){
+  getInputMetadata();
+  $('#summary').empty();
+  $('#summary').append(`<h4>Citation preview:</h4>`);
+  $('#summary').append(`<table class="preview">`);
+  $('#summary').append(`<tr><td><b>Title: </b></td><td>${globalMetadata.title}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Language: </b></td><td>${globalMetadata.language}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Description: </b></td><td>${globalMetadata.description}</td></tr>`);
+  $('#summary').append(`<tr><td><b>License: </b></td><td>${globalMetadata.licenseText}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Subjects: </b></td></tr>`);
+  globalMetadata.subjects.forEach((subject,index) => {
+    $('#summary').append(`<tr><td></td><td>${subject}</td></tr>`);
+  });
+  $('#summary').append(`<tr><td><b>Creator: </b></td></tr>`);
+  globalMetadata.creators.forEach((creator,index) => {
+    $('#summary').append(`<tr><td></td><td>${Object.keys(creator).map(function(k){return creator[k]}).join(", ")}</td></tr>`);
+  });
+  $('#summary').append(`<tr><td><b>Contributor: </b></td></tr>`);
+  globalMetadata.contributors.forEach((Contributor,index) => {
+    $('#summary').append(`<tr><td></td><td>${Object.keys(Contributor).map(function(k){return Contributor[k]}).join(", ")}</td></tr>`);
+  });
+  $('#summary').append(`</table>`);
+}
+
 async function showUploadDialog(){
     //let msg = await traverse(fileSystemEntry, listing);
     if(validateInputs()){
-        $('#myModal2').modal('show');
-        storeInputs();
+      setSummary();
+      
+      var height = document.getElementById('submitBtn').clientHeight;
+      $('.progress-bar').css('transition','width .6s linear');
+      $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
+      $('.progress-bar').css('background-color','#0275d8');
+      $('#submitBtn').css('width','50%');
+      $('.progress').css('height','17px');
+      //remove submit btn text
+      $('#submitBtn').contents().filter(function(){
+          return this.nodeType === 3;
+      }).remove();
+      $('#submitBtn').css('height',height);
+      $('#myModal2').modal('show');
+      storeInputs();
     }
     //let msg = await traverse(fileSystemEntry);
 
@@ -210,7 +248,7 @@ async function showUploadDialog(){
   }
 
   function toggleStartUpload(){
-    console.log("test3432");
+    $('#upload-start-button').prop('disabled', !$('#upload-start-button').is(":disabled"));
   }
 
   async function startUpload(){
@@ -223,17 +261,6 @@ async function showUploadDialog(){
   }
 
 async function startSingleFileUpload(){
-  var height = document.getElementById('submitBtn').clientHeight;
-  $('.progress-bar').css('transition','width .6s linear');
-  $('.progress-bar').css('background-color','#0275d8');
-  $('#submitBtn').css('width','50%');
-  $('.progress').css('height','17px');
-  //remove submit btn text
-  $('#submitBtn').contents().filter(function(){
-      return this.nodeType === 3;
-  }).remove();
-  $('#submitBtn').css('height',height);
-  let metadata = getInputMetadata();
   await uploadEntityAndMetadata(metadata.title,metadata);
   const file = await fileSystemEntry.getFile();
   files["file"] = file;
@@ -269,19 +296,7 @@ async function startSingleFileUpload(){
 
 async function startDirectoryUpload(){
   console.log("started directory upload");
-    var height = document.getElementById('submitBtn').clientHeight;
-    $('.progress-bar').css('transition','width .6s linear');
-    $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
-    $('.progress-bar').css('background-color','#0275d8');
-    $('#submitBtn').css('width','50%');
-    $('.progress').css('height','17px');
-    //remove submit btn text
-    $('#submitBtn').contents().filter(function(){
-        return this.nodeType === 3;
-    }).remove();
-    $('#submitBtn').css('height',height);
     numberOfFiles = Object.keys(files).length+2;
-    let metadata = getInputMetadata();
     await uploadEntityAndMetadata(metadata.title,metadata);
     await uploadEntity2(fileSystemEntry.name, null);
     $('.progress-bar').css('width',`${((2/numberOfFiles).toFixed(1))*100}%`);
@@ -593,15 +608,16 @@ worker.onmessage = (evt) => {
       globalMetadata.description = $('#text_description').val();
       globalMetadata.language = $('#select_language').val();
       globalMetadata.license = $('#select_license').val();
+      globalMetadata.licenseText = $("#select_license option:selected").text();
       let persons = [];
+      let authors = [];
+      let contributors = [];
       var tb = $('#author_table:eq(0) tbody');
       tb.find("tr").each(function(index, element) {
-        var colSize = $(element).find('td').length;
-        console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
         let currentPerson = {};
         $(element).find('td').each(function(index, element) {
         var $th = $(element).closest('table').find('th').eq(index);
-          if(index > 0 && index < 8){
+          if(index > 0 && index < 8 && $(element).text()){
             currentPerson[$th.text()] = $(element).text();
             var colVal = $(element).text();
             console.log("    Value in col " + (index + 1) + " : " + colVal.trim());
@@ -609,11 +625,17 @@ worker.onmessage = (evt) => {
             currentPerson[$th.text()] = $(element).find('select').val();
           }
         });
-        console.log("finished person_ "+JSON.stringify(currentPerson));
         persons.push(currentPerson);
+        if(currentPerson.Type === "Creator"){
+          authors.push(currentPerson);
+        }else if(currentPerson.Type === "Contributor"){
+          contributors.push(currentPerson);
+        }
+        delete currentPerson.Type;
       });
       globalMetadata.persons = persons;
-  
+      globalMetadata.creators = authors;
+      globalMetadata.contributors = contributors;
       let subjects = [];
       var tb = $('#subject_table:eq(0) tbody');
       tb.find("tr").each(function(index, element) {
@@ -622,7 +644,6 @@ worker.onmessage = (evt) => {
           }
       });
       globalMetadata.subjects = subjects;
-      console.log(JSON.stringify(globalMetadata));
       return globalMetadata;
     }
   
