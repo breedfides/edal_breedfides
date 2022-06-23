@@ -6,6 +6,7 @@ let titleAlreadyExists = false;
 let checkingTitle = false;
 let storage = localStorage;
 let currentAuthorRow = null;
+const displayAlertTime = 3000;
 //for calculation of readable filesizes instead of raw bits and bytes
 let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
@@ -51,6 +52,35 @@ function checkIfExists(input){
     }
 }
 
+function checkNames(cell){
+  if(cell.parentNode.children.item(4).textContent){
+    $(cell).attr('contenteditable','false');
+    $('#alert-information').empty();
+    $('#alert-information').append("Only allowed to set Firstname/Lastname if no legalname is set");
+    showAlert(displayAlertTime);
+  }else{
+    $(cell).attr('contenteditable','true');
+    cell.focus();
+  }
+}
+
+function checkLegalName(cell){
+  if(cell.parentNode.children.item(1).textContent && cell.parentNode.children.item(2).textContent){
+    $(cell).attr('contenteditable','false');
+    $('#alert-information').empty();
+    $('#alert-information').append("Only allowed to set Legalname if no Firstname and no Lastname is set");
+    showAlert(displayAlertTime);
+  }else{
+    $(cell).attr('contenteditable','true');
+    cell.focus();
+  }
+}
+
+function showAlert(displayTimeInMillis){
+  $('.alert').show();
+  setTimeout(function (){$('.alert').fadeOut()}, displayTimeInMillis); 
+}
+
 function validateInputs(){
   if(checkingTitle){
     //stop and let the user click again, wait for server side title validation
@@ -81,10 +111,9 @@ function validateInputs(){
     var tb = $('#author_table:eq(0) tbody');
     tb.find("tr").each(function(index, element) {
       var colSize = $(element).find('td').length;
-      console.log("  Number of cols in row " + (index + 1) + " : " + colSize);
       $(element).find('td').each(function(index, element) {
         //index == 2 = orcid, allowed to be empty
-        if(index > 0 && index < 8 && element.isContentEditable && index != 3){
+        if(index > 0 && index < 8 && element.isContentEditable && index != 3 && index != 4){
           var colVal = $(element).text();
           if(!colVal){
             authorsIncomplete = true;
@@ -94,12 +123,12 @@ function validateInputs(){
     });
     $('#alert-information').empty();
     if(authorsIncomplete){
-        $('#alert-information').append('<strong>Missing Author: </strong>Please set at least one author for this publication.');
+        $('#alert-information').append('<strong>Missing Author information: </strong>Please complete every author row or delete it.');
         if(!failedValidations.size){
-            $('.alert').show();
+            showAlert(displayAlertTime);
             return false;
         }
-        failedValidations.set(tb,{label:'Missing Authors: ',text:'Please set at least one author for this publication.'});
+        failedValidations.set(tb,{label:'Missing Author information: ',text:'Please complete every author row or delete it.'});
     }
     //validate if at least one subject is set
     let noSubject = true;
@@ -112,7 +141,7 @@ function validateInputs(){
     if(noSubject){
         $('#alert-information').append('<strong>Missing Subject: </strong>Please fill in at least one subject for this publication.');
         if(!failedValidations.size){
-            $('.alert').show();
+            showAlert(displayAlertTime);
             return false;
         }
     }
@@ -121,18 +150,17 @@ function validateInputs(){
     if(fileSystemEntry == null){
         $('#alert-information').append('<strong>Missing Dataset: </strong>Please drop or select a dataset to be uploaded.');
         if(!failedValidations.size){
-            $('.alert').show();
+            showAlert(displayAlertTime);
             return false;
         }
     }
     // if map only contains
-    console.log(failedValidations.get(0));
     if(failedValidations.size > 1){
         for (const [key, value] of failedValidations.entries()) {
             $('#alert-information').append(`<strong>${value.label}</strong>${value.text}`);
             $('#alert-information').append('<br>');
-          }
-        $('.alert').show();
+        }
+        showAlert(displayAlertTime);
         return false;
     }else{
         if(failedValidations.size == 1){
@@ -211,19 +239,20 @@ function setSummary(){
 async function showUploadDialog(){
     //let msg = await traverse(fileSystemEntry, listing);
     if(validateInputs()){
+      console.log("in showUpload()-----------");
       setSummary();
-      
-      var height = document.getElementById('submitBtn').clientHeight;
+      $('#toggleStartButton').prop("checked", false);
+      $('#upload-start-button').show();
+      $('#upload-start-button').prop('disabled',true);
+
+
       $('.progress-bar').css('transition','width .6s linear');
       $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
-      $('.progress-bar').css('background-color','#0275d8');
-      $('#submitBtn').css('width','50%');
       $('.progress').css('height','17px');
-      //remove submit btn text
-      $('#submitBtn').contents().filter(function(){
-          return this.nodeType === 3;
-      }).remove();
-      $('#submitBtn').css('height',height);
+      $('.progress-bar').text('0%'); 
+      $('#summary_agreement').addClass("d-flex").removeClass("d-none");
+      $('.parallel-uploads').empty();
+      $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
       $('#myModal2').modal('show');
       storeInputs();
     }
@@ -252,44 +281,29 @@ async function showUploadDialog(){
   }
 
   async function startUpload(){
+    $('#summary_agreement').removeClass("d-flex").addClass("d-none");
+    $('.parallel-uploads').addClass("d-flex").removeClass("d-none");
     if(fileSystemEntry.kind == "directory"){
       startDirectoryUpload();
     }else if(fileSystemEntry.kind == "file"){
       startSingleFileUpload();
     }
-    $('#submitBtn').prop('disabled', true);
+    $('#upload-start-button').hide();
+    $('#submitBtn').contents().filter(function(){
+      return this.nodeType === 3;
+    }).remove();
+    $('#submitBtn').append('Show Progress');
+    document.getElementById("submitBtn").onclick = () => {
+    $('#myModal2').modal('show');
+    }
   }
 
 async function startSingleFileUpload(){
-  await uploadEntityAndMetadata(metadata.title,metadata);
+  await uploadEntityAndMetadata(globalMetadata.title,globalMetadata);
   const file = await fileSystemEntry.getFile();
   files["file"] = file;
   uploadSingleEntityDataset(fileSystemEntry.name, file).then(() => {
-    $('.progress-bar').css('transition','width .1s linear');
-    $('.progress-bar').css('width','0%');
-    setTimeout(() => {
-        $('.progress-bar').css('background-color','#5cb85c');
-        $('.progress-bar').css('transition','width .6s ease');
-        $('.progress-bar').css('width','40%');
-    },600); 
-    let form = new FormData();
-    form.append("subject",email);
-    form.append("name", globalMetadata.title);
-    jQuery.ajax({
-      url: serverURL+"/restfull/api/publishDataset",
-      data: form,
-      cache: false,
-      contentType: false,
-      processData: false,
-      method: 'POST',
-      type: 'POST',
-      success: function(resData){
-        $('.progress-bar').css('width','100%');
-        $('.progress-bar').css('transition','width 1.8s ease');
-        titleAlreadyExists = true;
-        setTimeout(() => {$('#file-counter-info').text("Finished!");},600);                                                                            
-      }
-    });
+    publishDataset();
   });
 }
 
@@ -297,7 +311,7 @@ async function startSingleFileUpload(){
 async function startDirectoryUpload(){
   console.log("started directory upload");
     numberOfFiles = Object.keys(files).length+2;
-    await uploadEntityAndMetadata(metadata.title,metadata);
+    await uploadEntityAndMetadata(globalMetadata.title,globalMetadata);
     await uploadEntity2(fileSystemEntry.name, null);
     $('.progress-bar').css('width',`${((2/numberOfFiles).toFixed(1))*100}%`);
     async function iterateFiles(files){
@@ -321,32 +335,7 @@ async function startDirectoryUpload(){
                                 requests--
                                 updateUploadedFiles(counter);
                                 if(counter == length && requests == 0){
-                                    $('.progress-bar').css('transition','width .1s linear');
-                                    $('.progress-bar').css('width','0%');
-                                    setTimeout(() => {
-                                        $('.progress-bar').css('background-color','#5cb85c');
-                                        $('.progress-bar').css('transition','width .6s ease');
-                                        $('.progress-bar').css('width','40%');
-                                    },600); 
-                                    $('#file-counter-info').text("Finished uploading! Publishing initiated..");
-                                    let form = new FormData();
-                                    form.append("subject",email);
-                                    form.append("name", globalMetadata.title);
-                                    jQuery.ajax({
-                                      url: serverURL+"/restfull/api/publishDataset",
-                                      data: form,
-                                      cache: false,
-                                      contentType: false,
-                                      processData: false,
-                                      method: 'POST',
-                                      type: 'POST',
-                                      success: function(resData){
-                                        $('.progress-bar').css('width','100%');
-                                        $('.progress-bar').css('transition','width 1.8s ease');
-                                        titleAlreadyExists = true;
-                                        setTimeout(() => {$('#file-counter-info').text("Finished!");},600);                                                                            
-                                      }
-                                    });
+                                    publishDataset();
                                 }
                             });
                         }else{
@@ -363,6 +352,47 @@ async function startDirectoryUpload(){
     iterateFiles(files);
 
     //resumable.upload();
+}
+
+function publishDataset(){
+  $('.progress-bar').css('transition','width .1s linear');
+  $('.progress-bar').css('width','0%');
+  $('#droplabel').empty();
+  $('#droplabel').append(`Drop or Select a&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div>`);
+  let form = new FormData();
+  form.append("subject",email);
+  form.append("name", globalMetadata.title);
+  if($('#input_embargo').val().length > 0){
+    form.append("embargo",$('#input_embargo').val());
+  }
+  jQuery.ajax({
+    url: serverURL+"/restfull/api/publishDataset",
+    data: form,
+    cache: false,
+    contentType: false,
+    processData: false,
+    method: 'POST',
+    type: 'POST',
+    success: function(resData){
+      setTimeout(() => {
+        $('.progress-bar').css('transition','width 2s ease');
+        $('.progress-bar').css('width','100%');
+        $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
+      }, 2000);
+      resetUI();
+    }
+  });
+  fileSystemEntry = null;
+}
+
+function resetUI(){
+  checkIfExists(document.getElementById('input_title'));
+  document.getElementById('submitBtn').onclick = () => {showUploadDialog();};
+  $('#file-counter-info').text("");
+  $('#submitBtn').contents().filter(function(){
+    return this.nodeType === 3;
+  }).remove();
+  $('#submitBtn').append('Start Upload');  
 }
 
 async function updateUploadedFiles(counter){
@@ -416,7 +446,7 @@ async function uploadEntity2(path, file, progressIdentifier){
                 });
 
                /* Add progress ui for this file with the key as ID to upload progresses dialog  */         
-               markup = `<div class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
+               markup = `<div id='${progressIdentifier}-container' class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
                $(".parallel-uploads").append(markup);      
                updateFileProgress(path, progressIdentifier, 0);
 
@@ -467,11 +497,11 @@ async function uploadEntity2(path, file, progressIdentifier){
       success: function(progress){
         console.log(progressId);
         if(progress >= 100){
-            document.getElementById(progressId).style.width ="100%";
-            animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
-            setTimeout(function (){
-              document.getElementById(progressId).style.backgroundColor ="rgb(92, 184, 92)";                  
-            }, updateProgressTimeout);
+          document.getElementById(progressId).style.width ="100%";
+          animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
+          setTimeout(function (){
+            $(`#${progressId}-container`).addClass("d-none").removeClass("d-flex");                
+          }, updateProgressTimeout);
         }else if(progress > 0 && progress < 100){
           updates++;
           console.log("file upload progress display continues");
@@ -479,6 +509,7 @@ async function uploadEntity2(path, file, progressIdentifier){
           animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), progress, updateProgressTimeout);
           //$(`#${progressId}`).text(`${progress}%`);
           setTimeout(function (){
+            $(`#${progressId}-container`).addClass("d-flex").removeClass("d-none");
             updateFileProgress(path, progressId, updates)                    
           }, updateProgressTimeout);
         }else{
@@ -504,7 +535,7 @@ worker.onmessage = (evt) => {
           }, 4 );
     }else{
         files = evt.data.traversed;
-        document.querySelector("pre").textContent = `${ evt.data.processed } files, ${ evt.data.emptyDirs } empty directories, ${ evt.data.emptyFiles } empty files`;
+        document.querySelector("pre").textContent = `${ fileSystemEntry.kind}: ${ fileSystemEntry.name}: ${ evt.data.processed } files, ${ evt.data.emptyDirs } empty directories, ${ evt.data.emptyFiles } empty files`;
         console.log(JSON.stringify(evt.data.traversed));
         for (var key in files) {
             if (files.hasOwnProperty(key)) {
@@ -527,31 +558,17 @@ worker.onmessage = (evt) => {
     //let item = items[i].webkitGetAsEntry();
     let item = await items[0].getAsFileSystemHandle();
     console.log("dropped item");
-    if(item.kind == 'directory'){
+    if(item.kind == 'directory' || item.kind == 'file'){
       fileSystemEntry = item;
       $('.progress').css('height','0');
       $('.progress-bar').css('width','0%');
-      $('#submitBtn').css('width','25%');
       $('#submitBtn').contents().filter(function(){
           return this.nodeType === 3;
       }).remove();
       $('#submitBtn').append('Start upload');
       //const dirHandle = await showDirectoryPicker();
-      $('#droplabel').text("Directory: "+item.name);
-      
+
       worker.postMessage( item );
-    }else if(item.kind == 'file'){
-      $('.progress').css('height','0');
-      $('.progress-bar').css('width','0%');
-      $('#submitBtn').css('width','25%');
-      $('#submitBtn').contents().filter(function(){
-          return this.nodeType === 3;
-      }).remove();
-      $('#submitBtn').append('Start upload');
-      //const dirHandle = await showDirectoryPicker();
-      $('#droplabel').text("File: "+item.name);
-      console.log("dropped file!");
-      fileSystemEntry = item;
     }
 
     
@@ -576,9 +593,22 @@ worker.onmessage = (evt) => {
 
   async function chooseDirectory(){
     const dirHandle = await showDirectoryPicker();
-    $('#droplabel').text(dirHandle.name);
     fileSystemEntry = dirHandle;
     worker.postMessage( dirHandle );  
+  }
+
+  async function chooseFile(){
+    let [fileHandle] = await window.showOpenFilePicker({multiple:false});
+    fileSystemEntry = fileHandle;
+    $('.progress').css('height','0');
+    $('.progress-bar').css('width','0%');
+    $('#submitBtn').contents().filter(function(){
+        return this.nodeType === 3;
+    }).remove();
+    $('#submitBtn').append('Start upload');
+    document.querySelector("pre").textContent = `File: ${fileSystemEntry.name}`;
+    //const dirHandle = await showDirectoryPicker();
+
   }
   
   function uploadPost(){
@@ -609,7 +639,6 @@ worker.onmessage = (evt) => {
       globalMetadata.language = $('#select_language').val();
       globalMetadata.license = $('#select_license').val();
       globalMetadata.licenseText = $("#select_license option:selected").text();
-      let persons = [];
       let authors = [];
       let contributors = [];
       var tb = $('#author_table:eq(0) tbody');
@@ -625,7 +654,6 @@ worker.onmessage = (evt) => {
             currentPerson[$th.text()] = $(element).find('select').val();
           }
         });
-        persons.push(currentPerson);
         if(currentPerson.Type === "Creator"){
           authors.push(currentPerson);
         }else if(currentPerson.Type === "Contributor"){
@@ -633,7 +661,6 @@ worker.onmessage = (evt) => {
         }
         delete currentPerson.Type;
       });
-      globalMetadata.persons = persons;
       globalMetadata.creators = authors;
       globalMetadata.contributors = contributors;
       let subjects = [];
@@ -655,7 +682,7 @@ worker.onmessage = (evt) => {
     }
   
     function addAuthorRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td><td contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onclick='checkNames(this)'contenteditable></td><td onclick='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onclick='checkLegalName(this)' contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
         document.getElementById("addAuthorButton").scrollIntoView();

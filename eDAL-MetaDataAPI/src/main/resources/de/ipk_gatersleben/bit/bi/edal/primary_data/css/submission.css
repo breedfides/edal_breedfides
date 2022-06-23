@@ -19,14 +19,31 @@ body{
     /* Set a background color that will be displayed while the background image is loading */
 }
 
+#overlay {
+    background-color: rgba(0, 0, 0, 0.39);
+    z-index: 999;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+
 .alert{
   z-index: 1;
   position: absolute;
   left:0;
   right:0;
-  top: 5px;
-  margin: 0 auto!important;
-  width: 50vw;
+  top: 0;
+  bottom: 0;
+  margin: auto!important;
+  width: fit-content;
+  max-width: 40vw;
+  height:fit-content;
+  display:none;
+  margin:.5em .5em 1em .5em
 }
 
 .parallel-uploads{
@@ -34,7 +51,10 @@ body{
   min-height:50px;
   overflow-y: auto;
   max-height: 350px;
-  display:none!important;
+}
+
+.hide{
+  display:none;
 }
 
 #addAuthorButtonDiv{
@@ -120,9 +140,13 @@ table, th, td {
 }
 .single-file-progressbar{
   width:0%;
-  transition:width 1.9s ease!important;
+  transition:width 1s ease!important;
   background-color:rgb(2, 117, 216);
   color: white;
+}
+
+#droplabel{
+  justify-content: center;
 }
 
 
@@ -166,7 +190,7 @@ table.preview{
 #summary{
   border-top: 1px solid black;
   border-bottom: 1px solid black;
-  max-height: 80vh;
+  max-height: 60vh;
   overflow-y: auto;
   max-width: 90vw;
   overflow-x: auto;
@@ -181,11 +205,12 @@ table.preview{
   overflow: auto;
 }
 
-#droplabel{
+.chooseFileDirectory{
   cursor: pointer;
 }
 
-#droplabel:hover{
+.chooseFileDirectory:hover{
+  
   cursor: pointer;
   color: #4285F4;
   text-decoration: underline;

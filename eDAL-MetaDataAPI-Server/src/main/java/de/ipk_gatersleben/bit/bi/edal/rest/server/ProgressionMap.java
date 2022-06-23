@@ -1,11 +1,12 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ProgressionMap {
 	
 	private static ProgressionMap instance;
-	private HashMap<String,Integer> map = new HashMap<>();
+	private ConcurrentHashMap<String,Integer> map = new ConcurrentHashMap<>();
 	private ProgressionMap() {}
 	
 	public static ProgressionMap getInstance() {
@@ -15,7 +16,7 @@ public class ProgressionMap {
         return instance;
 	}
 
-	public HashMap<String, Integer> getMap(){
+	public ConcurrentHashMap<String, Integer> getMap(){
 		return map;
 	}
 }

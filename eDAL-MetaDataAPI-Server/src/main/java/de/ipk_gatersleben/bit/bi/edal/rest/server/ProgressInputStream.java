@@ -17,6 +17,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.JProgressBar;
 
@@ -25,11 +26,11 @@ public class ProgressInputStream extends FilterInputStream {
 	private String key;
 	private long nread = 0;
 	private long size = 0;
-	private HashMap<String, Integer> progressMap;
+	private ConcurrentHashMap<String, Integer> progressMap;
 	private long steps = 0;
 
 
-	public ProgressInputStream(HashMap<String, Integer> progressMap, InputStream in, long length,
+	public ProgressInputStream(ConcurrentHashMap<String, Integer> progressMap, InputStream in, long length,
 			String key) {
 		super(in);
 		this.progressMap = progressMap;

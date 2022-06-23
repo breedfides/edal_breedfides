@@ -640,6 +640,10 @@ public class EdalHttpHandler extends AbstractHandler {
 							break;
 						case CALLBACK:
 							this.sendDirectoryUploadTemplate(request.getParameter("code"), response, HttpStatus.Code.OK);
+							break;
+						case PREVIEW:
+							this.sendDataSubmissionPreview(request.getParameter("code"), response, HttpStatus.Code.OK);
+							break;
 						case OAUTH:
 							try {
 								String REDIRECT_URI = "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback";
@@ -721,6 +725,7 @@ public class EdalHttpHandler extends AbstractHandler {
 	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, Code ok) {
 		//Obtain accessToken
 		try {
+			System.out.println("creating submission UI");
 			CloseableHttpClient httpclient;
 			InetSocketAddress address = EdalConfiguration.guessProxySettings();
 			String httpProxyHost = address == null ? "" : address.getHostName();
@@ -794,6 +799,34 @@ public class EdalHttpHandler extends AbstractHandler {
 			}
 			this.sendMessage(response, HttpStatus.Code.BAD_REQUEST, "Missing request code");
 		}
+	}
+	
+	private void sendDataSubmissionPreview(String requestCode, HttpServletResponse response, Code ok) {
+		try {
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUploadPreview(response, ok).toString();
+			
+			response.setStatus(ok.getCode());
+			
+			response.addHeader("Access-Control-Allow-Origin", "*");
+
+			response.setContentType("text/html");
+			
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
+		}catch (Exception e) {
+			e.printStackTrace();
+			response.setStatus(ok.getCode());
+			try {
+				response.sendRedirect(EdalHttpServer.getServerURL()+":"+DataManager.getConfiguration().getHttpPort()+"/oauth");
+			} catch (IOException | EdalException | EdalConfigurationException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			this.sendMessage(response, HttpStatus.Code.BAD_REQUEST, "Missing request code");
+		}
+
+
 	}
 
 	private void sendHomePage(final HttpServletResponse response, final HttpStatus.Code responseCode) {

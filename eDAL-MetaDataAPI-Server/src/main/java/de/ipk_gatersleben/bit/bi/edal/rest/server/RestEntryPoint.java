@@ -26,8 +26,11 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -92,12 +95,14 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.Subjects;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.xml.types.DateType;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 import javafx.application.Platform;
 
 
 @Path("api")
 public class RestEntryPoint {
+
 
 	@GET
 	@Path("test")
@@ -215,13 +220,17 @@ public class RestEntryPoint {
 	@Path("getProgress")
 	@POST
 	public int getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
-		if(ProgressionMap.getInstance().getMap().get(email+name) != null){
-			int result = ProgressionMap.getInstance().getMap().get(email+name);	
+		String key = email+name;
+		if(ProgressionMap.getInstance().getMap().get(key) != null){
+			int result = ProgressionMap.getInstance().getMap().get(key);	
 			System.out.println("if in get Progress for: "+name+" "+result+"%");
+			if(result >= 100) {
+				ProgressionMap.getInstance().getMap().remove(key);
+			}
 			return result;	
 		}else {
 			System.out.println("else in get Progress for: "+name);
-			return 0;
+			return -1;
 		}
 		
 	}
@@ -290,7 +299,7 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
-	public String publishDataset(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name) throws PrimaryDataDirectoryException, AddressException,
+	public String publishDataset(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name, @FormDataParam("embargo") String embargo) throws PrimaryDataDirectoryException, AddressException,
 			PublicReferenceException, PrimaryDataEntityException, ParseException {
 		InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
 		ObjectInputStream oi;
@@ -305,6 +314,16 @@ public class RestEntryPoint {
 				break;
 			}
 			entity.addPublicReference(PersistentIdentifier.DOI);
+			if(embargo != null) {
+				Calendar release = Calendar.getInstance();
+				try {
+					release.setTime(new SimpleDateFormat("dd-MM-yyyy").parse(embargo));
+					entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email), release);
+					return "success";
+				} catch (java.text.ParseException e) {
+					e.printStackTrace();
+				}
+			}
 			entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email));
 			return "success";
 		}catch (IOException | ClassNotFoundException e) {
@@ -471,6 +490,25 @@ class ServerInfo {
 }
 
 class MetaDataWrapper {
+	
+	
+	private final String CREATORS = "creators";
+	private final String CONTRIBUTORS = "contributors";
+	private final String TITLE = "title";
+	private final String DESCRIPTION = "description";
+	private final String LICENSE = "license";
+	private final String LANGUAGE = "language";
+	private final String SUBJECTS = "subjects";
+	
+	
+	private final String FIRSTNAME = "Firstname";
+	private final String LASTNAME = "Lastname";
+	private final String LEGALNAME = "Legalname";
+	private final String ADDRESS = "Address";
+	private final String ZIP = "Zip";
+	private final String COUNTRY = "Country";
+	private final String ORCID = "ORCID";
+	
 	private UntypedData title;
 	private UntypedData description;
 	private UntypedData license;
@@ -481,38 +519,35 @@ class MetaDataWrapper {
 	private LegalPerson legalPerson;
 	
 	public MetaDataWrapper(JSONObject metadataObject) throws ORCIDException {
-		this.title = new UntypedData((String) metadataObject.get("title"));
-		this.description = new UntypedData((String) metadataObject.get("description"));
-		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataObject.get("license")).name());
-		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get("language")));
+		this.title = new UntypedData((String) metadataObject.get(TITLE));
+		this.description = new UntypedData((String) metadataObject.get(DESCRIPTION));
+		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataObject.get(LICENSE)).name());
+		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get(LANGUAGE)));
 		subjects = new Subjects();
-		JSONArray subjectsArr = (JSONArray) metadataObject.get("subjects");
+		JSONArray subjectsArr = (JSONArray) metadataObject.get(SUBJECTS);
 		for(Object subjectStr : subjectsArr) {
 			subjects.add(new UntypedData((String) subjectStr));
 		}
 		this.creators = new Persons();
 		this.contributors = new Persons();
 		this.legalPerson = new LegalPerson("null","null","null","null");
-		JSONArray persons = (JSONArray) metadataObject.get("persons");
-		for(Object personObj : persons) {
+		fillPersonCollections(creators, (JSONArray) metadataObject.get(CREATORS));
+		fillPersonCollections(contributors, (JSONArray) metadataObject.get(CONTRIBUTORS));
+	}
+	
+	private void fillPersonCollections(Persons persons, JSONArray personArray) throws ORCIDException {
+		for(Object personObj : personArray) {
 			JSONObject person = (JSONObject) personObj;
-			String type = ((String) person.get("Type")).toLowerCase();
 			if((String) person.get("Legalname") != null) {				
-				this.legalPerson = new LegalPerson((String) person.get("Legalname"),  (String) person.get("Address"), (String) person.get("Zip"), (String) person.get("Country"));
+				this.legalPerson = new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY));
 			}else {
-				Person parsedPerson;
-				if(((String)person.get("ORCID")).isEmpty()) {
-					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Address"),
-							(String) person.get("Zip"), (String) person.get("Country"));
-				}else {
-					parsedPerson = new NaturalPerson((String) person.get("Firstname"), (String) person.get("Lastname"), (String) person.get("Address"),
-							(String) person.get("Zip"), (String) person.get("Country"), new ORCID((String) person.get("ORCID")));
+				NaturalPerson parsedPerson = new NaturalPerson((String) person.get(FIRSTNAME), (String) person.get(LASTNAME), (String) person.get(ADDRESS),
+							(String) person.get(ZIP), (String) person.get(COUNTRY));
+				String orcid = (String)person.get(ORCID);
+				if(orcid != null && !orcid.isEmpty()) {
+					parsedPerson.setOrcid(new ORCID((String) person.get(ORCID)));
 				}
-				if(type.equals("creator")) {
-					creators.add(parsedPerson);
-				}else if(type.equals("contributor")) {
-					contributors.add(parsedPerson);
-				}
+				persons.add(parsedPerson);
 			}
 		}
 	}

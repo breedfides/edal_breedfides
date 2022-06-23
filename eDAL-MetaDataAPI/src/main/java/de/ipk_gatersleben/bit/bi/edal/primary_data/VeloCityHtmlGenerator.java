@@ -1643,9 +1643,41 @@ class VeloCityHtmlGenerator {
 		return output;
 	}
 	
+	public Object generateHtmlForDirectoryUploadPreview(HttpServletResponse response, Code ok) throws EdalException {
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+		final VelocityContext context = new VelocityContext();
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", ok.getCode());
+		LoginContext ctx = null;
+		
+		/* set serverURL */
+		try {
+			context.put("serverURL", EdalHttpServer.getServerURL());
+		} catch (EdalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		context.put("title", "e!DAL - DirectoryUpload");
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
+
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
+
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
+	}
+	
 	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String email) throws EdalException {
 		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-		System.out.println(email);
 		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
 		final VelocityContext context = new VelocityContext();
 		context.put("charset", DEFAULT_CHARSET.toString());
