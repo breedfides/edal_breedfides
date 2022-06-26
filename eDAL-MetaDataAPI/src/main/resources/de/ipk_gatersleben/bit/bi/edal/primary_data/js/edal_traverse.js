@@ -1,23 +1,26 @@
 let processed = 0;
 let emptyDirs = 0;
 let emptyFiles = 0;
+let globalFileCounter = 0;
 let root = {};
 onmessage = async (evt) => {
   processed = 0; 
   emptyDirs = 0; 
   emptyFiles = 0;
+  globalFileCounter = 0;
   root = evt.data;
   const out = {};
   const dirHandle = evt.data;  
-  await handleDirectoryEntry( dirHandle, out);
-  console.log("finish traversing via WORKER");
-  let result = {
+  if(dirHandle.kind == "directory"){
+    await handleDirectoryEntry( dirHandle, out);
+  }
+  postMessage( {
     traversed:out,
     processed:processed,
     emptyDirs:emptyDirs,
     emptyFiles:emptyFiles,
-  };
-  postMessage( result );
+    numberOfFiles:globalFileCounter,
+  } );
 };
 
 //create "array" of files
@@ -33,6 +36,7 @@ async function handleDirectoryEntry( dirHandle, out ) {
         console.log(processed+"   "+path.join("/"));
         out[path.join("/")] = {file:file,isDirectory:false};
         filecounter++;
+        globalFileCounter++;
       }else{
         emptyFiles++;
       }

@@ -99,7 +99,7 @@
                                 <div class="mt-2 smaller" id="dropzone">
                                     <div id="boxtitle">
                                         <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
-                                        <div class="d-flex flex-row" id="droplabel">Drop or Select a&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div></div>
+                                        <div class="d-flex flex-row" id="droplabel">Drop or Select a single&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div></div>
                                         <pre id="file-counter-info" style="margin-bottom:0;min-width:5px;"></pre>
                                     </div>
                                 </div>
@@ -191,7 +191,7 @@
 
                                             </div>
                                             <div class="d-flex flex-column width35">
-                                                <label style="margin-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="Year when the data is made publicly available">Embargo date (optional)</label>
+                                                <label id="tooltip" style="margin-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="">Embargo date (optional)</label>
                                                 <input id="input_embargo" type="date" class="form-control mt-1" name="dateofbirth" id="dateofbirth">
                                                 </div>
                                             </div>
@@ -211,7 +211,6 @@
                             <script>
 let dropzone = document.getElementById("dropzone");
 let listing = document.getElementById("boxtitle");
-
 let stack = [];
 let emptyDirectories = 0;
 var email = "$email";
@@ -222,6 +221,7 @@ let globalMetadata = {};
 let authors = [];
 
     $( document ).ready(function() {
+        $('#tooltip').attr('data-original-title', tooltip_text);
         $('#overlay').css('top',`${$('.header').height()}px`);
         #if($email)
         $('#overlay').hide(); 

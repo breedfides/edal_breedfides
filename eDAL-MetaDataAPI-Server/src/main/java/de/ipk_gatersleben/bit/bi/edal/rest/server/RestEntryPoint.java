@@ -318,6 +318,7 @@ public class RestEntryPoint {
 				Calendar release = Calendar.getInstance();
 				try {
 					release.setTime(new SimpleDateFormat("dd-MM-yyyy").parse(embargo));
+					System.out.println(release.toString());
 					entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email), release);
 					return "success";
 				} catch (java.text.ParseException e) {

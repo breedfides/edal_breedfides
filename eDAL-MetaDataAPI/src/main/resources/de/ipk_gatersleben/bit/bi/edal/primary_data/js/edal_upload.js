@@ -1,12 +1,15 @@
 const worker = new Worker("/js/edal_traverse.js");
 let files = {};
-let numberOfFiles = 0;
 let keytimer;
 let titleAlreadyExists = false;
 let checkingTitle = false;
 let storage = localStorage;
 let currentAuthorRow = null;
-const displayAlertTime = 3000;
+const displayAlertTime = 5000;
+const tooltip_text = "Year when the data is made publicly available";
+let fileCounter = 0;
+let numberOfFiles = 0;
+let requests = 0;
 //for calculation of readable filesizes instead of raw bits and bytes
 let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
@@ -247,7 +250,7 @@ async function showUploadDialog(){
 
 
       $('.progress-bar').css('transition','width .6s linear');
-      $('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
+      //$('#file-counter-info').text("Uploaded 0/"+Object.keys(files).length);
       $('.progress').css('height','17px');
       $('.progress-bar').text('0%'); 
       $('#summary_agreement').addClass("d-flex").removeClass("d-none");
@@ -283,6 +286,7 @@ async function showUploadDialog(){
   async function startUpload(){
     $('#summary_agreement').removeClass("d-flex").addClass("d-none");
     $('.parallel-uploads').addClass("d-flex").removeClass("d-none");
+    fileCounter = 0;
     if(fileSystemEntry.kind == "directory"){
       startDirectoryUpload();
     }else if(fileSystemEntry.kind == "file"){
@@ -302,45 +306,33 @@ async function startSingleFileUpload(){
   await uploadEntityAndMetadata(globalMetadata.title,globalMetadata);
   const file = await fileSystemEntry.getFile();
   files["file"] = file;
-  uploadSingleEntityDataset(fileSystemEntry.name, file).then(() => {
-    publishDataset();
-  });
+  uploadSingleEntityDataset(fileSystemEntry.name, file);
 }
 
 
 async function startDirectoryUpload(){
   console.log("started directory upload");
-    numberOfFiles = Object.keys(files).length+2;
     await uploadEntityAndMetadata(globalMetadata.title,globalMetadata);
     await uploadEntity2(fileSystemEntry.name, null);
-    $('.progress-bar').css('width',`${((2/numberOfFiles).toFixed(1))*100}%`);
     async function iterateFiles(files){
-        let requests = 0;
-        let counter = 0;
+        requests = 0;
+        uniqueProgressId = 0;
         $('.parallel-uploads').empty();
-        let length = Object.keys(files).length
         return new Promise(async (resolve) => {
             for (var key in files) {
-                counter++;
-                const progress_id = "file-no-"+counter;
+                const progress_id = "file-no-"+uniqueProgressId++;
                 console.log("progrss-id vor nutzung: "+progress_id)
                 if (files.hasOwnProperty(key)) {
                     if(files[key].isDirectory){
                         await uploadEntity2(key, null);
-                        updateUploadedFiles(counter);
                     }else{
-                        if(requests < 10){
+                        if(requests < numberOfParallelUploads){
                             requests++;
-                            uploadEntity2(key, files[key].file, progress_id).then(() => {
-                                requests--
-                                updateUploadedFiles(counter);
-                                if(counter == length && requests == 0){
-                                    publishDataset();
-                                }
-                            });
+                            uploadEntity2(key, files[key].file, progress_id).then(function(result) {
+                              requests--;
+                            });;
                         }else{
                             await uploadEntity2(key, files[key].file,progress_id);
-                            updateUploadedFiles(counter);
                         }
                         //resumable.addFile(files[key].file);
                     }
@@ -358,7 +350,7 @@ function publishDataset(){
   $('.progress-bar').css('transition','width .1s linear');
   $('.progress-bar').css('width','0%');
   $('#droplabel').empty();
-  $('#droplabel').append(`Drop or Select a&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div>`);
+  $('#droplabel').append(`Drop or Select a single&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div>`);
   let form = new FormData();
   form.append("subject",email);
   form.append("name", globalMetadata.title);
@@ -375,7 +367,7 @@ function publishDataset(){
     type: 'POST',
     success: function(resData){
       setTimeout(() => {
-        $('.progress-bar').css('transition','width 2s ease');
+        $('.progress-bar').css('transition','width 1s ease');
         $('.progress-bar').css('width','100%');
         $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
       }, 2000);
@@ -397,9 +389,9 @@ function resetUI(){
 
 async function updateUploadedFiles(counter){
   setTimeout(function (){
-    $('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
-    $('.progress-bar').css('width',`${(Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100}%`);
-    $('.progress-bar').text(`${Math.round((Math.round(((((counter+2)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100)}%`);                 
+    //$('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
+    $('.progress-bar').css('width',`${(Math.round(((((counter)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100}%`);
+    $('.progress-bar').text(`${Math.round((Math.round(((((counter)/numberOfFiles)) + Number.EPSILON) * 100)/100)*100)}%`);                 
   }, updateProgressTimeout);
 
 }
@@ -445,10 +437,11 @@ async function uploadEntity2(path, file, progressIdentifier){
                 }
                 });
 
-               /* Add progress ui for this file with the key as ID to upload progresses dialog  */         
+               /* Add progress ui for this file with the key as ID to upload progresses dialog  */      
+               console.log("GIVEN progress label:_ "+progressIdentifier);   
                markup = `<div id='${progressIdentifier}-container' class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
                $(".parallel-uploads").append(markup);      
-               updateFileProgress(path, progressIdentifier, 0);
+               updateFileProgress(path, progressIdentifier);
 
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
                 //resolve("finished!!");
@@ -475,14 +468,15 @@ async function uploadEntity2(path, file, progressIdentifier){
           method: 'POST',
           type: 'POST', // For jQuery < 1.9
           success: function(resData){
-          resolve("finished file upload "+resData);
+            resolve("finished file upload "+resData);
           }
           });   
-         updateFileProgress(path, "parent-progress-bar", 0);
+         updateFileProgress(path, "parent-progress-bar");
     });
   }
 
-  async function updateFileProgress(path, progressId, updates){
+  async function updateFileProgress(path, progressId){
+    console.log("file progress label:_ "+progressId);
     let payload = new FormData();
     payload.append('email',email);
     payload.append('name',path);
@@ -500,21 +494,27 @@ async function uploadEntity2(path, file, progressIdentifier){
           document.getElementById(progressId).style.width ="100%";
           animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
           setTimeout(function (){
-            $(`#${progressId}-container`).addClass("d-none").removeClass("d-flex");                
+            $(`#${progressId}-container`).addClass("d-none").removeClass("d-flex"); 
+            fileCounter++;
+            updateUploadedFiles(fileCounter);
+            if(fileCounter == numberOfFiles){
+              setTimeout(function (){
+                publishDataset();                
+              }, updateProgressTimeout);
+            }               
           }, updateProgressTimeout);
         }else if(progress > 0 && progress < 100){
-          updates++;
           console.log("file upload progress display continues");
           document.getElementById(progressId).style.width = progress+"%";
           animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), progress, updateProgressTimeout);
           //$(`#${progressId}`).text(`${progress}%`);
           setTimeout(function (){
             $(`#${progressId}-container`).addClass("d-flex").removeClass("d-none");
-            updateFileProgress(path, progressId, updates)                    
+            updateFileProgress(path, progressId)                    
           }, updateProgressTimeout);
         }else{
           setTimeout(function (){
-            updateFileProgress(path, progressId, updates)                    
+            updateFileProgress(path, progressId)                    
           }, updateProgressTimeout);
         }
       }
@@ -535,7 +535,7 @@ worker.onmessage = (evt) => {
           }, 4 );
     }else{
         files = evt.data.traversed;
-        document.querySelector("pre").textContent = `${ fileSystemEntry.kind}: ${ fileSystemEntry.name}: ${ evt.data.processed } files, ${ evt.data.emptyDirs } empty directories, ${ evt.data.emptyFiles } empty files`;
+        numberOfFiles = evt.data.numberOfFiles;
         console.log(JSON.stringify(evt.data.traversed));
         for (var key in files) {
             if (files.hasOwnProperty(key)) {
@@ -551,9 +551,14 @@ worker.onmessage = (evt) => {
       event.preventDefault();
   }, false);
   dropzone.addEventListener("drop", async function(event) {
-    let items = event.dataTransfer.items;
-  
     event.preventDefault();
+    let items = event.dataTransfer.items;
+    if(items.length > 1){
+      $('#alert-information').empty();
+      $('#alert-information').append('You can only drop a single file or directory');
+      showAlert(displayAlertTime);
+      return;
+    }
   
     //let item = items[i].webkitGetAsEntry();
     let item = await items[0].getAsFileSystemHandle();
@@ -567,8 +572,13 @@ worker.onmessage = (evt) => {
       }).remove();
       $('#submitBtn').append('Start upload');
       //const dirHandle = await showDirectoryPicker();
+      if(item.kind == 'directory'){
+        worker.postMessage( item );
+      }else{
+        document.querySelector("pre").textContent = `File: ${fileSystemEntry.name}`;
+        numberOfFiles = 1;
+      }
 
-      worker.postMessage( item );
     }
 
     
@@ -607,6 +617,7 @@ worker.onmessage = (evt) => {
     }).remove();
     $('#submitBtn').append('Start upload');
     document.querySelector("pre").textContent = `File: ${fileSystemEntry.name}`;
+    numberOfFiles = 1;
     //const dirHandle = await showDirectoryPicker();
 
   }
