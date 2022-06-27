@@ -251,7 +251,15 @@ let authors = [];
                     authors.forEach ((author, index) => {
                         //use orcid if exists, else add the orcid search button
                         let orcid = author.hasOwnProperty('ORCID') ? author.ORCID : "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode);' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
-                        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable>"+author.Firstname+"</td><td onkeyup='checkNames(this)' contenteditable>"+author.Lastname+"</td><td class='text-center'>"+orcid+"</td><td onkeyup='checkLegalName(this)' contenteditable>"+author.Legalname+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
+                        let firstName = 'Firstname' in author ? author.Firstname : '';
+                        let lastName = 'Lastname' in author ? author.Lastname : '';
+                        let legalName = 'Legalname' in author ? author.Legalname : '';
+                        if(legalName == ''){
+                            if(legalName){
+                                alert("empty but true");
+                            }
+                        }
+                        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable>"+firstName+"</td><td onkeyup='checkNames(this)' contenteditable>"+lastName+"</td><td class='text-center'>"+orcid+"</td><td onkeyup='checkLegalName(this)' contenteditable>"+legalName+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
                         tableBody.append(markup);
                         let table = document.getElementById("author_table");
                         let lastRow = table.rows[table.rows.length-1];
