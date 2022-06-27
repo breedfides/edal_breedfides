@@ -29,7 +29,6 @@ function checkIfExists(input){
             let form = new FormData();
             form.append("subject",email);
             form.append("name",$(input).val());
-            checkingTitle = true;
             jQuery.ajax({
                 url: serverURL+"/restfull/api/checkIfExists",
                 data: form,
@@ -55,34 +54,63 @@ function checkIfExists(input){
     }
 }
 
+function browserBlocked(){
+  var browserAllowed = (function (agent) {        switch (true) {
+    case agent.indexOf("edge") > -1: return true;
+    case agent.indexOf("edg/") > -1: return true;
+    case agent.indexOf("opr") > -1 && !!window.opr: return false;
+    case agent.indexOf("chrome") > -1 && !!window.chrome: return false;
+    case agent.indexOf("trident") > -1: return true;
+    case agent.indexOf("firefox") > -1: return true;
+    case agent.indexOf("safari") > -1: return true;
+    default: return true;
+    }
+  })(window.navigator.userAgent.toLowerCase());
+  return browserAllowed;
+}
+
 function checkNames(cell){
-  if(cell.parentNode.children.item(4).textContent){
-    $(cell).attr('contenteditable','false');
-    $('#alert-information').empty();
-    $('#alert-information').append("Only allowed to set Firstname/Lastname if no legalname is set");
-    showAlert(displayAlertTime);
-  }else{
-    $(cell).attr('contenteditable','true');
-    cell.focus();
+  if(cell.parentNode.children.item(1).textContent && cell.parentNode.children.item(2).textContent){
+    $(cell.parentNode.children.item(4)).attr('contenteditable','false');
+    $(cell.parentNode.children.item(4)).css("background-color", "dimgrey");
+    //showAlertMessage("Only allowed to set Legalname if no Firstname and no Lastname is set", displayAlertTime);
+  }else if(!cell.parentNode.children.item(1).textContent && !cell.parentNode.children.item(2).textContent){
+    $(cell.parentNode.children.item(4)).attr('contenteditable','true');
+    $(cell.parentNode.children.item(4)).css("background-color", "white");
   }
 }
 
+
+
 function checkLegalName(cell){
-  if(cell.parentNode.children.item(1).textContent && cell.parentNode.children.item(2).textContent){
-    $(cell).attr('contenteditable','false');
-    $('#alert-information').empty();
-    $('#alert-information').append("Only allowed to set Legalname if no Firstname and no Lastname is set");
-    showAlert(displayAlertTime);
+  if(cell.textContent){
+    $(cell.parentNode.children.item(1)).attr('contenteditable','false');
+    $(cell.parentNode.children.item(1)).css("background-color", "dimgrey");
+    $(cell.parentNode.children.item(2)).attr('contenteditable','false');
+    $(cell.parentNode.children.item(2)).css("background-color", "dimgrey");
+    $(cell.parentNode.children.item(3).firstChild).prop('disabled',true);
+    $(cell.parentNode.children.item(3)).css("background-color", "dimgrey");
   }else{
-    $(cell).attr('contenteditable','true');
-    cell.focus();
+    $(cell.parentNode.children.item(1)).attr('contenteditable','true');
+    $(cell.parentNode.children.item(1)).css("background-color", "white");
+    $(cell.parentNode.children.item(2)).attr('contenteditable','true');
+    $(cell.parentNode.children.item(2)).css("background-color", "white");
+    $(cell.parentNode.children.item(3).firstChild).prop('disabled',false);
+    $(cell.parentNode.children.item(3)).css("background-color", "white");
   }
+}
+
+function showAlertMessage(text, displayTimeInMillis){
+  $('#alert-information').empty();
+  $('#alert-information').append(text);
+  showAlert(displayTimeInMillis);
 }
 
 function showAlert(displayTimeInMillis){
   $('.alert').show();
   setTimeout(function (){$('.alert').fadeOut()}, displayTimeInMillis); 
 }
+
 
 function validateInputs(){
   if(checkingTitle){
@@ -221,13 +249,10 @@ function setSummary(){
   $('#summary').append(`<h4>Citation preview:</h4>`);
   $('#summary').append(`<table class="preview">`);
   $('#summary').append(`<tr><td><b>Title: </b></td><td>${globalMetadata.title}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Language: </b></td><td>${globalMetadata.language}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Language: </b></td><td>${globalMetadata.language_full}</td></tr>`);
   $('#summary').append(`<tr><td><b>Description: </b></td><td>${globalMetadata.description}</td></tr>`);
   $('#summary').append(`<tr><td><b>License: </b></td><td>${globalMetadata.licenseText}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Subjects: </b></td></tr>`);
-  globalMetadata.subjects.forEach((subject,index) => {
-    $('#summary').append(`<tr><td></td><td>${subject}</td></tr>`);
-  });
+  $('#summary').append(`<tr><td><b>Subjects: </b></td><td>${globalMetadata.subjects.join(', ')}</td></tr>`);
   $('#summary').append(`<tr><td><b>Creator: </b></td></tr>`);
   globalMetadata.creators.forEach((creator,index) => {
     $('#summary').append(`<tr><td></td><td>${Object.keys(creator).map(function(k){return creator[k]}).join(", ")}</td></tr>`);
@@ -378,7 +403,6 @@ function publishDataset(){
 }
 
 function resetUI(){
-  checkIfExists(document.getElementById('input_title'));
   document.getElementById('submitBtn').onclick = () => {showUploadDialog();};
   $('#file-counter-info').text("");
   $('#submitBtn').contents().filter(function(){
@@ -521,11 +545,8 @@ async function uploadEntity2(path, file, progressIdentifier){
       });
   }
   
-//   emptyFileCounter.onmessage = (event) => {
-//       const { data } = event;
-//       alert("empty files: "+data);
-//   };
 worker.onmessage = (evt) => {
+    //update the user inerface to show the progress of the Traversal
     if (typeof evt.data === 'string') {
         document.querySelector("pre").textContent = JSON.stringify( evt.data, (key, value) => {
             if( value instanceof Blob ) {
@@ -533,13 +554,44 @@ worker.onmessage = (evt) => {
             }
             return value;
           }, 4 );
+
+    //Finished traversing the directory
     }else{
         files = evt.data.traversed;
         numberOfFiles = evt.data.numberOfFiles;
+        if(evt.data.tempFiles > 0){
+          fileSystemEntry = null;
+          if(evt.data.tempFiles > 1){
+            showAlertMessage(`The choosen directory <b>contains ${evt.data.tempFiles} temporary files</b>. \n .tmp files, .foo files and files with leading ~$ are not allowed. \n Please delete them or choose a valid directory.`, 5*displayAlertTime);
+          }else{
+            showAlertMessage(`The choosen directory <b>contains a temporary file</b>. \n .tmp files, .foo files and files with leading ~$ are not allowed. \n Please delete the file or choose a valid directory.`, 5*displayAlertTime);
+          }
+        }else if(numberOfFiles == 0){
+          fileSystemEntry = null;
+          showAlertMessage("Please select or drop a directory with at least 1 valid file.", 5*displayAlertTime);
+        }else{
+          let alertMessage = "";
+          if(!$.isEmptyObject(evt.data.notRecommendedFiles)){
+            alertMessage = "The chosen directory contains not recommended file types:\n";
+            for (const [key, value] of Object.entries(evt.data.notRecommendedFiles)) {
+                alertMessage += value > 1 ? `${value} ${key} files,` : `${value} ${key} file,`;
+            }
+            //remove last ','
+            alertMessage.slice(0, -1);
+            console.log(JSON.stringify(evt.data.notRecommendedFiles));
+            alertMessage += "\nPlease consider to use a clean directory. Otherwise users can't access every File/Directory on the resulting landing page.\n"
+            showAlertMessage(alertMessage, displayAlertTime*2);
+          }
+          if(evt.data.emptyDirs > 0 || evt.data.emptyFiles > 0){
+            alertMessage += "The choosen directory contains empty files or directories. Please consider whether these files are important as they will be ignored during upload.";
+            showAlertMessage(alertMessage, displayAlertTime*2);
+          }
+
+        }
         console.log(JSON.stringify(evt.data.traversed));
+
         for (var key in files) {
             if (files.hasOwnProperty(key)) {
-                //console.log(key + " -> " + files[key].path.toString());
                 $('#submitBtn').prop('disabled', false);
             }
         }
@@ -547,6 +599,8 @@ worker.onmessage = (evt) => {
 
   }
   
+  /* For drag and drop handling we use methos of the HTML Drag and Drop API
+   that are experimental and only work in chrome, edge and opera.  */
   dropzone.addEventListener("dragover", function(event) {
       event.preventDefault();
   }, false);
@@ -554,9 +608,7 @@ worker.onmessage = (evt) => {
     event.preventDefault();
     let items = event.dataTransfer.items;
     if(items.length > 1){
-      $('#alert-information').empty();
-      $('#alert-information').append('You can only drop a single file or directory');
-      showAlert(displayAlertTime);
+      showAlertMessage('You can only drop a single file or directory',displayAlertTime);
       return;
     }
   
@@ -578,6 +630,7 @@ worker.onmessage = (evt) => {
         document.querySelector("pre").textContent = `File: ${fileSystemEntry.name}`;
         numberOfFiles = 1;
       }
+      checkIfExists(document.getElementById('input_title'));
 
     }
 
@@ -605,6 +658,7 @@ worker.onmessage = (evt) => {
     const dirHandle = await showDirectoryPicker();
     fileSystemEntry = dirHandle;
     worker.postMessage( dirHandle );  
+    checkIfExists(document.getElementById('input_title'));
   }
 
   async function chooseFile(){
@@ -618,6 +672,7 @@ worker.onmessage = (evt) => {
     $('#submitBtn').append('Start upload');
     document.querySelector("pre").textContent = `File: ${fileSystemEntry.name}`;
     numberOfFiles = 1;
+    checkIfExists(document.getElementById('input_title'));
     //const dirHandle = await showDirectoryPicker();
 
   }
@@ -648,6 +703,7 @@ worker.onmessage = (evt) => {
       globalMetadata.title = $('#input_title').val();
       globalMetadata.description = $('#text_description').val();
       globalMetadata.language = $('#select_language').val();
+      globalMetadata.language_full = $('#select_language option:selected').text();
       globalMetadata.license = $('#select_license').val();
       globalMetadata.licenseText = $("#select_license option:selected").text();
       let authors = [];
@@ -693,7 +749,7 @@ worker.onmessage = (evt) => {
     }
   
     function addAuthorRow(){
-        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onclick='checkNames(this)'contenteditable></td><td onclick='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onclick='checkLegalName(this)' contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
+        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)'contenteditable></td><td onkeyup='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onkeyup='checkLegalName(this)' contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
         tableBody.append(markup);
         document.getElementById("addAuthorButton").scrollIntoView();

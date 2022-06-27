@@ -70,7 +70,7 @@
                             <div class="modal-footer" style="justify-content:center;height:60px;">
                                 <div class="d-flex flex-row p-2 w-50 justify-content-around">
                                     <button id="upload-start-button" type="button" class="btn btn-default" onclick="startUpload()" disabled>Start</button>   
-                                    <button id="upload-close-button" type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Close</button>   
+                                    <button id="upload-close-button" type="button" class="btn btn-default" data-dismiss="modal">Close</button>   
                                 </div>                 
                             </div>
                             </div>
@@ -96,7 +96,7 @@
 
                                 <!-- <img src="edalheader.png" class="mt-1 flexrowfill"> -->
 
-                                <div class="mt-2 smaller" id="dropzone">
+                                <div class="mt-2 smaller p-2" id="dropzone">
                                     <div id="boxtitle">
                                         <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
                                         <div class="d-flex flex-row" id="droplabel">Drop or Select a single&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div></div>
@@ -226,78 +226,92 @@ let authors = [];
         #if($email)
         $('#overlay').hide(); 
         #end
+        if(browserBlocked()){
+            $('#overlay').css({ top: '' });
+            $('#overlay').show(); 
+            //display info for the user, that chrome is the only way to use this app
+            setTimeout(function(){
+                $('#alert-information').empty();
+                $('#alert-information').append('<strong>Please use Chrome to use this Web app.</strong>');
+                //shift the alert to the top
+                $('.alert').css({ bottom: 'initial' });
+                $('.alert').fadeIn();
+            },1000);
 
-        $('#submitBtn').css('transition:width','.6s ease!important');
-        function getStoredInput(key){
-            return storage.getItem(key) == null ? '' : storage.getItem(key);
-        }
-        //create authors array from stored inputs
-        tableBody = $("#author_table > tbody");
-        if(storage.authors != null){
-            authors = JSON.parse(storage.authors);
-            if(!jQuery.isEmptyObject(storage.authors)){
-                authors.forEach ((author, index) => {
-                    //use orcid if exists, else add the orcid search button
-                    let orcid = author.hasOwnProperty('ORCID') ? author.ORCID : "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode);' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
-                    markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onclick='checkNames(this)' contenteditable>"+author.Firstname+"</td><td onclick='checkNames(this)' contenteditable>"+author.Lastname+"</td><td class='text-center'>"+orcid+"</td><td onclick='checkLegalName(this)' contenteditable>"+author.Legalname+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
-                    tableBody.append(markup);
-                    let table = document.getElementById("author_table");
-                    let lastRow = table.rows[table.rows.length-1];
-                    let lastCell = lastRow.cells[lastRow.cells.length-1];
-                    console.log("last cell_ "+lastCell.firstChild);
-                    lastCell.firstChild.selectedIndex = author.Type === "Creator" ? 0 : 1;
-                });
+        }else{
+            $('#submitBtn').css('transition:width','.6s ease!important');
+            function getStoredInput(key){
+                return storage.getItem(key) == null ? '' : storage.getItem(key);
+            }
+            //create authors array from stored inputs
+            tableBody = $("#author_table > tbody");
+            if(storage.authors != null){
+                authors = JSON.parse(storage.authors);
+                if(!jQuery.isEmptyObject(storage.authors)){
+                    authors.forEach ((author, index) => {
+                        //use orcid if exists, else add the orcid search button
+                        let orcid = author.hasOwnProperty('ORCID') ? author.ORCID : "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode);' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
+                        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable>"+author.Firstname+"</td><td onkeyup='checkNames(this)' contenteditable>"+author.Lastname+"</td><td class='text-center'>"+orcid+"</td><td onkeyup='checkLegalName(this)' contenteditable>"+author.Legalname+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
+                        tableBody.append(markup);
+                        let table = document.getElementById("author_table");
+                        let lastRow = table.rows[table.rows.length-1];
+                        let lastCell = lastRow.cells[lastRow.cells.length-1];
+                        console.log("last cell_ "+lastCell.firstChild);
+                        lastCell.firstChild.selectedIndex = author.Type === "Creator" ? 0 : 1;
+                        checkNames(lastRow.cells[1]);
+                        checkLegalName(lastRow.cells[3]);
+                    });
+                }
+
+            }else{
+                markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable></td><td onkeyup='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onkeyup='checkLegalName(this)' contenteditable></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>"; 
+                tableBody.append(markup);
             }
 
-        }else{
-            markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onclick='checkNames(this)' contenteditable></td><td onclick='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onclick='checkLegalName(this)' contenteditable></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>"; 
-            tableBody.append(markup);
-        }
-
-        //create subjects from stored inputs
-        tableBody = $("#subject_table > tbody");
-        if(storage.subjects != null){
-            subjects = JSON.parse(storage.subjects);
-            subjects.forEach((subject, index) => {
-                markup =  `<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable>${subject}</td></tr>`;
+            //create subjects from stored inputs
+            tableBody = $("#subject_table > tbody");
+            if(storage.subjects != null){
+                subjects = JSON.parse(storage.subjects);
+                subjects.forEach((subject, index) => {
+                    markup =  `<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable>${subject}</td></tr>`;
+                    tableBody.append(markup);
+                });
+            }else{
+                markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
                 tableBody.append(markup);
-            });
-        }else{
-            markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
-            tableBody.append(markup);
+            }
+            
+
+
+            $("#addAuthorButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+            $("#addSubjectButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+
+            if(storage.language != null){
+                $('#select_language').prop('selectedIndex', storage.language);
+            }
+            if(storage.license != null){
+                $('#select_license').prop('selectedIndex', storage.license);
+            }
+            if(storage.description != null){
+                $('#text_description').val(storage.description);
+            }
+
+            document.getElementById("dropzone").addEventListener("dragover", () => {
+                let element = document.getElementById("dropzone");
+                    if(!element.classList.contains("drag")){
+                        element.classList.add("drag");
+                    }
+                        $("#dropzone").toggleClass("drag");
+                });
+            document.getElementById("dropzone").addEventListener("dragleave", () => {
+                let element = document.getElementById("dropzone");
+                    if(element.classList.contains("drag")){
+                        element.classList.remove("drag");
+                    }
+                }); 
+                //activate tooltips
+                $("body").tooltip({ selector: '[data-toggle=tooltip]' });
         }
-        
-
-
-        $("#addAuthorButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
-        $("#addSubjectButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
-
-        if(storage.language != null){
-            $('#select_language').prop('selectedIndex', storage.language);
-        }
-        if(storage.license != null){
-            $('#select_license').prop('selectedIndex', storage.license);
-        }
-        if(storage.description != null){
-            $('#text_description').val(storage.description);
-        }
-
-           document.getElementById("dropzone").addEventListener("dragover", () => {
-               let element = document.getElementById("dropzone");
-                if(!element.classList.contains("drag")){
-                    element.classList.add("drag");
-                }
-                    $("#dropzone").toggleClass("drag");
-            });
-           document.getElementById("dropzone").addEventListener("dragleave", () => {
-               let element = document.getElementById("dropzone");
-                if(element.classList.contains("drag")){
-                    element.classList.remove("drag");
-                }
-            }); 
-            //activate tooltips
-            $("body").tooltip({ selector: '[data-toggle=tooltip]' });
-
     });
 
 
