@@ -10,6 +10,7 @@ const tooltip_text = "Year when the data is made publicly available";
 let fileCounter = 0;
 let numberOfFiles = 0;
 let requests = 0;
+uploadCanceled = false;
 //for calculation of readable filesizes instead of raw bits and bytes
 let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
@@ -70,11 +71,12 @@ function browserBlocked(){
 }
 
 function checkNames(cell){
-  if(cell.parentNode.children.item(1).textContent && cell.parentNode.children.item(2).textContent){
+  console.log(new Boolean(cell.textContent));
+  if(cell.parentNode.children.item(1).textContent || cell.parentNode.children.item(2).textContent){
     $(cell.parentNode.children.item(4)).attr('contenteditable','false');
     $(cell.parentNode.children.item(4)).css("background-color", "dimgrey");
     //showAlertMessage("Only allowed to set Legalname if no Firstname and no Lastname is set", displayAlertTime);
-  }else if(!cell.parentNode.children.item(1).textContent && !cell.parentNode.children.item(2).textContent){
+  }else{
     $(cell.parentNode.children.item(4)).attr('contenteditable','true');
     $(cell.parentNode.children.item(4)).css("background-color", "white");
   }
@@ -84,6 +86,7 @@ function checkNames(cell){
 
 function checkLegalName(cell){
   if(cell.textContent){
+    console.log("LEGAL NAME "+cell.textContent);
     $(cell.parentNode.children.item(1)).attr('contenteditable','false');
     $(cell.parentNode.children.item(1)).css("background-color", "dimgrey");
     $(cell.parentNode.children.item(2)).attr('contenteditable','false');
@@ -136,25 +139,32 @@ function validateInputs(){
       element.reportValidity();
       return false;
     }
-
+    $('#alert-information').empty();
     //validate authors
     let authorsIncomplete = false;
     var tb = $('#author_table:eq(0) tbody');
-    tb.find("tr").each(function(index, element) {
-      var colSize = $(element).find('td').length;
+    let notValidAuthorRows = [];
+    tb.find("tr").each(function(rowIndex, element) {
+      let valid = true;
       $(element).find('td').each(function(index, element) {
-        //index == 2 = orcid, allowed to be empty
         if(index > 0 && index < 8 && element.isContentEditable && index != 3 && index != 4){
           var colVal = $(element).text();
           if(!colVal){
+            valid = false;
             authorsIncomplete = true;
           }
         }
       });
+      if(!valid){
+        let msg = `${element.cells[1].textContent} ${element.cells[2].textContent} ${rowIndex+1}.row`;
+        notValidAuthorRows.push(msg);
+      }
     });
-    $('#alert-information').empty();
     if(authorsIncomplete){
-        $('#alert-information').append('<strong>Missing Author information: </strong>Please complete every author row or delete it.');
+        $('#alert-information').append('\n<strong>Missing Author information: </strong>Please complete every author row:\n');
+        notValidAuthorRows.forEach((msg) => {
+          $('#alert-information').append(`${msg}\n`);
+        });
         if(!failedValidations.size){
             showAlert(displayAlertTime);
             return false;
@@ -304,6 +314,10 @@ async function showUploadDialog(){
     // });
   }
 
+  function logout(){
+    window.open(serverURL+'/preview', 'https://doi.ipk-gatersleben.de/search').focus();
+  }
+
   function toggleStartUpload(){
     $('#upload-start-button').prop('disabled', !$('#upload-start-button').is(":disabled"));
   }
@@ -345,22 +359,24 @@ async function startDirectoryUpload(){
         $('.parallel-uploads').empty();
         return new Promise(async (resolve) => {
             for (var key in files) {
-                const progress_id = "file-no-"+uniqueProgressId++;
-                console.log("progrss-id vor nutzung: "+progress_id)
-                if (files.hasOwnProperty(key)) {
-                    if(files[key].isDirectory){
-                        await uploadEntity2(key, null);
-                    }else{
-                        if(requests < numberOfParallelUploads){
-                            requests++;
-                            uploadEntity2(key, files[key].file, progress_id).then(function(result) {
-                              requests--;
-                            });;
-                        }else{
-                            await uploadEntity2(key, files[key].file,progress_id);
-                        }
-                        //resumable.addFile(files[key].file);
-                    }
+                if(!uploadCanceled){
+                  const progress_id = "file-no-"+uniqueProgressId++;
+                  console.log("progrss-id vor nutzung: "+progress_id)
+                  if (files.hasOwnProperty(key)) {
+                      if(files[key].isDirectory){
+                          await uploadEntity2(key, null);
+                      }else{
+                          if(requests < numberOfParallelUploads){
+                              requests++;
+                              uploadEntity2(key, files[key].file, progress_id).then(function(result) {
+                                requests--;
+                              });;
+                          }else{
+                              await uploadEntity2(key, files[key].file,progress_id);
+                          }
+                          //resumable.addFile(files[key].file);
+                      }
+                  }
                 }
             }
         });
@@ -382,24 +398,27 @@ function publishDataset(){
   if($('#input_embargo').val().length > 0){
     form.append("embargo",$('#input_embargo').val());
   }
-  jQuery.ajax({
-    url: serverURL+"/restfull/api/publishDataset",
-    data: form,
-    cache: false,
-    contentType: false,
-    processData: false,
-    method: 'POST',
-    type: 'POST',
-    success: function(resData){
-      setTimeout(() => {
-        $('.progress-bar').css('transition','width 1s ease');
-        $('.progress-bar').css('width','100%');
-        $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
-      }, 2000);
-      resetUI();
-    }
-  });
-  fileSystemEntry = null;
+  if(!uploadCanceled){
+    jQuery.ajax({
+      url: serverURL+"/restfull/api/publishDataset",
+      data: form,
+      cache: false,
+      contentType: false,
+      processData: false,
+      method: 'POST',
+      type: 'POST',
+      success: function(resData){
+        setTimeout(() => {
+          $('.progress-bar').css('transition','width 1s ease');
+          $('.progress-bar').css('width','100%');
+          $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
+        }, 2000);
+        resetUI();
+      }
+    });
+    fileSystemEntry = null;
+  }
+  
 }
 
 function resetUI(){
@@ -440,6 +459,14 @@ async function uploadEntity2(path, file, progressIdentifier){
             type: 'POST', // For jQuery < 1.9
             success: function(resData){
                 resolve("finished dir upload "+resData);
+            },
+            statusCode: {
+              404: function() {
+                cancelUpload('Server not reachable. Please try again later.')
+              },
+              0:function() {
+                cancelUpload('Server not reachable. Please try again later.')
+              },
             }
         });
         }else{
@@ -458,8 +485,16 @@ async function uploadEntity2(path, file, progressIdentifier){
                 type: 'POST', // For jQuery < 1.9
                 success: function(resData){
                 resolve("finished file upload "+resData);
+                },
+                statusCode: {
+                  404: function() {
+                    cancelUpload('Server not reachable. Please try again later.')
+                  },
+                  0:function() {
+                    cancelUpload('Server not reachable. Please try again later.')
+                  },
                 }
-                });
+              });
 
                /* Add progress ui for this file with the key as ID to upload progresses dialog  */      
                console.log("GIVEN progress label:_ "+progressIdentifier);   
@@ -493,6 +528,14 @@ async function uploadEntity2(path, file, progressIdentifier){
           type: 'POST', // For jQuery < 1.9
           success: function(resData){
             resolve("finished file upload "+resData);
+          },
+          statusCode: {
+            404: function() {
+              cancelUpload('Server not reachable. Please try again later.')
+            },
+            0:function() {
+              cancelUpload('Server not reachable. Please try again later.')
+            },
           }
           });   
          updateFileProgress(path, "parent-progress-bar");
@@ -616,6 +659,7 @@ worker.onmessage = (evt) => {
     let item = await items[0].getAsFileSystemHandle();
     console.log("dropped item");
     if(item.kind == 'directory' || item.kind == 'file'){
+      uploadCanceled = false;
       fileSystemEntry = item;
       $('.progress').css('height','0');
       $('.progress-bar').css('width','0%');
@@ -659,6 +703,7 @@ worker.onmessage = (evt) => {
     fileSystemEntry = dirHandle;
     worker.postMessage( dirHandle );  
     checkIfExists(document.getElementById('input_title'));
+    uploadCanceled = false;
   }
 
   async function chooseFile(){
@@ -674,6 +719,7 @@ worker.onmessage = (evt) => {
     numberOfFiles = 1;
     checkIfExists(document.getElementById('input_title'));
     //const dirHandle = await showDirectoryPicker();
+    uploadCanceled = false;
 
   }
   
@@ -907,9 +953,32 @@ worker.onmessage = (evt) => {
           type: 'POST', // For jQuery < 1.9
           success: function(resData){
               resolve("finished dir upload "+resData);
+          },
+          statusCode: {
+            404: function() {
+              cancelUpload('Server not reachable. Please try again later.')
+            },
+            0:function() {
+              cancelUpload('Server not reachable. Please try again later.')
+            },
           }
+        });
       });
-      });
+    }
+
+    function cancelUpload(text){
+      if(!uploadCanceled){
+        uploadCanceled = true;
+        $('myModal2').hide();
+        fileSystemEntry = null;
+        resetUI();
+        if(text){
+          alert(text)
+        }else{
+          alert('The upload was canceled!')
+        }
+
+      }
     }
   
   
@@ -932,6 +1001,14 @@ worker.onmessage = (evt) => {
               type: 'POST', // For jQuery < 1.9
               success: function(resData){
                   resolve("finished dir upload "+resData);
+              },
+              statusCode: {
+                404: function() {
+                  cancelUpload('Server not reachable. Please try again later.')
+                },
+                0:function() {
+                  cancelUpload('Server not reachable. Please try again later.')
+                },
               }
           });
           }else{
@@ -949,6 +1026,14 @@ worker.onmessage = (evt) => {
                 type: 'POST', // For jQuery < 1.9
                 success: function(resData){
                   resolve("finished file upload "+resData);
+                },
+                statusCode: {
+                  404: function() {
+                    cancelUpload('Server not reachable. Please try again later.')
+                  },
+                  0:function() {
+                    cancelUpload('Server not reachable. Please try again later.')
+                  },
                 }
                 });
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){

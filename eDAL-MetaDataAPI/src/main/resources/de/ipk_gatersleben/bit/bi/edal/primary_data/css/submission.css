@@ -152,7 +152,7 @@ table, th, td {
 
 #dropzone {
   text-align: center;
-  border: 2px dashed #636e72;
+  border: 2px dashed rgb(2, 117, 216);
   border-radius: 5px;
   width: 50%;
   min-width: fit-content;

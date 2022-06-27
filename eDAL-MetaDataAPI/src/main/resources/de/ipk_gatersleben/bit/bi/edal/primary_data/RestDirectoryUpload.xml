@@ -70,8 +70,25 @@
                             <div class="modal-footer" style="justify-content:center;height:60px;">
                                 <div class="d-flex flex-row p-2 w-50 justify-content-around">
                                     <button id="upload-start-button" type="button" class="btn btn-default" onclick="startUpload()" disabled>Start</button>   
-                                    <button id="upload-close-button" type="button" class="btn btn-default" data-dismiss="modal">Close</button>   
+                                    <button id="upload-close-button" type="button" class="btn btn-default" data-dismiss="modal" data-toggle="modal" data-target="#cancelUploadDialog" onclick="showCancelDialog()">Cancel</button>   
                                 </div>                 
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="cancelUploadDialog" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                            <div class="modal-header">
+                                <h6 class="modal-title" id="exampleModalLongTitle">Are you sure?</h6>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal" data-toggle="modal" data-target="#myModal2">Continue Upload</button>
+                                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="cancelUpload()">Cancel Upload</button>
                             </div>
                             </div>
                         </div>
@@ -90,7 +107,7 @@
 
                         <div class="header flexrowfill">
                             <img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" style="float:left;">
-                                <button class="btn btn-outline-secondary mt-2" onclick="location.href='$serverURL/oauth'">Login with Elixir</button>
+                                <button id="elixierLogin" class="btn btn-outline-primary mt-2" onclick="location.href='$serverURL/oauth'">Login with Elixir</button>
                                 <img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" style="float:right;">
                         </div>
 
@@ -197,7 +214,7 @@
                                             </div>
                                             <div class="d-flex flex-column width35" style="align-items:center;">
                                                 <pre style="margin-bottom:0;min-width:5px;">&nbsp</pre>
-                                            <button id="submitBtn" class= "btn btn-outline-secondary mt-1" onclick="showUploadDialog()">Start upload
+                                            <button id="submitBtn" class= "btn btn-outline-primary mt-1" onclick="showUploadDialog()">Start upload
                                             </button>
                                         </div>
 
@@ -225,6 +242,8 @@ let authors = [];
         $('#overlay').css('top',`${$('.header').height()}px`);
         #if($email)
         $('#overlay').hide(); 
+        $('#elixierLogin').text('Log out');
+        $('#elixierLogin').attr("onclick","logout()");
         #end
         if(browserBlocked()){
             $('#overlay').css({ top: '' });
@@ -254,11 +273,6 @@ let authors = [];
                         let firstName = 'Firstname' in author ? author.Firstname : '';
                         let lastName = 'Lastname' in author ? author.Lastname : '';
                         let legalName = 'Legalname' in author ? author.Legalname : '';
-                        if(legalName == ''){
-                            if(legalName){
-                                alert("empty but true");
-                            }
-                        }
                         markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable>"+firstName+"</td><td onkeyup='checkNames(this)' contenteditable>"+lastName+"</td><td class='text-center'>"+orcid+"</td><td onkeyup='checkLegalName(this)' contenteditable>"+legalName+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
                         tableBody.append(markup);
                         let table = document.getElementById("author_table");
@@ -267,7 +281,7 @@ let authors = [];
                         console.log("last cell_ "+lastCell.firstChild);
                         lastCell.firstChild.selectedIndex = author.Type === "Creator" ? 0 : 1;
                         checkNames(lastRow.cells[1]);
-                        checkLegalName(lastRow.cells[3]);
+                        checkLegalName(lastRow.cells[4]);
                     });
                 }
 

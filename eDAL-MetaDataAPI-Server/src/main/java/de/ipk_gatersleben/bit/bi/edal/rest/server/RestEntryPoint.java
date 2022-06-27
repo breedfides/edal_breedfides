@@ -317,7 +317,7 @@ public class RestEntryPoint {
 			if(embargo != null) {
 				Calendar release = Calendar.getInstance();
 				try {
-					release.setTime(new SimpleDateFormat("dd-MM-yyyy").parse(embargo));
+					release.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(embargo));
 					System.out.println(release.toString());
 					entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email), release);
 					return "success";
