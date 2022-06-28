@@ -255,22 +255,48 @@ function storeInputs(){
 /* Fill summary section with a table of entered metadata */
 function setSummary(){
   getInputMetadata();
+  let citaionPreview = "";
+  if(globalMetadata.creators.length < 4){
+    globalMetadata.creators.forEach((creator) => {
+      if('Lastname' in creator){
+        citaionPreview += `${creator.Lastname}, ${creator.Firstname};`;
+      }
+    });
+  }else{
+    citaionPreview += `${globalMetadata.creators[0].Lastname} et al.;`;
+  }
+  citaionPreview += `(${new Date().getFullYear()}):`
+  citaionPreview += `${globalMetadata.title};`
+  citaionPreview += `${globalMetadata.creators[0].Address};`
+  citaionPreview += `${globalMetadata.creators[0].Zip};`
+  citaionPreview += `${globalMetadata.creators[0].Country};`
+
   $('#summary').empty();
-  $('#summary').append(`<h4>Citation preview:</h4>`);
   $('#summary').append(`<table class="preview">`);
-  $('#summary').append(`<tr><td><b>Title: </b></td><td>${globalMetadata.title}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Language: </b></td><td>${globalMetadata.language_full}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Description: </b></td><td>${globalMetadata.description}</td></tr>`);
-  $('#summary').append(`<tr><td><b>License: </b></td><td>${globalMetadata.licenseText}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Subjects: </b></td><td>${globalMetadata.subjects.join(', ')}</td></tr>`);
-  $('#summary').append(`<tr><td><b>Creator: </b></td></tr>`);
-  globalMetadata.creators.forEach((creator,index) => {
-    $('#summary').append(`<tr><td></td><td>${Object.keys(creator).map(function(k){return creator[k]}).join(", ")}</td></tr>`);
-  });
-  $('#summary').append(`<tr><td><b>Contributor: </b></td></tr>`);
-  globalMetadata.contributors.forEach((Contributor,index) => {
-    $('#summary').append(`<tr><td></td><td>${Object.keys(Contributor).map(function(k){return Contributor[k]}).join(", ")}</td></tr>`);
-  });
+  $('#summary').append(`<tr><td><h6 style="text-decoration:underline;">Citation preview: </h6></td><td class="pl-2">${citaionPreview}</td></tr>`);
+  $('#summary').append(`<tr><td></td><td class="pl-2"></td></tr>`);
+  $('#summary').append(`<tr><td><h5>Metadata overview </h5></td></td></tr>`);
+  $('#summary').append(`<tr><td><b>Title: </b></td><td class="pl-2">${globalMetadata.title}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Language: </b></td><td class="pl-2">${globalMetadata.language_full}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Description: </b></td><td class="pl-2">${globalMetadata.description}</td></tr>`);
+  $('#summary').append(`<tr><td><b>License: </b></td><td class="pl-2" >${globalMetadata.licenseText}</td></tr>`);
+  $('#summary').append(`<tr><td><b>Subjects: </b></td><td class="pl-2">${globalMetadata.subjects.join(', ')}</td></tr>`);
+  for (let i = 0; i < globalMetadata.creators.length; i++) {
+    if(i == 0){
+      $('#summary').append(`<tr><td><b>Creator: </b></td><td class="pl-2">${Object.keys(globalMetadata.creators[i]).map(function(k){return globalMetadata.creators[i][k]}).join(", ")}</td></tr>`);
+    }else{
+      $('#summary').append(`<tr><td></td><td class="pl-2">${Object.keys(globalMetadata.creators[i]).map(function(k){return globalMetadata.creators[i][k]}).join(", ")}</td></tr>`);
+    }
+  }
+  $('#summary').append(`</tr>`);
+  for (let i = 0; i < globalMetadata.contributors.length; i++) {
+    if(i == 0){
+      $('#summary').append(`<tr><td><b>Contributor: </b></td><td class="pl-2">${Object.keys(globalMetadata.contributors[i]).map(function(k){return globalMetadata.contributors[i][k]}).join(", ")}</td></tr>`);
+    }else{
+      $('#summary').append(`<tr><td></td><td class="pl-2">${Object.keys(globalMetadata.contributors[i]).map(function(k){return globalMetadata.contributors[i][k]}).join(", ")}</td></tr>`);
+    }
+  }
+  $('#summary').append(`</tr>`);
   $('#summary').append(`</table>`);
 }
 
