@@ -71,10 +71,9 @@ public class EdalRestServer {
 	PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException  {
 		EdalConfiguration configuration ;
 		if(config == null) {
-			configuration = new EdalConfiguration("", "", "10.5072",
-					new InternetAddress("eric@my.mail"),
-					new InternetAddress("eric@my.mail"), new InternetAddress("eric@my.mail"),
-					new InternetAddress("eric@my.mail"),"localhost","","");
+			configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
+					new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+					new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
 		}else {
 			configuration = config;
 		}
