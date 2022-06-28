@@ -259,16 +259,16 @@ function setSummary(){
   if(globalMetadata.creators.length < 4){
     globalMetadata.creators.forEach((creator) => {
       if('Lastname' in creator){
-        citaionPreview += `${creator.Lastname}, ${creator.Firstname};`;
+        citaionPreview += `${creator.Lastname}, ${creator.Firstname}; `;
       }
     });
   }else{
     citaionPreview += `${globalMetadata.creators[0].Lastname} et al.;`;
   }
-  citaionPreview += `(${new Date().getFullYear()}):`
-  citaionPreview += `${globalMetadata.title};`
-  citaionPreview += `${globalMetadata.creators[0].Address};`
-  citaionPreview += `${globalMetadata.creators[0].Zip};`
+  citaionPreview += `(${new Date().getFullYear()}): `
+  citaionPreview += `${globalMetadata.title}; `
+  citaionPreview += `${globalMetadata.creators[0].Address}; `
+  citaionPreview += `${globalMetadata.creators[0].Zip}; `
   citaionPreview += `${globalMetadata.creators[0].Country};`
 
   $('#summary').empty();

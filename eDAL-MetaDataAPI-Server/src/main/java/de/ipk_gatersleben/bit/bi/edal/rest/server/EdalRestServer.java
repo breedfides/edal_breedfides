@@ -80,6 +80,7 @@ public class EdalRestServer {
 		}
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		configuration.setHttpPort(6789);
+		
 		configuration.setUseSSL(false);
 
 		EdalRestServer.implProv = new FileSystemImplementationProvider(configuration);
