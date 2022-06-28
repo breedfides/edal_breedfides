@@ -85,36 +85,30 @@ public class EdalRestServer {
 		EdalRestServer.implProv = new FileSystemImplementationProvider(configuration);
 
 		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
-//		root.createPrimaryDataFile("broken");
-//		root.createPrimaryDataFile("test");
-//		PrimaryDataFile file = (PrimaryDataFile) root.getPrimaryDataEntity("broken");
-//		InputStream input = new FileInputStream("test.txt");
-//		file.store(input);
-//		input.close();
-		EdalHttpServer server = DataManager.getHttpServer();
-		
-//		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
+//		EdalHttpServer server = DataManager.getHttpServer();
 //		
-//		loadDir(dir);
-
-		HandlerCollection currentHandler = server.getHandlers();
-
-		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		restHandler.setContextPath("/restfull");
-		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
-		jerseyServlet.setInitOrder(0);
-		jerseyServlet.setInitParameter("jersey.config.server.provider.packages",
-				"de.ipk_gatersleben.bit.bi.edal.rest.server");
-		jerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
-		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter,org.glassfish.jersey.media.multipart.MultiPartFeature");
-
-
-		currentHandler.prependHandler(restHandler);
-		try {
-			restHandler.start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+////		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
+////		
+////		loadDir(dir);
+//
+//		HandlerCollection currentHandler = server.getHandlers();
+//
+//		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+//		restHandler.setContextPath("/restfull");
+//		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+//		jerseyServlet.setInitOrder(0);
+//		jerseyServlet.setInitParameter("jersey.config.server.provider.packages",
+//				"de.ipk_gatersleben.bit.bi.edal.rest.server");
+//		jerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
+//		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter,org.glassfish.jersey.media.multipart.MultiPartFeature");
+//
+//
+//		currentHandler.prependHandler(restHandler);
+//		try {
+//			restHandler.start();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		return root;
 		//uploadZip(root, "Dataset12", "Ralfs1");
 	}

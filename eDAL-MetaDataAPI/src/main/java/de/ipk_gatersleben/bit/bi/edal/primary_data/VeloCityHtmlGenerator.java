@@ -1676,7 +1676,7 @@ class VeloCityHtmlGenerator {
 		return output;
 	}
 	
-	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String email) throws EdalException {
+	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String[] emailAndName) throws EdalException {
 		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
 		final VelocityContext context = new VelocityContext();
@@ -1684,7 +1684,7 @@ class VeloCityHtmlGenerator {
 		context.put("responseCode", ok.getCode());
 		LoginContext ctx = null;
 		try {
-			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
+			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(emailAndName[0]));
 			ctx.login();
 		}catch(LoginException e) {
 			e.printStackTrace();
@@ -1728,7 +1728,7 @@ class VeloCityHtmlGenerator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		context.put("userName", emailAndName[1]);
 		context.put("title", "e!DAL - DirectoryUpload");
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 		

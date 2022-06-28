@@ -43,8 +43,8 @@
                         <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
                             <div class="modal-content" style="min-width: 250px;width: 40vw;">
                             <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
-                                <h4 class="modal-title" style="font-size:1.3rem;">Upload Progress</h4>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 id="upload-title" class="modal-title" style="font-size:1.3rem;">Upload Progress</h4>
+                                <button id="cancelUploadDialogCross" type="button" class="close" data-dismiss="modal" aria-label="Close" data-toggle="modal" data-target="#cancelUploadDialog"><span aria-hidden="true">&times;</span></button>
                             </div>
                             <div class="modal-body d-flex flex-column" id="upload-body" style="padding: .5rem;">
                                 <div class="d-flex flex-row" style="text-align:center;align-items:center;">
@@ -70,7 +70,7 @@
                             <div class="modal-footer" style="justify-content:center;height:60px;">
                                 <div class="d-flex flex-row p-2 w-50 justify-content-around">
                                     <button id="upload-start-button" type="button" class="btn btn-default" onclick="startUpload()" disabled>Start</button>   
-                                    <button id="upload-close-button" type="button" class="btn btn-default" data-dismiss="modal" data-toggle="modal" data-target="#cancelUploadDialog" onclick="showCancelDialog()">Cancel</button>   
+                                    <button id="upload-close-button" type="button" class="btn btn-default" data-dismiss="modal" data-toggle="modal" data-target="#cancelUploadDialog">Cancel</button>   
                                 </div>                 
                             </div>
                             </div>
@@ -82,7 +82,6 @@
                             <div class="modal-content">
                             <div class="modal-header">
                                 <h6 class="modal-title" id="exampleModalLongTitle">Are you sure?</h6>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
@@ -94,8 +93,8 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-primary alert-dismissible fade show" role="alert">
-                        <button type="button" class="close" onclick="$('.alert').hide();" aria-label="Close">
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <button id="alert-close-cross" type="button" class="close" onclick="$('.alert').hide();" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         <div id="alert-information">
@@ -242,11 +241,14 @@ let authors = [];
         $('#overlay').css('top',`${$('.header').height()}px`);
         #if($email)
         $('#overlay').hide(); 
-        $('#elixierLogin').text('Log out');
         $('#elixierLogin').attr("onclick","logout()");
         #end
+        #if($userName)
+        $('#elixierLogin').text("Log out $userName");
+        #end
+
         if(browserBlocked()){
-            $('#overlay').css({ top: '' });
+            $('#elixierLogin').prop('disabled', true);
             $('#overlay').show(); 
             //display info for the user, that chrome is the only way to use this app
             setTimeout(function(){

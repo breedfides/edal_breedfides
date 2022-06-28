@@ -161,7 +161,7 @@ function validateInputs(){
       }
     });
     if(authorsIncomplete){
-        $('#alert-information').append('\n<strong>Missing Author information: </strong>Please complete every author row:\n');
+        $('#alert-information').append('<strong>Missing Author information: </strong>Please complete every author row:\n');
         notValidAuthorRows.forEach((msg) => {
           $('#alert-information').append(`${msg}\n`);
         });
@@ -258,12 +258,19 @@ function setSummary(){
   let citaionPreview = "";
   if(globalMetadata.creators.length < 4){
     globalMetadata.creators.forEach((creator) => {
-      if('Lastname' in creator){
+      if('Legalname' in creator){
+        citaionPreview += `${creator.Legalname}; `;
+      }else{
         citaionPreview += `${creator.Lastname}, ${creator.Firstname}; `;
       }
     });
   }else{
-    citaionPreview += `${globalMetadata.creators[0].Lastname} et al.;`;
+    if('Legalname' in globalMetadata.creators[0]){
+      citaionPreview += `${crglobalMetadata.creators[0].Legalname} et al.; `;
+    }else{
+      citaionPreview += `${globalMetadata.creators[0].Lastname} et al.;`;
+    }
+
   }
   citaionPreview += `(${new Date().getFullYear()}): `
   citaionPreview += `${globalMetadata.title}; `
@@ -308,6 +315,7 @@ async function showUploadDialog(){
       $('#toggleStartButton').prop("checked", false);
       $('#upload-start-button').show();
       $('#upload-start-button').prop('disabled',true);
+      $('#upload-title').text('Upload Progress');
 
 
       $('.progress-bar').css('transition','width .6s linear');
@@ -315,9 +323,12 @@ async function showUploadDialog(){
       $('.progress').css('height','17px');
       $('.progress-bar').text('0%'); 
       $('#summary_agreement').addClass("d-flex").removeClass("d-none");
-      $('.parallel-uploads').empty();
-      $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
+      $('.modal-list').empty();
+      $('.modal-list').removeClass("d-flex").addClass("d-none");
       $('#myModal2').modal('show');
+      $('#upload-close-button').text('back');
+      $('#cancelUploadDialogCross').attr('data-target','');
+      $('#upload-close-button').attr('data-target','');
       storeInputs();
     }
     //let msg = await traverse(fileSystemEntry);
@@ -350,7 +361,7 @@ async function showUploadDialog(){
 
   async function startUpload(){
     $('#summary_agreement').removeClass("d-flex").addClass("d-none");
-    $('.parallel-uploads').addClass("d-flex").removeClass("d-none");
+    $('.modal-list').addClass("d-flex").removeClass("d-none");
     fileCounter = 0;
     if(fileSystemEntry.kind == "directory"){
       startDirectoryUpload();
@@ -358,6 +369,9 @@ async function showUploadDialog(){
       startSingleFileUpload();
     }
     $('#upload-start-button').hide();
+    $('#upload-close-button').text('cancel');
+    $('#cancelUploadDialogCross').attr('data-target','#cancelUploadDialog');
+    $('#upload-close-button').attr('data-target','#cancelUploadDialog');
     $('#submitBtn').contents().filter(function(){
       return this.nodeType === 3;
     }).remove();
@@ -382,7 +396,7 @@ async function startDirectoryUpload(){
     async function iterateFiles(files){
         requests = 0;
         uniqueProgressId = 0;
-        $('.parallel-uploads').empty();
+        $('.modal-list').empty();
         return new Promise(async (resolve) => {
             for (var key in files) {
                 if(!uploadCanceled){
@@ -414,6 +428,7 @@ async function startDirectoryUpload(){
 }
 
 function publishDataset(){
+  $('#upload-title').text('Publication progress');
   $('.progress-bar').css('transition','width .1s linear');
   $('.progress-bar').css('width','0%');
   $('#droplabel').empty();
@@ -437,7 +452,10 @@ function publishDataset(){
         setTimeout(() => {
           $('.progress-bar').css('transition','width 1s ease');
           $('.progress-bar').css('width','100%');
-          $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
+          $('.modal-list').removeClass("d-flex").addClass("d-none");
+          $('#upload-close-button').text('close');
+          $('#cancelUploadDialogCross').attr('data-target','');
+          $('#upload-close-button').attr('data-target','');
         }, 2000);
         resetUI();
       }
@@ -525,7 +543,7 @@ async function uploadEntity2(path, file, progressIdentifier){
                /* Add progress ui for this file with the key as ID to upload progresses dialog  */      
                console.log("GIVEN progress label:_ "+progressIdentifier);   
                markup = `<div id='${progressIdentifier}-container' class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
-               $(".parallel-uploads").append(markup);      
+               $(".modal-list").append(markup);      
                updateFileProgress(path, progressIdentifier);
 
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
@@ -639,25 +657,27 @@ worker.onmessage = (evt) => {
           fileSystemEntry = null;
           showAlertMessage("Please select or drop a directory with at least 1 valid file.", 5*displayAlertTime);
         }else{
-          let alertMessage = "";
-          if(!$.isEmptyObject(evt.data.notRecommendedFiles)){
-            alertMessage = "The chosen directory contains not recommended file types:\n";
-            for (const [key, value] of Object.entries(evt.data.notRecommendedFiles)) {
-                alertMessage += value > 1 ? `${value} ${key} files,` : `${value} ${key} file,`;
-            }
+          let alertMessage = "<div class='alert-table-container'><h5 class='mb-2'>Found empty/compressed Files: </h5><div class='alert-table-wrapper mb-2 px-2 py-1'><table class='alert-table mb-2'>";
+          if(evt.data.emptyFilePaths.length > 0 || evt.data.compressedFilePaths.length > 0){
+            evt.data.compressedFilePaths.forEach((obj) => {
+              alertMessage += `<tr><td class="pr-2">${obj.type}:</td><td class="pl-2">${obj.path}</td>`;
+            });
+            evt.data.emptyFilePaths.forEach((obj) => {
+              alertMessage += `<tr><td class="pr-2">${obj.type}:</td><td class="pl-2">${obj.path}</td>`;
+            });
+            alertMessage += `</table></div><p class="mb-2">Empty files/directories will be ignored during upload.\nWe recommend to use directories without compressed files.</p><button class='btn btn-outline-primary' style='width:fit-content;margin: auto;' onclick='dismissPrimaryAlert();'>Continue</button></div>`;
             //remove last ','
-            alertMessage.slice(0, -1);
-            console.log(JSON.stringify(evt.data.notRecommendedFiles));
-            alertMessage += "\nPlease consider to use a clean directory. Otherwise users can't access every File/Directory on the resulting landing page.\n"
-            showAlertMessage(alertMessage, displayAlertTime*2);
+            $('.alert').removeClass( "alert-danger" ).addClass('alert-primary');
+            $('#alert-information').empty();
+            $('#alert-information').append(alertMessage);
+            $('.alert').show();
           }
-          if(evt.data.emptyDirs > 0 || evt.data.emptyFiles > 0){
+/*           if(evt.data.emptyDirs > 0 || evt.data.emptyFiles > 0){
             alertMessage += "The choosen directory contains empty files or directories. Please consider whether these files are important as they will be ignored during upload.";
             showAlertMessage(alertMessage, displayAlertTime*2);
-          }
+          } */
 
         }
-        console.log(JSON.stringify(evt.data.traversed));
 
         for (var key in files) {
             if (files.hasOwnProperty(key)) {
@@ -723,6 +743,11 @@ worker.onmessage = (evt) => {
       //       $('#submitBtn').prop('disabled', false);
       //   }
   }, false);
+
+  function dismissPrimaryAlert(){
+    $(".alert").hide();
+    $(".alert").removeClass( "alert-primary" ).addClass('alert-danger');
+  }
 
   async function chooseDirectory(){
     const dirHandle = await showDirectoryPicker();

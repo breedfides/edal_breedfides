@@ -541,6 +541,7 @@ class MetaDataWrapper {
 			JSONObject person = (JSONObject) personObj;
 			if((String) person.get("Legalname") != null) {				
 				this.legalPerson = new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY));
+				persons.add(new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY)));
 			}else {
 				NaturalPerson parsedPerson = new NaturalPerson((String) person.get(FIRSTNAME), (String) person.get(LASTNAME), (String) person.get(ADDRESS),
 							(String) person.get(ZIP), (String) person.get(COUNTRY));

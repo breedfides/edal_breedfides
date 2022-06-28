@@ -153,12 +153,22 @@ public class EdalHttpServer {
 //		contextHandlerCollection.addHandler(restHandler);
 //		contextHandlerCollection.addHandler(resourceHandler);
 //		contextHandlerCollection.addHandler(requestLogHandler);
+		
 
 		handlerCollection.addHandler(restHandler);
 		handlerCollection.addHandler(edalContextHandler);
 		handlerCollection.addHandler(resourceHandler);
 		handlerCollection.addHandler(requestLogHandler);
-
+		
+		ServletContextHandler submissionRestHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		submissionRestHandler.setContextPath("/restfull");
+		ServletHolder submissionJerseyServlet = submissionRestHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+		submissionJerseyServlet.setInitOrder(0);
+		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.packages",
+				"de.ipk_gatersleben.bit.bi.edal.rest.server");
+		submissionJerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
+		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter,org.glassfish.jersey.media.multipart.MultiPartFeature");
+		handlerCollection.prependHandler(submissionRestHandler);
 //		collection.addHandler(restHandler);
 //		handlerCollection.addHandler(resourceHandler);
 //

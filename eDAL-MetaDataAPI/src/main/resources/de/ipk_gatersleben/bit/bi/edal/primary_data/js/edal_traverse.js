@@ -7,14 +7,15 @@
  * 
  * **/
 const notRecommendedTypes = [
-  "zip", "zipx", "tar", "tar.gz", ".7z", ".rar", ".tgz", "arj",
+  "zip", "zipx", "tar", "tar.gz", "7z", "rar", "tgz", "arj",
   "bzip", "bzip2", "bz", "bz2",
 ];
 let processed = 0;
 let emptyDirs = 0;
 let emptyFiles = 0;
 let notAllowedFiles = {};
-let foundNotRecommendedFiles = {};
+let emptyFilePaths = [];
+let compressedFilePaths = [];
 let tempFileCounter = 0;
 let globalFileCounter = 0;
 let root = {};
@@ -25,7 +26,9 @@ onmessage = async (evt) => {
   tempFileCounter = 0;
   globalFileCounter = 0;
   root = evt.data;
-  foundNotRecommendedFiles = {};
+  emptyFilePaths = [];
+  compressedFilePaths = [];
+  foundNotRecommendedFiles = [];
   const out = {};
   const dirHandle = evt.data;  
   if(dirHandle.kind == "directory"){
@@ -37,7 +40,8 @@ onmessage = async (evt) => {
     emptyDirs:emptyDirs,
     emptyFiles:emptyFiles,
     numberOfFiles:globalFileCounter,
-    notRecommendedFiles:foundNotRecommendedFiles,
+    emptyFilePaths:emptyFilePaths,
+    compressedFilePaths:compressedFilePaths,
     tempFiles:tempFileCounter,
   } );
 };
@@ -52,32 +56,34 @@ async function handleDirectoryEntry( dirHandle, out ) {
     const path = await root.resolve(entry);
     //add the root name (user entered title) as a pseudo directory to the start of the file path
     path.unshift(root.name);
+    let filePath = path.join("/");
     if (entry.kind === "file"){
       let extension = entry.name.slice((entry.name.lastIndexOf(".") - 1 >>> 0) + 2);
         //check if it's a compressed file
-      if(notRecommendedTypes.includes(extension)){
-        foundNotRecommendedFiles[extension] = extension in foundNotRecommendedFiles ? foundNotRecommendedFiles[extension]++ : 1;
+      if(notRecommendedTypes.includes(extension) || entry.name.slice(-6) == 'tar.gz'){
+        compressedFilePaths.push({type:"compressed file",path:filePath});
         //check if it's a temporary file
       }else if(extension == 'tmp' || extension == 'foo' || entry.name.slice(0,2) == '~$'){
         tempFileCounter++;
       }
       const file = await entry.getFile();
       if(file.size > 0){
-        console.log(processed+"   "+path.join("/"));
-        out[path.join("/")] = {file:file,isDirectory:false};
+        out[filePath] = {file:file,isDirectory:false};
         filecounter++;
         globalFileCounter++;
       }else{
+        emptyFilePaths.push({type:"empty file",path:filePath});
         emptyFiles++;
       }
     }else if(entry.kind === "directory") {
       const newHandle = await dirHandle.getDirectoryHandle( entry.name, { create: false } );
-      out[path.join("/")] = {isDirectory:true};
+      out[filePath] = {isDirectory:true};
       let hasFiles = await handleDirectoryEntry( newHandle, out );
       if(hasFiles){
         filecounter++;
       }else{
-        delete out[path.join("/")];
+        emptyFilePaths.push({type:"Empty directory",path:filePath});
+        delete out[filePath];
       }
     }
   }

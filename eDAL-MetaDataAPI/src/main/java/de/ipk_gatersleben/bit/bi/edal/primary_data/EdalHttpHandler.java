@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -131,6 +133,15 @@ public class EdalHttpHandler extends AbstractHandler {
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
+		/* Elixier login redirect URL */
+		String REDIRECT_URI = "";
+		try {
+			REDIRECT_URI = "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback";
+		} catch (EdalConfigurationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		if (checkForRobots(request)) {
 			this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "blocked");
 		} else {
@@ -639,21 +650,24 @@ public class EdalHttpHandler extends AbstractHandler {
 							}
 							break;
 						case CALLBACK:
-							this.sendDirectoryUploadTemplate(request.getParameter("code"), response, HttpStatus.Code.OK);
+							try {
+								String[] emailAndName = this.retrieveUserEmailFromElixier(request.getParameter("code"), REDIRECT_URI);
+								this.sendDirectoryUploadTemplate(request.getParameter("code"), response, emailAndName);
+							} catch (EdalConfigurationException | IOException | org.json.simple.parser.ParseException
+									| EdalException e) {
+								DataManager.getImplProv().getLogger().error("Unable to generate Data submission UI with user email: " + e.getMessage());
+								e.printStackTrace();
+							}
+
 							break;
 						case PREVIEW:
 							this.sendDataSubmissionPreview(request.getParameter("code"), response, HttpStatus.Code.OK);
 							break;
 						case OAUTH:
-							try {
-								String REDIRECT_URI = "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback";
-								response.sendRedirect("https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
-										+ "&scope=email%20profile%20openid" + "&client_id="
-										+ new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8") + "&redirect_uri="
-										+ REDIRECT_URI);
-							} catch (EdalConfigurationException e) {
-								this.sendMessage(response, HttpStatus.Code.INTERNAL_SERVER_ERROR, "EdalExcpetion.. "+e.getMessage());
-							}
+							response.sendRedirect("https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
+									+ "&scope=email%20profile%20openid" + "&client_id="
+									+ new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8") + "&redirect_uri="
+									+ REDIRECT_URI);
 						case GIF:
 							this.sendGif(response, "spinner.gif", "image/gif");
 							break;
@@ -676,6 +690,65 @@ public class EdalHttpHandler extends AbstractHandler {
 			}
 			response.flushBuffer();
 		}
+	}
+
+	private String[] retrieveUserEmailFromElixier(String requestCode, String redirect_url) throws 
+	EdalConfigurationException,ClientProtocolException, IOException, org.json.simple.parser.ParseException, EdalException {
+		CloseableHttpClient httpclient;
+		InetSocketAddress address = EdalConfiguration.guessProxySettings();
+		String httpProxyHost = address == null ? "" : address.getHostName();
+		int httpProxyPort = address == null ? 0 : address.getPort();
+		if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
+
+			httpclient = HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
+					.setDefaultCookieStore(new BasicCookieStore())
+					.setRedirectStrategy(new LaxRedirectStrategy()).build();
+		} else {
+			httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
+					.setRedirectStrategy(new LaxRedirectStrategy()).build();
+		}
+
+		List<NameValuePair> data = new ArrayList<NameValuePair>();
+		data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
+		data.add(
+				new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
+		data.add(new BasicNameValuePair("grant_type", "authorization_code"));
+		data.add(new BasicNameValuePair("redirect_uri", redirect_url));
+		data.add(new BasicNameValuePair("code", requestCode));
+
+		HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
+
+		httpPost.setEntity(new UrlEncodedFormEntity(data));
+
+		CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
+		
+
+		if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
+
+			String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
+
+			String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
+					.get("access_token").toString();
+			
+			JerseyClient client = JerseyClientBuilder.createClient();
+			
+			String resultOfUserinformationRequest = client
+					.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
+			
+			client.close();
+			
+			JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);
+			String[] nameAndEmail = new String[2];
+			nameAndEmail[0] = jsonobj.get("email") != null ? jsonobj.get("email").toString() : null;
+			nameAndEmail[1] = jsonobj.get("name") != null ? jsonobj.get("name").toString() : null;
+			
+			return nameAndEmail;
+
+		}else {
+			return null;
+		}
+
 	}
 
 	private void sendGif(HttpServletResponse response, String fileName, String contentType) {
@@ -722,75 +795,26 @@ public class EdalHttpHandler extends AbstractHandler {
 		
 	}
 
-	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, Code ok) {
+	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, String[] emailAndName) {
 		//Obtain accessToken
 		try {
-			System.out.println("creating submission UI");
-			CloseableHttpClient httpclient;
-			InetSocketAddress address = EdalConfiguration.guessProxySettings();
-			String httpProxyHost = address == null ? "" : address.getHostName();
-			int httpProxyPort = address == null ? 0 : address.getPort();
-			if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
+			
+		final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUpload(response, HttpStatus.Code.OK, emailAndName).toString();
+		
+		response.setStatus(HttpStatus.Code.OK.getCode());
+		
+		response.addHeader("Access-Control-Allow-Origin", "*");
 
-				httpclient = HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
-						.setDefaultCookieStore(new BasicCookieStore())
-						.setRedirectStrategy(new LaxRedirectStrategy()).build();
-			} else {
-				httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
-						.setRedirectStrategy(new LaxRedirectStrategy()).build();
-			}
+		response.setContentType("text/html");
+		
+		OutputStream responseBody = response.getOutputStream();
+		responseBody.write(htmlOutput.getBytes());
+		responseBody.close();
 
-			List<NameValuePair> data = new ArrayList<NameValuePair>();
-			data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
-			data.add(
-					new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
-			data.add(new BasicNameValuePair("grant_type", "authorization_code"));
-			data.add(new BasicNameValuePair("redirect_uri", "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback"));
-			data.add(new BasicNameValuePair("code", requestCode));
-
-			HttpPost httpPost = new HttpPost("https://login.elixir-czech.org/oidc/token");
-
-			httpPost.setEntity(new UrlEncodedFormEntity(data));
-
-			CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
-
-			if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
-
-				String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
-
-				String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
-						.get("access_token").toString();
-				
-				JerseyClient client = JerseyClientBuilder.createClient();
-				
-				String resultOfUserinformationRequest = client
-						.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
-						.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
-				
-				client.close();
-				
-				JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);
-
-				String fullname = jsonobj.get("name").toString();
-				String email = jsonobj.get("email").toString();
-
-				final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUpload(response, ok, email).toString();
-				
-				response.setStatus(ok.getCode());
-				
-				response.addHeader("Access-Control-Allow-Origin", "*");
-
-				response.setContentType("text/html");
-				
-				OutputStream responseBody = response.getOutputStream();
-				responseBody.write(htmlOutput.getBytes());
-				responseBody.close();
-
-			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			response.setStatus(ok.getCode());
+			response.setStatus(HttpStatus.Code.FORBIDDEN.getCode());
 			try {
 				response.sendRedirect(EdalHttpServer.getServerURL()+":"+DataManager.getConfiguration().getHttpPort()+"/oauth");
 			} catch (IOException | EdalException | EdalConfigurationException e1) {

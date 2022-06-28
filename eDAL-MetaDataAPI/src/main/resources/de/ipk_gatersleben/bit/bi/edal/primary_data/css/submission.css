@@ -30,10 +30,14 @@ body{
     display: block;
 }
 
+.alert-table-container{
+  text-align: center;
+}
 
 .alert{
   z-index: 1;
   position: absolute;
+  padding-left: 4em;
   left:0;
   right:0;
   top: 0;
@@ -46,7 +50,7 @@ body{
   margin:.5em .5em 1em .5em
 }
 
-.parallel-uploads{
+.modal-list{
   border: 1px solid #ced4da;
   min-height:50px;
   overflow-y: auto;
@@ -168,7 +172,28 @@ table, th, td {
   background-color: #ced4da;
 }
 
+.alert-table-wrapper{
+  max-height: 30vh;
+  overflow-y: auto;
+  border: 1px solid grey;
+  border-radius: 7px;
+  max-width: 50vw;
+  overflow-x: auto;
+}
+
 table.preview{
+  border: none;
+}
+
+table.alert-table{
+  border: none;
+}
+.alert-table-container{
+  display:flex;
+  flex-direction: column;
+}
+
+.alert-table-container td, .alert-table-container th{
   border: none;
 }
 
