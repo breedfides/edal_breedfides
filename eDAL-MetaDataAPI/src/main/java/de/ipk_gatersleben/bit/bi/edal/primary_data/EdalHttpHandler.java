@@ -138,6 +138,7 @@ public class EdalHttpHandler extends AbstractHandler {
 		try {
 			REDIRECT_URI = DataManager.getHttpServer().getServerURL() + "/callback";
 		} catch (EdalException e1) {
+			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
