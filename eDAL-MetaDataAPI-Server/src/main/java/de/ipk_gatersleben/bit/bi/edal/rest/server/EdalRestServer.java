@@ -78,7 +78,6 @@ public class EdalRestServer {
 			configuration = config;
 		}
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
-		configuration.setHttpPort(6789);
 		
 		configuration.setUseSSL(false);
 

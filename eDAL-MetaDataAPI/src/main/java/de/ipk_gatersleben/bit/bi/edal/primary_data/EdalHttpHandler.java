@@ -136,9 +136,8 @@ public class EdalHttpHandler extends AbstractHandler {
 		/* Elixier login redirect URL */
 		String REDIRECT_URI = "";
 		try {
-			REDIRECT_URI = "http://localhost:" + DataManager.getConfiguration().getHttpPort() + "/callback";
-		} catch (EdalConfigurationException e1) {
-			// TODO Auto-generated catch block
+			REDIRECT_URI = DataManager.getHttpServer().getServerURL() + "/callback";
+		} catch (EdalException e1) {
 			e1.printStackTrace();
 		}
 		
