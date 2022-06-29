@@ -104,383 +104,101 @@ import javafx.application.Platform;
 public class RestEntryPoint {
 
 
-	@GET
-	@Path("test")
-	@Produces(MediaType.TEXT_PLAIN)
-	public String test() {
-		return "Test";
-	}
-
-	@GET
-	@Path("info")
-	@Produces(MediaType.TEXT_XML)
-	public ServerInfo serverinfo() {
-		ServerInfo info = new ServerInfo();
-		info.server = System.getProperty("os.name") + " " + System.getProperty("os.version");
-		return info;
-	}
-
-
-	@Produces(MediaType.TEXT_PLAIN)
-	@Path("sendSubject")
-	@POST
-	public String sendSubject(String subjectString) {
-		try {
-			Subject subject = new Subject();
-			subject.getPrincipals().add(new ElixirPrincipal(subjectString));
-			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity("REST");
-
-			for (Principal p : subject.getPrincipals()) {
-				return p.toString();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return "error";
-	}
 	
+	/**
+	 * REST path For testing if there already is a PrimaryDataEntity in the root Directory with the given name associated with this email
+	 * @param email The email base64 encoded for identification
+	 * @param name The name that will be used to look for an already existing entity
+	 * @return true if an entity with this name already exists, else false
+	 */
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("checkIfExists")
 	@POST
-	public Boolean checkIfExists(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name) {
-		try {
-			//decode subject
-			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
-			ObjectInputStream oi = new ObjectInputStream(in);
-			Subject subject = (Subject) oi.readObject();	
-			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			root.getPrimaryDataEntity(name);
-			return true;
-		} catch (IOException | ClassNotFoundException | PrimaryDataDirectoryException e) {
-			return false;
-		}
-				
+	public Boolean checkIfExists(@FormDataParam("email") String email,@FormDataParam("name") String name) {
+		return new DataSubmissionService().checkIfExists(email, name);			
 	}
 	
-	//function for dataset creation with metadata
+	/**
+	 * For dataset creation with metadata. 
+	 * @param metadataString A JSON formatted String with metadata attributes
+	 * @param email A base64 encoded email
+	 * @param entityName The esired PrimaryDataDirectory name
+	 * @return Status code
+	 */
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntityAndMetadata")
 	@POST
-	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("subject") String subjectString,@FormDataParam("name") String entityName) {
-		try {
-			//decode subject
-			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
-			ObjectInputStream oi = new ObjectInputStream(in);
-			Subject subject = (Subject) oi.readObject();	
-			
-			Object metadataObject = new JSONParser().parse(metadataString);
-			if(metadataObject instanceof JSONObject) {
-				MetaDataWrapper metadataWrapper = new MetaDataWrapper((JSONObject) metadataObject);
-				PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-				PrimaryDataDirectory newDataSet = root.createPrimaryDataDirectory(metadataWrapper.getTitle().toString());
-				System.out.println("created root with name: "+metadataWrapper.getTitle().toString());
-				MetaData metadata = newDataSet.getMetaData().clone();
-				metadata.setElementValue(EnumDublinCoreElements.TITLE,metadataWrapper.getTitle());
-				metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION,metadataWrapper.getDescription());
-				metadata.setElementValue(EnumDublinCoreElements.SUBJECT, metadataWrapper.getSubjects());
-				metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, metadataWrapper.getLanguage());
-				metadata.setElementValue(EnumDublinCoreElements.CREATOR, metadataWrapper.getCreators());
-				metadata.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, metadataWrapper.getContributors());
-				metadata.setElementValue(EnumDublinCoreElements.PUBLISHER, metadataWrapper.getLegalpersons());
-				metadata.setElementValue(EnumDublinCoreElements.RIGHTS, metadataWrapper.getLicense());						
-				newDataSet.setMetaData(metadata);
-				return "200";
-			}else {
-				throw new WebApplicationException(Response.Status.FORBIDDEN);
-			}
-		} catch (ParseException | IOException | ClassNotFoundException | PrimaryDataDirectoryException | ORCIDException | MetaDataException | CloneNotSupportedException | PrimaryDataEntityVersionException e) {
-			e.printStackTrace();
-			throw new WebApplicationException(Response.Status.FORBIDDEN);
-		}
-				
+	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("email") String email,@FormDataParam("name") String entityName) {
+		return new DataSubmissionService().uploadEntityAndMetadata(metadataString, email, entityName);			
 	}
 	
-	//function for dataset creation with metadata
+	/**
+	 * REST path to Search for an ORCID
+	 * @param firstName The given firstName
+	 * @param lastName The given lastName
+	 * @return A JSONArray with found ids, empty if no ids were found
+	 */
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("searchORCID/{firstName}/{lastName}")
 	@POST
 	public JSONArray searchORCID(@PathParam("firstName") String firstName, @PathParam("lastName") String lastName) {
-		JSONArray idArray = new JSONArray();
-		try {
-			List<ORCID> ids =  ORCID.getOrcidsByName(firstName, lastName);
-			for(ORCID id : ids) {
-				idArray.add(id.getOrcid());
-			}
-			return idArray;
-		} catch (ORCIDException e) {
-			return idArray;
-		}
+		return new DataSubmissionService().searchORCID(firstName, lastName);
 				
 	}
 	
-	//function for dataset creation with metadata
+	/**
+	 * REST path to check the progress of a file upload.
+	 * @param email The base64 encoded email of a user
+	 * @param name The name (constructed on client side constructed with the base64 encoded email + file path )
+	 * @return If there is a progress with the given name the return value is an int between 0 and 100, else -1
+	 */
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("getProgress")
 	@POST
-	public int getProgress(@FormDataParam("email") String email, @FormDataParam("name") String name) {
-		String key = email+name;
-		if(ProgressionMap.getInstance().getMap().get(key) != null){
-			int result = ProgressionMap.getInstance().getMap().get(key);	
-			System.out.println("if in get Progress for: "+name+" "+result+"%");
-			if(result >= 100) {
-				ProgressionMap.getInstance().getMap().remove(key);
-			}
-			return result;	
-		}else {
-			System.out.println("else in get Progress for: "+name);
-			return -1;
-		}
-		
+	public int getProgress(@FormDataParam("key") String key) {
+		return new DataSubmissionService().getProgress(key);		
 	}
 	
 	
-	//function for testing if entity with this title already exists
-
+	
+	/**
+	 * 
+	 * @param uploadedInputStream The optional InputStream of a file
+	 * @param path The full path of an file/directory
+	 * @param email The base64 encoded email of a user
+	 * @param type The type of the desired entity, File or Directory
+	 * @param datasetRoot The root title of the parent dataset
+	 * @param size Size of the optional file
+	 * @return The Status code
+	 */
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntity")
 	@POST
 	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
-			@FormDataParam("name") String name, @FormDataParam("email") String email,
-			@FormDataParam("type") String type, @FormDataParam("metadata") String metadatastring,
+			@FormDataParam("path") String path, @FormDataParam("email") String email, @FormDataParam("type") String type,
 			@FormDataParam("datasetRoot") String datasetRoot, @FormDataParam("size") String size)  {
-		// JSONObject data = new JSONObject();
-		String[] pathArray = name.split("/");
-		System.out.println(name);
-		try {
-			InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(email));		
-			ObjectInputStream oi = new ObjectInputStream(in);
-			Subject subject = (Subject) oi.readObject();	
-			
-			// data = (JSONObject) new JSONParser().parse(request);
-			// String type = (String) data.get("type");
-			PrimaryDataDirectory managerRoot = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			PrimaryDataDirectory root = (PrimaryDataDirectory) managerRoot.getPrimaryDataEntity(datasetRoot);
-			//if file child of directory -> walk Tree and find the parent of this child
-			if (pathArray.length > 0) {
-				PrimaryDataDirectory parent = root;
-				int lastIndex = pathArray.length - 1;
-				for (int i = 0; i < lastIndex; i++) {
-					parent = (PrimaryDataDirectory) parent.getPrimaryDataEntity(pathArray[i]);
-				}
-				if (type.equals("Directory")) {
-					System.out.println("Created:");
-					System.out.println(Arrays.toString(pathArray));
-					parent.createPrimaryDataDirectory(pathArray[lastIndex]);
-				} else {
-					PrimaryDataFile file = parent.createPrimaryDataFile(pathArray[pathArray.length - 1]);
-					System.out.println("Starting store function __");
-					try {				
-						ProgressInputStream pis = new ProgressInputStream(ProgressionMap.getInstance().getMap(), uploadedInputStream, Long.parseLong(size), email+name);
-						file.store(pis);
-						System.out.println("finished store function __");
-
-					} catch (PrimaryDataFileException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			} else {
-				return "500";
-			}
-			return "200";
-		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
-			e.printStackTrace();
-			return "500";
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return "500";
-		}
+		return new DataSubmissionService().uploadEntity(uploadedInputStream, path, email, type, datasetRoot, size);	
 	}
 
 	
+	/**
+	 * REST path to set a given dataset public.
+	 * @param emailEncoded The base64 encoded email of a user
+	 * @param name The name of the dataset
+	 * @param embargo An optional embargo date, to delay the publication of the associated DOIs
+	 * @return The Status code
+	 * @throws PrimaryDataDirectoryException if unable to create the root Directory
+	 * @throws AddressException If there was a problem creating the InternetAddress objects
+	 * @throws PublicReferenceException if unable to request the PublicReference to setpublic.
+	 * @throws PrimaryDataEntityException if unable to add the PublicReference to this PrimaryDataEntity
+	 * @throws ParseException if there was a problem parsing the embargo date
+	 */
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
-	public String publishDataset(@FormDataParam("subject") String subjectString,@FormDataParam("name") String name, @FormDataParam("embargo") String embargo) throws PrimaryDataDirectoryException, AddressException,
+	public String publishDataset(@FormDataParam("email") String emailEncoded,@FormDataParam("name") String name, @FormDataParam("embargo") String embargo) throws PrimaryDataDirectoryException, AddressException,
 			PublicReferenceException, PrimaryDataEntityException, ParseException {
-		InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(subjectString));		
-		ObjectInputStream oi;
-		try {
-			oi = new ObjectInputStream(in);
-			Subject subject = (Subject) oi.readObject();	
-			PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-			PrimaryDataDirectory entity = (PrimaryDataDirectory) root.getPrimaryDataEntity(name);
-			String email = "null";
-			for(Principal p : subject.getPrincipals()) {
-				email = p.getName();
-				break;
-			}
-			entity.addPublicReference(PersistentIdentifier.DOI);
-			if(embargo != null) {
-				Calendar release = Calendar.getInstance();
-				try {
-					release.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(embargo));
-					System.out.println(release.toString());
-					entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email), release);
-					return "success";
-				} catch (java.text.ParseException e) {
-					e.printStackTrace();
-				}
-			}
-			entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email));
-			return "success";
-		}catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return "500";
-		}
-	}
-
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Path("sendSubjectAndObject")
-	@POST
-	public String rename(@FormDataParam("subject") byte[] subjectByteArray, @FormDataParam("name") String newName)
-			throws Exception {
-
-		ByteArrayInputStream in = new ByteArrayInputStream(subjectByteArray);
-		ObjectInputStream is = new ObjectInputStream(in);
-		Subject subject = (Subject) is.readObject();
-
-		String principal = null;
-
-		for (Principal p : subject.getPrincipals()) {
-			principal = p.toString();
-			break;
-		}
-
-		return principal + "\t" + "name: " + newName;
-	}
-
-	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
-	@Path("getRootDirectory")
-	@POST
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getRootDirectory(byte[] data) throws Exception {
-
-		ByteArrayInputStream in = new ByteArrayInputStream(data);
-		ObjectInputStream is = new ObjectInputStream(in);
-		Subject subject = (Subject) is.readObject();
-
-		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-
-		System.out.println(root);
-
-		return Response.ok(root, MediaType.APPLICATION_OCTET_STREAM).build();
-	}
-
-//	@GET
-//	@Path("getMetaData/{uuid}/{version}")
-//	@Produces(MediaType.TEXT_PLAIN)
-//	public String getMetaData(@PathParam("uuid") String uuid, @PathParam("version") String version) {
-//
-//		return EdalRestServer.getEntityMetadata(uuid, Long.valueOf(version));
-//	}
-
-	@GET
-	@Path("/pdf")
-	public Response downloadPdfFile() {
-		StreamingOutput fileStream = new StreamingOutput() {
-			@Override
-			public void write(java.io.OutputStream output) throws IOException, WebApplicationException {
-				try {
-//                	File dir = Paths.get(System.getProperty("user.home"), "Search_Test").toFile();
-//            		if(!dir.exists()) {
-//            			dir.mkdir();
-//            		}
-//            		
-					java.nio.file.Path path = Paths.get(System.getProperty("user.home"), "Search_Test", "111.txt");
-//                	FileWriter myWriter = new FileWriter(path.toString());
-//        			BufferedWriter bufferedWriter = new BufferedWriter(myWriter);
-//        			String s = "This is a test for indexing the content of text files.";
-//        			int size = (int) ((Math.pow(10, 4)*1024*1024)/s.getBytes().length);
-//        			for(int i = 0; i < size; i++) {
-//        				bufferedWriter.write(s);
-//        			}
-//        			myWriter.close();
-//                	byte[] data = FileUtils.readFileToByteArray(path.toFile());
-//                    //byte[] data = Files.readAllBytes(path);
-//                    output.write(data);
-//                    output.flush();
-
-					final int BUFFER_SIZE = 1024 * 1024; // this is actually bytes
-
-					FileInputStream fis = new FileInputStream(path.toFile());
-					byte[] buffer = new byte[BUFFER_SIZE];
-					int read = 0;
-					while ((read = fis.read(buffer)) > 0) {
-						output.write(buffer);
-						output.flush();
-					}
-
-					fis.close();
-
-				} catch (Exception e) {
-					throw new WebApplicationException("File Not Found !!");
-				}
-			}
-		};
-		return Response.ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
-				.header("content-disposition", "attachment; filename = build.txt").build();
-	}
-
-	@POST
-	@Path("/upload")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response uploadFile(@FormDataParam("file") InputStream uploadedInputStream,
-			@FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("name") String name) {
-
-		String uploadedFileLocation = "d://uploaded/" + name;
-
-		// save it
-		writeToFile(uploadedInputStream, uploadedFileLocation);
-
-		String output = "File uploaded to : " + uploadedFileLocation;
-
-		return Response.status(200).entity(output).build();
-
-	}
-
-	@POST
-	@Path("/uploadDirectory")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response uploadDirectory(FormDataMultiPart multiPart) {
-
-		for (BodyPart part : multiPart.getBodyParts()) {
-			System.out.println(part.getContentDisposition().getFileName());
-		}
-//		String uploadedFileLocation = "d://uploaded/" + fileDetail.getFileName();
-//		System.out.println(uploadedFileLocation);
-//
-//		// save it
-//		//writeToFile(uploadedInputStream, uploadedFileLocation);
-//
-//		String output = "File uploaded to : " + uploadedFileLocation;
-
-		return Response.status(200).entity("test output").build();
-
-	}
-
-	// save uploaded file to new location
-	private void writeToFile(InputStream uploadedInputStream, String uploadedFileLocation) {
-
-		try {
-			OutputStream out = new FileOutputStream(new File(uploadedFileLocation));
-			int read = 0;
-			byte[] bytes = new byte[1024];
-
-			out = new FileOutputStream(new File(uploadedFileLocation));
-			while ((read = uploadedInputStream.read(bytes)) != -1) {
-				out.write(bytes, 0, read);
-			}
-			out.flush();
-			out.close();
-		} catch (IOException e) {
-			DataManager.getImplProv().getLogger().debug("Error at REST writeToFile: " + e.getMessage());
-		}
-
+		return new DataSubmissionService().publishDataset(emailEncoded, name, embargo);
 	}
 
 }
@@ -490,298 +208,4 @@ class ServerInfo {
 	public String server;
 }
 
-class MetaDataWrapper {
-	
-	
-	private final String CREATORS = "creators";
-	private final String CONTRIBUTORS = "contributors";
-	private final String TITLE = "title";
-	private final String DESCRIPTION = "description";
-	private final String LICENSE = "license";
-	private final String LANGUAGE = "language";
-	private final String SUBJECTS = "subjects";
-	
-	
-	private final String FIRSTNAME = "Firstname";
-	private final String LASTNAME = "Lastname";
-	private final String LEGALNAME = "Legalname";
-	private final String ADDRESS = "Address";
-	private final String ZIP = "Zip";
-	private final String COUNTRY = "Country";
-	private final String ORCID = "ORCID";
-	
-	private UntypedData title;
-	private UntypedData description;
-	private UntypedData license;
-	private EdalLanguage language;
-	private Subjects subjects;
-	private Persons creators;
-	private Persons contributors;
-	private LegalPerson legalPerson;
-	
-	public MetaDataWrapper(JSONObject metadataObject) throws ORCIDException {
-		this.title = new UntypedData((String) metadataObject.get(TITLE));
-		this.description = new UntypedData((String) metadataObject.get(DESCRIPTION));
-		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataObject.get(LICENSE)).name());
-		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get(LANGUAGE)));
-		subjects = new Subjects();
-		JSONArray subjectsArr = (JSONArray) metadataObject.get(SUBJECTS);
-		for(Object subjectStr : subjectsArr) {
-			subjects.add(new UntypedData((String) subjectStr));
-		}
-		this.creators = new Persons();
-		this.contributors = new Persons();
-		this.legalPerson = new LegalPerson("null","null","null","null");
-		fillPersonCollections(creators, (JSONArray) metadataObject.get(CREATORS));
-		fillPersonCollections(contributors, (JSONArray) metadataObject.get(CONTRIBUTORS));
-	}
-	
-	private void fillPersonCollections(Persons persons, JSONArray personArray) throws ORCIDException {
-		for(Object personObj : personArray) {
-			JSONObject person = (JSONObject) personObj;
-			if((String) person.get("Legalname") != null) {				
-				this.legalPerson = new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY));
-				persons.add(new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY)));
-			}else {
-				NaturalPerson parsedPerson = new NaturalPerson((String) person.get(FIRSTNAME), (String) person.get(LASTNAME), (String) person.get(ADDRESS),
-							(String) person.get(ZIP), (String) person.get(COUNTRY));
-				String orcid = (String)person.get(ORCID);
-				if(orcid != null && !orcid.isEmpty()) {
-					parsedPerson.setOrcid(new ORCID((String) person.get(ORCID)));
-				}
-				persons.add(parsedPerson);
-			}
-		}
-	}
 
-	public UntypedData getTitle() {
-		return title;
-	}
-
-	public void setTitle(UntypedData title) {
-		this.title = title;
-	}
-
-	public UntypedData getDescription() {
-		return description;
-	}
-
-	public void setDescription(UntypedData description) {
-		this.description = description;
-	}
-
-	public UntypedData getLicense() {
-		return license;
-	}
-
-	public void setLicense(UntypedData license) {
-		this.license = license;
-	}
-
-	public EdalLanguage getLanguage() {
-		return language;
-	}
-
-	public void setLanguage(EdalLanguage language) {
-		this.language = language;
-	}
-
-	public Subjects getSubjects() {
-		return subjects;
-	}
-
-	public void setSubjects(Subjects subjects) {
-		this.subjects = subjects;
-	}
-
-	public Persons getCreators() {
-		return creators;
-	}
-
-	public void setCreators(Persons creators) {
-		this.creators = creators;
-	}
-
-	public Persons getContributors() {
-		return contributors;
-	}
-
-	public void setContributors(Persons contributors) {
-		this.contributors = contributors;
-	}
-
-	public LegalPerson getLegalpersons() {
-		return this.legalPerson;
-	}
-
-	public void setLegalpersons(LegalPerson legalperson) {
-		this.legalPerson = legalperson;
-	}
-	
-	
-	
-	
-}
-
-//@Produces(MediaType.TEXT_PLAIN)
-//@Path("authenticate")
-//@POST
-//public String authenticate(@FormDataParam("email") String email) throws Exception {
-//	final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-//	System.out.println(email);
-//	Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
-//
-//	LoginContext ctx = null;
-//	try {
-//		ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
-//		ctx.login();
-//		Thread.currentThread().setContextClassLoader(currentClassLoader);
-//		Platform.setImplicitExit(true);
-//		Subject subject = ctx.getSubject();
-//		// return (String) jsonEmail.get("email");
-////		StreamingOutput stream = new StreamingOutput() {
-////			@Override
-////			public void write(OutputStream os) throws IOException, WebApplicationException {
-////				ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
-////				objectOutputStream.writeObject(subject);
-////				objectOutputStream.flush();
-////			}
-////		};			
-//		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//		ObjectOutputStream out = null;
-//		try {
-//		  out = new ObjectOutputStream(bos);   
-//		  out.writeObject(subject);
-//		  out.flush();
-//		  byte[] yourBytes = bos.toByteArray();			
-//			return Base64.getEncoder().encodeToString(yourBytes);
-//		} finally {
-//		  try {
-//		    bos.close();
-//		  } catch (IOException ex) {
-//		    // ignore close exception
-//		  }
-//		}
-//		// PrimaryDataDirectory root =
-//		// DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-//	} catch (final LoginException e) {
-//
-//		int result = 0;
-//		if (e.getCause() == null) {
-//			result = (Integer) JOptionPane.showConfirmDialog(null,
-//					"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
-//					"Login to Elixir", JOptionPane.YES_NO_OPTION);
-//		} else {
-//			result = (Integer) JOptionPane.showConfirmDialog(null,
-//					"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
-//					"Login to Elixir+", JOptionPane.YES_NO_OPTION);
-//		}
-//
-//	}
-//	return "";
-////	JSONObject obj = new JSONObject();
-////	obj.put("email", jsonEmail.get("email"));
-////	return obj;
-//}
-//
-//@Produces("text/html; charset=UTF-8")
-//@Path("authenticateEmail")
-//@POST
-//public String authenticateEmail(String email) throws Exception {
-//	Gson gson = new Gson();
-//
-//	JSONObject jsonEmail = (JSONObject) new JSONParser().parse(email);
-//	final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-//
-//	Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
-//
-//	LoginContext ctx = null;
-//	try {
-//		ctx = new LoginContext("Elixir", new SimpleCallbackHandler((String) jsonEmail.get("email")));
-//		ctx.login();
-//		Thread.currentThread().setContextClassLoader(currentClassLoader);
-//		Platform.setImplicitExit(true);
-//		Subject subject = ctx.getSubject();
-//		return (String) jsonEmail.get("email");
-////		StreamingOutput stream = new StreamingOutput() {
-////		    @Override
-////		    public void write(OutputStream os) throws IOException,
-////		    WebApplicationException {
-////	    	 ObjectOutputStream objectOutputStream = new ObjectOutputStream(os);
-////	    	 objectOutputStream.writeObject(subject);
-////	    	 objectOutputStream.flush();
-////		    }
-////		  };
-////	    	 ByteArrayOutputStream output = new ByteArrayOutputStream();
-////	    	 stream.write(output);
-////	    	 System.out.println("1.");
-////	    	 System.out.println(new String(output.toByteArray(), "UTF-8"));
-////		  return Response.ok(stream).build();
-////		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-//	} catch (final LoginException e) {
-//
-//		int result = 0;
-//		if (e.getCause() == null) {
-//			result = (Integer) JOptionPane.showConfirmDialog(null,
-//					"Your login attempt was not successful !\nReason: " + "no null name allowed" + "\nTry again ?",
-//					"Login to Elixir", JOptionPane.YES_NO_OPTION);
-//		} else {
-//			result = (Integer) JOptionPane.showConfirmDialog(null,
-//					"Your login attempt was not successful !\nReason: " + e.getMessage() + "\nTry again ?",
-//					"Login to Elixir+", JOptionPane.YES_NO_OPTION);
-//		}
-//
-//	}
-//	return null;
-////	JSONObject obj = new JSONObject();
-////	obj.put("email", jsonEmail.get("email"));
-////	return obj;
-//}
-//
-//@Produces("text/html; charset=UTF-8")
-//@Path("reuseSubject")
-//@POST
-//public String reuseSubject(@FormDataParam("subject") String src) {
-//	
-//	try {
-//		InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(src));		
-//		ObjectInputStream oi = new ObjectInputStream(in);
-//		Subject subject = (Subject) oi.readObject();
-//		PrimaryDataDirectory dir = DataManager.getRootDirectory(EdalRestServer.implProv, subject);
-//		System.out.println(dir.getName());
-//		return subject.toString();
-//	} catch (IOException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	}
-//
-//	catch (ClassNotFoundException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	} catch (PrimaryDataDirectoryException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	}
-//	return src;
-//}
-
-
-//class SimpleCallbackHandler implements CallbackHandler {
-//
-//	final String username;
-//
-//	SimpleCallbackHandler(String username) {
-//		this.username = username;
-//	}
-//
-//	@Override
-//	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-//		for (final Callback callback : callbacks) {
-//			if (callback instanceof NameCallback) {
-//				final NameCallback nc = (NameCallback) callback;
-//				nc.setName(username);
-//			}
-//		}
-//	}
-//
-//}

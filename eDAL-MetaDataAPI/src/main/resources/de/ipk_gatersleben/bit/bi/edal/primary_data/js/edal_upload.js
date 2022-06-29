@@ -28,7 +28,7 @@ function checkIfExists(input){
         clearTimeout(keytimer);
         keytimer = setTimeout(() => {
             let form = new FormData();
-            form.append("subject",email);
+            form.append("email",email);
             form.append("name",$(input).val());
             jQuery.ajax({
                 url: serverURL+"/restfull/api/checkIfExists",
@@ -434,7 +434,7 @@ function publishDataset(){
   $('#droplabel').empty();
   $('#droplabel').append(`Drop or Select a single&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div>`);
   let form = new FormData();
-  form.append("subject",email);
+  form.append("email",email);
   form.append("name", globalMetadata.title);
   if($('#input_embargo').val().length > 0){
     form.append("embargo",$('#input_embargo').val());
@@ -486,7 +486,7 @@ async function updateUploadedFiles(counter){
 async function uploadEntity2(path, file, progressIdentifier){
     return new Promise(async (resolve) => {
         let payload = new FormData();
-        payload.append("name",path);
+        payload.append("path",path);
         payload.append("email",email);
         payload.append("datasetRoot",globalMetadata.title);
         if(file == null){
@@ -515,7 +515,7 @@ async function uploadEntity2(path, file, progressIdentifier){
         });
         }else{
 
-            payload.set("name",path);
+            payload.set("path",path);
             payload.append('file',file);
             payload.append('size',file.size);
             payload.append("type","File");
@@ -544,7 +544,7 @@ async function uploadEntity2(path, file, progressIdentifier){
                console.log("GIVEN progress label:_ "+progressIdentifier);   
                markup = `<div id='${progressIdentifier}-container' class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
                $(".parallel-uploads").append(markup);      
-               updateFileProgress(path, progressIdentifier);
+               updateFileProgress(email+path, progressIdentifier);
 
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
                 //resolve("finished!!");
@@ -558,7 +558,7 @@ async function uploadEntity2(path, file, progressIdentifier){
       let payload = new FormData();
       payload.append("email",email);
       payload.append("datasetRoot",globalMetadata.title);
-      payload.set("name",path);
+      payload.set("path",path);
       payload.append('file',file);
       payload.append('size',file.size);
       payload.append("type","File");
@@ -589,8 +589,7 @@ async function uploadEntity2(path, file, progressIdentifier){
   async function updateFileProgress(path, progressId){
     console.log("file progress label:_ "+progressId);
     let payload = new FormData();
-    payload.append('email',email);
-    payload.append('name',path);
+    payload.append('key',path);
     jQuery.ajax({
       url: serverURL+"/restfull/api/getProgress",
       data: payload,
@@ -993,7 +992,6 @@ worker.onmessage = (evt) => {
       payload.append("name",fullPath);
       payload.append("email",email);
       payload.append("datasetRoot",globalMetadata.title);
-      payload.append("subject",email);
       payload.append("metadata",JSON.stringify(metadata));
         jQuery.ajax({
           url: serverURL+"/restfull/api/uploadEntityAndMetadata",
@@ -1037,7 +1035,7 @@ worker.onmessage = (evt) => {
     async function uploadEntity(entry){
       return new Promise(async (resolve) => {
           let payload = new FormData();
-          payload.append("name",entry.fullPath);
+          payload.append("path",entry.fullPath);
           payload.append("email",email);
           payload.append("datasetRoot",globalMetadata.title);
           if(entry.isDirectory){
@@ -1064,7 +1062,7 @@ worker.onmessage = (evt) => {
               }
           });
           }else{
-            payload.set("name",entry.fullPath);
+            payload.set("path",entry.fullPath);
             entry.file(async function (file){
               payload.append('file',file);
               payload.append("type","File");

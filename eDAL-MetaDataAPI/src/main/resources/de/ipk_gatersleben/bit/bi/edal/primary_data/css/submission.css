@@ -185,6 +185,10 @@ table.preview{
   border: none;
 }
 
+.alert-table{
+  text-align: initial;
+}
+
 table.alert-table{
   border: none;
 }
@@ -195,6 +199,7 @@ table.alert-table{
 
 .alert-table-container td, .alert-table-container th{
   border: none;
+  min-width: 130px;
 }
 
 

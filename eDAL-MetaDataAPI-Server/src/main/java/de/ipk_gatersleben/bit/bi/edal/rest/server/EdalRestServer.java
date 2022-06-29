@@ -72,13 +72,13 @@ public class EdalRestServer {
 		EdalConfiguration configuration ;
 		if(config == null) {
 			configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
-					new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-					new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
+					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
+					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"));
 		}else {
 			configuration = config;
 		}
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
-		//configuration.setHttpPort(6789);
+		configuration.setHttpPort(6789);
 		
 		configuration.setUseSSL(false);
 
