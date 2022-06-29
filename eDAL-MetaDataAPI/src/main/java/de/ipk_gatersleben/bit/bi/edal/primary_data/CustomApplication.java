@@ -10,25 +10,14 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package de.ipk_gatersleben.bit.bi.edal.rest.server;
+package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 
-public class ProgressionMap {
-	
-	private static ProgressionMap instance;
-	private ConcurrentHashMap<String,Integer> map = new ConcurrentHashMap<>();
-	private ProgressionMap() {}
-	
-	public static ProgressionMap getInstance() {
-        if(instance == null){
-            instance = new ProgressionMap();
-        }
-        return instance;
-	}
-
-	public ConcurrentHashMap<String, Integer> getMap(){
-		return map;
+public class CustomApplication extends ResourceConfig {
+	public CustomApplication() {
+		packages("de.ipk_gatersleben.bit.bi.edal.rest.server");
+		register(MultiPartFeature.class);
 	}
 }

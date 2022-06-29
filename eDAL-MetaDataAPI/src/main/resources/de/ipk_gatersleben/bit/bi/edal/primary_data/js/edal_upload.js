@@ -323,8 +323,8 @@ async function showUploadDialog(){
       $('.progress').css('height','17px');
       $('.progress-bar').text('0%'); 
       $('#summary_agreement').addClass("d-flex").removeClass("d-none");
-      $('.modal-list').empty();
-      $('.modal-list').removeClass("d-flex").addClass("d-none");
+      $('.parallel-uploads').empty();
+      $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
       $('#myModal2').modal('show');
       $('#upload-close-button').text('back');
       $('#cancelUploadDialogCross').attr('data-target','');
@@ -361,7 +361,7 @@ async function showUploadDialog(){
 
   async function startUpload(){
     $('#summary_agreement').removeClass("d-flex").addClass("d-none");
-    $('.modal-list').addClass("d-flex").removeClass("d-none");
+    $('.parallel-uploads').addClass("d-flex").removeClass("d-none");
     fileCounter = 0;
     if(fileSystemEntry.kind == "directory"){
       startDirectoryUpload();
@@ -396,7 +396,7 @@ async function startDirectoryUpload(){
     async function iterateFiles(files){
         requests = 0;
         uniqueProgressId = 0;
-        $('.modal-list').empty();
+        $('.parallel-uploads').empty();
         return new Promise(async (resolve) => {
             for (var key in files) {
                 if(!uploadCanceled){
@@ -452,7 +452,7 @@ function publishDataset(){
         setTimeout(() => {
           $('.progress-bar').css('transition','width 1s ease');
           $('.progress-bar').css('width','100%');
-          $('.modal-list').removeClass("d-flex").addClass("d-none");
+          $('.parallel-uploads').removeClass("d-flex").addClass("d-none");
           $('#upload-close-button').text('close');
           $('#cancelUploadDialogCross').attr('data-target','');
           $('#upload-close-button').attr('data-target','');
@@ -543,7 +543,7 @@ async function uploadEntity2(path, file, progressIdentifier){
                /* Add progress ui for this file with the key as ID to upload progresses dialog  */      
                console.log("GIVEN progress label:_ "+progressIdentifier);   
                markup = `<div id='${progressIdentifier}-container' class='d-flex flex-row mt-2 mb-2' style='text-align:center;align-items:center;'><div class='file-progress-name mr-2'>: ${file.name} (${niceBytes(file.size)})</div><div class='progress w-100 submitbtn' style='height:17px;'><div class="single-file-progressbar" id=${progressIdentifier} >0%</div></div></div>`;
-               $(".modal-list").append(markup);      
+               $(".parallel-uploads").append(markup);      
                updateFileProgress(path, progressIdentifier);
 
                 //$.post( serverURL+"/restfull/api/uploadEntity", JSON.stringify(requestData), function(data){
@@ -646,6 +646,7 @@ worker.onmessage = (evt) => {
     }else{
         files = evt.data.traversed;
         numberOfFiles = evt.data.numberOfFiles;
+        document.querySelector("pre").textContent = `Directory: ${fileSystemEntry.name}, ${numberOfFiles}`;
         if(evt.data.tempFiles > 0){
           fileSystemEntry = null;
           if(evt.data.tempFiles > 1){

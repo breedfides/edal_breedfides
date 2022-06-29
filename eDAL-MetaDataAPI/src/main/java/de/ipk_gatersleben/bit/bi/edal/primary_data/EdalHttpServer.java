@@ -166,8 +166,8 @@ public class EdalHttpServer {
 		submissionJerseyServlet.setInitOrder(0);
 		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.packages",
 				"de.ipk_gatersleben.bit.bi.edal.rest.server");
-		submissionJerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.rest.server.CustomApplication");
-		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.rest.server.CORSFilter,org.glassfish.jersey.media.multipart.MultiPartFeature");
+		submissionJerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.primary_data.CustomApplication");
+		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.classnames","org.glassfish.jersey.media.multipart.MultiPartFeature");
 		handlerCollection.prependHandler(submissionRestHandler);
 //		collection.addHandler(restHandler);
 //		handlerCollection.addHandler(resourceHandler);

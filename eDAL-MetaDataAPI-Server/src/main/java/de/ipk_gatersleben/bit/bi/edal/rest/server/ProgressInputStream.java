@@ -1,5 +1,4 @@
 package de.ipk_gatersleben.bit.bi.edal.rest.server;
-
 /**
  * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
