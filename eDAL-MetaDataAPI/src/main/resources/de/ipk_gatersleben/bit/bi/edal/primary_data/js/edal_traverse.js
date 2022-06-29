@@ -61,7 +61,7 @@ async function handleDirectoryEntry( dirHandle, out ) {
       let extension = entry.name.slice((entry.name.lastIndexOf(".") - 1 >>> 0) + 2);
         //check if it's a compressed file
       if(notRecommendedTypes.includes(extension) || entry.name.slice(-6) == 'tar.gz'){
-        compressedFilePaths.push({type:"compressed file",path:filePath});
+        compressedFilePaths.push({type:"Compressed file",path:filePath});
         //check if it's a temporary file
       }else if(extension == 'tmp' || extension == 'foo' || entry.name.slice(0,2) == '~$'){
         tempFileCounter++;
@@ -72,7 +72,7 @@ async function handleDirectoryEntry( dirHandle, out ) {
         filecounter++;
         globalFileCounter++;
       }else{
-        emptyFilePaths.push({type:"empty file",path:filePath});
+        emptyFilePaths.push({type:"Empty file",path:filePath});
         emptyFiles++;
       }
     }else if(entry.kind === "directory") {

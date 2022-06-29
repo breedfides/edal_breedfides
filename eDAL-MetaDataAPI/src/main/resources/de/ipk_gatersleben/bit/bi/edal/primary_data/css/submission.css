@@ -190,7 +190,7 @@ table.preview{
 }
 
 table.alert-table{
-  border: none;
+  border: 1px solid;
 }
 .alert-table-container{
   display:flex;
@@ -199,7 +199,11 @@ table.alert-table{
 
 .alert-table-container td, .alert-table-container th{
   border: none;
-  min-width: 130px;
+}
+
+.alert-table-container tr{
+  border-bottom: 1px solid;
+  border-top: 1px solid;
 }
 
 
@@ -241,6 +245,8 @@ table.alert-table{
 
 .chooseFileDirectory{
   cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .chooseFileDirectory:hover{

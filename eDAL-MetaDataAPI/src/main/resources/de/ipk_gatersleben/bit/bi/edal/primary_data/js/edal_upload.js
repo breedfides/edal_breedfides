@@ -1,24 +1,42 @@
+/* Web Worker for traversing a directory */
 const worker = new Worker("/js/edal_traverse.js");
+
+/* Container for selected/dropped file/directory */
 let files = {};
+
+/* For timing/throttling the requests when entering keys on the title field, see checkIfExists()*/
 let keytimer;
+
+/* Flag for input validation */
 let titleAlreadyExists = false;
+
+/* For avoiding submit/summary dialog, if the Title validation hasnt finished yet */
 let checkingTitle = false;
+
+/* For readability */
 let storage = localStorage;
+
+/* To Store the row in which the user clicked on the searchOrcid Button */
 let currentAuthorRow = null;
+
+/* To detect if the dataset was fully uploaded */
+let fileCounter = 0;
+
+/* Also to detect finished upload and to calculate the progression */
+let numberOfFiles = 0;
+
+/* Store the current parallel request count */
+let requests = 0;
+
+/* set the limit of possible parallel file uploads for throttling */
+const numberOfMaxAllowedParallelUploads = 6;
 const displayAlertTime = 5000;
 const tooltip_text = "Year when the data is made publicly available";
-let fileCounter = 0;
-let numberOfFiles = 0;
-let requests = 0;
 uploadCanceled = false;
 //for calculation of readable filesizes instead of raw bits and bytes
 let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
-/* set the limit of possible parallel file uploads */
-const numberOfParallelUploads = 6;
 const updateProgressTimeout = 1000;
-
-var resumable;
 
 
 /* Input validation function that makes a REST call to test if
@@ -406,7 +424,7 @@ async function startDirectoryUpload(){
                       if(files[key].isDirectory){
                           await uploadEntity2(key, null);
                       }else{
-                          if(requests < numberOfParallelUploads){
+                          if(requests < numberOfMaxAllowedParallelUploads){
                               requests++;
                               uploadEntity2(key, files[key].file, progress_id).then(function(result) {
                                 requests--;
@@ -582,7 +600,7 @@ async function uploadEntity2(path, file, progressIdentifier){
             },
           }
           });   
-         updateFileProgress(path, "parent-progress-bar");
+         updateFileProgress(email+path, "parent-progress-bar");
     });
   }
 
@@ -657,26 +675,7 @@ worker.onmessage = (evt) => {
           fileSystemEntry = null;
           showAlertMessage("Please select or drop a directory with at least 1 valid file.", 5*displayAlertTime);
         }else{
-          let alertMessage = "<div class='alert-table-container'><h5 class='mb-2'>Found empty/compressed Files: </h5><div class='alert-table-wrapper mb-2 px-2 py-1'><table class='alert-table mb-2'>";
-          if(evt.data.emptyFilePaths.length > 0 || evt.data.compressedFilePaths.length > 0){
-            evt.data.compressedFilePaths.forEach((obj) => {
-              alertMessage += `<tr><td class="pr-2">${obj.type}:</td><td class="pl-2">${obj.path}</td>`;
-            });
-            evt.data.emptyFilePaths.forEach((obj) => {
-              alertMessage += `<tr><td class="pr-2">${obj.type}:</td><td class="pl-2">${obj.path}</td>`;
-            });
-            alertMessage += `</table></div><p class="mb-2">Empty files/directories will be ignored during upload.\nWe recommend to use directories without compressed files.</p><button class='btn btn-outline-primary' style='width:fit-content;margin: auto;' onclick='dismissPrimaryAlert();'>Continue</button></div>`;
-            //remove last ','
-            $('.alert').removeClass( "alert-danger" ).addClass('alert-primary');
-            $('#alert-information').empty();
-            $('#alert-information').append(alertMessage);
-            $('.alert').show();
-          }
-/*           if(evt.data.emptyDirs > 0 || evt.data.emptyFiles > 0){
-            alertMessage += "The choosen directory contains empty files or directories. Please consider whether these files are important as they will be ignored during upload.";
-            showAlertMessage(alertMessage, displayAlertTime*2);
-          } */
-
+          createAndShowBadFiles(evt);
         }
 
         for (var key in files) {
@@ -686,6 +685,38 @@ worker.onmessage = (evt) => {
         }
     }
 
+  }
+
+  /* Fills a modal dialog with the information about how many empty/compressed files/directories were found and the file paths */
+  function createAndShowBadFiles(evt){
+    if(evt.data.emptyFilePaths.length > 0 || evt.data.compressedFilePaths.length > 0){
+      let footer = "";
+      let foundFiles = "";
+      if(evt.data.emptyFilePaths.length > 0 && evt.data.compressedFilePaths.length > 0){
+        foundFiles = `Found ${evt.data.emptyFilePaths.length} empty file(s)/directorie(s) and ${evt.data.compressedFilePaths.length} compressed file(s):`;
+        footer += `</table></div><p class="mb-2">1. Please note that empty files/directories will be ignored during upload.\n2. Also We recommend to use directories without compressed files.</p><button class='btn btn-outline-primary' style='width:fit-content;margin: auto;' onclick='dismissPrimaryAlert();'>Continue</button></div>`;
+      }else if(evt.data.emptyFilePaths.length > 0){
+        foundFiles = evt.data.emptyFilePaths.length > 1 ? `Found ${evt.data.emptyFilePaths.length} empty files/directories:` : `Found ${evt.data.emptyFilePaths.length} empty file/directorie:`;
+        footer += `</table></div><p class="mb-2">Please note that empty files/directories will be ignored during upload.</p><button class='btn btn-outline-primary' style='width:fit-content;margin: auto;' onclick='dismissPrimaryAlert();'>Continue</button></div>`;
+      }else{
+        foundFiles = evt.data.compressedFilePaths.length > 1 ? `Found ${evt.data.compressedFilePaths.length} compressed files:` : `Found ${evt.data.compressedFilePaths.length} compressed file:` ;
+        footer += `</table></div><p class="mb-2">We recommend to use directories without compressed files.</p><button class='btn btn-outline-primary' style='width:fit-content;margin: auto;' onclick='dismissPrimaryAlert();'>Continue</button></div>`;
+      }    
+      let alertMessage = `<div class='alert-table-container'><h5 class='mb-2'>${foundFiles}</h5><div class='alert-table-wrapper mb-2 px-2 py-1'><table class='alert-table mb-2'>`;       
+      let rowNumber = 1;
+      evt.data.compressedFilePaths.forEach((obj) => {
+        alertMessage += `<tr><td class="pr-2 py-1 pl-1">${rowNumber++}.</td><td class="py-1" style="min-width:130px;">${obj.type}:</td><td class="pl-2 py-1 pr-1">${obj.path}</td>`;
+      });
+      evt.data.emptyFilePaths.forEach((obj) => {
+        alertMessage += `<tr><td class="pr-2 py-1 pl-1">${rowNumber++}.</td> <td class="py-1"  style="min-width:130px;">${obj.type}:</td><td class="pl-2 py-1 pr-1">${obj.path}</td>`;
+      });
+      alertMessage += footer;
+      //remove last ','
+      $('.alert').removeClass( "alert-danger" ).addClass('alert-primary');
+      $('#alert-information').empty();
+      $('#alert-information').append(alertMessage);
+      $('.alert').show();
+    }
   }
   
   /* For drag and drop handling we use methos of the HTML Drag and Drop API
@@ -754,6 +785,12 @@ worker.onmessage = (evt) => {
     fileSystemEntry = dirHandle;
     worker.postMessage( dirHandle );  
     checkIfExists(document.getElementById('input_title'));
+    $('.progress').css('height','0');
+    $('.progress-bar').css('width','0%');
+    $('#submitBtn').contents().filter(function(){
+        return this.nodeType === 3;
+    }).remove();
+    $('#submitBtn').append('Start upload');
     uploadCanceled = false;
   }
 

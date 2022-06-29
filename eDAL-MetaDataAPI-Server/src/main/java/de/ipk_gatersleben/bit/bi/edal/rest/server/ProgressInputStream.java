@@ -20,6 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.JProgressBar;
 
+/**
+ * Special Stream class to map the reading progress of a file. 
+ * On every update a value in a ConcurrentHashMap gets updated.
+ * @author ralfs
+ *
+ */
 public class ProgressInputStream extends FilterInputStream {
 
 	private String key;

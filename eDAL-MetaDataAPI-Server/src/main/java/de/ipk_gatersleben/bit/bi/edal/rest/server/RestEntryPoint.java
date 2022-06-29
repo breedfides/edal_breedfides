@@ -128,7 +128,7 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntityAndMetadata")
 	@POST
-	public String uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("email") String email,@FormDataParam("name") String entityName) {
+	public Response uploadEntityAndMetadata(@FormDataParam("metadata") String metadataString, @FormDataParam("email") String email,@FormDataParam("name") String entityName) {
 		return new DataSubmissionService().uploadEntityAndMetadata(metadataString, email, entityName);			
 	}
 	
@@ -174,7 +174,7 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("uploadEntity")
 	@POST
-	public String uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
+	public Response uploadEntity(@FormDataParam("file") InputStream uploadedInputStream,
 			@FormDataParam("path") String path, @FormDataParam("email") String email, @FormDataParam("type") String type,
 			@FormDataParam("datasetRoot") String datasetRoot, @FormDataParam("size") String size)  {
 		return new DataSubmissionService().uploadEntity(uploadedInputStream, path, email, type, datasetRoot, size);	
@@ -196,7 +196,7 @@ public class RestEntryPoint {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("publishDataset")
 	@POST
-	public String publishDataset(@FormDataParam("email") String emailEncoded,@FormDataParam("name") String name, @FormDataParam("embargo") String embargo) throws PrimaryDataDirectoryException, AddressException,
+	public Response publishDataset(@FormDataParam("email") String emailEncoded,@FormDataParam("name") String name, @FormDataParam("embargo") String embargo) throws PrimaryDataDirectoryException, AddressException,
 			PublicReferenceException, PrimaryDataEntityException, ParseException {
 		return new DataSubmissionService().publishDataset(emailEncoded, name, embargo);
 	}

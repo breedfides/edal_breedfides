@@ -15,6 +15,12 @@ package de.ipk_gatersleben.bit.bi.edal.rest.server;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * A Singleton ConcurrentHashmap currently used in the DataSubmissionService.class
+ * to allow multiple Threads to obtain the progress of a file upload
+ * @author ralfs
+ *
+ */
 public class ProgressionMap {
 	
 	private static ProgressionMap instance;
