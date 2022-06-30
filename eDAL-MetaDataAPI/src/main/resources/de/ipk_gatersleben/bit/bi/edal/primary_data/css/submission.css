@@ -1,0 +1,311 @@
+* {
+    box-sizing: border-box;
+  }
+
+
+
+body{
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    /* Background image is centered vertically and horizontally at all times */
+    background-position: center center;
+    /* Background image doesn’t tile */
+    background-repeat: no-repeat;
+    /* Background image is fixed in the viewport so that it doesn’t move when the content’s height is greater than the image’s height */
+    background-attachment: fixed;
+    /* This is what makes the background image rescale based on the container’s size */
+    background-size: cover;
+    /* Set a background color that will be displayed while the background image is loading */
+}
+
+#overlay {
+    background-color: rgba(0, 0, 0, 0.39);
+    z-index: 999;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.alert-table-container{
+  text-align: center;
+}
+
+.alert{
+  z-index: 1;
+  position: absolute;
+  padding-left: 4em;
+  left:0;
+  right:0;
+  top: 0;
+  bottom: 0;
+  margin: auto!important;
+  width: fit-content;
+  max-width: 40vw;
+  height:fit-content;
+  display:none;
+  margin:.5em .5em 1em .5em
+}
+
+.parallel-uploads{
+  border: 1px solid #ced4da;
+  min-height:50px;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.hide{
+  display:none;
+}
+
+#addAuthorButtonDiv{
+  text-align: center;
+}
+
+#addSubjectButtonDiv{
+  text-align: center;
+}
+
+button:focus{
+  outline: 0!important;
+}
+
+label{
+  font-weight: 500;
+}
+
+.vertical-centerd-text{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.link:hover{
+  color: #4285F4;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.glass{
+    /* From https://css.glass */
+    width:100%;
+    height: 100%;
+    overflow-y: auto; /* allows scrolling without losing glass effect */
+}
+
+.width65{
+  width: 65%;
+}
+
+.width35{
+  width: 35%;
+}
+
+.flexrowfill{
+    width: 97vw;
+}
+
+.flexcolfill{
+    height: 100%;
+    width:100%;
+}
+
+table, th, td {
+    border: 1px solid;
+  }
+
+
+.container{
+    /*height: 100%;*/
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin:0px auto;
+    padding:0;
+    color: black;
+}
+
+.submitbtn{
+  width:9vw;
+  height:0;
+  min-width:fit-content;
+  transition: all .6s ease;
+}
+
+.file-progress-name{
+  width:150px;
+  width: 20vw;
+  direction: rtl;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.single-file-progressbar{
+  width:0%;
+  transition:width 1s ease!important;
+  background-color:rgb(2, 117, 216);
+  color: white;
+}
+
+#droplabel{
+  justify-content: center;
+}
+
+
+#dropzone {
+  text-align: center;
+  border: 2px dashed rgb(2, 117, 216);
+  border-radius: 5px;
+  width: 50%;
+  min-width: fit-content;
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  overflow: none;
+}
+
+.drag {
+  box-shadow: inset 0px 0px 0px 2px #00C;
+  background-color: #ced4da;
+}
+
+.alert-table-wrapper{
+  max-height: 30vh;
+  overflow-y: auto;
+  border: 1px solid grey;
+  border-radius: 7px;
+  max-width: 50vw;
+  overflow-x: auto;
+}
+
+table.preview{
+  border: none;
+}
+
+.alert-table{
+  text-align: initial;
+}
+
+table.alert-table{
+  border: 1px solid;
+}
+.alert-table-container{
+  display:flex;
+  flex-direction: column;
+}
+
+.alert-table-container td, .alert-table-container th{
+  border: none;
+}
+
+.alert-table-container tr{
+  border-bottom: 1px solid;
+  border-top: 1px solid;
+}
+
+
+#summary td, #summary th{
+  border: none;
+}
+
+.user-agreement-flex{
+  justify-content: center;
+  justify-items: center;
+  align-items: center;
+}
+
+.table-rows{
+  min-height: 30%;
+}
+
+#alert-information{
+  white-space: pre-wrap;
+}
+
+#summary{
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  max-height: 60vh;
+  overflow-y: auto;
+  max-width: 90vw;
+  overflow-x: auto;
+}
+
+#boxtitle {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  color: black;
+  font: 300 1.2em "Arial", sans-serif;
+  overflow: auto;
+}
+
+.chooseFileDirectory{
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.chooseFileDirectory:hover{
+  
+  cursor: pointer;
+  color: #4285F4;
+  text-decoration: underline;
+}
+
+.smaller{
+  min-height: 7%;
+}
+
+.header{
+    text-align: center;
+    min-height: 7%;
+}
+
+.btn {
+    font-family: Rubik, Helvetica, sans-serif;
+  }
+
+  .btn:hover .btn-slide-show-text1 {
+    margin-left: 65px;
+  }
+
+  .lds-facebook {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-facebook div {
+  display: inline-block;
+  position: absolute;
+  left: 8px;
+  width: 16px;
+  background: rgba(92,92,92,.2);
+  animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+}
+.lds-facebook div:nth-child(1) {
+  left: 8px;
+  animation-delay: -0.24s;
+}
+.lds-facebook div:nth-child(2) {
+  left: 32px;
+  animation-delay: -0.12s;
+}
+.lds-facebook div:nth-child(3) {
+  left: 56px;
+  animation-delay: 0;
+}
+@keyframes lds-facebook {
+  0% {
+    top: 8px;
+    height: 64px;
+  }
+  50%, 100% {
+    top: 24px;
+    height: 32px;
+  }
+}

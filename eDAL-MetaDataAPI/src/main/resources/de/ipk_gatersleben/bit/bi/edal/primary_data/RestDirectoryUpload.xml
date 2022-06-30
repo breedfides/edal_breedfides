@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+        
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+            <link rel="stylesheet" href="css/submission.css">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+            
+                <title>e!DAL Data Submission</title>
+            </head>
+
+            <body>
+            <div id="overlay"></div>
+                <div class="glass">
+
+                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
+                            <div class="modal-content">
+                            <div class="modal-header d-flex" style='height:50px;background-color: #00b3f4;background-image: url("header_bg2.png");'>
+                                <h4 class="modal-title" id="modal-orcid-title" style="font-size:1.3rem;">Modal title</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body" id="orcids" style="margin: 0 auto;padding: .5rem;">
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;height:60px;">
+                            <a class="mr-3" style="width:230px" href="https://orcid.org/orcid-search/search" target="_blank">Search by myself</a>
+                            <input class="form-control" id="modal-input" placeholder="Orcid.."></input>
+                                <button type="button" class="btn btn-default" onclick="setOrcid()" data-dismiss="modal">Save & Close</button>                    
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" data-keyboard="false">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" style="width:fit-content;" role="document">
+                            <div class="modal-content" style="min-width: 250px;width: 40vw;">
+                            <div class="modal-header d-flex" style='background-color: #00b3f4;background-image: url("header_bg2.png");'>
+                                <h4 id="upload-title" class="modal-title" style="font-size:1.3rem;">Upload Progress</h4>
+                                <button id="cancelUploadDialogCross" type="button" class="close" data-dismiss="modal" aria-label="Close" data-toggle="modal" data-target="#cancelUploadDialog"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body d-flex flex-column" id="upload-body" style="padding: .5rem;">
+                                <div class="d-flex flex-row" style="text-align:center;align-items:center;">
+                                    <div style="min-width:150px">Progress:</div>
+                                    <div class="progress w-100 submitbtn">
+                                            <div class="progress-bar" id="parent-progress-bar" style="width:0%;transition:width .6s linear!important;background-color:rgb(2, 117, 216);">0%</div>
+                                    </div>
+                 
+                                </div>
+                                <div class="parallel-uploads p-2 d-flex flex-column mt-2">
+                                    
+                                </div >
+
+                                <div id="summary_agreement" class="p-2 d-flex flex-column mt-2">
+                                    <div id="summary" class="py-2"></div>
+                                    <div class="d-flex flex-row p-2 user-agreement-flex">
+                                        <input id="toggleStartButton" onchange="toggleStartUpload()" class="mr-2" type="checkbox"/>
+                                        <label class="mr-2" style="margin-bottom:0;">I accept the Deposition and License Agreement</label>
+                                        <a href="https://edal-pgp.ipk-gatersleben.de/document/PGP-contract.pdf" target="_blank"><img class="v-icon" src="https://webapps.ipk-gatersleben.de/edal-pgp/VAADIN/themes/mytheme/img/pdf_icon.png"><span>PDF</span></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;height:60px;">
+                                <div class="d-flex flex-row p-2 w-50 justify-content-around">
+                                    <button id="upload-start-button" type="button" class="btn btn-outline-primary" onclick="startUpload()" disabled>Start</button>   
+                                    <button id="upload-close-button" type="button" class="btn btn-outline-primary" data-dismiss="modal" data-toggle="modal" data-target="#cancelUploadDialog">Cancel</button>   
+                                </div>                 
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="cancelUploadDialog" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                            <div class="modal-header">
+                                <h6 class="modal-title" id="exampleModalLongTitle">Are you sure?</h6>
+                                </button>
+                            </div>
+                            <div class="modal-footer" style="justify-content:center;">
+                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal" data-toggle="modal" data-target="#myModal2">Continue Upload</button>
+                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal" onclick="cancelUpload()">Cancel Upload</button>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <button id="alert-close-cross" type="button" class="close" onclick="$('.alert').hide();" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <div id="alert-information">
+                            
+                        </div>
+                    </div>
+
+                    <div class="container flexcolfill pb-1">
+
+                        <div class="header flexrowfill">
+                            <img id="logo-edal" src="$serverURL/LOGO/edal_logo.png" style="float:left;">
+                                <button id="elixierLogin" class="btn btn-outline-primary mt-2" onclick="location.href='$serverURL/oauth'">Login with Elixir</button>
+                                <img id="logo-ipk" src="$serverURL/LOGO/ipk_logo.jpg" style="float:right;">
+                        </div>
+
+                                <!-- <img src="edalheader.png" class="mt-1 flexrowfill"> -->
+
+                                <div class="mt-2 smaller p-2" id="dropzone">
+                                    <div id="boxtitle">
+                                        <img id="loading-indicator" src="$serverURL/GIF" style="height:80px;width:auto;display:none;"></img>
+                                        <div class="d-flex flex-row" id="droplabel">Drop or Select a single&nbsp;<div class="chooseFileDirectory" onclick="chooseFile();">file&nbsp;</div>or&nbsp;<div class="chooseFileDirectory" onclick="chooseDirectory();">directory </div></div>
+                                        <pre id="file-counter-info" style="margin-bottom:0;min-width:5px;"></pre>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flexrowfill mt-2 smaller">
+                                    <div class="d-flex flex-column width65">
+                                        <label style="margin: 0">Title</label>
+                                        <input id="input_title" required class="form-control" onkeyup="checkIfExists(this)" placeholder="Please enter a short, but clear title here.."></input>
+                                    </div>
+                                    <div class="d-flex flex-column width35 ml-2">
+                                        <label style="margin-bottom:0;">Language</label>
+                                        <select id="select_language" class="form-control">
+                                        #foreach($item in $languages)
+                                            <option value="$item[0]">$item[1]</option>
+                                        #end
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex mt-2 flexrowfill table-rows">
+                                    <div class="d-flex flex-column width65">
+                                        <label>Description</label>
+                                        <textarea required id="text_description" class="form-control" style="height: 23vh;"></textarea>
+                                    </div>
+                                    <div class="d-flex flex-column width35 ml-2">
+                                        <div>
+                                            <label>Subjects</label>
+                                        </div>
+                                        <div class="border border-secondary" style="height:23vh;overflow-y: auto;">
+                                            <table id="subject_table" class="table table-bordered table-hover table-sm mb-2">
+                                                <tbody>
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th style="width:100px">Add/Remove</th>
+                                                            <th >Subject</th>
+                                                        </tr>
+                                                    </thead>
+                                                </tbody>
+                                            </table>
+                                            <div id="addSubjectButtonDiv">
+                                                <button class='btn btn-outline-secondary btn-sm mb-2' onclick='addSubjectRow()' style='width:fit-content'>+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex mt-2 flexrowfill table-rows" style="height:fit-content">
+                                    <div class="d-flex flex-column" style="height:fit-content;flex-grow:1">
+                                        <div>
+                                            <label>Authors</label>
+                                        </div>
+                                        <div class="border border-secondary" style="height:23vh; overflow-y: auto;">
+                                            <table id="author_table" class="table table-bordered table-hover table-sm w-100 mb-2">
+                                                <tbody>
+                                                    <thead class="thead-light" id="author_thead">
+                                                        <tr>
+                                                            <th id="addRemoveAuthor" style="width:100px">Add/Remove</th>
+                                                            <th>Firstname</th>
+                                                            <th>Lastname</th>
+                                                            <th style="width:170px">ORCID</th>
+                                                            <th>Legalname</th>
+                                                            <th>Address</th>
+                                                            <th>Zip</th>
+                                                            <th>Country</th>
+                                                            <th>Type</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                </tbody>
+                                            </table>
+                                            <div id="addAuthorButtonDiv"><button id="addAuthorButton" class='btn btn-outline-secondary btn-sm mb-2' onclick='addAuthorRow()' style='width:fit-content'>+</button></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex mt-1 flexrowfill smaller">
+                                    <div class="d-flex flex-row width65">
+                                        <div class="d-flex flex-column width65 mr-2">
+                                            <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
+                                                <select id="select_license" class="form-control mt-1">
+                                                    <option value="CC010">CC0 1.0 Universal (Creative Commons Public Domain Dedication)</option>
+                                                    <option value="CCBY40">CC BY 4.0 (Creative Commons Attribution)</option>
+                                                    <option value="CCBYSA40">CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)</option>
+                                                    <option value="CCBYND40">CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)</option>
+                                                    <option value="CCBYNC40">CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)</option>
+                                                    <option value="CCBYNCSA40">CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)</option>
+                                                    <option value="CCBYNCND40">CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)</option>
+                                                </select>
+
+                                            </div>
+                                            <div class="d-flex flex-column width35">
+                                                <label id="tooltip" style="margin-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="">Embargo date (optional)</label>
+                                                <input id="input_embargo" type="date" class="form-control mt-1" name="dateofbirth" id="dateofbirth">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column width35" style="align-items:center;">
+                                                <pre style="margin-bottom:0;min-width:5px;">&nbsp</pre>
+                                            <button id="submitBtn" class= "btn btn-outline-primary mt-1" onclick="showUploadDialog()">Start upload
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!--button type="button" class="btn btn-primary" onclick="login()">Elixir AAI Log in</button> -->
+
+                            <script src="$serverURL/JS/edal_upload.js"></script>
+                            <script src="$serverURL/JS/resumable.js"></script>
+                            <script>
+let dropzone = document.getElementById("dropzone");
+let listing = document.getElementById("boxtitle");
+let stack = [];
+let emptyDirectories = 0;
+var email = "$email";
+var serverURL = "$serverURL";
+var fileSystemEntry = null;
+console.log("velocity email: "+email);
+let globalMetadata = {};
+let authors = [];
+
+    $( document ).ready(function() {
+        $('#tooltip').attr('data-original-title', tooltip_text);
+        $('#overlay').css('top',`${$('.header').height()}px`);
+        #if($email)
+        $('#overlay').hide(); 
+        $('#elixierLogin').attr("onclick","logout()");
+        #end
+        #if($userName)
+        $('#elixierLogin').text("Log out $userName");
+        #end
+
+        if(browserBlocked()){
+            $('#elixierLogin').prop('disabled', true);
+            $('#overlay').show(); 
+            //display info for the user, that chrome is the only way to use this app
+            setTimeout(function(){
+                $('#alert-information').empty();
+                $('#alert-information').append('<strong>Please use Chrome to use this Web app.</strong>');
+                //shift the alert to the top
+                $('.alert').css({ bottom: 'initial' });
+                $('.alert').fadeIn();
+            },1000);
+
+        }else{
+            $('#submitBtn').css('transition:width','.6s ease!important');
+            function getStoredInput(key){
+                return storage.getItem(key) == null ? '' : storage.getItem(key);
+            }
+            //create authors array from stored inputs
+            tableBody = $("#author_table > tbody");
+            if(storage.authors != null){
+                authors = JSON.parse(storage.authors);
+                if(!jQuery.isEmptyObject(storage.authors)){
+                    authors.forEach ((author, index) => {
+                        //use orcid if exists, else add the orcid search button
+                        let orcid = author.hasOwnProperty('ORCID') ? author.ORCID : "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode);' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
+                        let firstName = 'Firstname' in author ? author.Firstname : '';
+                        let lastName = 'Lastname' in author ? author.Lastname : '';
+                        let legalName = 'Legalname' in author ? author.Legalname : '';
+                        markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable>"+firstName+"</td><td onkeyup='checkNames(this)' contenteditable>"+lastName+"</td><td class='text-center'>"+orcid+"</td><td onkeyup='checkLegalName(this)' contenteditable>"+legalName+"</td><td contenteditable>"+author.Address+"</td><td contenteditable>"+author.Zip+"</td><td contenteditable>"+author.Country+"</td><td ><select class='form-control form-control-sm'><option>Creator</option><option>Contributor</option></select></td></tr>"; 
+                        tableBody.append(markup);
+                        let table = document.getElementById("author_table");
+                        let lastRow = table.rows[table.rows.length-1];
+                        let lastCell = lastRow.cells[lastRow.cells.length-1];
+                        console.log("last cell_ "+lastCell.firstChild);
+                        lastCell.firstChild.selectedIndex = author.Type === "Creator" ? 0 : 1;
+                        checkNames(lastRow.cells[1]);
+                        checkLegalName(lastRow.cells[4]);
+                    });
+                }
+
+            }else{
+                markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)' contenteditable></td><td onkeyup='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onkeyup='checkLegalName(this)' contenteditable></td><td contenteditable>"+getStoredInput('Adress')+"</td><td contenteditable>"+getStoredInput('Zip')+"</td><td contenteditable>"+getStoredInput('Country')+"</td><td ><select class='form-control form-control-sm'><option>Creator</option></select></td></tr>"; 
+                tableBody.append(markup);
+            }
+
+            //create subjects from stored inputs
+            tableBody = $("#subject_table > tbody");
+            if(storage.subjects != null){
+                subjects = JSON.parse(storage.subjects);
+                subjects.forEach((subject, index) => {
+                    markup =  `<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable>${subject}</td></tr>`;
+                    tableBody.append(markup);
+                });
+            }else{
+                markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
+                tableBody.append(markup);
+            }
+            
+
+
+            $("#addAuthorButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+            $("#addSubjectButtonDiv").width(`${document.getElementById("addRemoveAuthor").offsetWidth}px`);
+
+            if(storage.language != null){
+                $('#select_language').prop('selectedIndex', storage.language);
+            }
+            if(storage.license != null){
+                $('#select_license').prop('selectedIndex', storage.license);
+            }
+            if(storage.description != null){
+                $('#text_description').val(storage.description);
+            }
+
+            document.getElementById("dropzone").addEventListener("dragover", () => {
+                let element = document.getElementById("dropzone");
+                    if(!element.classList.contains("drag")){
+                        element.classList.add("drag");
+                    }
+                        $("#dropzone").toggleClass("drag");
+                });
+            document.getElementById("dropzone").addEventListener("dragleave", () => {
+                let element = document.getElementById("dropzone");
+                    if(element.classList.contains("drag")){
+                        element.classList.remove("drag");
+                    }
+                }); 
+                //activate tooltips
+                $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+        }
+    });
+
+
+                </script>
+            </body>
+
+        </html>

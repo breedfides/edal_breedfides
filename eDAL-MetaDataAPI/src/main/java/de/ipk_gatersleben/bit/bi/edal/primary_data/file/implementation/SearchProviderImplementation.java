@@ -28,6 +28,12 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -802,6 +808,50 @@ public class SearchProviderImplementation implements SearchProvider {
 			DataManager.getImplProv().getLogger().debug("IOException when searching: "+e.getMessage());
 		}
 		return new HashSet<Integer>();
+	}
+
+	@Override
+	public List<String> taxonSearch(String internalId) {
+		SearcherAndTaxonomy manager = null;
+		try {
+			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+		} catch (IOException e) {
+			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
+			return new ArrayList<String>();
+		}
+		List<String> list = new ArrayList<String>();
+		
+		List<Taxon> taxons = Stream.of(EnumTaxon.values())
+			    .map(EnumTaxon::value)
+			    .collect(Collectors.toList());
+		
+		try {
+			for(Taxon taxon : taxons) {
+				
+				BooleanQuery.Builder idQuery = new BooleanQuery.Builder()
+				.add(new TermQuery(new Term(EnumIndexField.INTERNALID.value(), internalId)), Occur.MUST)
+				.add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), PublicVersionIndexWriterThread.PUBLICREFERENCE)), Occur.MUST);
+				
+				BooleanQuery.Builder idTaxonQuery = new BooleanQuery.Builder()
+				.add(idQuery.build(), Occur.MUST);
+				BooleanQuery.Builder taxonQuery = new BooleanQuery.Builder();
+				for(String keyword : taxon.getSynonyms()) {
+					taxonQuery.add(new TermQuery(new Term(EnumIndexField.TITLE.value(), keyword)), Occur.SHOULD)
+							.add(new TermQuery(new Term(EnumIndexField.DESCRIPTION.value(), keyword)), Occur.SHOULD)
+							.add(new TermQuery(new Term(EnumIndexField.SUBJECT.value(), keyword)), Occur.SHOULD);
+				}	
+				idTaxonQuery.add(taxonQuery.build(), Occur.MUST);
+				Query q = idTaxonQuery.build();
+				if(manager.searcher.search(q, 1).totalHits.value > 0) {
+					list.add(taxon.getName());
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		
+		return list;
+
 	}
 
 }

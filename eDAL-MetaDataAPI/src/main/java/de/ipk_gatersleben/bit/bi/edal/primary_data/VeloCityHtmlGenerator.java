@@ -13,14 +13,17 @@
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -29,23 +32,44 @@ import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.mail.internet.InternetAddress;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
@@ -62,6 +86,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersion
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFile;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReference;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.CalculateDirectorySizeThread;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.EnumIndexField;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataEntityVersionImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PublicVersionIndexWriterThread;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.ServiceProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.DataSize;
@@ -72,6 +99,9 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SimpleCallbackHandler;
+import javafx.application.Platform;
 
 /**
  * VeloCity template generator to create HTML output for
@@ -620,6 +650,18 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		
+		//Enum Liste für jede pflanzenart mit Synonyme
+		SearchProvider searchProvider;
+		try {
+			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			context.put("taxon",searchProvider.taxonSearch(internalId));
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		
+
 
 		/** set date of the PublicReference */
 		context.put(VeloCityHtmlGenerator.STRING_DATE, date);
@@ -1080,6 +1122,16 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
+		
+		SearchProvider searchProvider;
+		try {
+			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
+			context.put("taxon",searchProvider.taxonSearch(internalId));
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		
 		/** set identifier type */
 		context.put(VeloCityHtmlGenerator.STRING_IDENTIFIER_TYPE, identifierType.toString());
 
@@ -1582,6 +1634,38 @@ class VeloCityHtmlGenerator {
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HomeTemplate.xml",
 				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
+	}
+	
+	public Object generateHtmlForDirectoryUploadPreview(HttpServletResponse response, Code ok) throws EdalException {
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+		final VelocityContext context = new VelocityContext();
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", ok.getCode());
+		LoginContext ctx = null;
+		
+		/* set serverURL */
+		try {
+			context.put("serverURL", EdalHttpServer.getServerURL());
+		} catch (EdalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		context.put("title", "e!DAL - DirectoryUpload");
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
+
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
 		try {
 			output.flush();
@@ -1592,43 +1676,75 @@ class VeloCityHtmlGenerator {
 		return output;
 	}
 	
-	class MyTerm implements Comparable<MyTerm>{
-		
-		private String term;
-		private int frequence;
-		
-		public MyTerm(String term, int frequence) {
-			this.term = term;
-			this.frequence = frequence;
+	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String[] emailAndName) throws EdalException {
+		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+		final VelocityContext context = new VelocityContext();
+		context.put("charset", DEFAULT_CHARSET.toString());
+		context.put("responseCode", ok.getCode());
+		LoginContext ctx = null;
+		try {
+			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(emailAndName[0]));
+			ctx.login();
+		}catch(LoginException e) {
+			e.printStackTrace();
+		}
+		Thread.currentThread().setContextClassLoader(currentClassLoader);
+		Platform.setImplicitExit(true);
+		Subject subject = ctx.getSubject();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream out = null;
+		try {
+			try {
+				  out = new ObjectOutputStream(bos);   
+				  out.writeObject(subject);
+				  out.flush();
+				  byte[] yourBytes = bos.toByteArray();			
+					context.put("email", Base64.getEncoder().encodeToString(yourBytes));
+				} finally {
+				  try {
+				    bos.close();
+				  } catch (IOException ex) {
+				    // ignore close exception
+				  }
+				}
+		}catch(IOException e) {
+			e.printStackTrace();
 		}
 		
-		public String getTerm() {
-			return term;
-		}
-
-		@Override
-		public int compareTo(MyTerm myTerm) {
-			return this.term.compareTo(myTerm.term);
+		List<String[]> allLanguages = new ArrayList<String[]>();
+		String[] languages = Locale.getISOLanguages();
+		for (int i = 0; i < languages.length; i++){
+		    Locale loc = new Locale(languages[i]);	   
+		    allLanguages.add(new String[]{loc.getLanguage(),loc.getDisplayLanguage(Locale.ENGLISH)});
 		}
 		
-	}
-	
-	public static List<String> getTerms() {
-		return fileTypes;
-	}
+		context.put("languages", allLanguages);
+		
+		/* set serverURL */
+		try {
+			context.put("serverURL", EdalHttpServer.getServerURL());
+		} catch (EdalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		context.put("userName", emailAndName[1]);
+		context.put("title", "e!DAL - DirectoryUpload");
+		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
+		
+		final StringWriter output = new StringWriter();
 
-	public static long getMaxFileSize() {
-		return maxFileSize;
-	}
+		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
+				VeloCityHtmlGenerator.DEFAULT_CHARSET.toString(), context, output);
 
-	public static int getMinYear() {
-		return minYear;
+		try {
+			output.flush();
+			output.close();
+		} catch (final IOException e) {
+			throw new EdalException(VeloCityHtmlGenerator.STRING_UNABLE_TO_WRITE_HTML_OUTPUT, e);
+		}
+		return output;
 	}
-
-	public static int getMaxYear() {
-		return maxYear;
-	}
-
 
 
 }

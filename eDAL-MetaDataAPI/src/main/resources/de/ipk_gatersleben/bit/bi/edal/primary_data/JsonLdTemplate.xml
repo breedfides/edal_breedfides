@@ -110,7 +110,18 @@
 			#end
 			#if($foreach.count < $size),#{else} #end
 		 	#end
+		 	],
+			#if(!$taxon.isEmpty())
+		 	"taxon":[
+		 	#foreach( $string in $taxon )
+		 			{
+		 	         "@context":"http://schema.org",
+			         "@type":"Taxon",
+			         "dct:conformsTo":"https://bioschemas.org/profiles/Taxon/0.6-RELEASE",
+			         "name":"$string"	
+					}
+			#end
 		 	]
-		 	
+		 	#end
 		}
 		</script>

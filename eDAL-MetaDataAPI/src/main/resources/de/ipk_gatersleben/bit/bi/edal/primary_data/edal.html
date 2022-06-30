@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Rubik">
+          <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
+          <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="edalstyle.css">
+
+<title>e!DAL Data Submission</title>
+</head>
+
+<body>
+<div class="glass">
+    <div class="container flexcolfill pb-1">
+
+        <div class="header flexrowfill">
+            <img src="edal_logo.png" style="float:left;">
+            <button class="btn btn-outline-secondary mt-2">Login with Elixir</button>
+            <img src="ipk_logo.jpg" style="float:right;">        
+        </div>
+
+        <img src="edalheader.png" class="mt-1 flexrowfill">  
+
+        <div class="mt-2" id="dropzone">
+            <div id="boxtitle">
+              Drop a file or directory
+            </div>
+          </div>
+
+        <div class="d-flex flexrowfill mt-2" >
+            <div class="d-flex flex-column width65"> 
+                <label style="margin: 0">Title</label>
+                <input class="form-control"  placeholder="Please enter a short, but clear title here.."></input>
+            </div>
+            <div class="d-flex flex-column width35 ml-2">
+                <label style="margin-bottom:0;">Language</label>
+                <select class="form-control">
+                    <option>English</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex mt-2 flexrowfill" style="flex-grow:1">
+            <div class="d-flex flex-column width65"> 
+                <label>Description</label>
+                <textarea class="form-control" style="height: 100%;"></textarea>
+            </div>
+            <div class="d-flex flex-column width35 ml-2">
+                <label>Subjects</label>
+                <div class="h-75 border border-secondary" style="min-height: 126px;max-height: 128px;overflow-y: auto;">
+                    <table id="subject_table" class="table table-bordered table-hover table-sm">
+                        <tbody>
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="w-75">Subject</th>
+                                    <th>Remove</th>
+                                </tr>
+                             </thead>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="addSubjectRow()" style="width:fit-content">Add Subject</button>
+            </div>
+        </div>
+
+        <div class="d-flex mt-2 flexrowfill" style="flex-grow:2">
+            <div class="d-flex flex-column" style="flex-grow:1;">
+                <label>Authors:</label>
+                <div class="h-75 border border-secondary" style="min-height: 140px; max-height: 170px; overflow-y: auto;">
+                    <table id="author_table" class="table table-bordered table-hover table-sm w-100">
+                        <tbody>
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Firstname</th>
+                                    <th>Lastname</th>
+                                    <th>ORCID</th>
+                                    <th>Legalname</th>
+                                    <th>Adress</th>
+                                    <th>Zip</th>
+                                    <th>Country</th>
+                                    <th>Type</th>
+                                    <th>Remove</th>
+                                </tr>
+                            </thead>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="addAuthorRow()" style="width:fit-content">Add Author</button>
+            </div>
+        </div>
+
+        <div class="d-flex mt-1 flexrowfill" style="flex-grow:1">
+            <div class="d-flex flex-column width65">
+                <label >License<a target="_blank" href="https://creativecommons.org/about/cclicenses/" class="ml-2">Help</a>
+                <div class="mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="option1" checked>
+                        <label class="form-check-label" for="exampleRadios1">
+                        CC0 1.0 Universal (Creative Commons Public Domain Dedication)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CC BY 4.0 (Creative Commons Attribution)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CCC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CC BY-ND 4.0 (Creative Commons Attribution-NoDerivatives)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CC BY-NC 4.0 (Creative Commons Attribution-Non-Commercial)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CC BY-NC-SA 4.0 (Creative Commons Attribution-Non-Commercial-ShareAlike)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+                        <label class="form-check-label" for="exampleRadios2">
+                        CC BY-NC-ND 4.0 (Creative Commons Attribution-Non-Commercial-NoDerivatives)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column width35">
+                <label>Embargo</label>
+                <input type="date" class="form-control w-50" name="dateofbirth" id="dateofbirth">
+            </div>
+        </div>
+        <div>
+            <button class= "btn btn-outline-secondary btn-sm">Submit</button>
+        </div>
+    </div>
+</div>
+<!--button type="button" class="btn btn-primary" onclick="login()">Elixir AAI Log in</button> -->
+
+<script>
+
+    function addSubjectRow(){
+        markup = "<tr><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        tableBody = $("#subject_table > tbody");
+        tableBody.append(markup);
+    }
+
+    function addAuthorRow(){
+        markup = "<tr><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td class='text-center' contenteditable><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>&#x2716</button></td></tr>";
+        tableBody = $("#author_table > tbody");
+        tableBody.append(markup);
+    }
+
+    function deleteRow(row){
+        $(row).parents("tr").remove();
+    }
+
+    function login(){
+        alert("test3");
+    }
+</script>
+</body>
+
+</html>
