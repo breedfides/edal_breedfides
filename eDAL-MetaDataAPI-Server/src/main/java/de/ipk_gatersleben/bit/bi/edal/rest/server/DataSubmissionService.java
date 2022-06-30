@@ -114,7 +114,7 @@ public class DataSubmissionService {
 				throw new WebApplicationException(Response.Status.FORBIDDEN);
 			}
 		} catch (ParseException | IOException | ClassNotFoundException | PrimaryDataDirectoryException | ORCIDException | MetaDataException | CloneNotSupportedException | PrimaryDataEntityVersionException e) {
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error while uploading a entity with metadata via REST: "+e.getMessage());
 			throw new WebApplicationException(Response.Status.FORBIDDEN);
 		}
 	}
@@ -199,20 +199,17 @@ public class DataSubmissionService {
 						System.out.println("finished store function __");
 
 					} catch (PrimaryDataFileException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+						DataManager.getImplProv().getLogger().debug("Error while uploading a entity with a file via REST: "+e.getMessage());					}
 				}
 			} else {
 				return Response.status(Status.BAD_REQUEST).build();
 			}
 			return Response.status(Status.OK).build();
 		} catch (PrimaryDataDirectoryException | PrimaryDataEntityVersionException | IOException e) {
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error while uploading a entity via REST: "+e.getMessage());
 			return Response.status(Status.BAD_REQUEST).build();
 		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error couldnt load a class while uploading a entity with metadata via REST: "+e1.getMessage());
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 	}
@@ -248,18 +245,16 @@ public class DataSubmissionService {
 				Calendar release = Calendar.getInstance();
 				try {
 					release.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(embargo));
-					System.out.println(release.toString());
 					entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email), release);
 					return Response.status(Status.OK).build();
 				} catch (java.text.ParseException e) {
-					e.printStackTrace();
+					DataManager.getImplProv().getLogger().debug("Error while parsing an embargo data: "+e.getMessage());
 				}
 			}
 			entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress(email));
 			return Response.status(Status.OK).build();
 		}catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			DataManager.getImplProv().getLogger().debug("Error while publishing a entity via REST: "+e.getMessage());
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 	}

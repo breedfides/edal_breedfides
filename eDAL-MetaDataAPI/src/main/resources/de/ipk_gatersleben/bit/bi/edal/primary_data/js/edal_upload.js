@@ -109,6 +109,16 @@ function checkLegalName(cell){
     $(cell.parentNode.children.item(1)).css("background-color", "dimgrey");
     $(cell.parentNode.children.item(2)).attr('contenteditable','false');
     $(cell.parentNode.children.item(2)).css("background-color", "dimgrey");
+    let orcIdBtn = "<button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(cell.parentNode.children.item(3))' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button>";
+    let button = document.createElement('button');
+    button.classList.add("btn", "btn-sm","btn-outline-secondary", "waves-effect");
+    button.onclick = () => {searchORCIDsOfRow(cell.parentNode)   };
+    $(button).attr('type','button');
+    $(button).attr('data-target','#myModal');
+    $(button).attr('data-toggle','modal');
+    $(cell.parentNode.children.item(3)).empty();
+    $(cell.parentNode.children.item(3)).append(button);
+    $(button).html("<i class='fa-solid fa-magnifying-glass'></i>");
     $(cell.parentNode.children.item(3).firstChild).prop('disabled',true);
     $(cell.parentNode.children.item(3)).css("background-color", "dimgrey");
   }else{
@@ -160,6 +170,7 @@ function validateInputs(){
     $('#alert-information').empty();
     //validate authors
     let authorsIncomplete = false;
+    let atLeastOneAuthor = false;
     var tb = $('#author_table:eq(0) tbody');
     let notValidAuthorRows = [];
     tb.find("tr").each(function(rowIndex, element) {
@@ -171,6 +182,9 @@ function validateInputs(){
             valid = false;
             authorsIncomplete = true;
           }
+        }
+        if(index == 8 && $(element).find('select').val() == "Creator"){
+          atLeastOneAuthor = true;
         }
       });
       if(!valid){
@@ -188,6 +202,9 @@ function validateInputs(){
             return false;
         }
         failedValidations.set(tb,{label:'Missing Author information: ',text:'Please complete every author row or delete it.'});
+    }
+    if(!atLeastOneAuthor){
+      showAlertMessage('Please add at least one creator.',displayAlertTime);
     }
     //validate if at least one subject is set
     let noSubject = true;
@@ -411,6 +428,7 @@ async function startDirectoryUpload(){
   console.log("started directory upload");
     await uploadEntityAndMetadata(globalMetadata.title,globalMetadata);
     await uploadEntity2(fileSystemEntry.name, null);
+    $('#upload-title').text(`Upload Progress: ${fileCounter} of ${numberOfFiles} files`);
     async function iterateFiles(files){
         requests = 0;
         uniqueProgressId = 0;
@@ -492,6 +510,7 @@ function resetUI(){
   $('#submitBtn').append('Start Upload');  
 }
 
+/** Update the "Parent" Progress bar of the uplaod dialog, that is placed at the top of the modal **/
 async function updateUploadedFiles(counter){
   setTimeout(function (){
     //$('#file-counter-info').text("Uploaded +"+counter+"/"+Object.keys(files).length);
@@ -604,6 +623,7 @@ async function uploadEntity2(path, file, progressIdentifier){
     });
   }
 
+  /** To change the progress bar of an individual file upload and to detect when the upload is finished **/
   async function updateFileProgress(path, progressId){
     console.log("file progress label:_ "+progressId);
     let payload = new FormData();
@@ -617,18 +637,16 @@ async function uploadEntity2(path, file, progressIdentifier){
       method: 'POST',
       type: 'POST', // For jQuery < 1.9
       success: function(progress){
-        console.log(progressId);
         if(progress >= 100){
           document.getElementById(progressId).style.width ="100%";
           animateValue(progressId, Number(document.getElementById(progressId).textContent.slice(0, -1)), 100, updateProgressTimeout);
           setTimeout(function (){
             $(`#${progressId}-container`).addClass("d-none").removeClass("d-flex"); 
             fileCounter++;
+            $('#upload-title').text(`Upload Progress: ${fileCounter} of ${numberOfFiles} files`);
             updateUploadedFiles(fileCounter);
             if(fileCounter == numberOfFiles){
-              setTimeout(function (){
-                publishDataset();                
-              }, updateProgressTimeout);
+              publishDataset();                
             }               
           }, updateProgressTimeout);
         }else if(progress > 0 && progress < 100){
@@ -648,8 +666,9 @@ async function uploadEntity2(path, file, progressIdentifier){
       }
       });
   }
-  
-worker.onmessage = (evt) => {
+
+  /* Handle message of the web worker. The Web worker is started if a file/direcotry was dropped or selected */
+  worker.onmessage = (evt) => {
     //update the user inerface to show the progress of the Traversal
     if (typeof evt.data === 'string') {
         document.querySelector("pre").textContent = JSON.stringify( evt.data, (key, value) => {
@@ -780,6 +799,7 @@ worker.onmessage = (evt) => {
     $(".alert").removeClass( "alert-primary" ).addClass('alert-danger');
   }
 
+  /* If a user wants to select a directory, this function is called to Show a dialog and handle the result */
   async function chooseDirectory(){
     const dirHandle = await showDirectoryPicker();
     fileSystemEntry = dirHandle;
@@ -794,6 +814,7 @@ worker.onmessage = (evt) => {
     uploadCanceled = false;
   }
 
+  /* If a user wants to select a file, this function is called to Show a dialog and handle the result */
   async function chooseFile(){
     let [fileHandle] = await window.showOpenFilePicker({multiple:false});
     fileSystemEntry = fileHandle;
@@ -810,29 +831,8 @@ worker.onmessage = (evt) => {
     uploadCanceled = false;
 
   }
-  
-  function uploadPost(){
-    console.log("triggered uploadPost()");
-    let myfile = $("fileInput").val();
-    //$.post(serverURL+"/restfull/api/upload",{file:myfile}, function(data){
-    //  console.log("uploaded single file");
-    //})
-    let data = new FormData();
-    data.append('file',myfile);
-    jQuery.ajax({
-      url: serverURL+"/restfull/api/upload",
-      data: data,
-      cache: false,
-      contentType: false,
-      processData: false,
-      method: 'POST',
-      type: 'POST', // For jQuery < 1.9
-      success: function(resData){
-          alert(resData);
-      }
-  });
-  }
-  
+
+    /* Harvest the input data and store it in the global variable globalMetaData*/
     function getInputMetadata(){
       globalMetadata.title = $('#input_title').val();
       globalMetadata.description = $('#text_description').val();
@@ -875,13 +875,14 @@ worker.onmessage = (evt) => {
       return globalMetadata;
     }
   
-  
+    /* Adds a row to the subject table */
     function addSubjectRow(){
         markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td contenteditable></td></tr>";
         tableBody = $("#subject_table > tbody");
         tableBody.append(markup);
     }
-  
+
+    /* Adds a row to the author table */
     function addAuthorRow(){
         markup = "<tr><td class='text-center'><button class='btn btn-outline-secondary btn-sm' onclick='deleteRow(this)'>-</button></td><td onkeyup='checkNames(this)'contenteditable></td><td onkeyup='checkNames(this)' contenteditable></td><td class='text-center'><button type='button' class='btn btn-sm btn-outline-secondary waves-effect' onclick='searchORCIDsOfRow(this.parentNode.parentNode)' data-toggle='modal' data-target='#myModal'><i class='fa-solid fa-magnifying-glass'></i></button></td><td onkeyup='checkLegalName(this)' contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td ><select class='form-control form-control-sm''><option>Creator</option><option>Contributor</option></select></td></tr>";
         tableBody = $("#author_table > tbody");
