@@ -148,8 +148,7 @@ public class RestEntryPoint {
 	
 	/**
 	 * REST path to check the progress of a file upload.
-	 * @param email The base64 encoded email of a user
-	 * @param name The name (constructed on client side constructed with the base64 encoded email + file path )
+	 * @param key The key (constructed on client side constructed with the base64 encoded email + file path )
 	 * @return If there is a progress with the given name the return value is an int between 0 and 100, else -1
 	 */
 	@Produces(MediaType.TEXT_PLAIN)

@@ -168,13 +168,13 @@ public class EdalRestServer {
 		MetaData metadata = entity.getMetaData().clone();
 		Persons persons = new Persons();
 		NaturalPerson np = new NaturalPerson("Peter", author,
-				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstraﬂe 3",
+				"2Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Seeland OT Gatersleben, Corrensstrasse 3",
 				"06466", "Germany");
 		persons.add(np);
 		metadata.setElementValue(EnumDublinCoreElements.CREATOR, persons);
 		metadata.setElementValue(EnumDublinCoreElements.PUBLISHER,
 				new LegalPerson("e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP)",
-						"IPK Gatersleben, Seeland OT Gatersleben, Corrensstraﬂe 3", "06466", "Germany"));
+						"IPK Gatersleben, Seeland OT Gatersleben, Corrensstrasse 3", "06466", "Germany"));
 
 		Subjects subjects = new Subjects();
 		subjects.add(new UntypedData("wheat"));

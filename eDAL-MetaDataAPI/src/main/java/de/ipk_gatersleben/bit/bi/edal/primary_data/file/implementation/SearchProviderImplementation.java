@@ -818,7 +818,6 @@ public class SearchProviderImplementation implements SearchProvider {
 			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
 			return new ArrayList<String>();
 		}
-		System.out.println(internalId);
 		List<String> list = new ArrayList<String>();
 		
 		List<Taxon> taxons = Stream.of(EnumTaxon.values())
@@ -842,14 +841,11 @@ public class SearchProviderImplementation implements SearchProvider {
 				}	
 				idTaxonQuery.add(taxonQuery.build(), Occur.MUST);
 				Query q = idTaxonQuery.build();
-				System.out.println(q.toString());
 				if(manager.searcher.search(q, 1).totalHits.value > 0) {
 					list.add(taxon.getName());
-					System.out.println("added: "+taxon.getName());
 				}
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 		
