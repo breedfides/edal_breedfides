@@ -48,7 +48,7 @@
 			 			}	
 					}
 			#end
-			#if($foreach.count < $creatorsize),#{else} #end
+			#if($foreach.count lt $creatorsize),#{else} #end
 		 	#end
 		 	#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($contributor))
 			#set($contributorsize=$persons.size())
@@ -68,7 +68,7 @@
 						"name":"$person.getLegalName()" 	
 					}
 			#end
-			#if($foreach.count < $contributorsize),#{else} #end
+			#if($foreach.count lt $contributorsize),#{else} #end
 		 	#end
 		 	],
 		 	"creator":[
@@ -89,7 +89,7 @@
 						"name":"$person.getLegalName()" 	
 					}
 			#end
-			#if($foreach.count < $size),#{else} #end
+			#if($foreach.count lt $size),#{else} #end
 		 	#end
 		 	],
 		 	"contributor":[
@@ -109,7 +109,7 @@
 						"name":"$person.getLegalName()" 	
 					}
 			#end
-			#if($foreach.count < $size),#{else} #end
+			#if($foreach.count lt $size),#{else} #end
 		 	#end
 		 	],
 			#if(!$taxon.isEmpty())
