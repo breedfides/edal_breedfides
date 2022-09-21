@@ -87,7 +87,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  */
 public final class EdalConfiguration {
 	
-	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@nodomain.com.invalid";
+	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@ipk-gatersleben.de";
 
 	private static final String MSG_UNABLE_TO_SET_PROXY = "unable to set proxy: ";
 

@@ -21,7 +21,7 @@
 			"inLanguage":"$entity.getVersionByDate($date).getMetaData().getElementValue($language)",
 			"author":[
 			#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($creator))
-			#set($size=$persons.size())
+			#set($creatorsize=$persons.size())
 			#foreach($person in $persons.getPersons())
 			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
 					{	
@@ -48,10 +48,11 @@
 			 			}	
 					}
 			#end
-			#if($foreach.count <= $size),#{else} #end
+			#if($foreach.count < $creatorsize),#{else} #end
 		 	#end
 		 	#set($persons=$entity.getVersionByDate($date).getMetaData().getElementValue($contributor))
-			#set($size=$persons.size())
+			#set($contributorsize=$persons.size())
+			#if($creatorsize > 0 and $contributorsize > 0),#{else} #end
 			#foreach($person in $persons.getPersons())
 			#if($person.class.getName() == "de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.NaturalPerson")
 					{	
@@ -67,7 +68,7 @@
 						"name":"$person.getLegalName()" 	
 					}
 			#end
-			#if($foreach.count < $size),#{else} #end
+			#if($foreach.count < $contributorsize),#{else} #end
 		 	#end
 		 	],
 		 	"creator":[
@@ -113,12 +114,15 @@
 		 	],
 			#if(!$taxon.isEmpty())
 		 	"taxon":[
-		 	#foreach( $string in $taxon )
+		 	#foreach( $t in $taxon )
 		 			{
 		 	         "@context":"http://schema.org",
 			         "@type":"Taxon",
 			         "dct:conformsTo":"https://bioschemas.org/profiles/Taxon/0.6-RELEASE",
-			         "name":"$string"	
+			         "name":"$t.getName()",
+			         "taxonRank":"$t.getTaxonRank()",
+			         "parentTaxon":"$t.getParentTaxon()",
+			         "vernacularName":"$t.getVernacularName()"	
 					}
 			#end
 		 	]

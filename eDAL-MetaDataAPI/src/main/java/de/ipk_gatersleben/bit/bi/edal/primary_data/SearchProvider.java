@@ -21,6 +21,8 @@ import org.apache.lucene.search.Query;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.Taxon;
+
 /**
  * Provider for Front end searching
  * @author ralfs
@@ -82,7 +84,7 @@ public interface SearchProvider {
 	 */
 	HashSet<Integer> searchByKeyword(String keyword, boolean fuzzy, String entityType);
 	
-	List<String> taxonSearch(String internalId);
+	List<Taxon> taxonSearch(String internalId);
 
 
 }

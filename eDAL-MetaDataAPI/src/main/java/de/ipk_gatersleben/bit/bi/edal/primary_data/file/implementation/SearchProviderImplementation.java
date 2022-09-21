@@ -811,15 +811,15 @@ public class SearchProviderImplementation implements SearchProvider {
 	}
 
 	@Override
-	public List<String> taxonSearch(String internalId) {
+	public List<Taxon> taxonSearch(String internalId) {
 		SearcherAndTaxonomy manager = null;
 		try {
 			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
 		} catch (IOException e) {
 			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
-			return new ArrayList<String>();
+			return new ArrayList<Taxon>();
 		}
-		List<String> list = new ArrayList<String>();
+		List<Taxon> list = new ArrayList<Taxon>();
 		
 		List<Taxon> taxons = Stream.of(EnumTaxon.values())
 			    .map(EnumTaxon::value)
@@ -834,7 +834,9 @@ public class SearchProviderImplementation implements SearchProvider {
 				
 				BooleanQuery.Builder idTaxonQuery = new BooleanQuery.Builder()
 				.add(idQuery.build(), Occur.MUST);
+				
 				BooleanQuery.Builder taxonQuery = new BooleanQuery.Builder();
+				
 				for(String keyword : taxon.getSynonyms()) {
 					taxonQuery.add(new TermQuery(new Term(EnumIndexField.TITLE.value(), keyword)), Occur.SHOULD)
 							.add(new TermQuery(new Term(EnumIndexField.DESCRIPTION.value(), keyword)), Occur.SHOULD)
@@ -843,7 +845,7 @@ public class SearchProviderImplementation implements SearchProvider {
 				idTaxonQuery.add(taxonQuery.build(), Occur.MUST);
 				Query q = idTaxonQuery.build();
 				if(manager.searcher.search(q, 1).totalHits.value > 0) {
-					list.add(taxon.getName());
+					list.add(taxon);
 				}
 			}
 		} catch (Exception e) {

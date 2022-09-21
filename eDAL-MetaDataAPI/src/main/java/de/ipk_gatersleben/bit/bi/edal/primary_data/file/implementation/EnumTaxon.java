@@ -15,43 +15,25 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 /*
  * Enumeration with names and related synonyms for the classification of a species.
  */
-public enum EnumTaxon{
-	
-	
-	BARLEY(new Taxon("barley", new String[] {"barley", "Hordeum vulgare", "Hordeum spontaneum"})),
-	
-	WHEAT(new Taxon("wheat", new String[] {"wheat", "Triticum aestivum", "Triticum vulgare"}));
+public enum EnumTaxon {
 
-    EnumTaxon(Taxon taxon) {
-    	this.taxon = taxon;
-    }
- 
-    public Taxon value() {
-        return taxon;
-    }
-    
-    Taxon taxon;
+	BARLEY(new Taxon("Hordeum spontaneum", "species", "Hordeum", "barley",
+			new String[] { "barley", "Hordeum vulgare", "Hordeum spontaneum" })),
 
-}
-
-/*
- * For classification of a species
- */
-class Taxon{
+	WHEAT(new Taxon("Triticum vulgare", "species", "Triticum", "wheat",
+			new String[] { "wheat", "Triticum aestivum", "Triticum vulgare" })),
 	
-	private String[] synonyms;
-	private String name;
-	public Taxon(String name, String[] synonyms) {
-        this.name = name;
-        this.synonyms = synonyms;
+	ARABIDOPSIS (new Taxon("Arabidopsis thaliana", "species", "Arabidopsis", "arabidopsis",
+			new String[] { "arabidopsis", "Arabidopsis thaliana","arabidopsis thaliana", }));
+
+	EnumTaxon(Taxon taxon) {
+		this.taxon = taxon;
 	}
-	
-    public String getName() {
-        return name;
-    }
-    
-    public String[] getSynonyms() {
-    	return synonyms;
-    }
-    
+
+	public Taxon value() {
+		return taxon;
+	}
+
+	Taxon taxon;
+
 }
