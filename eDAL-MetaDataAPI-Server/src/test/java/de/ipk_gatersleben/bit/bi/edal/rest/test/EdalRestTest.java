@@ -57,9 +57,10 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityExcepti
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntityVersionException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataFileException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaDataException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalAuthenticateException;
-import de.ipk_gatersleben.bit.bi.edal.rest.server.EdalRestServer;
+import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class EdalRestTest{
 
@@ -114,7 +115,7 @@ public class EdalRestTest{
 	public void testServer() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
 			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
-		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
+//		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
 
 		Client client = ClientBuilder.newClient();
 		WebTarget webTarget = client.target("http://localhost:6789/restfull").path("api/test");
@@ -135,7 +136,7 @@ public class EdalRestTest{
 	public void testUpload() throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
 			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException, InterruptedException {
-		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
+//		PrimaryDataDirectory root = EdalRestServer.startRestServer(configuration);
 		String dir = "uploadtest";
 		File file1 = new File(dir + File.separator + "file1.txt");
 		File file2 = new File(dir + File.separator + "file2.txt");
@@ -160,7 +161,7 @@ public class EdalRestTest{
 		        .field("metadata", METADATA_JSON);
 		Response response = postRequest("uploadEntityAndMetadata", form);
 		System.out.println("response okay?: "+response);
-		String actual = root.getPrimaryDataEntity("my dataset title").getName();
+		String actual = DataManager.getRootDirectory(new FileSystemImplementationProvider(this.configuration), EdalHelpers.authenticateWinOrUnixOrMacUser()).getPrimaryDataEntity("my dataset title").getName();
 		Assert.assertEquals("my dataset title", actual);
 		form = new FormDataMultiPart()
 		        .field("name", "neu")
@@ -169,7 +170,7 @@ public class EdalRestTest{
 		        .field("type", "Directory");
 		response = postRequest("uploadEntity", form);
 		System.out.println("response okay?: "+response);
-		actual = ((PrimaryDataDirectory)root.getPrimaryDataEntity("my dataset title")).getPrimaryDataEntity("neu").getName();
+		actual = ((PrimaryDataDirectory)DataManager.getRootDirectory(new FileSystemImplementationProvider(this.configuration), EdalHelpers.authenticateWinOrUnixOrMacUser()).getPrimaryDataEntity("my dataset title")).getPrimaryDataEntity("neu").getName();
 		Assert.assertEquals("neu", actual);
 		File initialFile = new File("neu"+File.separator+"Das ist ein test.txt");
 	    InputStream targetStream = new FileInputStream(initialFile);

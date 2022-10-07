@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -74,6 +75,7 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpStatus.Code;
+import org.glassfish.grizzly.utils.Charsets;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -100,6 +102,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProv
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PersistentIdentifier;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.PublicationStatus;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SimpleCallbackHandler;
 import javafx.application.Platform;
 
@@ -128,13 +131,13 @@ class VeloCityHtmlGenerator {
 	private static final String STRING_SERVER_URL = "serverURL";
 	private static final String STRING_CITATION_ENTITY = "citation_entity";
 	private static final String DOWNLOAD_SERVER_URL = "downloadURL";
-	
+
 	public static final Map<String, HashSet<String>> ipMap = new HashMap<String, HashSet<String>>();
 
 	public static final Map<String, Long> downloadedVolume = new HashMap<String, Long>();
 
 	public static final Map<String, Long> uniqueAccessNumbers = new HashMap<String, Long>();
-	
+
 	private static List<String> fileTypes = new ArrayList<>();
 	private static long maxFileSize = 0;
 	private static int minYear = Calendar.getInstance().get(Calendar.YEAR);
@@ -437,7 +440,7 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		/* set publisherURL */
 		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
-		
+
 		List<PrimaryDataEntity> list = null;
 
 		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
@@ -456,7 +459,7 @@ class VeloCityHtmlGenerator {
 		}
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -650,18 +653,16 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
-		
-		//Enum Liste für jede pflanzenart mit Synonyme
+
+		// Enum Liste fï¿½r jede pflanzenart mit Synonyme
 		SearchProvider searchProvider;
 		try {
 			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			context.put("taxon",searchProvider.taxonSearch(internalId));
+			context.put("taxon", searchProvider.taxonSearch(internalId));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		} 
-		
-
+		}
 
 		/** set date of the PublicReference */
 		context.put(VeloCityHtmlGenerator.STRING_DATE, date);
@@ -717,7 +718,7 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		/* set publisherURL */
 		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
-		
+
 		if (!publicReferenceFileDirectoryNumber.isEmpty()) {
 
 			context.put("directorynumber", publicReferenceFileDirectoryNumber.split(",")[0]);
@@ -752,7 +753,7 @@ class VeloCityHtmlGenerator {
 		addStatementPathToVelocityContext(context, currentPath);
 
 		addInstituteLogoPathToVelocityContext(context, currentPath);
-		
+
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -796,7 +797,7 @@ class VeloCityHtmlGenerator {
 		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HtmlMessageTemplate.xml",
@@ -946,7 +947,7 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		/* set publisherURL */
 		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
-		
+
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
 
 		final OutputStreamWriter output = new OutputStreamWriter(teeOutputStream);
@@ -1122,16 +1123,16 @@ class VeloCityHtmlGenerator {
 				e.printStackTrace();
 			}
 		}
-		
+
 		SearchProvider searchProvider;
 		try {
 			searchProvider = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance();
-			context.put("taxon",searchProvider.taxonSearch(internalId));
+			context.put("taxon", searchProvider.taxonSearch(internalId));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		} 
-		
+		}
+
 		/** set identifier type */
 		context.put(VeloCityHtmlGenerator.STRING_IDENTIFIER_TYPE, identifierType.toString());
 
@@ -1174,7 +1175,7 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 		/* set publisherURL */
 		context.put("publisherUrl", DataManager.getConfiguration().getPublisherURL());
-		
+
 		if (CalculateDirectorySizeThread.referenceContent.containsKey(internalId)) {
 
 			context.put("referenceDirectoryContent",
@@ -1194,7 +1195,7 @@ class VeloCityHtmlGenerator {
 		addStatementPathToVelocityContext(context, currentPath);
 
 		addInstituteLogoPathToVelocityContext(context, currentPath);
-		
+
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(teeOutputStream);
 
 		final MergingEntityOutputThread thread = new MergingEntityOutputThread(
@@ -1271,91 +1272,121 @@ class VeloCityHtmlGenerator {
 		}
 	}
 
+	/**
+	 * Fast split() function to improve the report loading performance, because it
+	 * is faster than String.split
+	 * 
+	 * @param text      the text to split
+	 * @param separator the char to split the text
+	 * @return an array of the splitted Strings
+	 */
+	private static List<String> fastSplit(final String text, char separator) {
+		final List<String> result = new ArrayList<String>();
+
+		if (text != null && text.length() > 0) {
+			int index1 = 0;
+			int index2 = text.indexOf(separator);
+			while (index2 >= 0) {
+				String token = text.substring(index1, index2);
+				result.add(token);
+				index1 = index2 + 1;
+				index2 = text.indexOf(separator, index1);
+			}
+
+			if (index1 < text.length() - 1) {
+				result.add(text.substring(index1));
+			}
+		}
+
+		return result;
+	}
+
 	@SuppressWarnings("unchecked")
 	protected OutputStreamWriter generateHtmlForReport(final HttpStatus.Code responseCode,
 			final OutputStream outputStream, final CountDownLatch latch) throws Exception {
 
-		JSONArray finalArray = new JSONArray();
-
 		final Map<String, HashSet<String>> accessMap = new HashMap<String, HashSet<String>>();
 
 		final Map<String, String[]> accessStatistic = new TreeMap<String, String[]>();
-		
+
 		VeloCityHtmlGenerator.ipMap.clear();
 
-		VeloCityHtmlGenerator.downloadedVolume.clear();;
+		VeloCityHtmlGenerator.downloadedVolume.clear();
 
-		VeloCityHtmlGenerator.uniqueAccessNumbers.clear();;
+		VeloCityHtmlGenerator.uniqueAccessNumbers.clear();
 
-		final Path pathToLogFiles = Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(),
+		final Path logFiles = Paths.get(DataManager.getImplProv().getConfiguration().getMountPath().toString(),
 				"jetty_log");
 
-		for (final File file : pathToLogFiles.toFile().listFiles()) {
+		for (final File file : logFiles.toFile().listFiles()) {
 
-			final FileInputStream is = new FileInputStream(file);
-			final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			if (file.isFile()) {
 
-			String strLine;
+				List<String> lines = Files.readAllLines(file.toPath(), Charsets.UTF8_CHARSET);
 
-			while ((strLine = br.readLine()) != null) {
+				for (String strLine : lines) {
 
-				final String[] split = strLine.split("\t");
+					final List<String> split = fastSplit(strLine, '\t');
 
-				if (split[5].startsWith("GET /DOI/")) {
+					if (split.get(5).startsWith("GET /DOI/")) {
 
-					final String publicReferenceId = split[5].split("/")[2];
+						final String publicReferenceId = fastSplit(split.get(5), '/').get(2);
 
-					if (publicReferenceId.length() == 36) {
+						if (publicReferenceId.length() == 36) {
 
-						if (split[5].endsWith("ZIP HTTP/1.1") && split[6].equals("200")) {
+							if (split.get(5).endsWith("ZIP HTTP/1.1") && split.get(6).equals("200")) {
 
-							final String directoryId = split[5].split("/")[3];
+								final String directoryId = fastSplit(split.get(5), '/').get(3);
 
-							if (CalculateDirectorySizeThread.directorySizes
-									.containsKey(publicReferenceId + "/" + directoryId)) {
+								if (CalculateDirectorySizeThread.directorySizes
+										.containsKey(publicReferenceId + "/" + directoryId)) {
 
+									if (downloadedVolume.containsKey(publicReferenceId)) {
+										downloadedVolume.put(publicReferenceId,
+												downloadedVolume.get(publicReferenceId)
+														+ CalculateDirectorySizeThread.directorySizes
+																.get(publicReferenceId + "/" + directoryId));
+									} else {
+										downloadedVolume.put(publicReferenceId,
+												CalculateDirectorySizeThread.directorySizes
+														.get(publicReferenceId + "/" + directoryId));
+									}
+
+								}
+							} else {
 								if (downloadedVolume.containsKey(publicReferenceId)) {
 									downloadedVolume.put(publicReferenceId,
-											downloadedVolume.get(publicReferenceId)
-													+ CalculateDirectorySizeThread.directorySizes
-															.get(publicReferenceId + "/" + directoryId));
+											downloadedVolume.get(publicReferenceId) + Long.parseLong(split.get(7)));
 								} else {
-									downloadedVolume.put(publicReferenceId, CalculateDirectorySizeThread.directorySizes
-											.get(publicReferenceId + "/" + directoryId));
+									downloadedVolume.put(publicReferenceId, Long.parseLong(split.get(7)));
 								}
-
 							}
-						} else {
-							if (downloadedVolume.containsKey(publicReferenceId)) {
-								downloadedVolume.put(publicReferenceId,
-										downloadedVolume.get(publicReferenceId) + Long.parseLong(split[7]));
+
+							final String ipAddress = split.get(1);
+
+							if (accessMap.containsKey(ipAddress)) {
+								accessMap.get(ipAddress).add(publicReferenceId);
 							} else {
-								downloadedVolume.put(publicReferenceId, Long.parseLong(split[7]));
+								accessMap.put(ipAddress, new HashSet<String>(Arrays.asList(publicReferenceId)));
 							}
-						}
 
-						final String ipAddress = split[1];
+							if (ipMap.containsKey(publicReferenceId)) {
+								ipMap.get(publicReferenceId).add(ipAddress);
 
-						if (accessMap.containsKey(ipAddress)) {
-							accessMap.get(ipAddress).add(publicReferenceId);
-						} else {
-							accessMap.put(ipAddress, new HashSet<String>(Arrays.asList(publicReferenceId)));
-						}
+							} else {
+								ipMap.put(publicReferenceId, new HashSet<String>(Arrays.asList(ipAddress)));
+							}
 
-						if (ipMap.containsKey(publicReferenceId)) {
-							ipMap.get(publicReferenceId).add(ipAddress);
-
-						} else {
-							ipMap.put(publicReferenceId, new HashSet<String>(Arrays.asList(ipAddress)));
 						}
 
 					}
+
 				}
 
-			}
-			br.close();
-			is.close();
+				lines.clear();
+				lines = null;
 
+			}
 		}
 
 		for (final Entry<String, HashSet<String>> ipToPublicReferenceEntry : accessMap.entrySet()) {
@@ -1367,6 +1398,8 @@ class VeloCityHtmlGenerator {
 				}
 			}
 		}
+
+		JSONArray finalArray = new JSONArray();
 
 		for (final Entry<String, Long> entry : uniqueAccessNumbers.entrySet()) {
 
@@ -1482,15 +1515,12 @@ class VeloCityHtmlGenerator {
 
 		DataManager.getVelocityExecutorService().execute(thread);
 
-		// String s = finalArray.toString().replace("\\/", "/");
-		//
-		// System.out.println(s);
-
 		return output;
 
 	}
-	
-	public Object generateHtmlForContent(Code responseCode, String doc, String q) throws EdalException, IOException, ParseException {	
+
+	public Object generateHtmlForContent(Code responseCode, String doc, String q)
+			throws EdalException, IOException, ParseException {
 		final VelocityContext context = new VelocityContext();
 		/* set the charset */
 		context.put("charset", "UTF-8");
@@ -1513,55 +1543,56 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
-	
+
 	/**
 	 * Generate HTML output for an Error message of the HHTP handler.
 	 * 
-	 * @param responseCode the error code of the response, e.g. 404.
-	 * @param responseCode2      the error message.
+	 * @param responseCode  the error code of the response, e.g. 404.
+	 * @param responseCode2 the error message.
 	 * @return the HTML output in a {@link StringWriter}.
 	 * @throws EdalException if unable to create output.
 	 */
 	public Object generateHtmlForSearch(Code responseCode, String searchBarQuery) throws EdalException {
 		final VelocityContext context = new VelocityContext();
-		
 
 		context.put("initQuery", searchBarQuery);
-		
+
 		/* set the charset */
 		context.put("charset", "UTF-8");
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
-		
-		//context.put("backendMessage", initializeTermSets());
-		
+
+		// context.put("backendMessage", initializeTermSets());
+
 		context.put("title", "PGP-Search");
 
 		/* set instance name long */
 		context.put("repositoryNameLong", DataManager.getConfiguration().getInstanceNameLong());
 		/* set instance name short */
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
-		
+
 		context.put("filetypes", fileTypes);
-		
+
 		context.put("publicreference", PublicVersionIndexWriterThread.PUBLICREFERENCE);
-		
+
 		context.put("file", PublicVersionIndexWriterThread.FILE);
-		
+
 		context.put("directory", PublicVersionIndexWriterThread.DIRECTORY);
-		
+
 		try {
-			HashMap<String, String> filterOptions = DataManager.getImplProv().getSearchProvider().getDeclaredConstructor().newInstance().getInitialFilterOptions();		
-		    for (Entry<String,String> pair : filterOptions.entrySet()){
-		        context.put(pair.getKey(), pair.getValue());
-		    }
+			HashMap<String, String> filterOptions = DataManager.getImplProv().getSearchProvider()
+					.getDeclaredConstructor().newInstance().getInitialFilterOptions();
+			for (Entry<String, String> pair : filterOptions.entrySet()) {
+				context.put(pair.getKey(), pair.getValue());
+			}
 		} catch (Exception e) {
-			DataManager.getImplProv().getLogger().debug("Error generating the initial filter options: "+e.getMessage());
+			DataManager.getImplProv().getLogger()
+					.debug("Error generating the initial filter options: " + e.getMessage());
 		}
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/SearchTemplate.xml",
@@ -1575,7 +1606,6 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
-	
 
 	/**
 	 * @return
@@ -1618,9 +1648,9 @@ class VeloCityHtmlGenerator {
 		context.put("responseCode", responseCode.getCode());
 		/* set serverURL */
 		context.put("serverURL", EdalHttpServer.getServerURL());
-		
+
 		context.put("title", "e!DAL");
-		
+
 		context.put("filetypes", fileTypes);
 
 		/* set instance name long */
@@ -1629,7 +1659,7 @@ class VeloCityHtmlGenerator {
 		context.put("repositoryNameShort", DataManager.getConfiguration().getInstanceNameShort());
 
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/HomeTemplate.xml",
@@ -1642,26 +1672,25 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
-	
+
 	public Object generateHtmlForDirectoryUploadPreview(HttpServletResponse response, Code ok) throws EdalException {
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+//		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+//		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
 		final VelocityContext context = new VelocityContext();
 		context.put("charset", DEFAULT_CHARSET.toString());
 		context.put("responseCode", ok.getCode());
-		LoginContext ctx = null;
-		
+//		LoginContext ctx = null;
+
 		/* set serverURL */
 		try {
 			context.put("serverURL", EdalHttpServer.getServerURL());
 		} catch (EdalException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		context.put("title", "e!DAL - DirectoryUpload");
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
@@ -1675,63 +1704,64 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
-	
-	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code ok, String[] emailAndName) throws EdalException {
-		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
+
+	public Object generateHtmlForDirectoryUpload(HttpServletResponse response, Code statusCode, String email, String name)
+			throws EdalException {
+//		final ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+//		Thread.currentThread().setContextClassLoader(EdalHelpers.class.getClassLoader());
 		final VelocityContext context = new VelocityContext();
 		context.put("charset", DEFAULT_CHARSET.toString());
-		context.put("responseCode", ok.getCode());
-		LoginContext ctx = null;
-		try {
-			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(emailAndName[0]));
-			ctx.login();
-		}catch(LoginException e) {
-			e.printStackTrace();
-		}
-		Thread.currentThread().setContextClassLoader(currentClassLoader);
-		Platform.setImplicitExit(true);
-		Subject subject = ctx.getSubject();
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		context.put("responseCode", statusCode.getCode());
+//		LoginContext ctx = null;
+//		try {
+//			ctx = new LoginContext("Elixir", new SimpleCallbackHandler(email));
+//			ctx.login();
+//		} catch (LoginException e) {
+//			e.printStackTrace();
+//		}
+//		Thread.currentThread().setContextClassLoader(currentClassLoader);
+//		Platform.setImplicitExit(true);
+//		Subject subject = ctx.getSubject();
+		Subject subject = new Subject();		
+		subject.getPrincipals().add(new ElixirPrincipal(email));
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream out = null;
 		try {
-			try {
-				  out = new ObjectOutputStream(bos);   
-				  out.writeObject(subject);
-				  out.flush();
-				  byte[] yourBytes = bos.toByteArray();			
-					context.put("email", Base64.getEncoder().encodeToString(yourBytes));
-				} finally {
-				  try {
-				    bos.close();
-				  } catch (IOException ex) {
-				    // ignore close exception
-				  }
-				}
-		}catch(IOException e) {
+			out = new ObjectOutputStream(baos);
+			out.writeObject(subject);
+			out.flush();
+			byte[] bytes = baos.toByteArray();
+			context.put("email", Base64.getEncoder().encodeToString(bytes));
+		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				baos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		
+
 		List<String[]> allLanguages = new ArrayList<String[]>();
 		String[] languages = Locale.getISOLanguages();
-		for (int i = 0; i < languages.length; i++){
-		    Locale loc = new Locale(languages[i]);	   
-		    allLanguages.add(new String[]{loc.getLanguage(),loc.getDisplayLanguage(Locale.ENGLISH)});
+		for (int i = 0; i < languages.length; i++) {
+			Locale loc = new Locale(languages[i]);
+			allLanguages.add(new String[] { loc.getLanguage(), loc.getDisplayLanguage(Locale.ENGLISH) });
 		}
-		
+
 		context.put("languages", allLanguages);
-		
+
 		/* set serverURL */
 		try {
 			context.put("serverURL", EdalHttpServer.getServerURL());
 		} catch (EdalException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		context.put("userName", emailAndName[1]);
+		context.put("userName", name);
 		context.put("title", "e!DAL - DirectoryUpload");
 		addInstituteLogoPathToVelocityContext(context, getCurrentPath());
-		
+
 		final StringWriter output = new StringWriter();
 
 		Velocity.mergeTemplate("de/ipk_gatersleben/bit/bi/edal/primary_data/RestDirectoryUpload.xml",
@@ -1745,6 +1775,5 @@ class VeloCityHtmlGenerator {
 		}
 		return output;
 	}
-
 
 }

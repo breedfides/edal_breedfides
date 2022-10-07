@@ -10,7 +10,7 @@
  *  Contributors:
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
-package de.ipk_gatersleben.bit.bi.edal.rest.server;
+package de.ipk_gatersleben.bit.bi.edal.rest.test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,29 +62,30 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
 public class EdalRestServer {
 
-	public static ImplementationProvider implProv= null;
-	private static File OUTPUTFILES = new File(System.getProperty("user.home")
-			+ File.separatorChar + "output");
-	
-	
-	public static PrimaryDataDirectory startRestServer(EdalConfiguration config) throws AddressException, EdalConfigurationException,
-	PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException  {
-		EdalConfiguration configuration ;
-		if(config == null) {
+	public static ImplementationProvider implProv = null;
+	private static File OUTPUTFILES = new File(System.getProperty("user.home") + File.separatorChar + "output");
+
+	public static PrimaryDataDirectory startRestServer(EdalConfiguration config)
+			throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
+			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
+			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
+		EdalConfiguration configuration;
+		if (config == null) {
 			configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
 					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
 					new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"));
-		}else {
+		} else {
 			configuration = config;
 		}
 		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
 		configuration.setHttpPort(6789);
-		
+
 		configuration.setUseSSL(false);
 
 		EdalRestServer.implProv = new FileSystemImplementationProvider(configuration);
 
-		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv, EdalHelpers.authenticateWinOrUnixOrMacUser());
+		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalRestServer.implProv,
+				EdalHelpers.authenticateWinOrUnixOrMacUser());
 //		EdalHttpServer server = DataManager.getHttpServer();
 //		
 ////		PrimaryDataDirectory dir = (PrimaryDataDirectory) root.getPrimaryDataEntity("AtomRoot");
@@ -110,22 +111,22 @@ public class EdalRestServer {
 //			e.printStackTrace();
 //		}
 		return root;
-		//uploadZip(root, "Dataset12", "Ralfs1");
+		// uploadZip(root, "Dataset12", "Ralfs1");
 	}
-	
-	public static void main(String[] args) throws AddressException, EdalConfigurationException,
-			PrimaryDataDirectoryException, EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException, CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
+
+	public static void main(String[] args)
+			throws AddressException, EdalConfigurationException, PrimaryDataDirectoryException,
+			EdalAuthenticateException, MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
+			CloneNotSupportedException, PrimaryDataEntityException, PublicReferenceException, IOException {
 
 		startRestServer(null);
 
 	}
-	
-	private static void loadDir(final PrimaryDataDirectory currentDirectory)
-			throws PrimaryDataDirectoryException, PrimaryDataFileException,
-			FileNotFoundException {
 
-		final List<PrimaryDataEntity> list = currentDirectory
-				.listPrimaryDataEntities();
+	private static void loadDir(final PrimaryDataDirectory currentDirectory)
+			throws PrimaryDataDirectoryException, PrimaryDataFileException, FileNotFoundException {
+
+		final List<PrimaryDataEntity> list = currentDirectory.listPrimaryDataEntities();
 
 		if (list != null) {
 			for (final PrimaryDataEntity primaryDataEntity : list) {
@@ -133,8 +134,7 @@ public class EdalRestServer {
 				if (!primaryDataEntity.isDirectory()) {
 					PrimaryDataFile file = (PrimaryDataFile) primaryDataEntity;
 
-					File tmp = new File(OUTPUTFILES.getAbsolutePath()
-							+ File.separatorChar + primaryDataEntity);
+					File tmp = new File(OUTPUTFILES.getAbsolutePath() + File.separatorChar + primaryDataEntity);
 
 					if (!tmp.exists()) {
 						try {
@@ -150,16 +150,14 @@ public class EdalRestServer {
 
 				}
 				if (primaryDataEntity.isDirectory()) {
-					OUTPUTFILES = new File(OUTPUTFILES.getAbsolutePath()
-							+ File.separatorChar + primaryDataEntity);
+					OUTPUTFILES = new File(OUTPUTFILES.getAbsolutePath() + File.separatorChar + primaryDataEntity);
 					loadDir((PrimaryDataDirectory) primaryDataEntity);
 				}
 			}
-			OUTPUTFILES = new File(OUTPUTFILES.getParentFile()
-					.getAbsolutePath());
+			OUTPUTFILES = new File(OUTPUTFILES.getParentFile().getAbsolutePath());
 		}
 	}
-	
+
 	public static void uploadZip(PrimaryDataDirectory currentDirectory, String title, String author)
 			throws MetaDataException, PrimaryDataEntityVersionException, PrimaryDataFileException,
 			PrimaryDataDirectoryException, CloneNotSupportedException, PrimaryDataEntityException, AddressException,
@@ -184,27 +182,14 @@ public class EdalRestServer {
 		EdalLanguage lang = new EdalLanguage(Locale.ENGLISH);
 		metadata.setElementValue(EnumDublinCoreElements.LANGUAGE, lang);
 		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjects);
-		metadata.setElementValue(EnumDublinCoreElements.TITLE,
-				new UntypedData(title));
+		metadata.setElementValue(EnumDublinCoreElements.TITLE, new UntypedData(title));
 		metadata.setElementValue(EnumDublinCoreElements.DESCRIPTION, new UntypedData(
 				"This file contains the detailed results of the gen34ie3 analysis for wheat gene expression67 networks. The result of the genie3 network construction are stored in a R data object containing a matrix with target genes in columns and transcription factor genes in rows. One folder provides GO term enrichments of the biological process category for each transcription factor. A second folder provides all transcription factors associated with each GO term."));
 		entity.setMetaData(metadata);
 		entity.addPublicReference(PersistentIdentifier.DOI);
-		//entity.getCurrentVersion().setAllReferencesPublic(new InternetAddress("ralfs@ipk-gatersleben.de"));
+		// entity.getCurrentVersion().setAllReferencesPublic(new
+		// InternetAddress("ralfs@ipk-gatersleben.de"));
 
 	}
-
-//	public static String getEntityMetadata(String uuid, long versionNumber) {
-//		PrimaryDataEntity ent=null;
-//		
-//		/** REMOVE PACKAGE VISABILITY FROM DATAMANAGER FUNCTION **/
-//		try {
-//			ent = DataManager.getPrimaryDataEntityByID(uuid, versionNumber);
-//		} catch (EdalException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		return ent.getMetaData().toString();	
-//	}
 
 }

@@ -27,7 +27,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 
-import javax.swing.JOptionPane;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;

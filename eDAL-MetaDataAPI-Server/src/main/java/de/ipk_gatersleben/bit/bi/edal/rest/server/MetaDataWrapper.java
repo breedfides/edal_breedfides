@@ -28,6 +28,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.orcid.ORCIDException
 
 /**
  * Class to extract and encapsulate metadata of a JSON Object
+ * 
  * @author ralfs
  *
  */
@@ -39,8 +40,7 @@ public class MetaDataWrapper {
 	private final String LICENSE = "license";
 	private final String LANGUAGE = "language";
 	private final String SUBJECTS = "subjects";
-	
-	
+
 	private final String FIRSTNAME = "Firstname";
 	private final String LASTNAME = "Lastname";
 	private final String LEGALNAME = "Legalname";
@@ -48,7 +48,7 @@ public class MetaDataWrapper {
 	private final String ZIP = "Zip";
 	private final String COUNTRY = "Country";
 	private final String ORCID = "ORCID";
-	
+
 	private UntypedData title;
 	private UntypedData description;
 	private UntypedData license;
@@ -57,35 +57,40 @@ public class MetaDataWrapper {
 	private Persons creators;
 	private Persons contributors;
 	private LegalPerson legalPerson;
-	
-	public MetaDataWrapper(JSONObject metadataObject) throws ORCIDException {
-		this.title = new UntypedData((String) metadataObject.get(TITLE));
-		this.description = new UntypedData((String) metadataObject.get(DESCRIPTION));
-		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataObject.get(LICENSE)).name());
-		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataObject.get(LANGUAGE)));
+
+	public MetaDataWrapper(JSONObject metadataJSONObject) throws ORCIDException {
+		this.title = new UntypedData((String) metadataJSONObject.get(TITLE));
+		this.description = new UntypedData((String) metadataJSONObject.get(DESCRIPTION));
+		this.license = new UntypedData(EnumCCLicense.valueOf((String) metadataJSONObject.get(LICENSE)).name());
+		this.language = new EdalLanguage(LocaleUtils.toLocale((String) metadataJSONObject.get(LANGUAGE)));
 		subjects = new Subjects();
-		JSONArray subjectsArr = (JSONArray) metadataObject.get(SUBJECTS);
-		for(Object subjectStr : subjectsArr) {
+		JSONArray subjectsArr = (JSONArray) metadataJSONObject.get(SUBJECTS);
+		for (Object subjectStr : subjectsArr) {
 			subjects.add(new UntypedData((String) subjectStr));
 		}
 		this.creators = new Persons();
 		this.contributors = new Persons();
-		this.legalPerson = new LegalPerson("null","null","null","null");
-		fillPersonCollections(creators, (JSONArray) metadataObject.get(CREATORS));
-		fillPersonCollections(contributors, (JSONArray) metadataObject.get(CONTRIBUTORS));
+		this.legalPerson = new LegalPerson(
+				"e!DAL - Plant Genomics and Phenomics Research Data Repository (PGP), IPK Gatersleben",
+				"Seeland OT Gatersleben, Corrensstraße 3", "06466", "Germany");
+		fillPersonCollections(creators, (JSONArray) metadataJSONObject.get(CREATORS));
+		fillPersonCollections(contributors, (JSONArray) metadataJSONObject.get(CONTRIBUTORS));
 	}
-	
+
 	private void fillPersonCollections(Persons persons, JSONArray personArray) throws ORCIDException {
-		for(Object personObj : personArray) {
+		for (Object personObj : personArray) {
 			JSONObject person = (JSONObject) personObj;
-			if((String) person.get("Legalname") != null) {				
-				this.legalPerson = new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY));
-				persons.add(new LegalPerson((String) person.get(LEGALNAME),  (String) person.get(ADDRESS), (String) person.get(ZIP), (String) person.get(COUNTRY)));
-			}else {
-				NaturalPerson parsedPerson = new NaturalPerson((String) person.get(FIRSTNAME), (String) person.get(LASTNAME), (String) person.get(ADDRESS),
-							(String) person.get(ZIP), (String) person.get(COUNTRY));
-				String orcid = (String)person.get(ORCID);
-				if(orcid != null && !orcid.isEmpty()) {
+			if ((String) person.get("Legalname") != null) {
+				this.legalPerson = new LegalPerson((String) person.get(LEGALNAME), (String) person.get(ADDRESS),
+						(String) person.get(ZIP), (String) person.get(COUNTRY));
+				persons.add(new LegalPerson((String) person.get(LEGALNAME), (String) person.get(ADDRESS),
+						(String) person.get(ZIP), (String) person.get(COUNTRY)));
+			} else {
+				NaturalPerson parsedPerson = new NaturalPerson((String) person.get(FIRSTNAME),
+						(String) person.get(LASTNAME), (String) person.get(ADDRESS), (String) person.get(ZIP),
+						(String) person.get(COUNTRY));
+				String orcid = (String) person.get(ORCID);
+				if (orcid != null && !orcid.isEmpty()) {
 					parsedPerson.setOrcid(new ORCID((String) person.get(ORCID)));
 				}
 				persons.add(parsedPerson);

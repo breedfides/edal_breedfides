@@ -23,14 +23,19 @@ public class TestRmiServer {
 
 	public static void main(String[] args) throws AddressException, EdalConfigurationException {
 		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de")
-				,"imap.ipk-gatersleben.de","","");
+				new InternetAddress("daniel.arend@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"),
+				"imap.ipk-gatersleben.de", "", "");
 
 		configuration.setUseSSL(false);
+		configuration.setHibernateIndexing(EdalConfiguration.NATIVE_LUCENE_INDEXING);
+
 
 		configuration.setPublisherURL("https://www.ipk-gatersleben.de");
-		
+
+		configuration.setStaticServerAddress("localhost");
+		configuration.setStaticServerPort(80);
+
 		EdalServer.startServer(configuration, EdalServer.DEFAULT_REGISTRY_PORT, EdalServer.DEFAULT_DATA_PORT, false,
 				false);
 

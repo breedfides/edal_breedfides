@@ -107,7 +107,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 	public static WebPageCache contentPageCache = new WebPageCache("contentpage");
 	public static WebPageCache reportPageCache = new WebPageCache("reportpage");
-	
+
 	private final String CLIENT_ID = "YzEyOThmNzctZWEzNC00NDJiLTgyNDQtNGE2YTE0OGQyZGMx";
 	private final String CLIENT_SECRET = "QU9sSk5IcWZfLV84NEEwVTd1MkI0LWJ5V0N0djBjdGVhTVN1Q3Brd2RPRkp4TUZ4YkFyOWZaS241WjV5RjNEdzA3MmZNeGt0R0thVTBib3VLU2lxYnJF";
 
@@ -141,13 +141,13 @@ public class EdalHttpHandler extends AbstractHandler {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		if (checkForRobots(request)) {
 			this.sendMessage(response, HttpStatus.Code.FORBIDDEN, "blocked");
 		} else {
 			if (request.getMethod().equalsIgnoreCase("GET")) {
 
-				final String url = request.getRequestURI().toString();			
+				final String url = request.getRequestURI().toString();
 
 				DataManager.getImplProv().getLogger().debug(url);
 
@@ -628,34 +628,38 @@ public class EdalHttpHandler extends AbstractHandler {
 						case LATEST:
 							this.sendLatestNews(response, HttpStatus.Code.OK);
 							break;
-						
+
 						case SEARCH:
 							String searchBarQuery = request.getParameter("q");
-							if(searchBarQuery == null || searchBarQuery == "") {
+							if (searchBarQuery == null || searchBarQuery == "") {
 								this.sendSearch(response, HttpStatus.Code.OK);
-							}else {
+							} else {
 								this.sendSearch(response, HttpStatus.Code.OK, searchBarQuery);
 							}
 							break;
-							
+
 						case HOME:
-							this.sendHomePage(response,HttpStatus.Code.OK);
+							this.sendHomePage(response, HttpStatus.Code.OK);
 							break;
-						
+
 						case CONTENT:
 							String id = request.getParameter("d");
 							String query = request.getParameter("q");
-							if(id != null && id.length() > 0 && query != null && query.length() > 0) {
+							if (id != null && id.length() > 0 && query != null && query.length() > 0) {
 								this.sendContent(response, HttpStatus.Code.OK, id, query);
 							}
 							break;
 						case CALLBACK:
 							try {
-								String[] emailAndName = this.retrieveUserEmailFromElixier(request.getParameter("code"), REDIRECT_URI);
-								this.sendDirectoryUploadTemplate(request.getParameter("code"), response, emailAndName);
+								String[] emailAndName = this.retrieveUserEmailFromElixier(request.getParameter("code"),
+										REDIRECT_URI);
+
+								this.sendDirectoryUploadTemplate(request.getParameter("code"), response,
+										emailAndName[0], emailAndName[1]);
 							} catch (EdalConfigurationException | IOException | org.json.simple.parser.ParseException
 									| EdalException e) {
-								DataManager.getImplProv().getLogger().error("Unable to generate Data submission UI with user email: " + e.getMessage());
+								DataManager.getImplProv().getLogger().error(
+										"Unable to generate Data submission UI with user email: " + e.getMessage());
 								e.printStackTrace();
 							}
 
@@ -664,8 +668,8 @@ public class EdalHttpHandler extends AbstractHandler {
 							this.sendDataSubmissionPreview(request.getParameter("code"), response, HttpStatus.Code.OK);
 							break;
 						case OAUTH:
-							response.sendRedirect("https://login.elixir-czech.org/oidc/authorize?" + "&response_type=code"
-									+ "&scope=email%20profile%20openid" + "&client_id="
+							response.sendRedirect("https://login.elixir-czech.org/oidc/authorize?"
+									+ "&response_type=code" + "&scope=email%20profile%20openid" + "&client_id="
 									+ new String(Base64.getDecoder().decode(CLIENT_ID), "UTF-8") + "&redirect_uri="
 									+ REDIRECT_URI);
 						case GIF:
@@ -692,8 +696,9 @@ public class EdalHttpHandler extends AbstractHandler {
 		}
 	}
 
-	private String[] retrieveUserEmailFromElixier(String requestCode, String redirect_url) throws 
-	EdalConfigurationException,ClientProtocolException, IOException, org.json.simple.parser.ParseException, EdalException {
+	private String[] retrieveUserEmailFromElixier(String requestCode, String redirect_url)
+			throws EdalConfigurationException, ClientProtocolException, IOException,
+			org.json.simple.parser.ParseException, EdalException {
 		CloseableHttpClient httpclient;
 		InetSocketAddress address = EdalConfiguration.guessProxySettings();
 		String httpProxyHost = address == null ? "" : address.getHostName();
@@ -701,8 +706,8 @@ public class EdalHttpHandler extends AbstractHandler {
 		if (httpProxyHost != null && !httpProxyHost.isEmpty()) {
 
 			httpclient = HttpClientBuilder.create().setProxy(new HttpHost(httpProxyHost, httpProxyPort))
-					.setDefaultCookieStore(new BasicCookieStore())
-					.setRedirectStrategy(new LaxRedirectStrategy()).build();
+					.setDefaultCookieStore(new BasicCookieStore()).setRedirectStrategy(new LaxRedirectStrategy())
+					.build();
 		} else {
 			httpclient = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
 					.setRedirectStrategy(new LaxRedirectStrategy()).build();
@@ -710,8 +715,7 @@ public class EdalHttpHandler extends AbstractHandler {
 
 		List<NameValuePair> data = new ArrayList<NameValuePair>();
 		data.add(new BasicNameValuePair("client_id", new String(Base64.getDecoder().decode(CLIENT_ID))));
-		data.add(
-				new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
+		data.add(new BasicNameValuePair("client_secret", new String(Base64.getDecoder().decode(CLIENT_SECRET))));
 		data.add(new BasicNameValuePair("grant_type", "authorization_code"));
 		data.add(new BasicNameValuePair("redirect_uri", redirect_url));
 		data.add(new BasicNameValuePair("code", requestCode));
@@ -721,31 +725,30 @@ public class EdalHttpHandler extends AbstractHandler {
 		httpPost.setEntity(new UrlEncodedFormEntity(data));
 
 		CloseableHttpResponse responseForAuth = httpclient.execute(httpPost);
-		
 
 		if (responseForAuth.getStatusLine().getStatusCode() == HttpStatus.OK_200) {
 
 			String resultForAuthentication = EntityUtils.toString(responseForAuth.getEntity());
 
-			String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication))
-					.get("access_token").toString();
-			
+			String access_token = ((JSONObject) new JSONParser().parse(resultForAuthentication)).get("access_token")
+					.toString();
+
 			JerseyClient client = JerseyClientBuilder.createClient();
-			
-			String resultOfUserinformationRequest = client
-					.target("https://login.elixir-czech.org/oidc/userinfo").request(MediaType.APPLICATION_JSON)
-					.header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).get(String.class);
-			
+
+			String resultOfUserinformationRequest = client.target("https://login.elixir-czech.org/oidc/userinfo")
+					.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token)
+					.get(String.class);
+
 			client.close();
-			
+
 			JSONObject jsonobj = (JSONObject) new JSONParser().parse(resultOfUserinformationRequest);
 			String[] nameAndEmail = new String[2];
 			nameAndEmail[0] = jsonobj.get("email") != null ? jsonobj.get("email").toString() : null;
 			nameAndEmail[1] = jsonobj.get("name") != null ? jsonobj.get("name").toString() : null;
-			
+
 			return nameAndEmail;
 
-		}else {
+		} else {
 			return null;
 		}
 
@@ -792,31 +795,32 @@ public class EdalHttpHandler extends AbstractHandler {
 		} catch (IOException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send file: " + e.getMessage());
 		}
-		
+
 	}
 
-	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, String[] emailAndName) {
-		//Obtain accessToken
+	private void sendDirectoryUploadTemplate(String requestCode, HttpServletResponse response, String email, String name) {
+		// Obtain accessToken
 		try {
-			
-		final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUpload(response, HttpStatus.Code.OK, emailAndName).toString();
-		
-		response.setStatus(HttpStatus.Code.OK.getCode());
-		
-		response.addHeader("Access-Control-Allow-Origin", "*");
 
-		response.setContentType("text/html");
-		
-		OutputStream responseBody = response.getOutputStream();
-		responseBody.write(htmlOutput.getBytes());
-		responseBody.close();
+			final String htmlOutput = velocityHtmlGenerator
+					.generateHtmlForDirectoryUpload(response, HttpStatus.Code.OK, email, name).toString();
 
+			response.setStatus(HttpStatus.Code.OK.getCode());
+
+			response.addHeader("Access-Control-Allow-Origin", "*");
+
+			response.setContentType("text/html");
+
+			OutputStream responseBody = response.getOutputStream();
+			responseBody.write(htmlOutput.getBytes());
+			responseBody.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.setStatus(HttpStatus.Code.FORBIDDEN.getCode());
 			try {
-				response.sendRedirect(EdalHttpServer.getServerURL()+":"+DataManager.getConfiguration().getHttpPort()+"/oauth");
+				response.sendRedirect(
+						EdalHttpServer.getServerURL() + ":" + DataManager.getConfiguration().getHttpPort() + "/oauth");
 			} catch (IOException | EdalException | EdalConfigurationException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -824,40 +828,42 @@ public class EdalHttpHandler extends AbstractHandler {
 			this.sendMessage(response, HttpStatus.Code.BAD_REQUEST, "Missing request code");
 		}
 	}
-	
+
 	private void sendDataSubmissionPreview(String requestCode, HttpServletResponse response, Code ok) {
 		try {
-			final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUploadPreview(response, ok).toString();
-			
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForDirectoryUploadPreview(response, ok)
+					.toString();
+
 			response.setStatus(ok.getCode());
-			
+
 			response.addHeader("Access-Control-Allow-Origin", "*");
 
 			response.setContentType("text/html");
-			
+
 			OutputStream responseBody = response.getOutputStream();
 			responseBody.write(htmlOutput.getBytes());
 			responseBody.close();
-		}catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			response.setStatus(ok.getCode());
 			try {
-				response.sendRedirect(EdalHttpServer.getServerURL()+":"+DataManager.getConfiguration().getHttpPort()+"/oauth");
+				response.sendRedirect(
+						EdalHttpServer.getServerURL() + ":" + DataManager.getConfiguration().getHttpPort() + "/oauth");
 			} catch (IOException | EdalException | EdalConfigurationException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			this.sendMessage(response, HttpStatus.Code.BAD_REQUEST, "Missing request code");
 		}
-
 
 	}
 
 	private void sendHomePage(final HttpServletResponse response, final HttpStatus.Code responseCode) {
-			
+
 		try {
 
-			final String htmlOutput = velocityHtmlGenerator.generateHtmlForHomePage(responseCode, responseCode).toString();
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForHomePage(responseCode, responseCode)
+					.toString();
 
 			response.setStatus(responseCode.getCode());
 
@@ -872,13 +878,14 @@ public class EdalHttpHandler extends AbstractHandler {
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
-		
+
 	}
 
 	private void sendLatestNews(HttpServletResponse response, Code responseCode) {
 		try {
 
-			final String htmlOutput = velocityHtmlGenerator.generatePublicReferenceLatestStatusResponse(responseCode).toString();
+			final String htmlOutput = velocityHtmlGenerator.generatePublicReferenceLatestStatusResponse(responseCode)
+					.toString();
 
 			response.setStatus(responseCode.getCode());
 			response.addHeader("Access-Control-Allow-Origin", "*");
@@ -1565,12 +1572,14 @@ public class EdalHttpHandler extends AbstractHandler {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
 	}
-	
-	//create and send search template if there is a query set as parameter
-	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode, String searchBarQuery) {
+
+	// create and send search template if there is a query set as parameter
+	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode,
+			String searchBarQuery) {
 		try {
 
-			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, searchBarQuery).toString();
+			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, searchBarQuery)
+					.toString();
 
 			response.setStatus(responseCode.getCode());
 
@@ -1584,13 +1593,14 @@ public class EdalHttpHandler extends AbstractHandler {
 			// Do nothing, because response was already send
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
-		}		
+		}
 	}
-	
-	//create and send search template if there is a query set as parameter
-	private void sendContent(final HttpServletResponse response, final HttpStatus.Code responseCode, String doc, String query) {
+
+	// create and send search template if there is a query set as parameter
+	private void sendContent(final HttpServletResponse response, final HttpStatus.Code responseCode, String doc,
+			String query) {
 		try {
-		
+
 			String htmlOutput = "";
 			try {
 				htmlOutput = velocityHtmlGenerator.generateHtmlForContent(responseCode, doc, query).toString();
@@ -1611,11 +1621,11 @@ public class EdalHttpHandler extends AbstractHandler {
 			// Do nothing, because response was already send
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
-		}		
+		}
 	}
+
 	private void sendSearch(final HttpServletResponse response, final HttpStatus.Code responseCode) {
-		
-		
+
 		try {
 
 			final String htmlOutput = velocityHtmlGenerator.generateHtmlForSearch(responseCode, null).toString();
@@ -1633,7 +1643,7 @@ public class EdalHttpHandler extends AbstractHandler {
 		} catch (IOException | EdalException e) {
 			DataManager.getImplProv().getLogger().error("Unable to send " + responseCode + "-message : " + e);
 		}
-		
+
 	}
 
 	/**
