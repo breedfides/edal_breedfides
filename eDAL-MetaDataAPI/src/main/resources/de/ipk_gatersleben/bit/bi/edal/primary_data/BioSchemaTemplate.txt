@@ -5,6 +5,7 @@
 			{
 		       "@context":"http://schema.org",
 		       "@type":"Taxon",
+		       "@id":"$t.getId()",
 		       "dct:conformsTo":"https://bioschemas.org/profiles/Taxon/0.6-RELEASE",
 		       "name":"$t.getName()",
 		       "taxonRank":"$t.getTaxonRank()",

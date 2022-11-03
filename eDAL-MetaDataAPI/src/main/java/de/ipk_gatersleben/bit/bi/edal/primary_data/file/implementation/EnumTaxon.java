@@ -18,13 +18,16 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 public enum EnumTaxon {
 
 	BARLEY(new Taxon("Hordeum spontaneum", "species", "Hordeum", "barley",
-			new String[] { "barley", "Hordeum vulgare", "Hordeum spontaneum" })),
+			new String[] { "barley", "Hordeum vulgare", "Hordeum spontaneum" },
+			"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=info&id=4513")),
 
 	WHEAT(new Taxon("Triticum vulgare", "species", "Triticum", "wheat",
-			new String[] { "wheat", "Triticum aestivum", "Triticum vulgare" })),
-	
-	ARABIDOPSIS (new Taxon("Arabidopsis thaliana", "species", "Arabidopsis", "arabidopsis",
-			new String[] { "arabidopsis", "Arabidopsis thaliana","arabidopsis thaliana", }));
+			new String[] { "wheat", "Triticum aestivum", "Triticum vulgare" },
+			"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=info&id=4565")),
+
+	ARABIDOPSIS(new Taxon("Arabidopsis thaliana", "species", "Arabidopsis", "arabidopsis",
+			new String[] { "arabidopsis", "Arabidopsis thaliana", "arabidopsis thaliana" },
+			"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=info&id=3702"));
 
 	EnumTaxon(Taxon taxon) {
 		this.taxon = taxon;

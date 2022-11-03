@@ -22,13 +22,16 @@ public class Taxon {
 	private String taxonRank;
 	private String parentTaxon;
 	private String vernacularName;
+	private String id;
 
-	public Taxon(String name, String taxonRank, String parentTaxon, String vernacularName, String[] synonyms) {
+
+	public Taxon(String name, String taxonRank, String parentTaxon, String vernacularName, String[] synonyms, String id) {
 		this.name = name;
 		this.taxonRank = taxonRank;
 		this.parentTaxon = parentTaxon;
 		this.vernacularName = vernacularName;
 		this.synonyms = synonyms;
+		this.id = id;
 	}
 
 	public String getName() {
@@ -49,6 +52,10 @@ public class Taxon {
 
 	public String getVernacularName() {
 		return vernacularName;
+	}
+	
+	public String getId() {
+		return id;
 	}
 
 }
