@@ -10,7 +10,7 @@ project.ext {
     aspectjVersion = '1.9.7'
     jerseyVersion = '2.35'
     jettyVersion = '9.4.44.v20210927'
-    junitVersion = '5.7.0'
+    junitVersion = '5.9.0'
 }
 
 apply plugin: 'eclipse'
@@ -299,11 +299,10 @@ project(':eDAL-MetaDataAPI') {
 				  
 	 	compile group: 'com.github.seancfoley', name:'ipaddress', version:'5.2.1'
 	  	
-	   	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
-    	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine',version: junitVersion
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junitVersion
 	    	
-	    	
-	       	 
 	   	compile group: 'org.glassfish.jersey.test-framework', name: 'jersey-test-framework-core', version: jerseyVersion
 	   	compile group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: jerseyVersion
 	   	compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: jerseyVersion
@@ -369,6 +368,11 @@ project(':eDAL-MetaDataAPI-Server') {
 		compile project(':eDAL-MetaDataAPI')
 	    compile group: 'commons-cli', name: 'commons-cli', version:'1.5.0'
 	   	compile group: 'com.healthmarketscience.rmiio', name: 'rmiio', version:'2.1.2'
+	   	
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine',version: junitVersion
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junitVersion
+	   	
 	}
 
 	task shadowJarServer(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
@@ -398,18 +402,18 @@ project(':eDAL-MetaDataAPI-Client') {
     	compile group: 'org.swinglabs.swingx', name: 'swingx-all', version:'1.6.4'
     	compile group: 'com.miglayout', name: 'miglayout-core', version:'4.2'
     	compile group: 'com.miglayout', name: 'miglayout-swing', version:'4.2'
-    	testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
-    	testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+    	
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine',version: junitVersion
+	    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junitVersion
     	
     	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
     	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
-    	
-    	
+    	   	
     }
 	
 	artifacts{
 		archives shadowJar
 	}
-	
-	
+		
 }
