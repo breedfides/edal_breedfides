@@ -96,8 +96,10 @@
                                     #parse("de/ipk_gatersleben/bit/bi/edal/primary_data/TreeTemplateForReviewer.xml")
                                 </table>
                             </div>
-
+							<div style="display:table-cell;vertical-align: middle;">
                             <a href="$downloadURL/$identifierType/$internalId/$entity.getID()/$entity.getVersionByDate($date).getRevision()/$reviewerCode/ZIP" role="button" class="mt-3 btn btn-outline-primary btn-sm"><span class="oi oi-data-transfer-download" title="icon name" aria-hidden="true"></span> Download as ZIP</a>                          
+                            (NOTE: ZIP Extraction using the native Windows Zip Client can fail due to file path length, please use third-party ZIP client instead)
+                        	</div>
                         </div>
                     </div>
                 </div>
