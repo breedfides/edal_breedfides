@@ -49,8 +49,8 @@ public class PublicationModulTest {
 		Platform.setImplicitExit(false);
 
 		EdalConfiguration configuration = new EdalConfiguration("", "", "10.5072",
-				new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"),
-				new InternetAddress("ralfs@ipk-gatersleben.de"), new InternetAddress("ralfs@ipk-gatersleben.de"));
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
+				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
 
 		EdalServer.startServer(configuration, EdalServer.DEFAULT_REGISTRY_PORT, EdalServer.DEFAULT_DATA_PORT, false,
 				false);
@@ -116,7 +116,7 @@ public class PublicationModulTest {
 		Platform.setImplicitExit(true);
 
 		Subject s = new Subject();
-		s.getPrincipals().add(new SamplePrincipal("ralfs@ipk-gatersleben.de"));
+		s.getPrincipals().add(new SamplePrincipal("arendd@ipk-gatersleben.de"));
 
 		Authentication testAuthentication = new Authentication(s);
 		clientDataManager = new ClientDataManager(SERVER, PORT, testAuthentication);

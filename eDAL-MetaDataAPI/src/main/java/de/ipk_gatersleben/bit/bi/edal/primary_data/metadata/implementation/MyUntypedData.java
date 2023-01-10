@@ -46,7 +46,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 @Indexed(index = "UntypedData")
 @Table(name = "UntypedData", indexes = { @Index(name = "index_string", columnList = "string") })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(columnDefinition = "char(2)", name = "UntypedDataType", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(columnDefinition = "character varying(2)", name = "UntypedDataType", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("1")
 public class MyUntypedData extends UntypedData implements Serializable {
 
@@ -103,7 +103,7 @@ public class MyUntypedData extends UntypedData implements Serializable {
 	 * WhitespaceAnalyzer is necessary to find object with dots at the beginning
 	 */
 	@Override
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	//@Field(index = org.hibernate.search.annotations.Index.YES, store = Store.YES)
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getString() {

@@ -75,7 +75,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
 
 @Entity
 @Table(name = "ENTITIES")
-@DiscriminatorColumn(columnDefinition = "char(1)", name = "TYPE", discriminatorType = DiscriminatorType.CHAR)
+@DiscriminatorColumn(columnDefinition = "character varying(1)", name = "TYPE", discriminatorType = DiscriminatorType.CHAR)
 @DiscriminatorValue("F")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "PrimaryDataFile")
 public class PrimaryDataFileImplementation extends PrimaryDataFile {
@@ -148,7 +148,7 @@ public class PrimaryDataFileImplementation extends PrimaryDataFile {
 	 */
 	@Override
 	@Id
-	@Column(columnDefinition = "char(40)")
+	@Column(columnDefinition = "character varying(40)")
 	public String getID() {
 		return super.getID();
 	}

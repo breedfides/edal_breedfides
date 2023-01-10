@@ -74,7 +74,7 @@ public class MyLegalPerson extends MyPerson {
 	/**
 	 * @return the legalName
 	 */
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getLegalName() {
 		return this.legalName;

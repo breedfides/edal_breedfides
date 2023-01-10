@@ -509,7 +509,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 		urlImplementation.setReference(publicReferenceImplementation);
 		urlImplementation.setUrl(url);
-		urlImplementation.setYear(year);
+		urlImplementation.setYearOfAssignment(year);
 
 		session.update(publicReferenceImplementation);
 		session.save(urlImplementation);
@@ -1010,7 +1010,7 @@ public class ApprovalServiceProviderImplementation implements ApprovalServicePro
 
 			doiImplementation.setReference(publicReferenceImplementation);
 			doiImplementation.setUrl(doi);
-			doiImplementation.setYear(year);
+			doiImplementation.setYearOfAssignment(year);
 
 			try {
 

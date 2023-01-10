@@ -112,7 +112,7 @@ public class MyNaturalPerson extends MyPerson {
 	/**
 	 * @return the givenName
 	 */
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getGivenName() {
 		return givenName;
@@ -129,7 +129,7 @@ public class MyNaturalPerson extends MyPerson {
 	/**
 	 * @return the sureName
 	 */
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getSureName() {
 		return sureName;

@@ -253,7 +253,7 @@ project(':eDAL-MetaDataAPI') {
 	   
 	    compile group: 'commons-io', name: 'commons-io', version:'2.11.0'
 	    compile group: 'org.aspectj', name: 'aspectjrt', version: aspectjVersion
-	    compile group: 'com.h2database', name: 'h2', version:'1.4.199'
+	    compile group: 'com.h2database', name: 'h2', version:'2.1.214'
     	/*compile ('com.github.h2database:h2database:master-SNAPSHOT'){
         	exclude group: 'org.apache.lucene'
     	}*/
@@ -267,9 +267,9 @@ project(':eDAL-MetaDataAPI') {
 		// https://mvnrepository.com/artifact/org.apache.lucene/lucene-misc
 		compile group: 'org.apache.lucene', name: 'lucene-misc', version: '8.7.0'
 		    	
-		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.6.5.Final'
-		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.6.5.Final'
-		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.6.5.Final'
+		compile group: 'org.hibernate', name: 'hibernate-core', version: '5.6.13.Final'
+		compile group: 'org.hibernate', name: 'hibernate-jcache', version: '5.6.13.Final'
+		compile group: 'org.hibernate', name: 'hibernate-c3p0', version: '5.6.13.Final'
 	 	compile group: 'org.ehcache', name: 'ehcache', version:'3.9.9'
 	 	
 	 	// https://mvnrepository.com/artifact/com.google.code.gson/gson

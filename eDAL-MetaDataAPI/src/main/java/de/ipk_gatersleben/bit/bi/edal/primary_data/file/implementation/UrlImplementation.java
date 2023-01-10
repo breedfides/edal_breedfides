@@ -23,7 +23,7 @@ public class UrlImplementation {
 	private int id;
 	private String url;
 	private PublicReferenceImplementation reference;
-	private int year;
+	private int yearOfAssignment;
 
 	public UrlImplementation() {
 
@@ -78,18 +78,18 @@ public class UrlImplementation {
 	}
 
 	/**
-	 * @return the year
+	 * @return the yearOfAssignment
 	 */
-	public int getYear() {
-		return year;
+	public int getYearOfAssignment() {
+		return this.yearOfAssignment;
 	}
 
 	/**
-	 * @param year
-	 *            the year to set
+	 * @param yearOfAssignment
+	 *            the yearOfAssignment to set
 	 */
-	public void setYear(int year) {
-		this.year = year;
+	public void setYearOfAssignment(int yearOfAssignment) {
+		this.yearOfAssignment = yearOfAssignment;
 	}
 
 }

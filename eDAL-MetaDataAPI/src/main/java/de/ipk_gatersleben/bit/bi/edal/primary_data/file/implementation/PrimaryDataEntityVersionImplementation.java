@@ -170,7 +170,7 @@ public class PrimaryDataEntityVersionImplementation extends PrimaryDataEntityVer
 	 * 
 	 * @return a {@link String} object.
 	 */
-	@Column(columnDefinition = "char(40)")
+	@Column(columnDefinition = "character varying(40)")
 	public String getPrimaryEntityId() {
 		return this.primaryEntityId;
 	}
