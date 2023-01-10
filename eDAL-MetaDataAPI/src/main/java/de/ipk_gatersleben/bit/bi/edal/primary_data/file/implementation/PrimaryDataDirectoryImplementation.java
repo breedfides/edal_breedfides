@@ -133,7 +133,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
 
 @Entity
 @Table(name = "ENTITIES")
-@DiscriminatorColumn(columnDefinition = "char(1)", name = "TYPE", discriminatorType = DiscriminatorType.CHAR)
+@DiscriminatorColumn(columnDefinition = "character varying(1)", name = "TYPE", discriminatorType = DiscriminatorType.CHAR)
 @DiscriminatorValue("D")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "PrimaryDataDirectory")
 public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
@@ -307,7 +307,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 	 */
 	@Override
 	@Id
-	@Column(columnDefinition = "char(40)")
+	@Column(columnDefinition = "character varying(40)")
 	public String getID() {
 		return super.getID();
 	}

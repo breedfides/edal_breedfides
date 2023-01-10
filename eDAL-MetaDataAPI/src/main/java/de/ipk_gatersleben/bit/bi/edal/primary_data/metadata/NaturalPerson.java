@@ -145,7 +145,7 @@ public class NaturalPerson extends Person {
 	 * 
 	 * @return the sure name
 	 */
-	@Column(columnDefinition = "varchar(4000)")	
+	@Column(columnDefinition = "character varying(4000)")	
 	public String getSureName() {
 		return this.sureName;
 	}
@@ -155,7 +155,7 @@ public class NaturalPerson extends Person {
 	 * 
 	 * @return the given name
 	 */
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	public String getGivenName() {
 		return this.givenName;
 	}

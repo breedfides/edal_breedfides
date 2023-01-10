@@ -80,7 +80,7 @@ public class MyPerson extends MyUntypedData {
 	 * 
 	 * @return address line of the {@link Person}.
 	 */
-	@Column(columnDefinition = "varchar(4000)")
+	@Column(columnDefinition = "character varying(4000)")
 	@FullTextField(analyzer = "default",projectable = Projectable.YES)
 	public String getAddressLine() {
 		return addressLine;

@@ -192,7 +192,7 @@ public class EdalPermissionImplementation extends EdalPermission {
 	 * 
 	 * @return the internId
 	 */
-	@Column(columnDefinition = "char(40)")
+	@Column(columnDefinition = "character varying(40)")
 	private String getInternId() {
 		return internId;
 	}
