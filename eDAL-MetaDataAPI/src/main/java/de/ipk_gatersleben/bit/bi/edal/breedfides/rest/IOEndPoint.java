@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ * Copyright (c) 2023 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
  * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
  * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
@@ -92,10 +92,10 @@ public class IOEndPoint {
 		Files.copy(fileInputStream, target);
 
 		String output = "File successfully uploaded to : " + target;
-		
+
 		return Response.status(200).entity(output).build();
 	}
-	
+
 	/**
 	 * simple endpoint to upload a file
 	 * 
@@ -104,20 +104,18 @@ public class IOEndPoint {
 	@POST
 	@Path("/upload_detail")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response uploadStaticFile(@FormDataParam("file") InputStream fileInputStream,  @FormDataParam("file") FormDataContentDisposition fileDetail) throws IOException {
+	public Response uploadStaticFile(@FormDataParam("file") InputStream fileInputStream,
+			@FormDataParam("file") FormDataContentDisposition fileDetail) throws IOException {
 
-		
 		System.out.println(fileDetail.getFileName());
-		
-		
+
 		java.nio.file.Path target = Paths.get(System.getProperty("user.home"), "edal_upload.png");
 
 		Files.copy(fileInputStream, target);
 
 		String output = "File successfully uploaded to : " + target;
-		
+
 		return Response.status(200).entity(output).build();
 	}
-	
 
 }

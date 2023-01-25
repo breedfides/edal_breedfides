@@ -121,10 +121,10 @@ allprojects {
 		zip64 true
 	}
 	
-	artifacts {
+/*	artifacts {
    		archives javadocJar, sourcesJar
 	}
-
+*/
 	if(!project.hasProperty('signing.keyId') || !project.hasProperty('signing.password')|| !project.hasProperty('signing.secretKeyRingFile')){   
 		println "WARNING: If you want to sign your archives please provide the 'signing.keyId' and 'signing.password' and 'signing.secretKeyRingFile' properties"
 	}
@@ -320,6 +320,11 @@ project(':eDAL-MetaDataAPI') {
      	compile group: 'com.sun.xml.bind', name: 'jaxb-core', version:'2.3.0.1'	 
      	compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version:'2.3.1'	 
      	compile group: 'javax.activation', name: 'activation', version:'1.1.1'	
+		 
+		implementation group: 'com.auth0', name:'java-jwt', version:'4.2.1'
+		implementation group: 'com.auth0', name:'jwks-rsa', version:'0.21.2'
+		implementation group: 'org.bouncycastle', name:'bcpkix-jdk18on', version:'1.72'
+		//implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: '3.1.0'
      	
 	}
 	
@@ -339,10 +344,10 @@ project(':eDAL-MetaDataAPI') {
 		exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
 	}
 */	
-	artifacts{
+/*	artifacts{
 		archives shadowJar //, shadowJarLogin
 	}
-	
+*/	
 	task cleanUpTestDirectoryAPI(type: Delete) {
 		
 		def homePath = ant.properties['user.home']
@@ -412,8 +417,8 @@ project(':eDAL-MetaDataAPI-Client') {
     	   	
     }
 	
-	artifacts{
+/*	artifacts{
 		archives shadowJar
 	}
-		
+*/		
 }

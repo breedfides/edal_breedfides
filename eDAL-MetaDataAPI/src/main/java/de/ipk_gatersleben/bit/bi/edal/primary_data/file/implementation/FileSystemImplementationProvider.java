@@ -63,6 +63,7 @@ import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
 import org.hibernate.tool.schema.TargetType;
 
+import de.ipk_gatersleben.bit.bi.edal.breedfides.persistence.Certificate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
@@ -314,7 +315,7 @@ public class FileSystemImplementationProvider
 				MyCheckSumType.class, MyCheckSum.class,
 				MyEdalLanguage.class, MyEdalDate.class,
 				MyEdalDateRange.class, MyDateEvents.class,
-				MyORCID.class);
+				MyORCID.class, Certificate.class);
 
 		if (!exists) {
 

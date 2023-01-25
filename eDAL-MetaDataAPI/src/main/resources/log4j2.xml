@@ -67,6 +67,10 @@
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>
+		<Logger name="BreedFidesRestLog" level="INFO" additivity="false">
+			<appender-ref ref="Console" />
+			<appender-ref ref="RollingFileInfo" />
+		</Logger>
 		<Logger name="index-thread" level="DEBUG" additivity="false">
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileIndexing" />

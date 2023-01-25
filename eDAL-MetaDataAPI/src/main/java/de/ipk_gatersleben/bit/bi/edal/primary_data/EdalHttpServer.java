@@ -139,44 +139,46 @@ public class EdalHttpServer {
 		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setResourceBase(".");
 
-
 		ServletContextHandler restHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		restHandler.setContextPath("/rest");
 		ServletHolder jerseyServlet = restHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
-		
+
 		jerseyServlet.setInitOrder(2);
-		
-		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames","de.ipk_gatersleben.bit.bi.edal.primary_data.EdalSearchRestEndpoints,org.glassfish.jersey.media.multipart.MultiPartFeature,de.ipk_gatersleben.bit.bi.edal.primary_data.CORSFilter");
+
+		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
+				"de.ipk_gatersleben.bit.bi.edal.primary_data.EdalSearchRestEndpoints,org.glassfish.jersey.media.multipart.MultiPartFeature, de.ipk_gatersleben.bit.bi.edal.primary_data.CORSFilter");
 
 		handlerCollection.addHandler(restHandler);
 		handlerCollection.addHandler(edalContextHandler);
 		handlerCollection.addHandler(resourceHandler);
 		handlerCollection.addHandler(requestLogHandler);
-		
+
 		/** add REST endpoints for web submission tool **/
 		ServletContextHandler submissionRestHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		submissionRestHandler.setContextPath("/restfull");
-		ServletHolder submissionJerseyServlet = submissionRestHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+		ServletHolder submissionJerseyServlet = submissionRestHandler
+				.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		submissionJerseyServlet.setInitOrder(0);
 		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.packages",
 				"de.ipk_gatersleben.bit.bi.edal.rest.server");
-		//submissionJerseyServlet.setInitParameter("javax.ws.rs.Application", "de.ipk_gatersleben.bit.bi.edal.primary_data.CustomApplication");
-		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.classnames","org.glassfish.jersey.media.multipart.MultiPartFeature");
+		// submissionJerseyServlet.setInitParameter("javax.ws.rs.Application",
+		// "de.ipk_gatersleben.bit.bi.edal.primary_data.CustomApplication");
+		submissionJerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
+				"org.glassfish.jersey.media.multipart.MultiPartFeature");
 		handlerCollection.prependHandler(submissionRestHandler);
-		
-		
+
 		/** add REST endpoints for BreedFides web interface **/
 		ServletContextHandler breedFidesRestHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		breedFidesRestHandler.setContextPath("/breedfides");
-		ServletHolder breedFidesJerseyServlet = breedFidesRestHandler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
+		ServletHolder breedFidesJerseyServlet = breedFidesRestHandler
+				.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		breedFidesJerseyServlet.setInitOrder(0);
 		breedFidesJerseyServlet.setInitParameter("jersey.config.server.provider.packages",
 				"de.ipk_gatersleben.bit.bi.edal.breedfides.rest");
-		breedFidesJerseyServlet.setInitParameter("jersey.config.server.provider.classnames","org.glassfish.jersey.media.multipart.MultiPartFeature");
+		breedFidesJerseyServlet.setInitParameter("jersey.config.server.provider.classnames",
+				"org.glassfish.jersey.media.multipart.MultiPartFeature, de.ipk_gatersleben.bit.bi.edal.breedfides.rest.BreedFidesCORSFilter");
 		handlerCollection.prependHandler(breedFidesRestHandler);
-		
-		
-	
+
 		if (this.useSSL) {
 
 			try {
