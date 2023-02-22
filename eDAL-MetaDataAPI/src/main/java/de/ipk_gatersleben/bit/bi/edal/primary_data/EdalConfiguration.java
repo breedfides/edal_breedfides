@@ -72,9 +72,11 @@ import com.github.markusbernhardt.proxy.util.PlatformUtil.Platform;
 import com.sun.security.auth.NTUserPrincipal;
 import com.sun.security.auth.UnixPrincipal;
 
+import de.ipk_gatersleben.bit.bi.edal.breedfides.rest.InfoEndpoint;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.ElixirPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.GooglePrincipal;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.login.JWTPrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.login.SamplePrincipal;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteMDSConnector;
@@ -86,7 +88,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.datacite.DataCiteRe
  * @author arendd
  */
 public final class EdalConfiguration {
-	
+
 	private static final String NOREPLY_EMAIL_DEFAULT = "noreply@ipk-gatersleben.de";
 
 	private static final String MSG_UNABLE_TO_SET_PROXY = "unable to set proxy: ";
@@ -95,6 +97,7 @@ public final class EdalConfiguration {
 
 	static {
 		EdalConfiguration.logger = LogManager.getLogger("eDAL-API");
+		InfoEndpoint.setLogger(LogManager.getLogger("BreedFides"));
 	}
 
 	public static final String DATACITE_SEARCH_URL = "http://search.datacite.org/api/";
@@ -135,7 +138,7 @@ public final class EdalConfiguration {
 	 */
 	public static final List<Class<? extends Principal>> DEFAULT_SUPPORTED_PRINCIPALS = new ArrayList<Class<? extends Principal>>(
 			Arrays.asList(SamplePrincipal.class, NTUserPrincipal.class, UnixPrincipal.class, KerberosPrincipal.class,
-					GooglePrincipal.class, ElixirPrincipal.class));
+					GooglePrincipal.class, ElixirPrincipal.class, JWTPrincipal.class));
 
 	/**
 	 * The default database user name
@@ -310,7 +313,7 @@ public final class EdalConfiguration {
 
 	private boolean inTestMode = false;
 	private boolean inReadOnlyMode = false;
-	
+
 	/**
 	 * The eMail address to send messages of edal.
 	 */
@@ -392,13 +395,12 @@ public final class EdalConfiguration {
 
 	private String keystorePasswordForHttpListener = "";
 
-	
 	private boolean cleanBrokenEntities = true;
-	
+
 	private boolean indexingStrategy = false;
-	
+
 	public static int HIBERNATE_SEARCH_INDEXING = 0;
-	
+
 	public static int NATIVE_LUCENE_INDEXING = 1;
 
 	/**
@@ -491,20 +493,17 @@ public final class EdalConfiguration {
 		this.setMailSmtpPassword(smtpPassword);
 		this.validate();
 	}
-	
 
 	public void setHibernateIndexing(int configValue) {
-		if(configValue == EdalConfiguration.HIBERNATE_SEARCH_INDEXING)
+		if (configValue == EdalConfiguration.HIBERNATE_SEARCH_INDEXING)
 			this.indexingStrategy = true;
-		else if(configValue == EdalConfiguration.NATIVE_LUCENE_INDEXING)
+		else if (configValue == EdalConfiguration.NATIVE_LUCENE_INDEXING)
 			this.indexingStrategy = false;
 	}
-	
 
 	public boolean isHibernateSearchIndexingEnabled() {
 		return this.indexingStrategy;
 	}
-	
 
 	/**
 	 * Add a supported Principal to the list of principals.
@@ -1731,7 +1730,7 @@ public final class EdalConfiguration {
 			throw new EdalConfigurationException("unable to connect to eMail Server, check SMTP settings");
 		}
 	}
-	
+
 	public boolean isCleanBrokenEntities() {
 		return cleanBrokenEntities;
 	}
@@ -1763,7 +1762,7 @@ public final class EdalConfiguration {
 	public void setPublisherString(String publisherString) {
 		this.publisherString = publisherString;
 	}
-	
+
 	public String getPublisherURL() {
 		return this.publisherURL;
 	}

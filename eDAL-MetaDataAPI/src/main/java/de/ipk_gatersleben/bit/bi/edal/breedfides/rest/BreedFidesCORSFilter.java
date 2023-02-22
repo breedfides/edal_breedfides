@@ -11,6 +11,7 @@
  *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
  */
 package de.ipk_gatersleben.bit.bi.edal.breedfides.rest;
+
 /**
  * Copyright (c) 2022 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
  *
@@ -33,14 +34,14 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class BreedFidesCORSFilter implements ContainerResponseFilter {
 
-   @Override
-   public void filter(final ContainerRequestContext requestContext,
-                      final ContainerResponseContext cres) throws IOException {
-      cres.getHeaders().add("Access-Control-Allow-Origin", "http://vm-109.ipk-gatersleben.de:5173");
-      cres.getHeaders().add("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
-      cres.getHeaders().add("Access-Control-Allow-Credentials", "true");
-      cres.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
-      cres.getHeaders().add("Access-Control-Max-Age", "1209600");
-   }
+	@Override
+	public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext cres)
+			throws IOException {
+		cres.getHeaders().add("Access-Control-Allow-Origin", "*");
+		cres.getHeaders().add("Access-Control-Allow-Headers", "*");
+//      cres.getHeaders().add("Access-Control-Allow-Credentials", "true");
+		cres.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+		cres.getHeaders().add("Access-Control-Max-Age", "1209600");
+	}
 
 }

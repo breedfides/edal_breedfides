@@ -69,30 +69,43 @@ import de.ipk_gatersleben.bit.bi.edal.sample.*;
 @SuppressWarnings("unused")
 public class TestClass {
 
+	private static final String ROOT_USER = "eDAL0815@ipk-gatersleben.de";
+	private static final String EMAIL = "arendd@ipk-gatersleben.de";
+
+	private static final String DATACITE_PREFIX = "10.5072";
+	private static final String DATACITE_PASSWORD = "";
+	private static final String DATACITE_USERNAME = "";
+
+	private static void listDir(final PrimaryDataDirectory currentDirectory) throws PrimaryDataDirectoryException {
+
+		final List<PrimaryDataEntity> list = currentDirectory.listPrimaryDataEntities();
+		if (list != null) {
+			for (final PrimaryDataEntity primaryDataEntity : list) {
+				System.out.println(primaryDataEntity.getPath());
+				System.out.println(primaryDataEntity.getMetaData());
+				if (primaryDataEntity.isDirectory()) {
+					listDir((PrimaryDataDirectory) primaryDataEntity);
+				}
+			}
+		}
+	}
+
 	public static void main(final String[] args) throws Exception {
 
-		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+		EdalConfiguration configuration = new EdalConfiguration(DATACITE_USERNAME, DATACITE_PASSWORD, DATACITE_PREFIX,
+				new InternetAddress(EMAIL), new InternetAddress(EMAIL), new InternetAddress(EMAIL),
+				new InternetAddress(ROOT_USER), "imap.ipk-gatersleben.de", "", "");
+		configuration.setUseSSL(true);
 
-		// System.out.println(EdalHelpers.authenticateGoogleUser("proxy1.ipk-gatersleben.de",3128));
-		// System.out.println(EdalHelpers.authenticateORCIDUser("proxy1.ipk-gatersleben.de",3128));
+		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
+				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
+				EdalHelpers.authenticateUserWithJWT("1677077912982"));
+		
+		
 
-		InetSocketAddress address = EdalConfiguration.guessProxySettings();
-
-		if (address != null) {
-			System.out.println(EdalHelpers.authenticateElixirUser(address.getHostName(), address.getPort()));
-		} else {
-			System.out.println(EdalHelpers.authenticateElixirUser("", 0));
-		}
-
-//		EdalConfiguration configuration = new EdalConfiguration("dummy", "dummy", "10.5072",
-//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("arendd@ipk-gatersleben.de"),
-//				new InternetAddress("arendd@ipk-gatersleben.de"), new InternetAddress("eDAL0815@ipk-gatersleben.de"));
-//		
-//		PrimaryDataDirectory root = DataManager.getRootDirectory(EdalHelpers.getFileSystemImplementationProvider(false, configuration), EdalHelpers.authenticateWinOrUnixOrMacUser());
-//		
-//		Thread.sleep(3000);
-//		
-//		DataManager.shutdown();
+		
+		
+		listDir(rootDirectory);
 
 	}
 

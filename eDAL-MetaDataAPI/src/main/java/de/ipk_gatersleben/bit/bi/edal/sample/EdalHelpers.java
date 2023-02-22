@@ -25,7 +25,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -42,11 +41,6 @@ import javax.swing.JOptionPane;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.hibernate.stat.CacheRegionStatistics;
 import org.hibernate.stat.Statistics;
 
@@ -505,45 +499,45 @@ public class EdalHelpers {
 
 //		try {
 
-			for (InetAddress inetAddress : ipAddressList) {
+		for (InetAddress inetAddress : ipAddressList) {
 
-				String localIPAddress = inetAddress.getHostAddress();
-				System.out.println(localIPAddress);
+			String localIPAddress = inetAddress.getHostAddress();
+			System.out.println(localIPAddress);
 
-				if (contains("172.31.0.0/16", localIPAddress) || contains("192.168.168.0/24", localIPAddress)
-						|| contains("192.168.0.0/24", localIPAddress) || contains("172.19.0.0/16", localIPAddress)
-						|| contains("192.168.120.0/24", localIPAddress)) {
+			if (contains("172.31.0.0/16", localIPAddress) || contains("192.168.168.0/24", localIPAddress)
+					|| contains("192.168.0.0/24", localIPAddress) || contains("172.19.0.0/16", localIPAddress)
+					|| contains("192.168.120.0/24", localIPAddress)) {
 
-					kerberosRealm = "QUEDLINBURG.BBA.INTERN";
-					kerberosKDC = "172.31.16.1";
-					break;
+				kerberosRealm = "QUEDLINBURG.BBA.INTERN";
+				kerberosKDC = "172.31.16.1";
+				break;
 
-				} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
-						|| contains("192.168.200.0/24", localIPAddress)) {
+			} else if (contains("172.16.0.0/16", localIPAddress) || contains("172.21.0.0/16", localIPAddress)
+					|| contains("192.168.200.0/24", localIPAddress)) {
 
-					kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
-					kerberosKDC = "172.16.4.128";
-					break;
+				kerberosRealm = "BRAUNSCHWEIG.BBA.INTERN";
+				kerberosKDC = "172.16.4.128";
+				break;
 
-				} else if (contains("172.18.0.0/16", localIPAddress)) {
+			} else if (contains("172.18.0.0/16", localIPAddress)) {
 
-					kerberosRealm = "BERLIN.BBA.INTERN";
-					kerberosKDC = "172.18.1.4";
-					break;
+				kerberosRealm = "BERLIN.BBA.INTERN";
+				kerberosKDC = "172.18.1.4";
+				break;
 
-				} else if (contains("172.17.0.0/16", localIPAddress) || contains("192.168.115.0/24", localIPAddress)
-						|| contains("192.168.2.0/24", localIPAddress)) {
+			} else if (contains("172.17.0.0/16", localIPAddress) || contains("192.168.115.0/24", localIPAddress)
+					|| contains("192.168.2.0/24", localIPAddress)) {
 
-					kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
-					kerberosKDC = "172.17.21.20";
-					break;
-				} 
+				kerberosRealm = "KLEINMACHNOW.BBA.INTERN";
+				kerberosKDC = "172.17.21.20";
+				break;
 			}
-			
-			if(kerberosKDC==null && kerberosRealm==null) {
-				throw new EdalAuthenticateException(
-						"You are not in a valid IP range to access the Kerberos service provider");
-			}
+		}
+
+		if (kerberosKDC == null && kerberosRealm == null) {
+			throw new EdalAuthenticateException(
+					"You are not in a valid IP range to access the Kerberos service provider");
+		}
 //		} catch (UnknownHostException e1) {
 //			throw new EdalAuthenticateException("Cannnot determine you local IP address");
 //		}
@@ -1010,4 +1004,11 @@ public class EdalHelpers {
 		}
 
 	}
+
+	public static Subject authenticateUserWithJWT(String jwt) throws EdalAuthenticateException {
+
+		return EdalHelpers.authenticateSubject("JWT", new UserCallBackHandler(jwt, jwt));
+
+	}
+
 }

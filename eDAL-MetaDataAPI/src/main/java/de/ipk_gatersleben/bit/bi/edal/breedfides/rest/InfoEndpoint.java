@@ -24,20 +24,30 @@ import org.apache.logging.log4j.Logger;
 public class InfoEndpoint {
 
 	private static Logger logger = null;
-
+	
 	static {
-		InfoEndpoint.logger = LogManager.getLogger("BreedFidesRestLog");
+		InfoEndpoint.setLogger(LogManager.getLogger("BreedFides"));
+
+		InfoEndpoint.getLogger().info("Started BreedFides Endpoint");
+
 	}
 
 	@GET
 	@Path("info")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String info() {
+
+		InfoEndpoint.getLogger().info("Call 'info/info/' endpoint");
+
 		return "BreedFides Info endpoint";
 	}
 
 	public static Logger getLogger() {
-		return logger;
+		return InfoEndpoint.logger;
+	}
+
+	public static Logger setLogger(Logger log) {
+		return InfoEndpoint.logger = log;
 	}
 
 }

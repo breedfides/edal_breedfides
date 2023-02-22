@@ -131,6 +131,16 @@ public class EdalLoginConfiguration extends Configuration {
 			array[0] = elixirLoginModule;
 
 			return array;
+		case "JWT":
+
+			AppConfigurationEntry jwtLoginModule = new AppConfigurationEntry(
+					"de.ipk_gatersleben.bit.bi.edal.primary_data.login.JWTLoginModule",
+					LoginModuleControlFlag.REQUIRED, this.map);
+
+			array[0] = jwtLoginModule;
+
+			return array;	
+			
 		default:
 			return array;
 		}

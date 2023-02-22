@@ -192,33 +192,69 @@ public class RESTClientForTest {
 //		
 //		File file = streamResponse.readEntity(File.class);
 //		Files.copy(new FileInputStream(file), Paths.get(System.getProperty("user.home"), "compressed.zip"));
+
+//		Client client = ClientBuilder.newClient();
+//		client.register(MultiPartFeature.class);
+//
+//		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/aai/login");
+//
+//		File file3 = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+//
+//		final FileDataBodyPart filePart = new FileDataBodyPart("file", file3);
+//		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
+//		final FormDataMultiPart multipart = (FormDataMultiPart) formDataMultiPart.field("foo", "bar")
+//				.bodyPart(filePart);
+//
+//		final Response uploadResponse = uploadRequest.request()
+//				.post(Entity.entity(multipart, multipart.getMediaType()));
+//
+//		// Use response object to verify upload success
+//		System.out.println("Respose (" + uploadResponse.getStatus() + " - " + uploadResponse.getStatusInfo() + ")");
+//		System.out.println("Respose (" + uploadResponse.readEntity(String.class) + ")");
+//		System.out.println(uploadResponse.getCookies());
+//		formDataMultiPart.close();
+//		multipart.close();
+
+//		Client client = ClientBuilder.newClient();
+//		client.register(MultiPartFeature.class);
+//
+//		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/upload/datasets");
+//
+//		File file3 = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+//
+//		final FileDataBodyPart filePart = new FileDataBodyPart("file", file3);
+//		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
+//		final FormDataMultiPart multipart = (FormDataMultiPart) formDataMultiPart.field("datasetRoot", "subdirectory")
+//				.field("metaData", "{\"title\":\"Italian Accessions of the Bridge Dataset\",\"description\":\"MIAPPE ISA Tab formatted dataset of all italian accessions of the BRIDGE Dataset.\",\"language\":\"english\",\"subjects\":[\"Hordeum vulgare\",\"ISA Tab\",\"Phenotyping\",\"MIAPPE\"],\"authors\":[{\"country\":\"Deutschland\",\"zip\":\"D-06466\",\"address\":\"CORRENSSTRASSE 3\",\"role\":\"Contributor\",\"orcid\":\"0000-0001-6546-1818\",\"legalName\":\"Manuel Feser\",\"lastName\":\"Feser\",\"firstName\":\"Manuel\",\"id\":0}],\"embargoDate\":\"02/17/2023\",\"license\":\"CC 1.0 Universal\"}").bodyPart(filePart);
+//
+//		
+//		
+//		final Response uploadResponse = uploadRequest.request()
+//				.header("Authorization", "Bearer JWT_Token")
+//				.post(Entity.entity(multipart, multipart.getMediaType()));
+//
+//		// Use response object to verify upload success
+//		System.out.println("Respose (" + uploadResponse.getStatus() + " - " + uploadResponse.getStatusInfo() + ")");
+//		System.out.println("Respose (" + uploadResponse.readEntity(String.class) + ")");
+//		System.out.println(uploadResponse.getCookies());
+//		formDataMultiPart.close();
+//		multipart.close();
+
+		
 		
 		
 		
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/aai/login");
+		WebTarget accessRequest = client.target("http://localhost/").path("breedfides/access/datasets");
 
-		File file3 = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+		Response registerResponse = accessRequest.queryParam("subjects", "hordeum vulgare").request()
+				.header("Authorization", "Bearer JWT_Token").accept(MediaType.APPLICATION_JSON).get();
 
-		final FileDataBodyPart filePart = new FileDataBodyPart("file", file3);
-		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
-		final FormDataMultiPart multipart = (FormDataMultiPart) formDataMultiPart.field("foo", "bar")
-				.bodyPart(filePart);
+		System.out.println(
+				"Respose (" + registerResponse.getStatus() + ") value: " + registerResponse.readEntity(String.class));
 
-		final Response uploadResponse = uploadRequest.request()
-				.post(Entity.entity(multipart, multipart.getMediaType()));
-
-		// Use response object to verify upload success
-		System.out.println("Respose (" + uploadResponse.getStatus() + " - " + uploadResponse.getStatusInfo() + ")");
-		System.out.println("Respose (" + uploadResponse.readEntity(String.class) + ")");
-		System.out.println(uploadResponse.getCookies());
-		formDataMultiPart.close();
-		multipart.close();
-		
-		
-		
 	}
 
 }

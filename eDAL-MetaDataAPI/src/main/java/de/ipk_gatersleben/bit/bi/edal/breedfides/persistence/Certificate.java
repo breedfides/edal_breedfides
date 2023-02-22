@@ -25,6 +25,7 @@ import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import de.ipk_gatersleben.bit.bi.edal.breedfides.rest.InfoEndpoint;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 
@@ -85,6 +86,9 @@ public class Certificate {
 	}
 
 	public static boolean checkSerialNumber(X509Certificate providedCertificate) {
+
+		InfoEndpoint.getLogger().info("Check serial number of given certificate");
+
 		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -92,9 +96,15 @@ public class Certificate {
 
 		Root<Certificate> root = criteria.from(Certificate.class);
 		criteria.where(criteriaBuilder.equal(root.get("serialNumber"), providedCertificate.getSerialNumber()));
-		Certificate loadedCertificate = session.createQuery(criteria).getSingleResult();
-	
-		return loadedCertificate.getSerialNumber().equals(providedCertificate.getSerialNumber());
+		Certificate loadedCertificate = session.createQuery(criteria).uniqueResult();
+
+		session.close();
+
+		if (loadedCertificate != null) {
+			return loadedCertificate.getSerialNumber().equals(providedCertificate.getSerialNumber());
+		} else {
+			return false;
+		}
 
 	}
 }

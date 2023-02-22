@@ -67,7 +67,7 @@
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>
-		<Logger name="BreedFidesRestLog" level="INFO" additivity="false">
+		<Logger name="BreedFides" level="INFO" additivity="false">
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>

@@ -60,6 +60,10 @@
 			<appender-ref ref="Console" />
 			<appender-ref ref="RollingFileInfo" />
 		</Logger>
+		<Logger name="BreedFides" level="INFO" additivity="false">
+			<appender-ref ref="Console" />
+			<appender-ref ref="RollingFileInfo" />
+		</Logger>
 		<root level="INFO">
 			<appender-ref ref="RollingFileInfo" />
 		</root>

@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.breedfides.rest;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Principal;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -68,7 +69,10 @@ public class AAIEndpoint {
 	@Path("info")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String info() {
-		return "BreedFides AAI endpoint";
+
+		InfoEndpoint.getLogger().info("Call 'aai/info/' endpoint");
+
+		return "Call 'aai/info/' endpoint";
 	}
 
 	@POST
@@ -77,7 +81,7 @@ public class AAIEndpoint {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response register(JSONObject inputJson) {
 
-		InfoEndpoint.getLogger().info("Call 'register' endpoint");
+		InfoEndpoint.getLogger().info("Call 'aai/register/' endpoint");
 
 		StreamingOutput fileStream = new StreamingOutput() {
 
@@ -128,16 +132,26 @@ public class AAIEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response login(@FormDataParam("file") InputStream fileInputStream) throws Exception {
 
-		InfoEndpoint.getLogger().info("Call 'login' endpoint");
+		InfoEndpoint.getLogger().info("Call 'aai/login/' endpoint");
 
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode rootNode = mapper.createObjectNode();
 
-		CertificateFactory factory = CertificateFactory.getInstance("X509");
+		X509Certificate certificate = null;
 
-		X509Certificate certificate = (X509Certificate) factory.generateCertificate(fileInputStream);
+		try {
+			CertificateFactory factory = CertificateFactory.getInstance("X509");
+			certificate = (X509Certificate) factory.generateCertificate(fileInputStream);
+
+			InfoEndpoint.getLogger().info("Got Certificate with serial number " + certificate.getSerialNumber());
+
+		} catch (CertificateException e) {
+			return Response.status(Status.UNAUTHORIZED.getStatusCode(), "Please check your certificate").build();
+		}
 
 		if (Certificate.checkSerialNumber(certificate)) {
+
+			InfoEndpoint.getLogger().info("Certificate check successful");
 
 			Principal subject = certificate.getSubjectX500Principal();
 			String subjectArray[] = subject.toString().split(",");
@@ -153,18 +167,26 @@ public class AAIEndpoint {
 				}
 			}
 
-			String responseJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
-
 			HashMap<String, String> payload = new HashMap<>();
+			payload.put("serialNumber",certificate.getSerialNumber().toString());
 			payload.put("role", "breeder");
 
 			String jwt = JwtGenerator.generateJwt(payload);
 
-			InfoEndpoint.getLogger().info("Call 'login' endpoint -> generate JWT '" + jwt.substring(0, 10) + ".."
+			InfoEndpoint.getLogger().info("Call 'login' endpoint -> generate JWT '" + jwt.substring(0, 10) + "..."
 					+ jwt.substring(jwt.length() - 11, jwt.length() - 1) + "'");
 
-			return Response.ok(responseJson, MediaType.APPLICATION_JSON).cookie(new NewCookie("token", jwt)).build();
+			rootNode.put("jwt", jwt);
+
+			String responseJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
+//			return Response.ok(responseJson, MediaType.APPLICATION_JSON).cookie(new NewCookie("token", jwt)).build();
+
+			return Response.ok(responseJson, MediaType.APPLICATION_JSON).build();
+
 		} else {
+			InfoEndpoint.getLogger().info("Certificate check failed");
+
 			return Response.status(Status.UNAUTHORIZED.getStatusCode(), "No valid certificate, please register before")
 					.build();
 		}
@@ -176,7 +198,7 @@ public class AAIEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response logout() throws Exception {
 
-		InfoEndpoint.getLogger().info("Call 'logout' endpoint");
+		InfoEndpoint.getLogger().info("Call 'aai/logout/' endpoint");
 
 		JsonBuilder builder = new JsonBuilder();
 		builder.put("message", "Logged out");
