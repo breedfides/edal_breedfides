@@ -623,7 +623,7 @@ public class SearchProviderImplementation implements SearchProvider {
 					continue;
 				JSONObject jsonFacet = new JSONObject();
 				if (facet.dim.equals(EnumIndexField.CREATORNAME.value()))
-					jsonFacet.put("category", EnumIndexField.PERSON.value());
+					jsonFacet.put("category", EnumIndexField.CREATOR.value());
 				else if (facet.dim.equals(EnumIndexField.CONTRIBUTORNAME.value()))
 					jsonFacet.put("category", EnumIndexField.CONTRIBUTOR.value());
 				else
@@ -755,7 +755,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		Analyzer standardAnalyzer = new StandardAnalyzer(stopSet);
 		String[] fields = { EnumIndexField.TITLE.value(), EnumIndexField.DESCRIPTION.value(),
 				EnumIndexField.COVERAGE.value(), EnumIndexField.IDENTIFIER.value(), EnumIndexField.SIZE.value(),
-				EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.PERSON.value(),
+				EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.CREATOR.value(),
 				EnumIndexField.LEGALPERSON.value(), EnumIndexField.ALGORITHM.value(), EnumIndexField.CHECKSUM.value(),
 				EnumIndexField.SUBJECT.value(), EnumIndexField.RELATION.value(), EnumIndexField.MIMETYPE.value(),
 				EnumIndexField.STARTDATE.value(), EnumIndexField.ENDDATE.value(), EnumIndexField.RELATIONTYPE.value(),

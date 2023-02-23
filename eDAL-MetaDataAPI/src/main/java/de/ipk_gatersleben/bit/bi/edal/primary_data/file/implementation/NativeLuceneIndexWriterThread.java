@@ -267,7 +267,7 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 			builder.append(( currentPerson).getZip());
 			builder.append(DELIMITER);
 			builder.append(( currentPerson).getCountry());
-			doc.add(new TextField(EnumIndexField.PERSON.value(), builder.toString(), Store.YES));
+			doc.add(new TextField(EnumIndexField.CREATOR.value(), builder.toString(), Store.YES));
 		}
 		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
