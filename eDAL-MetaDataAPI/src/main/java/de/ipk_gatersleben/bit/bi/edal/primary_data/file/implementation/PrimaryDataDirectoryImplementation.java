@@ -1820,7 +1820,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 			String[] fields = { EnumIndexField.TITLE.value(), EnumIndexField.DESCRIPTION.value(),
 					EnumIndexField.COVERAGE.value(), EnumIndexField.IDENTIFIER.value(), EnumIndexField.SIZE.value(),
-					EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.PERSON.value(),
+					EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.CREATOR.value(),
 					EnumIndexField.LEGALPERSON.value(), EnumIndexField.ALGORITHM.value(),
 					EnumIndexField.CHECKSUM.value(), EnumIndexField.SUBJECT.value(), EnumIndexField.RELATION.value(),
 					EnumIndexField.MIMETYPE.value(), EnumIndexField.STARTDATE.value(), EnumIndexField.ENDDATE.value() };
@@ -2310,7 +2310,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			if (fuzzy) {
 				builder.append('~');
 			}
-			QueryParser parser = new QueryParser(EnumIndexField.PERSON.value(), new StandardAnalyzer());
+			QueryParser parser = new QueryParser(EnumIndexField.CREATOR.value(), new StandardAnalyzer());
 			parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 			org.apache.lucene.search.Query luceneQuery = parser.parse(builder.toString());
 			ScoreDoc[] hits;

@@ -49,7 +49,7 @@ public enum EnumIndexField {
 		
 		ENDDATE("Enddate"),
 		
-		PERSON("Creator"),
+		CREATOR("Creator"),
 		
 		CONTRIBUTOR("Contributor"),
 		
