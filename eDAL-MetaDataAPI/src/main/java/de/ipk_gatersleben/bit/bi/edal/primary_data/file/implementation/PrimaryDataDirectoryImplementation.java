@@ -149,7 +149,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 	private static final String SUPPRESS_UNCHECKED_WARNING = "unchecked";
 
-	private long startTime;
+//	private long startTime;
 
 	/**
 	 * Maximal number of search result, if the number is higher the user must
@@ -638,7 +638,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			final UntypedData data, final boolean fuzzy, final boolean recursiveIntoSubdirectories)
 			throws PrimaryDataDirectoryException {
 
-		startTime = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
 
 		List<Integer> versionIDList = new ArrayList<Integer>();
 		try {
@@ -1704,7 +1704,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			final boolean recursiveIntoSubdirectories) throws PrimaryDataDirectoryException {
 
 		List<Integer> versionIdList = new ArrayList<>();
-		Long searchstart = System.currentTimeMillis();
+		Long searchStartTime = System.currentTimeMillis();
 		final Session mainSession = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
 
 		if (((FileSystemImplementationProvider) DataManager.getImplProv()).getConfiguration()
@@ -1802,7 +1802,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 			versionSQLQuery.setParameterList("list", datatypeIDList);
 
 			versionIdList = versionSQLQuery.list();
-		} else {
+		} 
+		else {
 			BooleanQuery.setMaxClauseCount(10000);
 
 			IndexReader reader = null;
@@ -1848,13 +1849,13 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
 					Document doc = searcher.doc(hits[i].doc);
 
-					versionIdList.add(Integer.parseInt(doc.get("versionID")));
+					versionIdList.add(Integer.parseInt(doc.get(EnumIndexField.VERSIONID.value())));
 
 				}
 			} catch (IOException e) {
 				DataManager.getImplProv().getLogger().info("IO error while searching: " + e.getMessage());
 			}
-			
+
 			((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
 					.info("Found while searching: " + versionIdList.size() + " values");
 		}
@@ -1864,9 +1865,10 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		final long startEntityQuery = System.currentTimeMillis();
 
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.info("Time for search in index: " + (startEntityQuery - searchstart) + " msec");
-		
-		final Session sessionForCheckRecursiveObjects = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+				.info("Time for search in index: " + (startEntityQuery - searchStartTime) + " msec");
+
+		final Session sessionForCheckRecursiveObjects = ((FileSystemImplementationProvider) DataManager.getImplProv())
+				.getSession();
 
 		if (!recursiveIntoSubdirectories) {
 			for (final Integer version : versionIdList) {
@@ -1886,8 +1888,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 										currentVersion.getPrimaryEntityId())),
 						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY), this)));
 
-				final PrimaryDataFileImplementation primaryDataFile = sessionForCheckRecursiveObjects.createQuery(fileCriteria)
-						.setCacheable(false)
+				final PrimaryDataFileImplementation primaryDataFile = sessionForCheckRecursiveObjects
+						.createQuery(fileCriteria).setCacheable(false)
 						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
 				CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
@@ -1903,8 +1905,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
 								this)));
 
-				final PrimaryDataDirectoryImplementation primaryDataDirectory = sessionForCheckRecursiveObjects.createQuery(directoryCriteria)
-						.setCacheable(false)
+				final PrimaryDataDirectoryImplementation primaryDataDirectory = sessionForCheckRecursiveObjects
+						.createQuery(directoryCriteria).setCacheable(false)
 						.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY).uniqueResult();
 
 				if (primaryDataFile != null) {
@@ -1957,7 +1959,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
 										this)));
 
-						final PrimaryDataFileImplementation pdf = sessionForCheckRecursiveObjects.createQuery(fileCriteria).setCacheable(false)
+						final PrimaryDataFileImplementation pdf = sessionForCheckRecursiveObjects
+								.createQuery(fileCriteria).setCacheable(false)
 								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
 								.uniqueResult();
 
@@ -1992,8 +1995,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 										directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
 										this)));
 
-						final PrimaryDataDirectoryImplementation pdd = sessionForCheckRecursiveObjects.createQuery(directoryCriteria)
-								.setCacheable(false)
+						final PrimaryDataDirectoryImplementation pdd = sessionForCheckRecursiveObjects
+								.createQuery(directoryCriteria).setCacheable(false)
 								.setCacheRegion(PrimaryDataDirectoryImplementation.CACHE_REGION_SEARCH_ENTITY)
 								.uniqueResult();
 
@@ -2035,12 +2038,13 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 		}
 
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.debug("Zeit (Search Entity)    : " + (System.currentTimeMillis() - startEntityQuery) + " msec");
+				.debug("Time to search for Entities : " + (System.currentTimeMillis() - startEntityQuery) + " msec");
 
 		final List<PrimaryDataEntity> results = new ArrayList<PrimaryDataEntity>(resultSet);
 
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.info("Zeit (Search by keyword): " + (System.currentTimeMillis() - startTime) + " msec");
+				.info("Time for search by keyword : " + (System.currentTimeMillis() - searchStartTime) + " msec");
+		
 		return results;
 	}
 
