@@ -76,7 +76,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PublicReferenceException
  */
 public class SearchProviderImplementation implements SearchProvider {
 	
-	private static final String TILDE = "~";
+	public static final String TILDE = "~";
 
 	/** The last result of a resultlist, needed for pagination  **/
 	private static final String BOTTOM_RESULT_SCORE = "bottomResultScore";

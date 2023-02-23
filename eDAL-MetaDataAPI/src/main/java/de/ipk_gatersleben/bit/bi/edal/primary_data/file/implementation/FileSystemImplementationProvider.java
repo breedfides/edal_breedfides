@@ -111,7 +111,7 @@ public class FileSystemImplementationProvider
 
 	private static final String FACETS = "Facets";
 
-	private static final String MASTER_INDEX = "Master_Index";
+	public static final String MASTER_INDEX = "Master_Index";
 
 	private static final String EDALDB_DBNAME = "edaldb";
 
