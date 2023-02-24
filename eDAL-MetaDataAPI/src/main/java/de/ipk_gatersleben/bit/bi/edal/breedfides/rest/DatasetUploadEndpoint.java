@@ -278,6 +278,7 @@ public class DatasetUploadEndpoint {
 			}
 
 			newMetadata.setElementValue(EnumDublinCoreElements.CREATOR, creatorPersons);
+			newMetadata.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, contributorPersons);
 			//
 
 			return newMetadata;

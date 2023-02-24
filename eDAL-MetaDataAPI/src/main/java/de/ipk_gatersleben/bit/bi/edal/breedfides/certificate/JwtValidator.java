@@ -65,9 +65,7 @@ public class JwtValidator {
 	}
 
 	public static String getSerialNumber(String token) throws Exception {
-		
-		System.out.println("HERE");
-		
+				
 		try {
 			final DecodedJWT jwt = JWT.decode(token);
 
