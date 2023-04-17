@@ -112,14 +112,6 @@ public class DatasetUploadEndpoint {
 
 			InfoEndpoint.getLogger().info("Got Metadata : " + metaData);
 
-//			try {
-//				MetaData metadata = convertJsonMetadata(dataFile.getMetaData(), metaData);
-//				// ToDo: set MetaData to
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//			///////////////
-
 			try {
 				FileSystemImplementationProvider filesystemImplementationProvider = ((FileSystemImplementationProvider) DataManager
 						.getImplProv());

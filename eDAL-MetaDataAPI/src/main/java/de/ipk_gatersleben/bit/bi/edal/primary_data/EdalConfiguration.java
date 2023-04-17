@@ -395,7 +395,7 @@ public final class EdalConfiguration {
 
 	private String keystorePasswordForHttpListener = "";
 
-	private boolean cleanBrokenEntities = true;
+	private boolean cleanBrokenEntities = false;
 
 	private boolean indexingStrategy = false;
 

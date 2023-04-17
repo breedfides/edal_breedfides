@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,6 +63,9 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.*;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.SearchProviderBreedFidesImplementation;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.SearchProviderImplementation;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.*;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.*;
@@ -82,7 +87,6 @@ public class TestClass {
 		if (list != null) {
 			for (final PrimaryDataEntity primaryDataEntity : list) {
 				System.out.println(primaryDataEntity.getPath());
-				System.out.println(primaryDataEntity.getMetaData());
 				if (primaryDataEntity.isDirectory()) {
 					listDir((PrimaryDataDirectory) primaryDataEntity);
 				}
@@ -97,15 +101,68 @@ public class TestClass {
 				new InternetAddress(ROOT_USER), "imap.ipk-gatersleben.de", "", "");
 		configuration.setUseSSL(true);
 
+		FileSystemImplementationProvider filesystemImplementationProvider= (FileSystemImplementationProvider) EdalHelpers.getFileSystemImplementationProvider(false, configuration);
+		
 		PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(
-				EdalHelpers.getFileSystemImplementationProvider(false, configuration),
-				EdalHelpers.authenticateUserWithJWT("1677077912982"));
+				filesystemImplementationProvider,
+				EdalHelpers.authenticateUserWithJWT("1677161018301"));
 		
 		
 
+//		PrimaryDataDirectory dir =  (PrimaryDataDirectory) rootDirectory.getPrimaryDataEntity("1677161018301");
+
+		
+//		listDir(rootDirectory);
+		
+//		try {
+//			SearchProviderBreedFidesImplementation si = (SearchProviderBreedFidesImplementation) filesystemImplementationProvider
+//					.getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
+//
+//			String set1 = si.breedFidesKeywordSearch(rootDirectory,"Arend", true, false,1,25);
+//			System.out.println(set1);
+//			
+////			String set2 = si.breedFidesSearch(dir,"MIAPPE", true, true);
+////			System.out.println(set2);
+//			
+//
+//
+//		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+//				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+//
+//			e.printStackTrace();
+//		}
+//		
 		
 		
-		listDir(rootDirectory);
+		
+		
+//
+//
+//		MetaData metadata = filesystemImplementationProvider.createMetaDataInstance();
+//
+//		Subjects subjectsMetadata = new Subjects();
+//
+//		subjectsMetadata.add(new UntypedData("vulgare"));
+//
+//		metadata.setElementValue(EnumDublinCoreElements.SUBJECT, subjectsMetadata);
+//
+//		List<PrimaryDataEntity> list = dir.searchByMetaData(metadata, false, false);
+//
+//		System.out.println(list);
+//		
+
+		
+//		System.out.println(dir.getID());
+//		
+//		List<PrimaryDataEntity> list2 = dir.searchByKeyword("MIAPPE", false, false);
+//		List<PrimaryDataEntity> list3 = dir.searchByDublinCoreElement(EnumDublinCoreElements.SUBJECT, new UntypedData("MIAPPE"), false, false);
+//		
+//		System.out.println(list2);
+//		System.out.println(list3);
+
+		
+		DataManager.shutdown();
+		
 
 	}
 

@@ -139,15 +139,15 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.EdalPermission;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "PrimaryDataDirectory")
 public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 
-	private static final String STRING_UNABLE_TO_SWITCH_TO_CURRENT_VERSION = "Unable to switch to current version";
+	public static final String STRING_UNABLE_TO_SWITCH_TO_CURRENT_VERSION = "Unable to switch to current version";
 
 	public static final String CACHE_REGION_SEARCH_ENTITY = "search.entity";
 
 	public static final String STRING_ID = "ID";
 
-	private static final String STRING_PARENT_DIRECTORY = "parentDirectory";
+	public static final String STRING_PARENT_DIRECTORY = "parentDirectory";
 
-	private static final String SUPPRESS_UNCHECKED_WARNING = "unchecked";
+	public static final String SUPPRESS_UNCHECKED_WARNING = "unchecked";
 
 //	private long startTime;
 
@@ -1885,8 +1885,7 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				fileCriteria.where(builder.and(
 						builder.and(builder.equal(fileRoot.type(), PrimaryDataFileImplementation.class),
 								builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
-										currentVersion.getPrimaryEntityId())),
-						builder.equal(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY), this)));
+										currentVersion.getPrimaryEntityId()))));
 
 				final PrimaryDataFileImplementation primaryDataFile = sessionForCheckRecursiveObjects
 						.createQuery(fileCriteria).setCacheable(false)
@@ -1901,9 +1900,8 @@ public class PrimaryDataDirectoryImplementation extends PrimaryDataDirectory {
 				directoryCriteria.where(builder.and(
 						builder.and(builder.equal(directoryRoot.type(), PrimaryDataDirectoryImplementation.class),
 								builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID),
-										currentVersion.getPrimaryEntityId())),
-						builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY),
-								this)));
+										currentVersion.getPrimaryEntityId()))
+						));
 
 				final PrimaryDataDirectoryImplementation primaryDataDirectory = sessionForCheckRecursiveObjects
 						.createQuery(directoryCriteria).setCacheable(false)

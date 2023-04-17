@@ -63,11 +63,13 @@ import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
 import org.hibernate.tool.schema.TargetType;
 
+import de.ipk_gatersleben.bit.bi.edal.breedfides.persistence.Certificate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProviderBreedFides;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
@@ -267,7 +269,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
 				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
 				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
-				MyDateEvents.class, MyORCID.class);
+				MyDateEvents.class, MyORCID.class, Certificate.class);
 
 		if (!exists) {
 
@@ -885,5 +887,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public Class<? extends SearchProvider> getSearchProvider() {
 		return SearchProviderImplementation.class;
+	}
+	
+	@Override
+	public Class<? extends SearchProviderBreedFides> getSearchProviderBreedFides() {
+		return SearchProviderBreedFidesImplementation.class;
 	}
 }

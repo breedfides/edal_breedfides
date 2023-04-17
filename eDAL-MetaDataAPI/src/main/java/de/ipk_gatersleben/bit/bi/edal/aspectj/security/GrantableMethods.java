@@ -247,6 +247,7 @@ public final class GrantableMethods {
 		DIRECTORY_METHODS.add(Methods.searchByDublinCoreElement);
 		DIRECTORY_METHODS.add(Methods.searchByMetaData);
 		DIRECTORY_METHODS.add(Methods.searchByPublicationStatus);
+		DIRECTORY_METHODS.add(Methods.searchByKeyword);
 		DIRECTORY_METHODS.add(Methods.setMetaData);
 		FILE_METHODS.add(Methods.read);
 		FILE_METHODS.add(Methods.setMetaData);

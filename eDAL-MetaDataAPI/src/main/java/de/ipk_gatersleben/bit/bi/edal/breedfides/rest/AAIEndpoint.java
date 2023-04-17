@@ -83,6 +83,8 @@ public class AAIEndpoint {
 
 		InfoEndpoint.getLogger().info("Call 'aai/register/' endpoint");
 
+		InfoEndpoint.getLogger().info("Creating Certifiacte for " + inputJson);
+
 		StreamingOutput fileStream = new StreamingOutput() {
 
 			@Override
@@ -168,7 +170,7 @@ public class AAIEndpoint {
 			}
 
 			HashMap<String, String> payload = new HashMap<>();
-			payload.put("serialNumber",certificate.getSerialNumber().toString());
+			payload.put("serialNumber", certificate.getSerialNumber().toString());
 			payload.put("role", "breeder");
 
 			String jwt = JwtGenerator.generateJwt(payload);

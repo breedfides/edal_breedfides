@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProviderBreedFides;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.MetaData;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.reference.ApprovalServiceProvider;
@@ -138,4 +139,10 @@ public interface ImplementationProvider {
 	 */
 	void shutdown();
 
+	/**
+	 * Getter for the {@link SearchProviderBreedFides} implementation class
+	 * 
+	 * @return the implementing class of {@link SearchProviderBreedFides}
+	 */
+	Class<? extends SearchProviderBreedFides> getSearchProviderBreedFides();
 }

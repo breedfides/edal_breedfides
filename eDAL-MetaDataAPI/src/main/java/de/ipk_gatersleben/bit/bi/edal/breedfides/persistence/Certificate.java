@@ -77,12 +77,19 @@ public class Certificate {
 		try {
 			session.save(certificate);
 			transaction.commit();
+			session.close();
 		} catch (final Exception e) {
+
+			InfoEndpoint.getLogger()
+					.error("Storing certificate " + x509certificate.getSerialNumber() + " failed :" + e.getMessage());
+
 			if (transaction != null) {
 				transaction.rollback();
 			}
 			session.close();
 		}
+
+		InfoEndpoint.getLogger().info("Certificate stored into database");
 	}
 
 	public static boolean checkSerialNumber(X509Certificate providedCertificate) {
