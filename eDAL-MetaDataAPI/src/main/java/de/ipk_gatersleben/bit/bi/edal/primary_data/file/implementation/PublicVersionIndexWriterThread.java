@@ -84,32 +84,30 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private final String IDENTIFIER_TYPE = "identifierType";
 	private final String PUBLICATION_STATUS = "publicationStatus";
 	private final String ID = "id";
-	
+
 	public static final String FILE = "file";
-	public static final String PUBLICREFERENCE = "dataset";	
-	public static final String DIRECTORY = "directory";	
-	
-	public static final String PUBLIC_LAST_ID = "last_id_publicreference.dat";
-	
+	public static final String PUBLICREFERENCE = "dataset";
+	public static final String DIRECTORY = "directory";
+
 	/** The max number of bytes for the indexing of file content **/
 	private final int MAX_DOC_SIZE = 100 * 1024 * 1024;
-	protected static int lastIndexedID = 0;	
-	private Analyzer analyzer = null;	
+	private int lastIndexedID = 0;
+	private Analyzer analyzer = null;
 	private int indexedVersions = 0;
 	private int flushedObjects = 0;
-	private int filesCounter = 0;	
+	private int filesCounter = 0;
 	private Boolean indexedData = false;
-	
-	private IndexWriter writer = null;	
-	private IndexSearcher searcher = null;	
+
+	private IndexWriter writer = null;
+	private IndexSearcher searcher = null;
 	private IndexReader reader = null;
-	
+
 	/**
 	 * Used for indexing of Facets, holds information about the indexed
 	 * Facet-dimensions
 	 **/
 	private final FacetsConfig config = new FacetsConfig();
-	
+
 	private DirectoryTaxonomyWriter taxoWriter = null;
 
 	/** high value fetch objects faster, but more memory is needed */
@@ -117,7 +115,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private final int DIRECTORY_FETCH_SIZE = (int) Math.pow(10, 5);
 
 	private DirectoryReader directoryReader;
-	private Path pathToLastId = Paths.get(this.indexDirectory.toString(), PUBLIC_LAST_ID);
+	private final Path pathToLastId = Paths.get(this.indexDirectory.toString(), "last_id_publicreference.dat");
+
+	/*
+	 * if set to true, then public references will be also indexed without approval
+	 */
 	private boolean isInTestMode = false;
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
@@ -148,11 +150,13 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				this.setLastID((int) ois.readObject());
 				ois.close();
+				this.implementationProviderLogger
+						.info("Loaded LastID from PublicVersionIndexWriterThread: " + this.getLastID());
 			} catch (IOException | ClassNotFoundException e) {
 				this.indexLogger.debug("Error reading the last indexed stored id: " + e.getMessage());
 			}
 		}
-		this.indexLogger.debug("Last indexed public reference: " + PublicVersionIndexWriterThread.getLastID());
+		this.indexLogger.debug("Last indexed public reference: " + this.getLastID());
 
 	}
 
@@ -198,10 +202,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			CriteriaQuery<Object[]> criteria = criteriaBuilder.createQuery(Object[].class);
 			Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
 			criteria.multiselect(root.get(ID), root.get(INTERNAL_ID));
-			Predicate predicateId = criteriaBuilder.gt(root.get(ID), PublicVersionIndexWriterThread.getLastID());
+			Predicate predicateId = criteriaBuilder.gt(root.get(ID), this.getLastID());
 			Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS),
 					PublicationStatus.ACCEPTED);
-			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);			
+			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
 			if (isInTestMode) {
 				criteria.where(criteriaBuilder.and(predicateId, predicateType))
 						.orderBy(criteriaBuilder.asc(root.get(ID)));
@@ -228,11 +232,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				Object[] publicRefAndID = (Object[]) results.get(0);
 				Integer publicRef = (Integer) publicRefAndID[0];
 				String internalId = (String) publicRefAndID[1];
+
+				System.out.println("LastID PublicVersionIndexForQuery: " + internalId);
+
 				/** index all associated Files/Directories */
 				indexPublicReference(publicRef, internalId, session);
 				this.setLastID(publicRef);
 				try {
-					((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().maybeRefresh();
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getSearchManager().maybeRefresh();
 				} catch (IOException e) {
 					this.indexLogger.debug("Error while refreshing the SearcherManager: " + e.getMessage());
 				}
@@ -260,26 +267,25 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				} catch (IOException e) {
 					this.indexLogger.debug("Error while commiting Index/Taxonomy writer " + e.getMessage());
 				}
-				try {
-					FileOutputStream fos = new FileOutputStream(Paths
-							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
-							.getImplProv()).getIndexThread()).getLastID());
-					oos.close();
-					fos.close();
-				} catch (IOException e) {
-					this.indexLogger.debug("Error writing the Native_last_id: " + e.getMessage());
-				}
-				this.indexWriterThreadLogger
-						.debug("INDEXING SUCCESSFUL : indexed objects|flushed objects|Index|Query : " + indexedVersions
+//				try {
+//					FileOutputStream fos = new FileOutputStream(Paths
+//							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
+//					ObjectOutputStream oos = new ObjectOutputStream(fos);
+//					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
+//							.getImplProv()).getIndexThread()).getLastID());
+//					oos.close();
+//					fos.close();
+//				} catch (IOException e) {
+//					this.indexLogger.debug("Error writing the Native_last_id: " + e.getMessage());
+//				}
+				this.implementationProviderLogger
+						.info("INDEXING SUCCESSFUL FOR PUBLICREFERENCES: indexed objects|flushed objects|Index|Query : " + indexedVersions
 								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
 								+ df.format(new Date(queryTime)));
 				try {
-					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), PublicVersionIndexWriterThread.PUBLIC_LAST_ID).toFile());
+					FileOutputStream fos = new FileOutputStream(pathToLastId.toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
+					oos.writeObject(this.getLastID());
 					oos.close();
 					fos.close();
 				} catch (IOException e) {
@@ -300,11 +306,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			} catch (final InterruptedException e) {
 				this.indexLogger.debug("PublicVersionIndexWriterThread got interrupted: " + e.getMessage());
 			}
-			// this.implementationProviderLogger.info("Finished execute Index task:
-			// lastIndexedID: " + lastIndexedID);
-			// this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+"
-			// Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:
-			// "+flushedObjects);
+//			 this.implementationProviderLogger.info("Finished execute Index task:	 lastIndexedID: " + this.getLastID());
+//			 this.indexLogger.info("ExecuteIndexingTime(ms): "+executeIndexingFinishTime+"	 Amount_of_indexed_objects: "+indexedObjects+" flushedObjects:	 "+flushedObjects);
 		}
 	}
 
@@ -319,22 +322,23 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
 		Root<PublicReferenceImplementation> root = criteriaQuery.from(PublicReferenceImplementation.class);
 		criteriaQuery.select(criteriaBuilder.count(root));
-		Predicate predicateId = criteriaBuilder.gt(root.get(ID), PublicVersionIndexWriterThread.getLastID());
+		Predicate predicateId = criteriaBuilder.gt(root.get(ID), this.getLastID());
 		Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS), PublicationStatus.ACCEPTED);
 		Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
 		criteriaQuery.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType));
-		long l = session.createQuery(criteriaQuery).getSingleResult();
-		if (l > 0) {
-			DataManager.getImplProv().getLogger().info("Publicreferences that still have to be indexed " + l);
+		long numberOfPublicReferencesToBeIndexed = session.createQuery(criteriaQuery).getSingleResult();
+		if (numberOfPublicReferencesToBeIndexed > 0) {
+			DataManager.getImplProv().getLogger().info("PublicReferences that still have to be indexed: " + numberOfPublicReferencesToBeIndexed);
 		}
 	}
-	
+
 	/**
 	 * Fetches all children of a given type from a parent directory
-	 * @param primId The ID of the parent directory
-	 * @param session The Hibernate session
+	 * 
+	 * @param primId      The ID of the parent directory
+	 * @param session     The Hibernate session
 	 * @param entityClass The desired child PrimaryEntity type
-	 * @param lowerBound The minimal ID.. if null the min ID is 0
+	 * @param lowerBound  The minimal ID.. if null the min ID is 0
 	 * @return A ScrollableResult iterator for the retrieved Child Ids
 	 */
 	private ScrollableResults getPrimaryDataFileIds(String primId, Session session, Class entityClass,
@@ -342,7 +346,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 		CriteriaQuery<String> primaryEntityCriteria = criteriaBuilder.createQuery(String.class);
 		Root<?> fileRoot = primaryEntityCriteria.from(entityClass);
-		//primaryEntityCriteria.select(fileRoot.get("type"));
+		// primaryEntityCriteria.select(fileRoot.get("type"));
 		primaryEntityCriteria.select(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID));
 		if (lowerBound != null) {
 			primaryEntityCriteria.where(criteriaBuilder.and(
@@ -367,12 +371,12 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * 
 	 * @param pubRef     The PublicReference of which the files are to be indexed
 	 * @param internalId The InternalId of the publicreference
-	 * @param session The given Hibernate session
+	 * @param session    The given Hibernate session
 	 */
 	@SuppressWarnings("unchecked")
 	private void indexPublicReference(Integer pubRef, String internalId, Session session) {
 		/**
-		 * Discriminator value kann nicht mit criteria geholt werden -> man müsste das
+		 * Discriminator value kann nicht mit criteria geholt werden -> man mï¿½sste das
 		 * ganze Object aus der Datenbank holen..
 		 **/
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
@@ -388,16 +392,17 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		primaryEntityCriteria.where(fileRoot.in(sub));
 		String parentDirectoryId = session.createQuery(primaryEntityCriteria).getSingleResult();
 		this.filesCounter = 0;
-		
+
 		// index a new PublicReference version
-		Document doc = this.addInformationToExistingDocument(parentDirectoryId, session, PublicVersionIndexWriterThread.PUBLICREFERENCE);
+		Document doc = this.addInformationToExistingDocument(parentDirectoryId, session,
+				PublicVersionIndexWriterThread.PUBLICREFERENCE);
 		doc.add(new StringField(EnumIndexField.PUBLICID.value(), String.valueOf(pubRef), Store.YES));
 		doc.add(new StringField(EnumIndexField.INTERNALID.value(), internalId, Store.YES));
 		this.indexDocument(doc, pubRef);
 		Stack<String> directoryStack = new Stack<>();
 		directoryStack.add(parentDirectoryId);
 		while (!directoryStack.isEmpty()) {
-			
+
 			String directory = directoryStack.pop();
 			// index all child directories and add them to the stack
 			String lastId = null;
@@ -405,7 +410,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			do {
 				/**
 				 * Get child directories, first iteration -> lastID == null because we dont want
-				 * a lowerbound, if there are more directories to process the lowerbound will have a use
+				 * a lowerbound, if there are more directories to process the lowerbound will
+				 * have a use
 				 **/
 				ScrollableResults primDirs = this.getPrimaryDataFileIds(directory, session,
 						PrimaryDataDirectoryImplementation.class, lastId);
@@ -413,7 +419,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				while (primDirs.next()) {
 					lastId = primDirs.getString(0);
 					directoryStack.add(lastId);
-					doc = this.addInformationToExistingDocument(lastId, session, PublicVersionIndexWriterThread.DIRECTORY);
+					doc = this.addInformationToExistingDocument(lastId, session,
+							PublicVersionIndexWriterThread.DIRECTORY);
 					doc.add(new StringField(EnumIndexField.PUBLICID.value(), String.valueOf(pubRef), Store.YES));
 					doc.add(new StringField(EnumIndexField.INTERNALID.value(), internalId, Store.YES));
 					this.indexDocument(doc, pubRef);
@@ -430,7 +437,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				count = 0;
 				while (primFiles.next()) {
 					lastId = primFiles.getString(0);
-					doc = this.addInformationToExistingDocument(lastId, session,PublicVersionIndexWriterThread.FILE);
+					doc = this.addInformationToExistingDocument(lastId, session, PublicVersionIndexWriterThread.FILE);
 					doc.add(new StringField(EnumIndexField.PUBLICID.value(), String.valueOf(pubRef), Store.YES));
 					doc.add(new StringField(EnumIndexField.INTERNALID.value(), internalId, Store.YES));
 					this.indexDocument(doc, pubRef);
@@ -441,10 +448,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			} while (count == DIRECTORY_FETCH_SIZE);
 		}
 	}
-	
+
 	/**
 	 * Indexes a Document and updates the last indexed ID if necessary
-	 * @param doc The given Document
+	 * 
+	 * @param doc    The given Document
 	 * @param pubRef The associate PublicReference id
 	 */
 	private void indexDocument(Document doc, Integer pubRef) {
@@ -453,34 +461,34 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			this.indexedVersions++;
 			this.filesCounter++;
 		} catch (IOException e) {
-			this.indexLogger.debug("IOException when adding Document to index: "+e.getMessage());
+			this.indexLogger.debug("IOException when adding Document to index: " + e.getMessage());
 			return;
 		}
 		if (this.indexedVersions != 0 && this.indexedVersions % this.FETCH_SIZE == 0) {
 			try {
 				writer.commit();
 				this.taxoWriter.commit();
-				try {
-					FileOutputStream fos = new FileOutputStream(Paths
-							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID).toFile());
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
-							.getImplProv()).getIndexThread()).getLastID());
-					oos.close();
-					fos.close();
-				} catch (IOException e) {
-					this.indexLogger.debug("Error writing the native_last_id: " + e.getMessage());
-				}
+//				try {
+//					FileOutputStream fos = new FileOutputStream(Paths
+//							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID)
+//							.toFile());
+//					ObjectOutputStream oos = new ObjectOutputStream(fos);
+//					oos.writeObject(((NativeLuceneIndexWriterThread) ((FileSystemImplementationProvider) DataManager
+//							.getImplProv()).getIndexThread()).getLastID());
+//					oos.close();
+//					fos.close();
+//				} catch (IOException e) {
+//					this.indexLogger.debug("Error writing the native_last_id: " + e.getMessage());
+//				}
 			} catch (IOException e) {
 				this.indexLogger.debug("Error commting new indexed Documents: " + e.getMessage());
 			}
 			flushedObjects += FETCH_SIZE;
-			if (this.indexedVersions > 0 && pubRef > PublicVersionIndexWriterThread.getLastID()) {
+			if (this.indexedVersions > 0 && pubRef > this.getLastID()) {
 				try {
-					FileOutputStream fos = new FileOutputStream(
-							Paths.get(this.indexDirectory.toString(), PublicVersionIndexWriterThread.PUBLIC_LAST_ID).toFile());
+					FileOutputStream fos = new FileOutputStream(pathToLastId.toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(PublicVersionIndexWriterThread.getLastID());
+					oos.writeObject(this.getLastID());
 					oos.close();
 					fos.close();
 				} catch (IOException e) {
@@ -491,25 +499,32 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 
 	/**
-	 * Adds information to an existing Lucene Document, so that the associated File/Directory can be found and filtered for users
-	 * @param file The related PrimaryDataFile id
-	 * @param session The Hibernate session
+	 * Adds information to an existing Lucene Document, so that the associated
+	 * File/Directory can be found and filtered for users
+	 * 
+	 * @param file       The related PrimaryDataFile id
+	 * @param session    The Hibernate session
 	 * @param entityType The type of the associated PrimaryEntity
 	 */
 	private Document addInformationToExistingDocument(String file, Session session, String entityType) {
-		
-		/** Fetch the PrimaryEntityVersion id associated with the given PrimaryDataFile id "file" **/
+
+		/**
+		 * Fetch the PrimaryEntityVersion id associated with the given PrimaryDataFile
+		 * id "file"
+		 **/
 		CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
 		Root<PrimaryDataEntityVersionImplementation> root = criteriaQuery
 				.from(PrimaryDataEntityVersionImplementation.class);
 		criteriaQuery.select(root.get(ID));
 		criteriaQuery.where(criteriaBuilder.equal(root.get(PRIMARY_ENTITY_ID), file));
-		criteriaQuery.orderBy(criteriaBuilder.desc(root.get(REVISION)));		
+		criteriaQuery.orderBy(criteriaBuilder.desc(root.get(REVISION)));
 		Integer version = session.createQuery(criteriaQuery).setMaxResults(1).getSingleResult();
 
-		
-		/** Fetch the indexed Document associated with the given PrimaryEntityVersion id "version" **/
+		/**
+		 * Fetch the indexed Document associated with the given PrimaryEntityVersion id
+		 * "version"
+		 **/
 		try {
 			ScoreDoc[] versionHit = searcher.search(
 					new TermQuery(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version))), 1).scoreDocs;
@@ -536,7 +551,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						new TermQuery(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version))),
 						1).scoreDocs;
 			}
-			
+
 			/** "Reindex" the retrieved document with additional information **/
 			try {
 				Document doc = searcher.doc(versionHit[0].doc);
@@ -547,7 +562,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						.append(HYPHEN);
 				if (entityType.equals(PublicVersionIndexWriterThread.FILE)) {
 					String filetype = FilenameUtils.getExtension(doc.get(EnumIndexField.TITLE.value()));
-					docIDBuilder.append(1);				
+					docIDBuilder.append(1);
 					// skip this field, if file has no extension
 					if (filetype != null && !filetype.isEmpty()) {
 						doc.add(new TextField(EnumIndexField.FILETYPE.value(), filetype, Store.YES));
@@ -574,20 +589,22 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 						this.indexLogger.debug("String conversion failed: " + e.getMessage());
 						fileSize = -1;
 					}
-				} else if(entityType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
-					docIDBuilder.append(0);	
-				} else if(entityType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)){
-					docIDBuilder.append(2);	
+				} else if (entityType.equals(PublicVersionIndexWriterThread.DIRECTORY)) {
+					docIDBuilder.append(0);
+				} else if (entityType.equals(PublicVersionIndexWriterThread.PUBLICREFERENCE)) {
+					docIDBuilder.append(2);
 				}
-				//docID will be needed to resolve the correct link from a found version to the associated PrimaryDataFile landing page
+				// docID will be needed to resolve the correct link from a found version to the
+				// associated PrimaryDataFile landing page
 				doc.add(new StringField(EnumIndexField.DOCID.value(), docIDBuilder.toString(), Store.YES));
 				return doc;
 			} catch (IOException e) {
-				this.indexLogger.debug("Return NULL Document.. PublicVersionIndexWriterThread was interrupted: " + e.getMessage());
+				this.indexLogger.debug(
+						"Return NULL Document.. PublicVersionIndexWriterThread was interrupted: " + e.getMessage());
 				return null;
 			}
 		} catch (IOException e) {
-			this.indexWriterThreadLogger.debug("Return NULL Documente.. "+e.getMessage());
+			this.indexWriterThreadLogger.debug("Return NULL Documente.. " + e.getMessage());
 			return null;
 		}
 	}
@@ -774,16 +791,17 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 * 
 	 * @param val The last ID to set
 	 */
-	protected void setLastID(int val) {
-		PublicVersionIndexWriterThread.lastIndexedID = val;
+	private void setLastID(int val) {
+		this.lastIndexedID = val;
 	}
 
 	/**
 	 * Getter for the last indexed Publicreference ID
+	 * 
 	 * @return The last indexed version ID of this Thread
 	 */
-	protected static int getLastID() {
-		return PublicVersionIndexWriterThread.lastIndexedID;
+	public int getLastID() {
+		return this.lastIndexedID;
 	}
 
 	/**
@@ -822,6 +840,6 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	}
 
 	public void setTestMode(boolean inTestMode) {
-		this.isInTestMode = inTestMode;	
+		this.isInTestMode = inTestMode;
 	}
 }
