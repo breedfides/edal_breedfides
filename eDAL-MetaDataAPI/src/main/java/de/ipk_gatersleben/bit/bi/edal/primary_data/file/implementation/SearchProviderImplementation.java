@@ -121,7 +121,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		innerThread.start();
 		SearcherAndTaxonomy manager = null;
 		try {
-			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 		} catch (IOException e) {
 			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
 			return result;
@@ -332,7 +332,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		} finally {
 			try {
 				if (manager != null) {
-					((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().release(manager);
+					((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
 				}
 			} catch (IOException e) {
 				DataManager.getImplProv().getLogger().debug("Couldnt close SearcherManager: "+e.getMessage());
@@ -596,7 +596,7 @@ public class SearchProviderImplementation implements SearchProvider {
 			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
 					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
 			queryParser.setDefaultOperator(Operator.AND);
-			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 
 			FacetsConfig config = ((FileSystemImplementationProvider)DataManager.getImplProv()).getFacetsConfig();
 			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
@@ -613,10 +613,10 @@ public class SearchProviderImplementation implements SearchProvider {
 				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
 				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
 			} catch (Exception e) {
-				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().release(manager);
+				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
 				return new JSONArray();
 			}
-			((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().release(manager);
+			((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
 			JSONArray result = new JSONArray();
 			for (FacetResult facet : results) {
 				if (facet == null)
@@ -636,6 +636,8 @@ public class SearchProviderImplementation implements SearchProvider {
 			DataManager.getImplProv().getLogger().debug("Low level index error when retrieving Facets: "+ioError.getMessage());
 		} catch (ParseException parserError) {
 			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+parserError.getMessage());
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
 		return new JSONArray();
 	}
@@ -643,7 +645,7 @@ public class SearchProviderImplementation implements SearchProvider {
 
 	public HashMap<String, String> getInitialFilterOptions() {
 		try {
-			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 			FacetsConfig config = ((FileSystemImplementationProvider)DataManager.getImplProv()).getFacetsConfig();
 			FacetsCollector fc = new FacetsCollector();
 			BooleanQuery booleanQuery = new BooleanQuery.Builder()
@@ -657,10 +659,10 @@ public class SearchProviderImplementation implements SearchProvider {
 				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.SIZE.value()));
 				results.add(facets.getTopChildren(Integer.MAX_VALUE, EnumIndexField.STARTDATE.value()));
 			} catch (Exception e) {
-				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().release(manager);
+				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
 				return new HashMap<String, String>();
 			}finally {
-				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().release(manager);	
+				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);	
 			}
 			HashMap<String, String> result = new HashMap<String, String>();
 			for (FacetResult facet : results) {
@@ -703,7 +705,7 @@ public class SearchProviderImplementation implements SearchProvider {
 
 	public JSONObject getHighlightedSections(String docId, String queryString) {
 		try {
-			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 			Query query = new TermQuery(new Term(EnumIndexField.DOCID.value(), docId));
 			ScoreDoc[] hits = manager.searcher.search(query, 1).scoreDocs;
 			JSONObject result = new JSONObject();
@@ -783,7 +785,7 @@ public class SearchProviderImplementation implements SearchProvider {
 		booleanQuery.add(luceneQuery, BooleanClause.Occur.MUST);
 		booleanQuery.add(new TermQuery(new Term(EnumIndexField.ENTITYTYPE.value(), entityType)), Occur.FILTER);
 		try {
-			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 			ScoreDoc[] hits2 = manager.searcher.search(booleanQuery.build(), 50000).scoreDocs;
 			HashSet<Integer> ids = new HashSet<>();
 			for (int i = 0; i < hits2.length; i++) {
@@ -802,7 +804,7 @@ public class SearchProviderImplementation implements SearchProvider {
 	public List<Taxon> taxonSearch(String internalId) {
 		SearcherAndTaxonomy manager = null;
 		try {
-			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearchManager().acquire();
+			manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 		} catch (IOException e) {
 			DataManager.getImplProv().getLogger().debug("Lucene Reference Manager is already closed "+e.getMessage());
 			return new ArrayList<Taxon>();
