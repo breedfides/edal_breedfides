@@ -546,10 +546,10 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			try {
 				Document doc = searcher.doc(versionHit[0].doc);
 
-				System.out.println("Public1: " + doc);
+//				System.out.println("Public1: " + doc);
 
 				addFacets(doc);
-				System.out.println("Public2: " + doc);
+//				System.out.println("Public2: " + doc);
 
 				indexWriter.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
 				doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
