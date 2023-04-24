@@ -46,7 +46,6 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.FacetField;
-import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -79,11 +78,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private static final String REVISION = "revision";
 	private static final String PRIMARY_ENTITY_ID = "primaryEntityId";
 	private final String INTERNAL_ID = "internalID";
-	private final String SEPERATOR = "/";
-	private final String HYPHEN = "-";
+//	private final String SEPERATOR = "/";
+//	private final String HYPHEN = "-";
 	private final String IDENTIFIER_TYPE = "identifierType";
 	private final String PUBLICATION_STATUS = "publicationStatus";
-	private final String ID = "id";
+//	private final String ID = "id";
 
 	public static final String FILE = "file";
 	public static final String PUBLICREFERENCE = "dataset";
@@ -98,17 +97,11 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private int filesCounter = 0;
 	private Boolean indexedData = false;
 
-	private IndexWriter writer = null;
+	private IndexWriter indexWriter = null;
 	private IndexSearcher searcher = null;
 	private IndexReader reader = null;
 
-	/**
-	 * Used for indexing of Facets, holds information about the indexed
-	 * Facet-dimensions
-	 **/
-	private final FacetsConfig config = new FacetsConfig();
-
-	private DirectoryTaxonomyWriter taxoWriter = null;
+	private DirectoryTaxonomyWriter taxonomyWriter = null;
 
 	/** high value fetch objects faster, but more memory is needed */
 	private final int FETCH_SIZE = (int) Math.pow(10, 5);
@@ -123,21 +116,15 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	private boolean isInTestMode = false;
 
 	protected PublicVersionIndexWriterThread(SessionFactory sessionFactory, Path indexDirectory,
-			Logger implementationProviderLogger, IndexWriter writer, DirectoryTaxonomyWriter taxoWriter) {
+			Logger implementationProviderLogger, IndexWriter indexWriter, DirectoryTaxonomyWriter taxonomyWriter) {
 		super(sessionFactory, indexDirectory, implementationProviderLogger);
-		this.writer = writer;
-		this.analyzer = writer.getAnalyzer();
+		this.indexWriter = indexWriter;
+		this.analyzer = indexWriter.getAnalyzer();
 		try {
-			this.taxoWriter = taxoWriter;
-			this.config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
-			this.config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
-			this.config.setMultiValued(EnumIndexField.TITLE.value(), true);
-			this.config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
-			this.config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
-			this.config.setMultiValued(EnumIndexField.STARTDATE.value(), true);
-			this.reader = DirectoryReader.open(writer);
+			this.taxonomyWriter = taxonomyWriter;
+			this.reader = DirectoryReader.open(indexWriter);
 			this.searcher = new IndexSearcher(reader);
-			this.directoryReader = DirectoryReader.open(writer);
+			this.directoryReader = DirectoryReader.open(indexWriter);
 		} catch (IOException e) {
 			this.indexLogger
 					.debug("Error occured while starting the PublicVersionIndexWriterThread (opening Lucene IO tools): "
@@ -201,17 +188,17 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = criteriaBuilder.createQuery(Object[].class);
 			Root<PublicReferenceImplementation> root = criteria.from(PublicReferenceImplementation.class);
-			criteria.multiselect(root.get(ID), root.get(INTERNAL_ID));
-			Predicate predicateId = criteriaBuilder.gt(root.get(ID), this.getLastID());
+			criteria.multiselect(root.get(EnumIndexing.ID.value()), root.get(INTERNAL_ID));
+			Predicate predicateId = criteriaBuilder.gt(root.get(EnumIndexing.ID.value()), this.getLastID());
 			Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS),
 					PublicationStatus.ACCEPTED);
 			Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
 			if (isInTestMode) {
 				criteria.where(criteriaBuilder.and(predicateId, predicateType))
-						.orderBy(criteriaBuilder.asc(root.get(ID)));
+						.orderBy(criteriaBuilder.asc(root.get(EnumIndexing.ID.value())));
 			} else {
 				criteria.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType))
-						.orderBy(criteriaBuilder.asc(root.get(ID)));
+						.orderBy(criteriaBuilder.asc(root.get(EnumIndexing.ID.value())));
 			}
 
 			/** Transaction is needed for ScrollableResults */
@@ -239,7 +226,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 				indexPublicReference(publicRef, internalId, session);
 				this.setLastID(publicRef);
 				try {
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getSearchManager().maybeRefresh();
+					((FileSystemImplementationProvider) DataManager.getImplProv())
+							.getSearcherTaxonomyManagerForPublicReferences().maybeRefresh();
 				} catch (IOException e) {
 					this.indexLogger.debug("Error while refreshing the SearcherManager: " + e.getMessage());
 				}
@@ -262,8 +250,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 
 			if (indexedVersions > 0 || flushedObjects > 0) {
 				try {
-					this.writer.commit();
-					this.taxoWriter.commit();
+					this.indexWriter.commit();
+					this.taxonomyWriter.commit();
 				} catch (IOException e) {
 					this.indexLogger.debug("Error while commiting Index/Taxonomy writer " + e.getMessage());
 				}
@@ -279,9 +267,9 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 //					this.indexLogger.debug("Error writing the Native_last_id: " + e.getMessage());
 //				}
 				this.implementationProviderLogger
-						.info("INDEXING SUCCESSFUL FOR PUBLICREFERENCES: indexed objects|flushed objects|Index|Query : " + indexedVersions
-								+ " | " + flushedObjects + " | " + df.format(new Date(indexingTime)) + " | "
-								+ df.format(new Date(queryTime)));
+						.info("INDEXING SUCCESSFUL FOR PUBLICREFERENCES: indexed objects|flushed objects|Index|Query : "
+								+ indexedVersions + " | " + flushedObjects + " | " + df.format(new Date(indexingTime))
+								+ " | " + df.format(new Date(queryTime)));
 				try {
 					FileOutputStream fos = new FileOutputStream(pathToLastId.toFile());
 					ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -322,13 +310,14 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
 		Root<PublicReferenceImplementation> root = criteriaQuery.from(PublicReferenceImplementation.class);
 		criteriaQuery.select(criteriaBuilder.count(root));
-		Predicate predicateId = criteriaBuilder.gt(root.get(ID), this.getLastID());
+		Predicate predicateId = criteriaBuilder.gt(root.get(EnumIndexing.ID.value()), this.getLastID());
 		Predicate predicateAccepted = criteriaBuilder.equal(root.get(PUBLICATION_STATUS), PublicationStatus.ACCEPTED);
 		Predicate predicateType = criteriaBuilder.equal(root.get(IDENTIFIER_TYPE), PersistentIdentifier.DOI);
 		criteriaQuery.where(criteriaBuilder.and(predicateId, predicateAccepted, predicateType));
 		long numberOfPublicReferencesToBeIndexed = session.createQuery(criteriaQuery).getSingleResult();
 		if (numberOfPublicReferencesToBeIndexed > 0) {
-			DataManager.getImplProv().getLogger().info("PublicReferences that still have to be indexed: " + numberOfPublicReferencesToBeIndexed);
+			DataManager.getImplProv().getLogger()
+					.info("PublicReferences that still have to be indexed: " + numberOfPublicReferencesToBeIndexed);
 		}
 	}
 
@@ -387,7 +376,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		Root<PublicReferenceImplementation> subRoot = sub.from(PublicReferenceImplementation.class);
 		Join<PublicReferenceImplementation, PrimaryDataEntityVersionImplementation> join = subRoot.join("version");
 		sub.select(join.get(PRIMARY_ENTITY_ID));
-		sub.where(criteriaBuilder.equal(subRoot.get(ID), pubRef));
+		sub.where(criteriaBuilder.equal(subRoot.get(EnumIndexing.ID.value()), pubRef));
 		primaryEntityCriteria.select(fileRoot.get(PrimaryDataDirectoryImplementation.STRING_ID));
 		primaryEntityCriteria.where(fileRoot.in(sub));
 		String parentDirectoryId = session.createQuery(primaryEntityCriteria).getSingleResult();
@@ -457,7 +446,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	 */
 	private void indexDocument(Document doc, Integer pubRef) {
 		try {
-			this.writer.addDocument(config.build(taxoWriter, doc));
+			this.indexWriter.addDocument(((FileSystemImplementationProvider) DataManager.getImplProv())
+					.getFacetsConfig().build(this.taxonomyWriter, doc));
 			this.indexedVersions++;
 			this.filesCounter++;
 		} catch (IOException e) {
@@ -466,8 +456,8 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		}
 		if (this.indexedVersions != 0 && this.indexedVersions % this.FETCH_SIZE == 0) {
 			try {
-				writer.commit();
-				this.taxoWriter.commit();
+				this.indexWriter.commit();
+				this.taxonomyWriter.commit();
 //				try {
 //					FileOutputStream fos = new FileOutputStream(Paths
 //							.get(this.indexDirectory.toString(), NativeLuceneIndexWriterThread.NATIVE_INDEXER_LAST_ID)
@@ -516,7 +506,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
 		Root<PrimaryDataEntityVersionImplementation> root = criteriaQuery
 				.from(PrimaryDataEntityVersionImplementation.class);
-		criteriaQuery.select(root.get(ID));
+		criteriaQuery.select(root.get(EnumIndexing.ID.value()));
 		criteriaQuery.where(criteriaBuilder.equal(root.get(PRIMARY_ENTITY_ID), file));
 		criteriaQuery.orderBy(criteriaBuilder.desc(root.get(REVISION)));
 		Integer version = session.createQuery(criteriaQuery).setMaxResults(1).getSingleResult();
@@ -555,11 +545,16 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 			/** "Reindex" the retrieved document with additional information **/
 			try {
 				Document doc = searcher.doc(versionHit[0].doc);
+
+//				System.out.println("Public1: " + doc);
+
 				addFacets(doc);
-				writer.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
+//				System.out.println("Public2: " + doc);
+
+				indexWriter.deleteDocuments(new Term(EnumIndexField.VERSIONID.value(), Integer.toString(version)));
 				doc.add(new StringField(EnumIndexField.ENTITYTYPE.value(), entityType, Store.YES));
 				StringBuilder docIDBuilder = new StringBuilder(doc.get(EnumIndexField.PRIMARYENTITYID.value()))
-						.append(HYPHEN);
+						.append(EnumIndexing.HYPHEN.value());
 				if (entityType.equals(PublicVersionIndexWriterThread.FILE)) {
 					String filetype = FilenameUtils.getExtension(doc.get(EnumIndexField.TITLE.value()));
 					docIDBuilder.append(1);
@@ -571,16 +566,18 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 					long fileSize;
 					try {
 						fileSize = Long.parseLong(doc.get(EnumIndexField.SIZE.value()));
-						String mimeType[] = doc.get(EnumIndexField.MIMETYPE.value()).split(SEPERATOR);
+						String mimeType[] = doc.get(EnumIndexField.MIMETYPE.value()).split(EnumIndexing.SEPERATOR.value());
 						if (mimeType[0].toLowerCase().equals(TEXT) && mimeType[1].toLowerCase().equals(PLAIN)
 								&& fileSize <= MAX_DOC_SIZE) {
-							String[] dateValues = doc.get(EnumIndexField.CREATION_DATE.value()).split(HYPHEN);
+							String[] dateValues = doc.get(EnumIndexField.CREATION_DATE.value())
+									.split(EnumIndexing.HYPHEN.value());
 							if (dateValues.length == 5) {
 								Path pathToFile = Paths.get(
 										((FileSystemImplementationProvider) DataManager.getImplProv()).getDataPath()
 												.toString(),
 										dateValues[0], dateValues[1], dateValues[2], dateValues[3], dateValues[4],
-										file + HYPHEN + doc.get(EnumIndexField.REVISION.value()) + DAT);
+										file + EnumIndexing.HYPHEN.value() + doc.get(EnumIndexField.REVISION.value())
+												+ DAT);
 								indexFileContent(doc, pathToFile.toFile());
 							}
 
@@ -698,7 +695,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		for (String s : strings) {
 			tokenStream = analyzer.tokenStream(EnumIndexField.CREATORNAME.value(), s);
 			tokenStream.reset();
-			StringJoiner creator = new StringJoiner(" ");
+			StringJoiner creator = new StringJoiner(EnumIndexing.DELIMITER.value());
 			while (tokenStream.incrementToken()) {
 				CharTermAttribute termAttribute = tokenStream.getAttribute(CharTermAttribute.class);
 				String token = termAttribute == null ? "" : termAttribute.toString();
@@ -714,7 +711,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		for (String s : strings) {
 			tokenStream = analyzer.tokenStream(EnumIndexField.CONTRIBUTORNAME.value(), s);
 			tokenStream.reset();
-			StringJoiner contributor = new StringJoiner(" ");
+			StringJoiner contributor = new StringJoiner(EnumIndexing.DELIMITER.value());
 			while (tokenStream.incrementToken()) {
 				CharTermAttribute termAttribute = tokenStream.getAttribute(CharTermAttribute.class);
 				String token = termAttribute == null ? "" : termAttribute.toString();
@@ -754,7 +751,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 		IndexReader reader = null;
 		int numberDocs = 0;
 		try {
-			reader = DirectoryReader.open(writer);
+			reader = DirectoryReader.open(indexWriter);
 			numberDocs += reader.numDocs();
 			reader.close();
 		} catch (IOException e) {
@@ -817,7 +814,7 @@ public class PublicVersionIndexWriterThread extends IndexWriterThread {
 	public void run() {
 		super.run();
 		try {
-			this.taxoWriter.close();
+			this.taxonomyWriter.close();
 			this.reader.close();
 		} catch (IOException e) {
 			this.indexLogger.debug("Error closing the Indexwriter/Taxonomywriter: " + e.getMessage());

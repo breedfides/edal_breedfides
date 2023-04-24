@@ -37,7 +37,6 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager;
-import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -63,13 +62,11 @@ import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaValidator;
 import org.hibernate.tool.schema.TargetType;
 
-import de.ipk_gatersleben.bit.bi.edal.breedfides.persistence.Certificate;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProviderBreedFides;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
@@ -110,9 +107,6 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.security.PermissionProvider;
  */
 public class FileSystemImplementationProvider implements ImplementationProvider {
 
-	private static final String FACETS = "Facets";
-
-	public static final String MASTER_INDEX = "Master_Index";
 
 	private static final String EDALDB_DBNAME = "edaldb";
 
@@ -139,9 +133,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 			"using", "various", "very", "was", "we", "were", "what", "when", "which", "while", "with", "within",
 			"without", "would");
 
-	private IndexWriter writer = null;
-
-	private DirectoryTaxonomyWriter taxoWriter = null;
+	private IndexWriter indexWriter = null;
 
 	private boolean hibernateIndexing = false;
 
@@ -156,26 +148,42 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	private SessionFactory sessionFactory = null;
 	private Path indexDirectory = null;
 	private CacheManager cacheManager = null;
+	
+	private static final String FACETS_PUBLIC = "Facets_Public";
+	private Directory facetDirectoryForPublicReferences = null;
+	private DirectoryTaxonomyWriter taxoWriterForPublicReferences = null;
+	
+	private static final String FACETS_NATIVE = "Facets_Native";
+	private Directory facetDirectoryForNativeEntities = null;
+	private DirectoryTaxonomyWriter taxoWriterForNativeEntities = null;
 
-	private Directory facetDirectory = null;
+	public static final String MASTER_INDEX = "Master_Index";
 
 	/**
 	 * Manages the reopining and sharing of IndexSearcher instances
 	 */
-	private static SearcherTaxonomyManager searchManager;
+	private static SearcherTaxonomyManager SearcherTaxonomyManagerForPublicReferences;
+	
+	private static SearcherTaxonomyManager SearcherTaxonomyManagerForNative;
 
-	private static TaxonomyReader taxoReader = null;
-	private static FacetsConfig config = new FacetsConfig();
+
+	/**
+	 * Used for indexing of Facets, holds information about the indexed
+	 * Facet-dimensions
+	 **/
+	private static FacetsConfig factesConfig = new FacetsConfig();
 
 	public FileSystemImplementationProvider(EdalConfiguration configuration) {
 
 		this.configuration = configuration;
 
-		config.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
-		config.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
-		config.setMultiValued(EnumIndexField.SUBJECT.value(), true);
-		config.setMultiValued(EnumIndexField.TITLE.value(), true);
-		config.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.CREATORNAME.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.CONTRIBUTORNAME.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.SUBJECT.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.TITLE.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.DESCRIPTION.value(), true);
+		factesConfig.setMultiValued(EnumIndexField.STARTDATE.value(), true);
+
 
 		try {
 			this.setDatabaseUsername(this.getConfiguration().getDatabaseUsername());
@@ -269,7 +277,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				MyIdentifier.class, MyIdentifierRelation.class, MyPersons.class, MyPerson.class, MyNaturalPerson.class,
 				MyLegalPerson.class, MyUnknownMetaData.class, MyUntypedData.class, MySubjects.class,
 				MyCheckSumType.class, MyCheckSum.class, MyEdalLanguage.class, MyEdalDate.class, MyEdalDateRange.class,
-				MyDateEvents.class, MyORCID.class, Certificate.class);
+				MyDateEvents.class, MyORCID.class);
 
 		if (!exists) {
 
@@ -391,17 +399,22 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 					IndexWriterConfig writerConfig = new IndexWriterConfig(
 							new StandardAnalyzer(CharArraySet.unmodifiableSet(stopSet)));
 					writerConfig.setMergePolicy(pol);
-					writer = new IndexWriter(indexingDirectory, writerConfig);
-					this.facetDirectory = FSDirectory.open(Paths.get(indexDirectory.toString(), FACETS));
-					taxoWriter = new DirectoryTaxonomyWriter(facetDirectory);
+					this.indexWriter = new IndexWriter(indexingDirectory, writerConfig);
+					this.facetDirectoryForPublicReferences = FSDirectory.open(Paths.get(this.indexDirectory.toString(), FACETS_PUBLIC));
+					this.taxoWriterForPublicReferences = new DirectoryTaxonomyWriter(this.facetDirectoryForPublicReferences);
+					
+					this.facetDirectoryForNativeEntities = FSDirectory.open(Paths.get(this.indexDirectory.toString(), FACETS_NATIVE));
+					this.taxoWriterForNativeEntities = new DirectoryTaxonomyWriter(this.facetDirectoryForNativeEntities);
+					
 				} catch (IOException e) {
+					e.printStackTrace();
 					this.getLogger().error("System wasn't able to create/open Lucene Index!");
 					System.exit(0);
 				}
 				indexWriterThreads.add(new NativeLuceneIndexWriterThread(this.getSessionFactory(), this.indexDirectory,
-						this.logger, writer));
+						this.logger, this.indexWriter, this.taxoWriterForNativeEntities));
 				indexWriterThreads.add(new PublicVersionIndexWriterThread(this.getSessionFactory(), this.indexDirectory,
-						this.logger, writer, taxoWriter));
+						this.logger, this.indexWriter, this.taxoWriterForPublicReferences));
 				this.countDownLatch = new CountDownLatch(indexWriterThreads.size());
 				indexWriterThreads.get(0).setCountDownLatch(this.countDownLatch);
 				indexWriterThreads.get(1).setCountDownLatch(this.countDownLatch);
@@ -411,7 +424,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				this.getIndexThread().start();
 				this.getPublicVersionWriter().start();
 				try {
-					searchManager = new SearcherTaxonomyManager(writer, new SearcherFactory(), taxoWriter);
+					SearcherTaxonomyManagerForPublicReferences = new SearcherTaxonomyManager(this.indexWriter, new SearcherFactory(), this.taxoWriterForPublicReferences);
+					SearcherTaxonomyManagerForNative = new SearcherTaxonomyManager(this.indexWriter, new SearcherFactory(), this.taxoWriterForNativeEntities);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -599,10 +613,7 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 		return PrimaryDataFileImplementation.class;
 	}
 
-	public DirectoryTaxonomyWriter getTaxoWriter() {
-		return taxoWriter;
-	}
-
+	
 	/**
 	 * Getter for a new {@link Session} for public access.
 	 * 
@@ -733,24 +744,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	}
 
 	public IndexWriter getWriter() {
-		return writer;
+		return indexWriter;
 	}
 
 	public void setHibernateIndexing(boolean hibernateIndexing) {
 		this.hibernateIndexing = hibernateIndexing;
-	}
-
-	public Directory getFacetDirectory() {
-		return facetDirectory;
-	}
-
-	/**
-	 * Getter for the TaxonomyReader
-	 * 
-	 * @return The TaxonomyReady
-	 */
-	public TaxonomyReader getTaxonomyReader() {
-		return taxoReader;
 	}
 
 	/**
@@ -759,16 +757,16 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * @return The FacetsConfig for faceted indexing
 	 */
 	public FacetsConfig getFacetsConfig() {
-		return config;
+		return factesConfig;
 	}
 
 	/**
-	 * Getter for the SearcherManager
+	 * Getter for the SearcherTaxonomyManager
 	 * 
-	 * @return The SearcherManager
+	 * @return The SearcherTaxonomyManager
 	 */
-	public SearcherTaxonomyManager getSearchManager() {
-		return searchManager;
+	public SearcherTaxonomyManager getSearcherTaxonomyManagerForPublicReferences() {
+		return SearcherTaxonomyManagerForPublicReferences;
 	}
 
 	public Path getIndexDirectory() {
@@ -839,19 +837,19 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				e.printStackTrace();
 			} finally {
 
-				if (writer != null) {
+				if (indexWriter != null) {
 					try {
-						writer.close();
+						indexWriter.close();
 					} catch (IOException e) {
 						e.printStackTrace();
 						try {
-							this.writer.rollback();
-							writer.close();
+							this.indexWriter.rollback();
+							indexWriter.close();
 						} catch (IOException e1) {
 							e1.printStackTrace();
 						}
 					}
-					writer = null;
+					indexWriter = null;
 				}
 			}
 		}
@@ -888,9 +886,8 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	public Class<? extends SearchProvider> getSearchProvider() {
 		return SearchProviderImplementation.class;
 	}
-	
-	@Override
-	public Class<? extends SearchProviderBreedFides> getSearchProviderBreedFides() {
-		return SearchProviderBreedFidesImplementation.class;
+
+	public SearcherTaxonomyManager getSearcherTaxonomyManagerForNative() {
+		return SearcherTaxonomyManagerForNative;
 	}
 }
