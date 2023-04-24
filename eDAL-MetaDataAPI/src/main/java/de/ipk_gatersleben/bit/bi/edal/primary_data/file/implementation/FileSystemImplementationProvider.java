@@ -67,6 +67,7 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfiguration;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.EdalConfigurationException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.HttpServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProvider;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProviderBreedFides;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.ServiceProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.EdalException;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.ImplementationProvider;
@@ -889,5 +890,10 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 
 	public SearcherTaxonomyManager getSearcherTaxonomyManagerForNative() {
 		return SearcherTaxonomyManagerForNative;
+	}
+
+	@Override
+	public Class<? extends SearchProviderBreedFides> getSearchProviderBreedFides() {
+		return SearchProviderBreedFidesImplementation.class;
 	}
 }
