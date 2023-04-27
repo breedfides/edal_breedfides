@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.rest.client;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.ws.rs.client.Client;
@@ -39,9 +40,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.ipk_gatersleben.bit.bi.edal.primary_data.rmi.client.helper.EdalDirectoryVisitorRmi;
+
 public class BreedFidesClientForTest {
-	
-	
+
 	private static String myJWT = "";
 
 	private static void register() throws Exception {
@@ -101,12 +103,12 @@ public class BreedFidesClientForTest {
 		client.close();
 
 	}
-	
+
 	private static void upload() throws Exception {
 
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
-		
+
 		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/upload/datasets");
 
 		File file = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
@@ -147,8 +149,7 @@ public class BreedFidesClientForTest {
 		final FormDataMultiPart multipart = (FormDataMultiPart) formDataMultiPart.field("path", "directory2")
 				.field("metaData", jsonString).bodyPart(filePart);
 
-		final Response uploadResponse = uploadRequest.request().header("Authorization",
-				"Bearer "+ myJWT)
+		final Response uploadResponse = uploadRequest.request().header("Authorization", "Bearer " + myJWT)
 				.post(Entity.entity(multipart, multipart.getMediaType()));
 
 		// Use response object to verify upload success
@@ -157,39 +158,123 @@ public class BreedFidesClientForTest {
 		System.out.println(uploadResponse.getCookies());
 		formDataMultiPart.close();
 		multipart.close();
-		
+
 	}
-	
+
 	private static void access() throws Exception {
-		
+
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
-		
+
 		WebTarget accessRequest = client.target("http://localhost/").path("breedfides/access/datasets");
-		
-				Response registerResponse = accessRequest.queryParam("pageSize", 25).queryParam("page", 1).queryParam("keywords", "triticum").request()
-						.header("Authorization", "Bearer "+ myJWT)
-		.accept(MediaType.APPLICATION_JSON).get();
-		
-				System.out.println(
-						"Respose (" + registerResponse.getStatus() + ") value: " + registerResponse.readEntity(String.class));
+
+		Response registerResponse = accessRequest.queryParam("pageSize", 25).queryParam("page", 1)
+				.queryParam("keywords", "Manuel").request().header("Authorization", "Bearer " + myJWT)
+				.accept(MediaType.APPLICATION_JSON).get();
+
+		System.out.println(
+				"Respose (" + registerResponse.getStatus() + ") value: " + registerResponse.readEntity(String.class));
 	}
-	
-	
+
+	private static void download() throws Exception {
+
+		Client client = ClientBuilder.newClient();
+		client.register(MultiPartFeature.class);
+
+		WebTarget downloadRequest = client.target("http://localhost/").path("breedfides/download/dataset");
+
+		Response downloadResponse = downloadRequest.queryParam("datasetOwner", "1681293054019")
+				.queryParam("datasetRoot", "Downloads").request().header("Authorization", "Bearer " + myJWT)
+				.accept(MediaType.APPLICATION_OCTET_STREAM).get();
+
+		File file = downloadResponse.readEntity(File.class);
+		Files.copy(new FileInputStream(file), Paths.get(System.getProperty("user.home"), "download.zip"));
+
+		client.close();
+
+	}
+
+	private static void uploadDirectory() throws Exception {
+
+		Client client = ClientBuilder.newClient();
+		client.register(MultiPartFeature.class);
+
+		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/upload/datasets");
+
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode rootNode = mapper.createObjectNode();
+
+		rootNode.put("title", "Italian Accessions of the Bridge Dataset");
+		rootNode.put("description", "MIAPPE ISA Tab formatted dataset of all italian accessions of the BRIDGE Dataset");
+		rootNode.put("language", "english");
+		rootNode.put("license", "CC 1.0 Universal");
+
+		ArrayNode authorsArrayNode = rootNode.arrayNode();
+		ObjectNode authorNode = mapper.createObjectNode();
+
+		authorNode.put("firstName", "Manuel");
+		authorNode.put("lastName", "Feser");
+		authorNode.put("country", "Deutschland");
+		authorNode.put("zip", "06466");
+		authorNode.put("address", "Corrensstraße 3 Seeland");
+		authorNode.put("role", "Creator");
+
+		authorsArrayNode.add(authorNode);
+
+		rootNode.set("authors", authorsArrayNode);
+
+		ArrayNode subjectsArrayNode = rootNode.arrayNode();
+		subjectsArrayNode.add("MIAPPE");
+		subjectsArrayNode.add("Triticum");
+		subjectsArrayNode.add("Ro-Crate");
+		rootNode.set("subjects", subjectsArrayNode);
+
+		String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
+		Path uplodPath = Paths.get(System.getProperty("user.home"), "Downloads");
+
+		FileUploadVisitor uploadVisitor = new FileUploadVisitor(uplodPath, jsonString, uploadRequest, myJWT);
+
+		Files.walkFileTree(uplodPath, uploadVisitor);
+
+//		File file = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+//
+//		final FileDataBodyPart filePart = new FileDataBodyPart("file", file);
+//		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
+//		
+//		
+//		
+//
+//		final FormDataMultiPart multipart = (FormDataMultiPart) formDataMultiPart.field("path", "directory2")
+//				.field("metaData", jsonString).bodyPart(filePart);
+//
+//		final Response uploadResponse = uploadRequest.request().header("Authorization", "Bearer " + myJWT)
+//				.post(Entity.entity(multipart, multipart.getMediaType()));
+//
+//		// Use response object to verify upload success
+//		System.out.println("Respose (" + uploadResponse.getStatus() + " - " + uploadResponse.getStatusInfo() + ")");
+//		System.out.println("Respose (" + uploadResponse.readEntity(String.class) + ")");
+//		System.out.println(uploadResponse.getCookies());
+//		formDataMultiPart.close();
+//		multipart.close();
+
+	}
 
 	public static void main(String[] args) throws Exception {
 
 //			register();
-			
-//			login();
-			
-			
-				myJWT="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzZXJpYWxOdW1iZXIiOiIxNjgxMjkzMDU0MDE5Iiwicm9sZSI6ImJyZWVkZXIiLCJpc3MiOiJCcmVlZEZpZGVzIiwiaWF0IjoxNjgxMjkzMDkzLCJqdGkiOiI4MTJlNjk3ZC1mNmFiLTQzZGQtYjUwMi1hZjE2MTVhZWFlNGYifQ.aH_MvGHI2cUp0qjXHnM2ZxZQ20Xbrjymj_f5NQul5G0hM37FDNjjVXJpPmS1smFq8eMuIQ1OAuUcliTQrWXlVjN9YwO4NgwWJwbD9oj351quiue-r02wqNTcyVbOiJnO06aumdCmJYgS0qxwf2t2_NpWinND2IMWscxbdPaXb-AH7GXeEC397_OOR5D13nCML3RSC0UgT-jpgtO2N1cmhL2CAfdbuD8U4lhgjVpbpDW9qBIyOwESzxX6GAAErJzNq64IGAr3nfTSfUYr0ooXYxy0PAfh4ecnjl9DjUVVFToJWk47qlcLRdMVuQEGJEaiMUxf0XKnpu37QUroRYuEzw";
 
-		
+//			login();
+
+		myJWT = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzZXJpYWxOdW1iZXIiOiIxNjgxMjkzMDU0MDE5Iiwicm9sZSI6ImJyZWVkZXIiLCJpc3MiOiJCcmVlZEZpZGVzIiwiaWF0IjoxNjgxMjkzMDkzLCJqdGkiOiI4MTJlNjk3ZC1mNmFiLTQzZGQtYjUwMi1hZjE2MTVhZWFlNGYifQ.aH_MvGHI2cUp0qjXHnM2ZxZQ20Xbrjymj_f5NQul5G0hM37FDNjjVXJpPmS1smFq8eMuIQ1OAuUcliTQrWXlVjN9YwO4NgwWJwbD9oj351quiue-r02wqNTcyVbOiJnO06aumdCmJYgS0qxwf2t2_NpWinND2IMWscxbdPaXb-AH7GXeEC397_OOR5D13nCML3RSC0UgT-jpgtO2N1cmhL2CAfdbuD8U4lhgjVpbpDW9qBIyOwESzxX6GAAErJzNq64IGAr3nfTSfUYr0ooXYxy0PAfh4ecnjl9DjUVVFToJWk47qlcLRdMVuQEGJEaiMUxf0XKnpu37QUroRYuEzw";
+
 //			upload();
-		
+
 			access();
+
+		download();
+
+//		uploadDirectory();
 
 	}
 

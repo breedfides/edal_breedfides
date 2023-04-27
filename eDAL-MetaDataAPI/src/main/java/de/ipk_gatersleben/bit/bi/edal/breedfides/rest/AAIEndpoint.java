@@ -83,7 +83,7 @@ public class AAIEndpoint {
 
 		InfoEndpoint.getLogger().info("Call 'aai/register/' endpoint");
 
-		InfoEndpoint.getLogger().info("Creating Certifiacte for " + inputJson);
+		InfoEndpoint.getLogger().info("Creating Certificate for " + inputJson);
 
 		StreamingOutput fileStream = new StreamingOutput() {
 
@@ -96,7 +96,7 @@ public class AAIEndpoint {
 							HASH_ALGORITHM, (String) inputJson.get(COMMON_NAME),
 							(String) inputJson.get(ORGANISATION_NAME), (String) inputJson.get(ORGANISATION_UNIT_NAME),
 							(String) inputJson.get(COUNTRY_NAME), (String) inputJson.get(STATE_NAME),
-							(String) inputJson.get(CITY_NAME), 14);
+							(String) inputJson.get(CITY_NAME), 0);
 
 					ZipEntry entry = new ZipEntry(CERTIFICATE_FILE_NAME);
 					zipStream.putNextEntry(entry);

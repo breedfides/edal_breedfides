@@ -12,15 +12,22 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.breedfides.rest;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.ipk_gatersleben.bit.bi.edal.breedfides.certificate.JwtValidator;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
@@ -35,11 +42,11 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
  * @author arendd
  *
  */
-@javax.ws.rs.Path("access")
+@Path("access")
 public class DatasetAccessEndpoint {
 
 	@GET
-	@javax.ws.rs.Path("info")
+	@Path("info")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String info() {
 
@@ -49,7 +56,7 @@ public class DatasetAccessEndpoint {
 	}
 
 	@GET
-	@javax.ws.rs.Path("/datasets")
+	@Path("/datasets")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getMetadata(@QueryParam("datasetRoot") String datasetRoot, @Context HttpServletRequest request,
@@ -59,7 +66,6 @@ public class DatasetAccessEndpoint {
 
 		InfoEndpoint.getLogger().info("Call 'access/datasets/' endpoint");
 
-		
 		if (page == 0) {
 			page = 1;
 		}
@@ -73,13 +79,12 @@ public class DatasetAccessEndpoint {
 			// cut of "Bearer"
 			String jwt = request.getHeader("Authorization").substring(7);
 
-			InfoEndpoint.getLogger().info(
-					"Got JWT '" + jwt.substring(0, 3) + "..." + jwt.substring(jwt.length() - 3, jwt.length()) + "'");
-
 			try {
 				JwtValidator.validate(jwt);
 				String serialNumber = JwtValidator.getSerialNumber(jwt);
-				InfoEndpoint.getLogger().info("SerialNumber of JWT: " + serialNumber);
+				InfoEndpoint.getLogger()
+						.info("Got JWT '" + jwt.substring(0, 3) + "..." + jwt.substring(jwt.length() - 3, jwt.length())
+								+ "' with valid Serialnumber : " + serialNumber);
 			} catch (Exception e) {
 				return Response.status(Status.UNAUTHORIZED.getStatusCode(), "Given JWT is invalid: " + e.getMessage())
 						.build();
@@ -90,47 +95,42 @@ public class DatasetAccessEndpoint {
 					.build();
 		}
 
-		if (keywords == null) {
-			try {
-				FileSystemImplementationProvider filesystemImplementationProvider = ((FileSystemImplementationProvider) DataManager
-						.getImplProv());
+		try {
+			if (keywords == null || keywords.isBlank() || keywords.isEmpty()) {
 
-				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) filesystemImplementationProvider
-						.getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
+				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) DataManager
+						.getImplProv().getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
 
-				String result = searchProvider.getAllUserDatasets(page, pageSize);
+				String resultJSON = searchProvider.getAllUserDatasets(page, pageSize);
 
-				InfoEndpoint.getLogger().info("Get all User Datasets " + result);
+				ObjectNode jsonNode = (ObjectNode) new ObjectMapper().readTree(resultJSON);
 
-				return Response.status(Status.OK).entity(result).build();
-			} catch (Exception e) {
+				InfoEndpoint.getLogger().info("Get all " + jsonNode.findValue("results").size() + " User Datasets ");
 
-				Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
+				return Response.status(Status.OK).entity(resultJSON).build();
+
 			}
 
-		} else if (!keywords.isEmpty()) {
-			try {
-				FileSystemImplementationProvider filesystemImplementationProvider = ((FileSystemImplementationProvider) DataManager
-						.getImplProv());
+			else {
 
-				PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(filesystemImplementationProvider,
+				PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(DataManager.getImplProv(),
 						EdalHelpers.authenticateUserWithJWT("jwt"));
 
-				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) filesystemImplementationProvider
-						.getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
+				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) DataManager
+						.getImplProv().getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
 
-				String result = searchProvider.breedFidesKeywordSearch(rootDirectory, keywords, true, false, page,
+				String resultJSON = searchProvider.breedFidesKeywordSearch(rootDirectory, keywords, true, false, page,
 						pageSize);
 
-				InfoEndpoint.getLogger().info("Found " + result);
-				
-				System.out.println(searchProvider.drillDown("+Allfields:triticum +EntityType:dataset"));
+				ObjectNode jsonNode = (ObjectNode) new ObjectMapper().readTree(resultJSON);
 
-				return Response.status(Status.OK).entity(result).build();
-			} catch (Exception e) {
+				InfoEndpoint.getLogger().info("Found " + jsonNode.findValue("results").size() + " results");
 
-				Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
+				return Response.status(Status.OK).entity(resultJSON).build();
+
 			}
+		} catch (Exception e) {
+			Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
 		}
 
 		return null;

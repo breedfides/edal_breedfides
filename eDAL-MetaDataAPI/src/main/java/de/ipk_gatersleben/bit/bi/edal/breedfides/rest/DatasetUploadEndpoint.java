@@ -12,8 +12,10 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.breedfides.rest;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -60,7 +62,7 @@ import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 public class DatasetUploadEndpoint {
 
 	private static final String CREATOR = "Creator";
-	private static final String CONTRIBUTOR = "Conributor";
+	private static final String CONTRIBUTOR = "Contributor";
 
 	@GET
 	@javax.ws.rs.Path("info")
@@ -95,22 +97,20 @@ public class DatasetUploadEndpoint {
 			// cut of "Bearer"
 			String jwt = request.getHeader("Authorization").substring(7);
 
-			InfoEndpoint.getLogger().info(
-					"Got JWT '" + jwt.substring(0, 3) + "..." + jwt.substring(jwt.length() - 3, jwt.length()) + "'");
-
 			String serialNumber = null;
 
 			try {
 				JwtValidator.validate(jwt);
 				serialNumber = JwtValidator.getSerialNumber(jwt);
-				InfoEndpoint.getLogger().info("SerialNumber of JWT: " + serialNumber);
-
+				InfoEndpoint.getLogger()
+						.info("Got JWT '" + jwt.substring(0, 3) + "..." + jwt.substring(jwt.length() - 3, jwt.length())
+								+ "' with valid Serialnumber : " + serialNumber);
 			} catch (Exception e) {
 				return Response.status(Status.UNAUTHORIZED.getStatusCode(), "Given JWT is invalid: " + e.getMessage())
 						.build();
 			}
 
-			InfoEndpoint.getLogger().info("Got Metadata : " + metaData);
+//			InfoEndpoint.getLogger().info("Got Metadata : " + metaData);
 
 			try {
 				FileSystemImplementationProvider filesystemImplementationProvider = ((FileSystemImplementationProvider) DataManager
@@ -120,9 +120,9 @@ public class DatasetUploadEndpoint {
 						EdalHelpers.authenticateUserWithJWT(serialNumber));
 
 				InfoEndpoint.getLogger().info("Got root directory: " + rootDirectory);
-
-				String[] parentDirectories = filePath.split("/");
 				
+				String[] parentDirectories = filePath.split(Pattern.quote(File.separator));		
+
 				PrimaryDataDirectory currentRootDirectory = rootDirectory;
 				PrimaryDataDirectory currentDirectory = null;
 
@@ -176,6 +176,7 @@ public class DatasetUploadEndpoint {
 
 				return Response.status(200).build();
 			} catch (Exception e) {
+				e.printStackTrace();
 				return Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
 
 			}

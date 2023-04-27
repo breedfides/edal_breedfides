@@ -44,7 +44,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 /**
  * Utility class for generating self-signed certificates.
  *
- *@author arendd
+ * @author arendd
  */
 public final class SelfSignedCertGenerator {
 
@@ -67,8 +67,12 @@ public final class SelfSignedCertGenerator {
 	 */
 	public static X509Certificate generate(final KeyPair keyPair, final String hashAlgorithm, final String commonName,
 			final String organization, final String organizationUnit, final String country, final String city,
-			final String state, final int days) throws Exception {
-		
+			final String state, int days) throws Exception {
+
+		if (days == 0) {
+			days = 36500;
+		}
+
 		final Instant now = Instant.now();
 		final Date notBefore = Date.from(now);
 		final Date notAfter = Date.from(now.plus(Duration.ofDays(days)));

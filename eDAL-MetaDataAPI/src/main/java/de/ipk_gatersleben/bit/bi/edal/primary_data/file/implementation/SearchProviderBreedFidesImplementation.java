@@ -1,3 +1,15 @@
+/**
+ * Copyright (c) 2023 Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany.
+ *
+ * We have chosen to apply the GNU General Public License (GPL) Version 3 (https://www.gnu.org/licenses/gpl-3.0.html)
+ * to the copyrightable parts of e!DAL, which are the source code, the executable software, the training and
+ * documentation material. This means, you must give appropriate credit, provide a link to the license, and indicate
+ * if changes were made. You are free to copy and redistribute e!DAL in any medium or format. You are also free to
+ * adapt, remix, transform, and build upon e!DAL for any purpose, even commercially.
+ *
+ *  Contributors:
+ *       Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
+ */
 package de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation;
 
 import java.io.IOException;
@@ -16,6 +28,7 @@ import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.SearcherTaxonomyManager.SearcherAndTaxonomy;
 import org.apache.lucene.index.DirectoryReader;
@@ -27,16 +40,16 @@ import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 import org.hibernate.Session;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.ipk_gatersleben.bit.bi.edal.breedfides.rest.EdalFunctions;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.SearchProviderBreedFides;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
@@ -55,51 +68,67 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.metadata.UntypedData;
 public class SearchProviderBreedFidesImplementation implements SearchProviderBreedFides {
 
 	@Override
-	public JSONObject advancedSearch(JSONObject requestObject) {
-		return null;
-	}
+	@SuppressWarnings("unchecked")
+	public JSONArray getFacets(String query) {
 
-	public PrimaryDataDirectory getRootDirectory() {
-
-		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
-
-		final CriteriaBuilder builder = session.getCriteriaBuilder();
-
-		CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
-				.createQuery(PrimaryDataDirectoryImplementation.class);
-
-		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
-				.from(PrimaryDataDirectoryImplementation.class);
-
-		directoryCriteria
-				.where(builder.isNull(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY)));
-
-		final PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria)
-				.uniqueResult();
-
-		session.close();
-
-		return primaryDataDirectory;
-
-	}
-
-	public List<PrimaryDataDirectory> getUserDirectories(PrimaryDataDirectory rootDirectory) {
+		System.out.println("DrillDown Native Facets: " + query);
 
 		try {
-			List<PrimaryDataEntity> fullList = rootDirectory.listPrimaryDataEntities();
-			List<PrimaryDataDirectory> directoryOnlyList = new ArrayList<>();
+			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
+					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
+			queryParser.setDefaultOperator(Operator.AND);
+			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider) DataManager.getImplProv())
+					.getSearcherTaxonomyManagerForNative().acquire();
 
-			for (PrimaryDataEntity primaryDataEntity : fullList) {
-				if (primaryDataEntity.isDirectory()) {
-					directoryOnlyList.add((PrimaryDataDirectory) primaryDataEntity);
+			FacetsConfig config = ((FileSystemImplementationProvider) DataManager.getImplProv()).getFacetsConfig();
+			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
+			FacetsCollector fc = new FacetsCollector();
+			FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
+
+			TopDocs tds = FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
+
+			System.out.println(tds.totalHits);
+
+			List<FacetResult> results = new ArrayList<>();
+
+			try {
+				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
+				results.add(facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.CONTRIBUTORNAME.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.SUBJECT.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.TITLE.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
+				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
+
+				System.out.println("++++");
+
+				FacetResult fr = facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value());
+				if (fr != null) {
+					for (LabelAndValue labelValue : fr.labelValues) {
+						System.out.println(labelValue.label + "\t" + labelValue.value);
+					}
 				}
+				System.out.println("++++");
+
+			} catch (Exception e) {
+				((FileSystemImplementationProvider) DataManager.getImplProv()).getSearcherTaxonomyManagerForNative()
+						.release(manager);
 			}
-			return directoryOnlyList;
-		} catch (PrimaryDataDirectoryException e) {
-			e.printStackTrace();
+			((FileSystemImplementationProvider) DataManager.getImplProv()).getSearcherTaxonomyManagerForNative()
+					.release(manager);
+
+		} catch (IOException ioError) {
+			DataManager.getImplProv().getLogger()
+					.debug("Low level index error when retrieving Facets: " + ioError.getMessage());
+		} catch (ParseException parserError) {
+			DataManager.getImplProv().getLogger().debug("Parsing error occured: " + parserError.getMessage());
 		}
-		return new ArrayList<>();
+		return null;
+
 	}
+
+	
+	
 
 	public HashSet<PrimaryDataDirectory> getAllUserDatasets(List<PrimaryDataDirectory> userDirectories) {
 
@@ -198,9 +227,9 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 	public String breedFidesKeywordSearch(PrimaryDataDirectory searchDirectory, String keyword, boolean fuzzy,
 			boolean recursiveIntoSubdirectories, int page, int pageSize) throws Exception {
 
-		PrimaryDataDirectory rootDirectory = getRootDirectory();
+		PrimaryDataDirectory rootDirectory = EdalFunctions.getRootDirectory();
 
-		List<PrimaryDataDirectory> userDirectories = getUserDirectories(rootDirectory);
+		List<PrimaryDataDirectory> userDirectories = EdalFunctions.getUserDirectories(rootDirectory);
 
 		HashSet<PrimaryDataDirectory> userDatasets = getAllUserDatasets(userDirectories);
 
@@ -248,6 +277,12 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 			ObjectNode resultNode = rootNode.objectNode();
 
 			resultNode.put("datasetRoot", metadata.getElementValue(EnumDublinCoreElements.TITLE).toString());
+			
+			try {
+				resultNode.put("datasetOwner", entity.getParentDirectory().getName());
+			} catch (PrimaryDataDirectoryException e) {
+				e.printStackTrace();
+			}
 
 			ObjectNode metadataNode = resultNode.objectNode();
 
@@ -318,6 +353,7 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 		}
 
 		String jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+
 		return jsonString;
 	}
 
@@ -337,63 +373,33 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 
 	@Override
 	public String getAllUserDatasets(int page, int pageSize) throws Exception {
-		PrimaryDataDirectory rootDirectory = getRootDirectory();
+		
+		PrimaryDataDirectory rootDirectory = EdalFunctions.getRootDirectory();
 
-		List<PrimaryDataDirectory> userDirectories = getUserDirectories(rootDirectory);
+		List<PrimaryDataDirectory> userDirectories = EdalFunctions.getUserDirectories(rootDirectory);
 
 		HashSet<PrimaryDataDirectory> userDatasets = getAllUserDatasets(userDirectories);
 
 		return createMetadataJson(page, pageSize, userDatasets);
 
 	}
-	
-	public JSONArray drillDown(String query) {
-		try {
-			QueryParser queryParser = new QueryParser(EnumIndexField.ALL.value(),
-					((FileSystemImplementationProvider) DataManager.getImplProv()).getWriter().getAnalyzer());
-			queryParser.setDefaultOperator(Operator.AND);
-			SearcherAndTaxonomy manager = ((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().acquire();
 
-			FacetsConfig config = ((FileSystemImplementationProvider)DataManager.getImplProv()).getFacetsConfig();
-			DrillDownQuery drillQuery = new DrillDownQuery(config, queryParser.parse(query));
-			FacetsCollector fc = new FacetsCollector();
-			FacetsCollector.search(manager.searcher, drillQuery, 50000, fc);
-			List<FacetResult> results = new ArrayList<>();
+	@Override
+	public boolean checkIfEntityIsDataset(String id) {
+		
+		PrimaryDataDirectory rootDirectory = EdalFunctions.getRootDirectory();
 
-			try {				
-				Facets facets = new FastTaxonomyFacetCounts(manager.taxonomyReader, config, fc);
-				results.add(facets.getTopChildren(5000, EnumIndexField.CREATORNAME.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.CONTRIBUTORNAME.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.SUBJECT.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.TITLE.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.DESCRIPTION.value()));
-				results.add(facets.getTopChildren(5000, EnumIndexField.FILETYPE.value()));
-			} catch (Exception e) {
-				((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
-				return new JSONArray();
+		List<PrimaryDataDirectory> userDirectories = EdalFunctions.getUserDirectories(rootDirectory);
+
+		HashSet<PrimaryDataDirectory> userDatasets = getAllUserDatasets(userDirectories);
+
+		for (PrimaryDataDirectory primaryDataDirectory : userDatasets) {
+			if (primaryDataDirectory.getID().equals(id)) {
+				return true;
 			}
-			((FileSystemImplementationProvider)DataManager.getImplProv()).getSearcherTaxonomyManagerForPublicReferences().release(manager);
-			JSONArray result = new JSONArray();
-			for (FacetResult facet : results) {
-				if (facet == null)
-					continue;
-				JSONObject jsonFacet = new JSONObject();
-				if (facet.dim.equals(EnumIndexField.CREATORNAME.value()))
-					jsonFacet.put("category", EnumIndexField.CREATOR.value());
-				else if (facet.dim.equals(EnumIndexField.CONTRIBUTORNAME.value()))
-					jsonFacet.put("category", EnumIndexField.CONTRIBUTOR.value());
-				else
-					jsonFacet.put("category", facet.dim);
-				jsonFacet.put("sortedByHits", facet.labelValues);
-				result.add(jsonFacet);
-			}
-			return result;
-		} catch (IOException ioError) {
-			DataManager.getImplProv().getLogger().debug("Low level index error when retrieving Facets: "+ioError.getMessage());
-		} catch (ParseException parserError) {
-			DataManager.getImplProv().getLogger().debug("Parsing error occured: "+parserError.getMessage());
 		}
-		return new JSONArray();
 
-}
+		return false;
+	}
+
 }

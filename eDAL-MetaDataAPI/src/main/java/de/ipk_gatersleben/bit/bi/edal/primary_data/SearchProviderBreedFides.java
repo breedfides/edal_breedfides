@@ -12,7 +12,7 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.primary_data;
 
-import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 
@@ -24,11 +24,13 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
  */
 public interface SearchProviderBreedFides {
 
-	JSONObject advancedSearch(JSONObject requestObject);
+	JSONArray getFacets(String query);
 
 	String breedFidesKeywordSearch(PrimaryDataDirectory searchDirectory, String keyword, boolean fuzzy,
 			boolean recursiveIntoSubdirectories, int page, int pageSize) throws Exception;
 	
 	String getAllUserDatasets(int page, int pageSize) throws Exception;
+	
+	boolean checkIfEntityIsDataset(String id);
 
 }
