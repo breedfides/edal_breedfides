@@ -56,7 +56,7 @@ public class ZipThread extends EdalThread {
 		TEXT;
 	}
 
-	private static List<String> ENUM_LIST = null;
+	public static List<String> ENUM_LIST = null;
 
 	static {
 		ENUM_LIST = Stream.of(FILE_TYPES_WITH_COMPRESSION_SUPPORT.values()).map(Enum::name)
