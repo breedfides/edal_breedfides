@@ -120,8 +120,10 @@ public class DatasetUploadEndpoint {
 						EdalHelpers.authenticateUserWithJWT(serialNumber));
 
 				InfoEndpoint.getLogger().info("Got root directory: " + rootDirectory);
-				
-				String[] parentDirectories = filePath.split(Pattern.quote(File.separator));		
+
+				filePath = filePath.replace("\\", "/");
+
+				String[] parentDirectories = filePath.split("/");
 
 				PrimaryDataDirectory currentRootDirectory = rootDirectory;
 				PrimaryDataDirectory currentDirectory = null;
@@ -176,7 +178,7 @@ public class DatasetUploadEndpoint {
 
 				return Response.status(200).build();
 			} catch (Exception e) {
-				e.printStackTrace();
+				InfoEndpoint.getLogger().error(e.getMessage());
 				return Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
 
 			}
@@ -216,7 +218,6 @@ public class DatasetUploadEndpoint {
 				metadataSubjects.add(new UntypedData(subjects.next().asText()));
 			}
 			newMetadata.setElementValue(EnumDublinCoreElements.SUBJECT, metadataSubjects);
-			//
 
 			// authors
 			Iterator<JsonNode> authors = authorsNode.elements();
@@ -272,7 +273,6 @@ public class DatasetUploadEndpoint {
 
 			newMetadata.setElementValue(EnumDublinCoreElements.CREATOR, creatorPersons);
 			newMetadata.setElementValue(EnumDublinCoreElements.CONTRIBUTOR, contributorPersons);
-			//
 
 			return newMetadata;
 

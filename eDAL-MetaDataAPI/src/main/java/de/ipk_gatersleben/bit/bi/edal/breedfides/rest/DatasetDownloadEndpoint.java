@@ -60,7 +60,6 @@ public class DatasetDownloadEndpoint {
 	public String info() {
 
 		InfoEndpoint.getLogger().info("Call 'download/info/' endpoint");
-
 		return "Call 'download/info/' endpoint";
 	}
 
@@ -91,40 +90,44 @@ public class DatasetDownloadEndpoint {
 						.build();
 			}
 
-		}
+			String zipfileName = "";
+			try {
 
-		String zipfileName = "";
-		try {
-
-			zipfileName = ((PrimaryDataDirectory) EdalFunctions.getRootDirectory().getPrimaryDataEntity(datasetOwner))
-					.getPrimaryDataEntity(datasetRoot).getName() + ".zip";
-		} catch (PrimaryDataDirectoryException e) {
-			e.printStackTrace();
-			InfoEndpoint.getLogger().error(e.getMessage());
-		}
-
-		StreamingOutput fileStream = new StreamingOutput() {
-
-			@Override
-			public void write(OutputStream output) {
-
-				try (ZipOutputStream zipStream = new ZipOutputStream(output)) {
-
-					PrimaryDataDirectory datasetDirectory = (PrimaryDataDirectory) ((PrimaryDataDirectory) EdalFunctions
-							.getRootDirectory().getPrimaryDataEntity(datasetOwner)).getPrimaryDataEntity(datasetRoot);
-
-					readPrimaryDataDirectoryIntoZipOutputStream(zipStream, datasetDirectory, true);
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					InfoEndpoint.getLogger().error(e.getMessage());
-				}
-
+				zipfileName = ((PrimaryDataDirectory) EdalFunctions.getRootDirectory()
+						.getPrimaryDataEntity(datasetOwner)).getPrimaryDataEntity(datasetRoot).getName() + ".zip";
+			} catch (PrimaryDataDirectoryException e) {
+				e.printStackTrace();
+				InfoEndpoint.getLogger().error(e.getMessage());
 			}
-		};
 
-		return Response.ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
-				.header("content-disposition", "attachment; filename=" + zipfileName).build();
+			StreamingOutput fileStream = new StreamingOutput() {
+
+				@Override
+				public void write(OutputStream output) {
+
+					try (ZipOutputStream zipStream = new ZipOutputStream(output)) {
+
+						PrimaryDataDirectory datasetDirectory = (PrimaryDataDirectory) ((PrimaryDataDirectory) EdalFunctions
+								.getRootDirectory().getPrimaryDataEntity(datasetOwner))
+								.getPrimaryDataEntity(datasetRoot);
+
+						readPrimaryDataDirectoryIntoZipOutputStream(zipStream, datasetDirectory, true);
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						InfoEndpoint.getLogger().error(e.getMessage());
+					}
+
+				}
+			};
+
+			return Response.ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
+					.header("content-disposition", "attachment; filename=" + zipfileName).build();
+		} else {
+			return Response.status(Status.UNAUTHORIZED.getStatusCode(), "Please check your Authorizaton Header")
+					.build();
+
+		}
 
 	}
 

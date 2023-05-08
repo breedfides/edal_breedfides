@@ -20,7 +20,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
-
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectoryException;
@@ -28,6 +27,12 @@ import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.PrimaryDataDirectoryImplementation;
 
+
+/** Important function to get use e!DAL without getting AccessControlException due to JAAS/AspectJ
+ * 
+ * @author arendd
+ *
+ */
 public class EdalFunctions {
 
 	public static PrimaryDataDirectory getRootDirectory() {
@@ -73,7 +78,30 @@ public class EdalFunctions {
 	}
 
 	public static PrimaryDataDirectory getUserDirectory(PrimaryDataDirectory rootDirectory) {
-		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static PrimaryDataDirectory getParentDirectory(PrimaryDataEntity entity) {
+
+		final Session session = ((FileSystemImplementationProvider) DataManager.getImplProv()).getSession();
+
+		final CriteriaBuilder builder = session.getCriteriaBuilder();
+
+		CriteriaQuery<PrimaryDataDirectoryImplementation> directoryCriteria = builder
+				.createQuery(PrimaryDataDirectoryImplementation.class);
+
+		Root<PrimaryDataDirectoryImplementation> directoryRoot = directoryCriteria
+				.from(PrimaryDataDirectoryImplementation.class);
+
+		directoryCriteria
+				.where(builder.equal(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_ID), entity.getID()))
+				.select(directoryRoot.get(PrimaryDataDirectoryImplementation.STRING_PARENT_DIRECTORY));
+
+		PrimaryDataDirectoryImplementation primaryDataDirectory = session.createQuery(directoryCriteria).uniqueResult();
+
+		session.close();
+
+		return primaryDataDirectory;
+
 	}
 }

@@ -12,8 +12,6 @@
  */
 package de.ipk_gatersleben.bit.bi.edal.breedfides.rest;
 
-import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -25,14 +23,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.ipk_gatersleben.bit.bi.edal.breedfides.certificate.JwtValidator;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.DataManager;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
-import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.FileSystemImplementationProvider;
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.implementation.SearchProviderBreedFidesImplementation;
 import de.ipk_gatersleben.bit.bi.edal.sample.EdalHelpers;
 
@@ -97,7 +93,7 @@ public class DatasetAccessEndpoint {
 
 		try {
 			if (keywords == null || keywords.isBlank() || keywords.isEmpty()) {
-
+				
 				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) DataManager
 						.getImplProv().getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
 
@@ -112,14 +108,14 @@ public class DatasetAccessEndpoint {
 			}
 
 			else {
-
+				
 				PrimaryDataDirectory rootDirectory = DataManager.getRootDirectory(DataManager.getImplProv(),
 						EdalHelpers.authenticateUserWithJWT("jwt"));
 
 				SearchProviderBreedFidesImplementation searchProvider = (SearchProviderBreedFidesImplementation) DataManager
 						.getImplProv().getSearchProviderBreedFides().getDeclaredConstructor().newInstance();
 
-				String resultJSON = searchProvider.breedFidesKeywordSearch(rootDirectory, keywords, true, false, page,
+				String resultJSON = searchProvider.breedFidesKeywordSearch(rootDirectory, keywords, false, false, page,
 						pageSize);
 
 				ObjectNode jsonNode = (ObjectNode) new ObjectMapper().readTree(resultJSON);
@@ -133,7 +129,7 @@ public class DatasetAccessEndpoint {
 			Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).build();
 		}
 
-		return null;
+		return Response.status(Status.INTERNAL_SERVER_ERROR.getStatusCode(), "INTERNAL_SERVER_ERROR").build();
 
 	}
 

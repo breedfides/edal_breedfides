@@ -127,9 +127,6 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 
 	}
 
-	
-	
-
 	public HashSet<PrimaryDataDirectory> getAllUserDatasets(List<PrimaryDataDirectory> userDirectories) {
 
 		HashSet<PrimaryDataDirectory> userDatasets = new HashSet<>();
@@ -181,7 +178,7 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 
 		String[] fields = { EnumIndexField.TITLE.value(), EnumIndexField.DESCRIPTION.value(),
 				EnumIndexField.COVERAGE.value(), EnumIndexField.IDENTIFIER.value(), EnumIndexField.SIZE.value(),
-				EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.CREATOR.value(),
+				EnumIndexField.TYPE.value(), EnumIndexField.LANGUAGE.value(), EnumIndexField.CREATOR.value(),EnumIndexField.CONTRIBUTOR.value(),
 				EnumIndexField.LEGALPERSON.value(), EnumIndexField.ALGORITHM.value(), EnumIndexField.CHECKSUM.value(),
 				EnumIndexField.SUBJECT.value(), EnumIndexField.RELATION.value(), EnumIndexField.MIMETYPE.value(),
 				EnumIndexField.STARTDATE.value(), EnumIndexField.ENDDATE.value() };
@@ -277,10 +274,9 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 			ObjectNode resultNode = rootNode.objectNode();
 
 			resultNode.put("datasetRoot", metadata.getElementValue(EnumDublinCoreElements.TITLE).toString());
-			
 			try {
-				resultNode.put("datasetOwner", entity.getParentDirectory().getName());
-			} catch (PrimaryDataDirectoryException e) {
+				resultNode.put("datasetOwner", EdalFunctions.getParentDirectory(entity).getName());
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
@@ -347,14 +343,11 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 			}
 
 			metadataNode.set("authors", authorsArrayNode);
-
 			resultsArrayNode.add(resultNode);
 
 		}
 
-		String jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
-
-		return jsonString;
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
 	}
 
 	private ObjectNode createPaginationNode(ObjectNode rootNode, int currentPage, int pageSize, int totalCount,
@@ -373,7 +366,7 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 
 	@Override
 	public String getAllUserDatasets(int page, int pageSize) throws Exception {
-		
+
 		PrimaryDataDirectory rootDirectory = EdalFunctions.getRootDirectory();
 
 		List<PrimaryDataDirectory> userDirectories = EdalFunctions.getUserDirectories(rootDirectory);
@@ -386,7 +379,7 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 
 	@Override
 	public boolean checkIfEntityIsDataset(String id) {
-		
+
 		PrimaryDataDirectory rootDirectory = EdalFunctions.getRootDirectory();
 
 		List<PrimaryDataDirectory> userDirectories = EdalFunctions.getUserDirectories(rootDirectory);
