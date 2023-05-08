@@ -285,19 +285,24 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 				((EdalLanguage) metadata.getElementValue(EnumDublinCoreElements.LANGUAGE)).getLanguage().toString()),
 				Store.NO));
 		Persons creators = (Persons) metadata.getElementValue(EnumDublinCoreElements.CREATOR);
-		for (Person currentPerson : creators) {
+		for (Person creator : creators) {
 			builder.setLength(0);
-			if (currentPerson instanceof NaturalPerson) {
-				builder.append(((NaturalPerson) currentPerson).getGivenName() + EnumIndexing.DELIMITER.value());
-				builder.append(((NaturalPerson) currentPerson).getSureName() + EnumIndexing.DELIMITER.value());
+			if (creator instanceof NaturalPerson) {
+				builder.append(((NaturalPerson) creator).getGivenName() + EnumIndexing.DELIMITER.value());
+				builder.append(((NaturalPerson) creator).getSureName() + EnumIndexing.DELIMITER.value());
 				document.add(new TextField(EnumIndexField.CREATORNAME.value(), builder.toString(), Store.YES));
 			}
-			builder.append((currentPerson).getAddressLine() + EnumIndexing.DELIMITER.value());
-			builder.append((currentPerson).getZip() + EnumIndexing.DELIMITER.value());
-			builder.append((currentPerson).getCountry());
+			else if (creator instanceof LegalPerson) {
+				builder.append(((LegalPerson) creator).getLegalName());
+				builder.append(EnumIndexing.DELIMITER.value());
+				document.add(new TextField(EnumIndexField.CREATORNAME.value(), builder.toString(), Store.YES));
+			}
+			builder.append((creator).getAddressLine() + EnumIndexing.DELIMITER.value());
+			builder.append((creator).getZip() + EnumIndexing.DELIMITER.value());
+			builder.append((creator).getCountry());
 			document.add(new TextField(EnumIndexField.CREATOR.value(), builder.toString(), Store.YES));
 		}
-		Persons persons = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
+		Persons contributors = (Persons) metadata.getElementValue(EnumDublinCoreElements.CONTRIBUTOR);
 		LegalPerson legalPerson = (LegalPerson) metadata.getElementValue(EnumDublinCoreElements.PUBLISHER);
 		builder.setLength(0);
 		builder.append((legalPerson).getLegalName() + EnumIndexing.DELIMITER.value());
@@ -307,21 +312,26 @@ public class NativeLuceneIndexWriterThread extends IndexWriterThread {
 		document.add(new TextField(EnumIndexField.LEGALPERSON.value(), builder.toString(), Store.YES));
 		/**
 		 * Stringbuilder to combine multiple Values into one large String to store the
-		 * text in one field per categopry Not used for Relations and dates, because
+		 * text in one field per category Not used for Relations and dates, because
 		 * these values occur rarely more than once per Version/Document
 		 */
-		for (Person currentPerson : persons) {
+		for (Person contributor : contributors) {
 			builder.setLength(0);
-			if (currentPerson instanceof NaturalPerson) {
-				builder.append(((NaturalPerson) currentPerson).getGivenName());
+			if (contributor instanceof NaturalPerson) {
+				builder.append(((NaturalPerson) contributor).getGivenName());
 				builder.append(EnumIndexing.DELIMITER.value());
-				builder.append(((NaturalPerson) currentPerson).getSureName());
+				builder.append(((NaturalPerson) contributor).getSureName());
 				builder.append(EnumIndexing.DELIMITER.value());
 				document.add(new TextField(EnumIndexField.CONTRIBUTORNAME.value(), builder.toString(), Store.YES));
 			}
-			builder.append((currentPerson).getAddressLine() + EnumIndexing.DELIMITER.value());
-			builder.append((currentPerson).getZip() + EnumIndexing.DELIMITER.value());
-			builder.append((currentPerson).getCountry());
+			else if (contributor instanceof LegalPerson) {
+				builder.append(((LegalPerson) contributor).getLegalName());
+				builder.append(EnumIndexing.DELIMITER.value());
+				document.add(new TextField(EnumIndexField.CONTRIBUTORNAME.value(), builder.toString(), Store.YES));
+			}
+			builder.append((contributor).getAddressLine() + EnumIndexing.DELIMITER.value());
+			builder.append((contributor).getZip() + EnumIndexing.DELIMITER.value());
+			builder.append((contributor).getCountry());
 			document.add(new TextField(EnumIndexField.CONTRIBUTOR.value(), builder.toString(), Store.YES));
 		}
 		CheckSum checkSums = (CheckSum) metadata.getElementValue(EnumDublinCoreElements.CHECKSUM);
