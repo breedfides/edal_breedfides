@@ -28,11 +28,6 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import org.junit.After;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -40,18 +35,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.ipk_gatersleben.bit.bi.edal.primary_data.rmi.client.helper.EdalDirectoryVisitorRmi;
-
 public class BreedFidesClientForTest {
 
+	private static final String HTTP_LOCALHOST = "http://localhost/";
+//	private static final String HTTP_LOCALHOST = "http://94.156.201.214:81/";
 	private static String myJWT = "";
 
 	private static void register() throws Exception {
 
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
-
-		///// register to get certificate stored in a zip
 
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode rootNode = mapper.createObjectNode();
@@ -61,18 +54,18 @@ public class BreedFidesClientForTest {
 		rootNode.put("cityName", "Stadt Seeland, OT Gatersleben");
 		rootNode.put("organizationName", "IPK Gatersleben");
 		rootNode.put("organizationUnitName", "BIT");
-		rootNode.put("commonName", "Max Mustermann");
-		rootNode.put("commonName", "mustermann@ipk-gatersleben.de");
+		rootNode.put("commonName", "Daniel Arend");
+		rootNode.put("commonName", "arendd@ipk-gatersleben.de");
 
 		String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
 		System.out.println(jsonString);
 
-		WebTarget streamRequest = client.target("http://localhost/").path("breedfides/aai/register");
+		WebTarget streamRequest = client.target(HTTP_LOCALHOST).path("breedfides/aai/register");
 		Response streamResponse = streamRequest.request().accept(MediaType.APPLICATION_OCTET_STREAM)
 				.post(Entity.json(jsonString));
 
 		File file = streamResponse.readEntity(File.class);
-		Files.copy(new FileInputStream(file), Paths.get(System.getProperty("user.home"), "compressed.zip"));
+		Files.copy(new FileInputStream(file), Paths.get(System.getProperty("user.home"), "breedFides","compressed.zip"));
 
 		client.close();
 	}
@@ -82,9 +75,9 @@ public class BreedFidesClientForTest {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget loginRequest = client.target("http://localhost/").path("breedfides/aai/login");
+		WebTarget loginRequest = client.target(HTTP_LOCALHOST).path("breedfides/aai/login");
 
-		File file1 = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+		File file1 = Paths.get(System.getProperty("user.home"), "breedFides","certificate.cer").toFile();
 
 		final FileDataBodyPart filePart = new FileDataBodyPart("file", file1);
 		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
@@ -109,9 +102,9 @@ public class BreedFidesClientForTest {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/upload/datasets");
+		WebTarget uploadRequest = client.target(HTTP_LOCALHOST).path("breedfides/upload/datasets");
 
-		File file = Paths.get(System.getProperty("user.home"), "certificate.cer").toFile();
+		File file = Paths.get(System.getProperty("user.home"),"breedFides", "certificate.cer").toFile();
 
 		final FileDataBodyPart filePart = new FileDataBodyPart("file", file);
 		FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
@@ -125,17 +118,28 @@ public class BreedFidesClientForTest {
 		rootNode.put("license", "CC 1.0 Universal");
 
 		ArrayNode authorsArrayNode = rootNode.arrayNode();
-		ObjectNode authorNode = mapper.createObjectNode();
+		ObjectNode creatorNode = mapper.createObjectNode();
 
-		authorNode.put("firstName", "Manuel");
-		authorNode.put("lastName", "Feser");
-		authorNode.put("country", "Deutschland");
-		authorNode.put("zip", "06466");
-		authorNode.put("address", "Corrensstraße 3 Seeland");
-		authorNode.put("role", "Creator");
+		creatorNode.put("firstName", "Daniel");
+		creatorNode.put("lastName", "Arend");
+		creatorNode.put("country", "Deutschland");
+		creatorNode.put("zip", "123");
+		creatorNode.put("address", "Corrensstraße 3 Seeland");
+		creatorNode.put("role", "Creator");
+		
+		
+		ObjectNode contributorNode = mapper.createObjectNode();
 
-		authorsArrayNode.add(authorNode);
+		contributorNode.put("legalName", "IPK Gatersleben");
+		contributorNode.put("country", "Deutschland");
+		contributorNode.put("zip", "06466");
+		contributorNode.put("address", "Corrensstraße 3 Seeland");
+		contributorNode.put("role", "Contributor");
 
+
+		authorsArrayNode.add(creatorNode);
+		authorsArrayNode.add(contributorNode);
+		
 		rootNode.set("authors", authorsArrayNode);
 
 		ArrayNode subjectsArrayNode = rootNode.arrayNode();
@@ -166,10 +170,10 @@ public class BreedFidesClientForTest {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget accessRequest = client.target("http://localhost/").path("breedfides/access/datasets");
+		WebTarget accessRequest = client.target(HTTP_LOCALHOST).path("breedfides/access/datasets");
 
 		Response registerResponse = accessRequest.queryParam("pageSize", 25).queryParam("page", 1)
-				.queryParam("keywords", "Manuel").request().header("Authorization", "Bearer " + myJWT)
+				.queryParam("keywords", "amanda").request().header("Authorization", "Bearer " + myJWT)
 				.accept(MediaType.APPLICATION_JSON).get();
 
 		System.out.println(
@@ -181,10 +185,10 @@ public class BreedFidesClientForTest {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget downloadRequest = client.target("http://localhost/").path("breedfides/download/dataset");
+		WebTarget downloadRequest = client.target(HTTP_LOCALHOST).path("breedfides/download/dataset");
 
-		Response downloadResponse = downloadRequest.queryParam("datasetOwner", "1681293054019")
-				.queryParam("datasetRoot", "Downloads").request().header("Authorization", "Bearer " + myJWT)
+		Response downloadResponse = downloadRequest.queryParam("datasetOwner", "1682596147141")
+				.queryParam("datasetRoot", "amanda").request().header("Authorization", "Bearer " + myJWT)
 				.accept(MediaType.APPLICATION_OCTET_STREAM).get();
 
 		File file = downloadResponse.readEntity(File.class);
@@ -199,39 +203,39 @@ public class BreedFidesClientForTest {
 		Client client = ClientBuilder.newClient();
 		client.register(MultiPartFeature.class);
 
-		WebTarget uploadRequest = client.target("http://localhost/").path("breedfides/upload/datasets");
+		WebTarget uploadRequest = client.target(HTTP_LOCALHOST).path("breedfides/upload/datasets");
 
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode rootNode = mapper.createObjectNode();
 
-		rootNode.put("title", "Italian Accessions of the Bridge Dataset");
-		rootNode.put("description", "MIAPPE ISA Tab formatted dataset of all italian accessions of the BRIDGE Dataset");
+		rootNode.put("title", "Amanda");
+		rootNode.put("description", "Crazy Chromosome Videos");
 		rootNode.put("language", "english");
 		rootNode.put("license", "CC 1.0 Universal");
 
 		ArrayNode authorsArrayNode = rootNode.arrayNode();
-		ObjectNode authorNode = mapper.createObjectNode();
+		ObjectNode creatorNode = mapper.createObjectNode();
 
-		authorNode.put("firstName", "Manuel");
-		authorNode.put("lastName", "Feser");
-		authorNode.put("country", "Deutschland");
-		authorNode.put("zip", "06466");
-		authorNode.put("address", "Corrensstraße 3 Seeland");
-		authorNode.put("role", "Creator");
-
-		authorsArrayNode.add(authorNode);
+		creatorNode.put("firstName", "Amanda");
+		creatorNode.put("lastName", "Camara");
+		creatorNode.put("country", "Deutschland");
+		creatorNode.put("zip", "06466");
+		creatorNode.put("address", "Corrensstraße 3 Seeland");
+		creatorNode.put("role", "Creator");
+		
+		authorsArrayNode.add(creatorNode);
 
 		rootNode.set("authors", authorsArrayNode);
 
 		ArrayNode subjectsArrayNode = rootNode.arrayNode();
-		subjectsArrayNode.add("MIAPPE");
-		subjectsArrayNode.add("Triticum");
-		subjectsArrayNode.add("Ro-Crate");
+		subjectsArrayNode.add("barley");
+		subjectsArrayNode.add("chromosome");
+		subjectsArrayNode.add("mpeg");
 		rootNode.set("subjects", subjectsArrayNode);
 
 		String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
 
-		Path uplodPath = Paths.get(System.getProperty("user.home"), "Downloads");
+		Path uplodPath = Paths.get(System.getProperty("user.home"), "Downloads","amanda");
 
 		FileUploadVisitor uploadVisitor = new FileUploadVisitor(uplodPath, jsonString, uploadRequest, myJWT);
 
@@ -266,13 +270,18 @@ public class BreedFidesClientForTest {
 
 //			login();
 
-		myJWT = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzZXJpYWxOdW1iZXIiOiIxNjgxMjkzMDU0MDE5Iiwicm9sZSI6ImJyZWVkZXIiLCJpc3MiOiJCcmVlZEZpZGVzIiwiaWF0IjoxNjgxMjkzMDkzLCJqdGkiOiI4MTJlNjk3ZC1mNmFiLTQzZGQtYjUwMi1hZjE2MTVhZWFlNGYifQ.aH_MvGHI2cUp0qjXHnM2ZxZQ20Xbrjymj_f5NQul5G0hM37FDNjjVXJpPmS1smFq8eMuIQ1OAuUcliTQrWXlVjN9YwO4NgwWJwbD9oj351quiue-r02wqNTcyVbOiJnO06aumdCmJYgS0qxwf2t2_NpWinND2IMWscxbdPaXb-AH7GXeEC397_OOR5D13nCML3RSC0UgT-jpgtO2N1cmhL2CAfdbuD8U4lhgjVpbpDW9qBIyOwESzxX6GAAErJzNq64IGAr3nfTSfUYr0ooXYxy0PAfh4ecnjl9DjUVVFToJWk47qlcLRdMVuQEGJEaiMUxf0XKnpu37QUroRYuEzw";
+		myJWT = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzZXJpYWxOdW1iZXIiOiIxNjgzMjAxNTYyNjA5Iiwicm9sZSI6ImJyZWVkZXIiLCJpc3MiOiJCcmVlZEZpZGVzIiwiaWF0IjoxNjgzMjAxNTc3LCJqdGkiOiJhMGI0ZjgwYi0xY2EzLTRkZmUtYTQzZC0xMDI4ZjdiMGNjY2QifQ.X_dt9vKNjr7tLCV5_K5F7hdWODk9cMlQd1-6dvHDEBoiAYyi4ZGvJ97ftJQMM-4HJFf3Xu40MFx7Wx4Xk-Msy3BhhyS4k7Xb3T6XPIjvjWTiO4o93_d7Z5BbIAdZa2ZwHuo7NOpQmZMv-SP7jpzuEVfMAHGfy3SI8XNanwNj5Apvqxz7adf0ZvERGoScRLZDbbe7CYh6C7kxwTpYnrWR__873GuKiGpl4E0arlAQ2uX8g8M3MlK-meZ9rPr8Lk8BQvpMeOoWP_gdmz2EABDnEgYSq_IxS0ex_UgL0LOpcz-e4ZmOt1vTFoYKhBn2R09Fg2FeXqPm9u06fu6Y7iuLWQ";
 
-//			upload();
 
-			access();
+//			myJWT =  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzZXJpYWxOdW1iZXIiOiIxNjgyNTk2MTQ3MTQxIiwicm9sZSI6ImJyZWVkZXIiLCJpc3MiOiJCcmVlZEZpZGVzIiwiaWF0IjoxNjgyNTk2MTYwLCJqdGkiOiI5NDY3ODdmYi0zYjZlLTQ5MGMtOGRiYi1jODU0YzljOTI2NjMifQ.SWKYsSSO0z0gtLqtadE6YtQjeRcaE_61SjX-ewMGVIOilokgbwrAQvKALVEaZUav7I9FlR-6f98r44PXzBO5sIsw8Kj4ZxiOtPr_I5dj9zV8y349Xf2CTkyvx3lbmPF8iTYPiUEv62971HPFQhHRc43NxlyHXxvNxh3wd44Vzwe48QHqAL-9xidCbipBMx4-CpHeqsOfIv_6wPdk1dY1xnev1e7S5P38RhaFRPpzqDjY_HQySDs94m0fZPDHEzEqT_lGTcqDbQV47yA3uvLD1Az-qGx3IzZ9nIMwDeS92OIajXDNe2uBy_Sr1Zsqh8v1ZPVN8xok_3IyQngFX_BgFA";
 
-		download();
+
+			
+			upload();
+
+//			access();
+
+//		download();
 
 //		uploadDirectory();
 

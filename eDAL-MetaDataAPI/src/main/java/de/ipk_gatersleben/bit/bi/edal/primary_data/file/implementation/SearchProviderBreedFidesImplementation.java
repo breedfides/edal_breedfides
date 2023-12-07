@@ -202,6 +202,8 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 			ScoreDoc[] hits = searcher.search(luceneQuery, 50000).scoreDocs;
 
 			versionIdList = new HashSet<Integer>();
+			
+			System.out.println(hits.length);
 
 			for (int i = 0; i < hits.length; i++) {
 
@@ -215,7 +217,7 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 		}
 
 		((FileSystemImplementationProvider) DataManager.getImplProv()).getLogger()
-				.info("Found while searching: " + versionIdList.size() + " values");
+				.info("Found in the index: " + versionIdList.size() + " values");
 
 		return versionIdList;
 	}
@@ -392,6 +394,16 @@ public class SearchProviderBreedFidesImplementation implements SearchProviderBre
 			}
 		}
 
+		return false;
+	}
+
+	@Override
+	public boolean indexNewEntity(PrimaryDataEntity entity) {
+		
+		BreedFidesIndexWriter breedFidesIndexWriter = ((FileSystemImplementationProvider)DataManager.getImplProv()).getBreedFidesIndexWriter();
+
+		breedFidesIndexWriter.executeIndexing(entity);
+		
 		return false;
 	}
 

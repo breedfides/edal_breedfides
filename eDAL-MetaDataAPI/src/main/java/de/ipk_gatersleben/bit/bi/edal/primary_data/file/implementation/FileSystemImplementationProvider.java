@@ -174,6 +174,11 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	 * Facet-dimensions
 	 **/
 	private static FacetsConfig factesConfig = new FacetsConfig();
+	
+	private static final String FACETS_BREEDFIDES = "Facets_BreedFides";
+	private BreedFidesIndexWriter breedFidesIndexWriter;
+	private Directory facetDirectoryForBreedFidesEntities;
+	private DirectoryTaxonomyWriter taxoWriterForBreedFides;
 
 	public FileSystemImplementationProvider(EdalConfiguration configuration) {
 
@@ -423,11 +428,20 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 				((PublicVersionIndexWriterThread) indexWriterThreads.get(1)).setTestMode(configuration.isInTestMode());
 				this.setIndexThread(indexWriterThreads.get(0));
 				this.setPublicVersionWriter((PublicVersionIndexWriterThread) indexWriterThreads.get(1));
-				this.getIndexThread().start();
-				this.getPublicVersionWriter().start();
+//				this.getIndexThread().start();
+//				this.getPublicVersionWriter().start();
 				try {
 					SearcherTaxonomyManagerForPublicReferences = new SearcherTaxonomyManager(this.indexWriter, new SearcherFactory(), this.taxoWriterForPublicReferences);
 					SearcherTaxonomyManagerForNative = new SearcherTaxonomyManager(this.indexWriter, new SearcherFactory(), this.taxoWriterForNativeEntities);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				try {
+				this.facetDirectoryForBreedFidesEntities = FSDirectory.open(Paths.get(this.indexDirectory.toString(), FACETS_BREEDFIDES));
+
+				this.taxoWriterForBreedFides =  new DirectoryTaxonomyWriter(this.facetDirectoryForBreedFidesEntities);
+				
+				this.breedFidesIndexWriter = new BreedFidesIndexWriter(this.sessionFactory, this.indexDirectory, this.logger, this.indexWriter, this.taxoWriterForBreedFides);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -896,5 +910,9 @@ public class FileSystemImplementationProvider implements ImplementationProvider 
 	@Override
 	public Class<? extends SearchProviderBreedFides> getSearchProviderBreedFides() {
 		return SearchProviderBreedFidesImplementation.class;
+	}
+
+	public BreedFidesIndexWriter getBreedFidesIndexWriter() {
+		return breedFidesIndexWriter;
 	}
 }

@@ -110,8 +110,6 @@ public class DatasetUploadEndpoint {
 						.build();
 			}
 
-//			InfoEndpoint.getLogger().info("Got Metadata : " + metaData);
-
 			try {
 				FileSystemImplementationProvider filesystemImplementationProvider = ((FileSystemImplementationProvider) DataManager
 						.getImplProv());
@@ -145,7 +143,10 @@ public class DatasetUploadEndpoint {
 
 				// get or create actual file path
 
+				int directoryCounter = 0;
+
 				for (String directory : parentDirectories) {
+					directoryCounter++;
 
 					if (currentRootDirectory.exist(directory)) {
 						currentDirectory = (PrimaryDataDirectory) currentRootDirectory.getPrimaryDataEntity(directory);
@@ -157,6 +158,11 @@ public class DatasetUploadEndpoint {
 						currentDirectory.setMetaData(convertJsonMetadata(currentDirectory.getMetaData(), metaData));
 						currentRootDirectory = currentDirectory;
 						InfoEndpoint.getLogger().info("ParentDirectory was created : " + directory);
+					}
+
+					if (directoryCounter == 1) {
+						((FileSystemImplementationProvider) DataManager.getImplProv()).getBreedFidesIndexWriter()
+								.executeIndexing(currentDirectory);
 
 					}
 				}
@@ -203,7 +209,7 @@ public class DatasetUploadEndpoint {
 
 			InfoEndpoint.getLogger().info("description = " + descriptionNode.asText());
 			InfoEndpoint.getLogger().info("subjects = " + (ArrayNode) rootNode.path("subjects"));
-			InfoEndpoint.getLogger().info("authors = " + (ArrayNode) rootNode.path("authors"));
+//			InfoEndpoint.getLogger().info("authors = " + (ArrayNode) rootNode.path("authors"));
 			InfoEndpoint.getLogger().info("language = " + languageNode.asText());
 
 			// description
@@ -240,8 +246,6 @@ public class DatasetUploadEndpoint {
 					person = new LegalPerson(legalNameNode.asText(), addressNode.asText(), zipNode.asText(),
 							countryNode.asText());
 
-					InfoEndpoint.getLogger().info("author = " + (LegalPerson) person);
-
 				} else if (authorNode.has("firstName")) {
 
 					JsonNode lastNameNode = authorNode.path("lastName");
@@ -257,8 +261,6 @@ public class DatasetUploadEndpoint {
 						person = new NaturalPerson(firstNameNode.asText(), lastNameNode.asText(), addressNode.asText(),
 								zipNode.asText(), countryNode.asText());
 					}
-					InfoEndpoint.getLogger().info("author = " + (NaturalPerson) person);
-
 				}
 
 				JsonNode roleNode = authorNode.path("role");
@@ -268,6 +270,8 @@ public class DatasetUploadEndpoint {
 				} else if (roleNode.asText().equals(CONTRIBUTOR)) {
 					contributorPersons.add(person);
 				}
+
+				InfoEndpoint.getLogger().info("author = " + person + ", " + roleNode.asText());
 
 			}
 

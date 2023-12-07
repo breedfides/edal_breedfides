@@ -99,6 +99,8 @@ public class DatasetDownloadEndpoint {
 				e.printStackTrace();
 				InfoEndpoint.getLogger().error(e.getMessage());
 			}
+			
+			System.out.println(zipfileName);
 
 			StreamingOutput fileStream = new StreamingOutput() {
 

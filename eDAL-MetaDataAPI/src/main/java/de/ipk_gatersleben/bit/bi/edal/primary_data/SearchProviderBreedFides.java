@@ -15,6 +15,7 @@ package de.ipk_gatersleben.bit.bi.edal.primary_data;
 import org.json.simple.JSONArray;
 
 import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataDirectory;
+import de.ipk_gatersleben.bit.bi.edal.primary_data.file.PrimaryDataEntity;
 
 /**
  * Provider for BreedFidesSearch
@@ -32,5 +33,7 @@ public interface SearchProviderBreedFides {
 	String getAllUserDatasets(int page, int pageSize) throws Exception;
 	
 	boolean checkIfEntityIsDataset(String id);
+	
+	boolean indexNewEntity(PrimaryDataEntity entity);
 
 }

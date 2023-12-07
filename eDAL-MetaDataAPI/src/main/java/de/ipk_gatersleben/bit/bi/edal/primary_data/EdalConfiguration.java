@@ -1235,7 +1235,7 @@ public final class EdalConfiguration {
 		this.getRootUser();
 
 		this.validateProxies();
-		this.validateSmtpSettings();
+//		this.validateSmtpSettings();
 
 		try {
 			this.validateDataCiteConnection();
